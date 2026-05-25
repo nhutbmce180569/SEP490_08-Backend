@@ -1,41 +1,94 @@
-var builder = WebApplication.CreateBuilder(args);
+using StackExchange.Redis;
+using System.IdentityModel.Tokens.Jwt;
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+namespace GatewayAPI
 {
-    app.MapOpenApi();
-}
+    public class Program
+    {
+        public static void Main(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
 
-app.UseHttpsRedirection();
+            builder.Services.AddControllers();
+            builder.Services.AddEndpointsApiExplorer();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
+            });
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+            var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+            if (!string.IsNullOrEmpty(redisConnectionString))
+            {
+                builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnectionString));
+            }
 
-app.Run();
+            builder.Services.AddReverseProxy()
+                .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+            var app = builder.Build();
+
+
+            app.UseHttpsRedirection();
+
+            app.UseCors("AllowAll");
+
+            app.Use(async (context, next) =>
+            {
+                var authHeader = context.Request.Headers["Authorization"].ToString();
+
+                if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                {
+                    var token = authHeader.Substring("Bearer ".Length).Trim();
+                    var handler = new JwtSecurityTokenHandler();
+
+                    if (handler.CanReadToken(token))
+                    {
+                        var jwtToken = handler.ReadJwtToken(token);
+                        var userId = jwtToken.Claims.FirstOrDefault(c => c.Type == "nameid" || c.Type == "sub")?.Value;
+                        var iatClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "iat")?.Value;
+
+                        if (!string.IsNullOrEmpty(userId) && !string.IsNullOrEmpty(iatClaim))
+                        {
+                            var redis = context.RequestServices.GetService<IConnectionMultiplexer>();
+                            if (redis != null)
+                            {
+                                var db = redis.GetDatabase();
+
+                                var revokeTimestampStr = await db.StringGetAsync($"revoke_user_{userId}");
+
+                                if (revokeTimestampStr.HasValue)
+                                {
+                                    long revokeTimestamp = long.Parse(revokeTimestampStr);
+                                    long tokenIat = long.Parse(iatClaim);
+
+                                    if (tokenIat <= revokeTimestamp)
+                                    {
+                                        context.Response.StatusCode = 401;
+                                        context.Response.ContentType = "application/json";
+                                        await context.Response.WriteAsJsonAsync(new { message = "Token has been invalidated due to a password change. Please log in again." });
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                await next();
+            });
+
+            app.UseAuthorization();
+
+            app.MapReverseProxy();
+            app.MapControllers();
+
+            app.Run();
+        }
+    }
 }

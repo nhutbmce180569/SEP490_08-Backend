@@ -1,0 +1,19 @@
+﻿using AuthAPI.Models;
+
+namespace AuthAPI.Repositories
+{
+    public interface IUserRepository
+    {
+        Task Add(User model);
+        Task<List<User>> GetAll();
+        Task<(List<User> Users, int Total)> GetAllPaged(int page, int pageSize);
+
+        Task<User?> GetById(int id);
+        Task<User?> GetByEmail(string email);
+        Task Update(int id, User model);
+        Task Delete(int id);
+
+        Task<(List<User> Users, int Total)> SearchPagedAsync(string query, int page, int pageSize, string? roleName = null);
+        Task<List<User>> GetUsersByIdsAsync(List<int> ids);
+    }
+}
