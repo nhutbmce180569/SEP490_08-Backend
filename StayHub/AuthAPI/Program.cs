@@ -193,7 +193,10 @@ namespace AuthAPI
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseSwaggerUI(options =>
+                {
+                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Auth API v1");
+                });
             }
 
             app.UseHttpsRedirection();
