@@ -19,6 +19,7 @@ namespace AuthAPI.Controllers
 
         // GET: api/users?page=1&pageSize=10
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             if (page <= 0) page = 1;
@@ -30,6 +31,7 @@ namespace AuthAPI.Controllers
 
         // GET: api/users/{id}
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetUserById(int id)
         {
             var user = await _userService.GetUserById(id);
@@ -45,6 +47,7 @@ namespace AuthAPI.Controllers
 
         // GET: api/users/email/{email}
         [HttpGet("email/{email}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetUserByEmail(string email)
         {
             var user = await _userService.GetUserByEmail(email);
@@ -60,6 +63,7 @@ namespace AuthAPI.Controllers
         // POST: api/users
         [HttpPost]
         [Consumes("multipart/form-data")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateUserByAdmin([FromForm] CreateUserDTO createUserDTO)
         {
             if (!ModelState.IsValid)
@@ -81,6 +85,7 @@ namespace AuthAPI.Controllers
         // PUT: api/users/{id}
         [HttpPut("{id}")]
         [Consumes("multipart/form-data")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateUser(int id, [FromForm] UpdateUserDTO updateUserDTO)
         {
             if (!ModelState.IsValid)
@@ -100,6 +105,7 @@ namespace AuthAPI.Controllers
 
         // DELETE: api/users/{id}
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteUser(int id)
         {
             var isSuccess = await _userService.DeleteUser(id);
