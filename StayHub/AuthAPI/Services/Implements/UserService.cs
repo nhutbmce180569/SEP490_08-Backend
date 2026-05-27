@@ -281,5 +281,24 @@ namespace AuthAPI.Services.Implements
             return true;
 
         }
+
+        public async Task<PaginationDTO<ReadUserDTO>> FilterUsersAsync(UserFilterDTO filter)
+        {
+            if (filter.Page <= 0) filter.Page = 1;
+            if (filter.PageSize <= 0) filter.PageSize = 10;
+
+            var (users, total) = await _userRepository.FilterPagedAsync(filter);
+
+            var userDtos = _mapper.Map<List<ReadUserDTO>>(users);
+
+            return new PaginationDTO<ReadUserDTO>
+            {
+                Data = userDtos,
+                Total = total,
+                TotalPages = (int)Math.Ceiling(total / (double)filter.PageSize),
+                CurrentPage = filter.Page,
+                PageSize = filter.PageSize
+            };
+        }
     }
 }

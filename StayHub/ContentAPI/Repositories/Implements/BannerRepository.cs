@@ -29,6 +29,26 @@ namespace ContentAPI.Repositories.Implements
             return (banners, total);
         }
 
+        public async Task<(List<Banner> Banners, int Total)> SearchPagedAsync(string keyword, int page, int pageSize)
+        {
+            var query = _context.Banners.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = query.Where(b => b.Title.Contains(keyword));
+            }
+
+            int total = await query.CountAsync();
+
+            var banners = await query
+                .OrderByDescending(b => b.Priority)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (banners, total);
+        }
+
         public async Task<(List<Banner> Banners, int Total)> GetActiveBannersPaged(int page, int pageSize)
         {
             var query = _context.Banners.Where(b => b.IsActive == true).AsQueryable();
