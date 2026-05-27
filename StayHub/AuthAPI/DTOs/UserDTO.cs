@@ -87,4 +87,19 @@ namespace AuthAPI.DTOs
         [RegularExpression("^(Active|Blocked)$", ErrorMessage = "Status must be either 'Active' or 'Blocked'.")]
         public string Status { get; set; } = null!;
     }
+
+    public class UserFilterDTO
+    {
+        public string? Email { get; set; }
+        public string? FullName { get; set; }
+        public string? PhoneNumber { get; set; }
+
+        public List<string>? Roles { get; set; }
+
+        [Range(1, int.MaxValue, ErrorMessage = "Page must be greater than 0.")]
+        public int Page { get; set; } = 1;
+
+        [Range(1, 100, ErrorMessage = "PageSize must be between 1 and 100.")]
+        public int PageSize { get; set; } = 10;
+    }
 }

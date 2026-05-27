@@ -219,5 +219,44 @@ namespace AuthAPI.Controllers
                 return StatusCode(500, new { message = "An error occurred while changing user status.", details = ex.Message });
             }
         }
+
+        // GET: api/users/filter?FullName=John&Roles=Admin&Roles=Customer&Page=1&PageSize=10
+        [HttpGet("filter")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> FilterUsers([FromQuery] UserFilterDTO filter)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new { message = "Invalid filter parameters.", errors = ModelState });
+                }
+
+                var paginationResult = await _userService.FilterUsersAsync(filter);
+
+                if (paginationResult.Total == 0)
+                {
+                    return Ok(new
+                    {
+                        message = "No users found matching the filter criteria.",
+                        data = paginationResult
+                    });
+                }
+
+                return Ok(new
+                {
+                    message = $"Found {paginationResult.Total} user(s) matching the criteria.",
+                    data = paginationResult
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "An error occurred while filtering users.",
+                    details = ex.Message
+                });
+            }
+        }
     }
 }

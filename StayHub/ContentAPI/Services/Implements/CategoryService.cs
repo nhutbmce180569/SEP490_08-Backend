@@ -46,7 +46,20 @@ namespace ContentAPI.Services.Implements
                 PageSize = pageSize
             };
         }
+        public async Task<PaginationDTO<ReadCategoryDTO>> SearchCategoriesAsync(string keyword, int page, int pageSize)
+        {
+            var (categories, total) = await _categoryRepository.SearchPagedAsync(keyword, page, pageSize);
+            var categoryDtos = _mapper.Map<List<ReadCategoryDTO>>(categories);
 
+            return new PaginationDTO<ReadCategoryDTO>
+            {
+                Data = categoryDtos,
+                Total = total,
+                TotalPages = (int)Math.Ceiling(total / (double)pageSize),
+                CurrentPage = page,
+                PageSize = pageSize
+            };
+        }
         public async Task<PaginationDTO<ReadCategoryDTO>> GetActiveCategories(int page, int pageSize)
         {
             var (categories, total) = await _categoryRepository.GetActiveCategoriesPaged(page, pageSize);
