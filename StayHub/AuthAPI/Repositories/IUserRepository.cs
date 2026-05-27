@@ -1,4 +1,5 @@
-﻿using AuthAPI.Models;
+﻿using AuthAPI.DTOs;
+using AuthAPI.Models;
 
 namespace AuthAPI.Repositories
 {
@@ -15,5 +16,6 @@ namespace AuthAPI.Repositories
 
         Task<(List<User> Users, int Total)> SearchPagedAsync(string query, int page, int pageSize, string? roleName = null);
         Task<List<User>> GetUsersByIdsAsync(List<int> ids);
+        Task<(List<User> Users, int Total)> FilterPagedAsync(UserFilterDTO filter);
     }
 }

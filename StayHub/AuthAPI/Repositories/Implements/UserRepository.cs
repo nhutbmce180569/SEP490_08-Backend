@@ -1,5 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AuthAPI.DTOs;
 using AuthAPI.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace AuthAPI.Repositories.Implements
 {
@@ -110,6 +111,43 @@ namespace AuthAPI.Repositories.Implements
                 .Where(u => ids.Contains(u.Id))
                 .AsNoTracking()
                 .ToListAsync();
+        }
+
+        public async Task<(List<User> Users, int Total)> FilterPagedAsync(UserFilterDTO filter)
+        {
+            var query = _context.Users
+                .Include(u => u.Roles)
+                .AsNoTracking()
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(filter.Email))
+            {
+                query = query.Where(u => u.Email.Contains(filter.Email));
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.FullName))
+            {
+                query = query.Where(u => u.FullName.Contains(filter.FullName));
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.PhoneNumber))
+            {
+                query = query.Where(u => u.PhoneNumber != null && u.PhoneNumber.Contains(filter.PhoneNumber));
+            }
+
+            if (filter.Roles != null && filter.Roles.Any())
+            {
+                query = query.Where(u => u.Roles.Any(r => filter.Roles.Contains(r.Name)));
+            }
+
+            int total = await query.CountAsync();
+
+            var users = await query
+                .Skip((filter.Page - 1) * filter.PageSize)
+                .Take(filter.PageSize)
+                .ToListAsync();
+
+            return (users, total);
         }
     }
 }

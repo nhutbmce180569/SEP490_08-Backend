@@ -145,5 +145,61 @@ namespace ContentAPI.Controllers
 
             return Ok(new { message = "Category deactivated successfully." });
         }
+
+        // GET: api/Categories/search?q=hotel&page=1&pageSize=10
+        [HttpGet("search")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Search(
+            [FromQuery(Name = "q")] string keyword,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                if (page < 1) page = 1;
+                if (pageSize < 1) pageSize = 10;
+
+                if (string.IsNullOrWhiteSpace(keyword))
+                {
+                    return BadRequest(new
+                    {
+                        message = "Search keyword cannot be empty.",
+                        data = new PaginationDTO<ReadCategoryDTO>
+                        {
+                            Data = new List<ReadCategoryDTO>(),
+                            Total = 0,
+                            TotalPages = 0,
+                            CurrentPage = page,
+                            PageSize = pageSize
+                        }
+                    });
+                }
+
+                var result = await _categoryService.SearchCategoriesAsync(keyword, page, pageSize);
+
+                if (result.Total == 0)
+                {
+                    return Ok(new
+                    {
+                        message = $"No categories found matching '{keyword}'.",
+                        data = result
+                    });
+                }
+
+                return Ok(new
+                {
+                    message = $"Found {result.Total} category(ies) matching '{keyword}'.",
+                    data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "An error occurred while searching for categories.",
+                    details = ex.Message
+                });
+            }
+        }
     }
 }
