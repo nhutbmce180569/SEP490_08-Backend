@@ -32,11 +32,11 @@ namespace TourAPI.Services.Implements
         }
         public async Task Add(CreateTourDTO model)
         {
-            //var checkCategory =
-            //    await _categoryService.CheckCategoryExist(model.CategoryId);
+            var checkCategory =
+                await _categoryService.CheckCategoryExist(model.CategoryId);
 
-            //if (!checkCategory)
-            //    throw new Exception("Category does not exist");
+            if (!checkCategory)
+                throw new Exception("Category does not exist");
 
             var tour = _mapper.Map<Tour>(model);
 
@@ -64,10 +64,10 @@ namespace TourAPI.Services.Implements
         public async Task Update(int id, UpdateTourDTO model)
         {
 
-            //var checkCategory = await _categoryService.CheckCategoryExist(model.CategoryId);
+            var checkCategory = await _categoryService.CheckCategoryExist(model.CategoryId);
 
-            //if (!checkCategory)
-            //    throw new Exception("Category does not exist");
+            if (!checkCategory)
+                throw new Exception("Category does not exist");
 
             var tour = await _repository.GetById(id);
 
