@@ -17,13 +17,17 @@ namespace TourAPI.DTOs
         public long Price { get; set; }
 
         public int MaxCapacity { get; set; }
+
         public int SoldQuantity { get; set; }
 
         public int AvailableSeats { get; set; }
 
         public string? Note { get; set; }
+
         public virtual ReadTourBasicDTO? Tour { get; set; }
+
         public virtual ICollection<ReadTourScheduleStaffDTO>? TourScheduleStaffs { get; set; }
+
         public virtual ICollection<ReadTourScheduleItineraryDTO>? TourScheduleItineraries { get; set; }
 
     }
