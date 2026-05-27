@@ -20,14 +20,32 @@ namespace ContentAPI.Repositories.Implements
 
             var categories = await query
                 .AsNoTracking()
-                .OrderByDescending(c => c.Id) // Sắp xếp theo Id giảm dần (mới nhất lên đầu)
+                .OrderByDescending(c => c.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
             return (categories, total);
         }
+        public async Task<(List<Category> Categories, int Total)> SearchPagedAsync(string keyword, int page, int pageSize)
+        {
+            var query = _context.Categories.AsNoTracking().AsQueryable();
 
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = query.Where(c => c.Name.Contains(keyword) || (c.Description != null && c.Description.Contains(keyword)));
+            }
+
+            int total = await query.CountAsync();
+
+            var categories = await query
+                .OrderByDescending(c => c.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (categories, total);
+        }
         public async Task<(List<Category> Categories, int Total)> GetActiveCategoriesPaged(int page, int pageSize)
         {
             var query = _context.Categories.Where(c => c.IsActive == true).AsQueryable();

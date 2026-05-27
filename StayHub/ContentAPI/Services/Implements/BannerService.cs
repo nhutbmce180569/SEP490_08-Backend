@@ -35,6 +35,20 @@ namespace ContentAPI.Services.Implements
                 PageSize = pageSize
             };
         }
+        public async Task<PaginationDTO<ReadBannerDTO>> SearchBannersAsync(string keyword, int page, int pageSize)
+        {
+            var (banners, total) = await _bannerRepository.SearchPagedAsync(keyword, page, pageSize);
+            var bannerDtos = _mapper.Map<List<ReadBannerDTO>>(banners);
+
+            return new PaginationDTO<ReadBannerDTO>
+            {
+                Data = bannerDtos,
+                Total = total,
+                TotalPages = (int)Math.Ceiling(total / (double)pageSize),
+                CurrentPage = page,
+                PageSize = pageSize
+            };
+        }
 
         public async Task<PaginationDTO<ReadBannerDTO>> GetActiveBanners(int page, int pageSize)
         {

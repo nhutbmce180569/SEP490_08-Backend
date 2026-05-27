@@ -29,6 +29,58 @@ namespace ContentAPI.Controllers
             return Ok(banners);
         }
 
+        // GET: api/Banners/search?keyword=summer&page=1&pageSize=10
+        [HttpGet("search")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Search(
+            [FromQuery(Name = "q")] string keyword,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                if (page < 1) page = 1;
+                if (pageSize < 1) pageSize = 10;
+
+                if (string.IsNullOrWhiteSpace(keyword))
+                {
+                    return BadRequest(new
+                    {
+                        message = "Search keyword cannot be empty.",
+                        data = new PaginationDTO<ReadBannerDTO>
+                        {
+                            Data = new List<ReadBannerDTO>(),
+                            Total = 0,
+                            TotalPages = 0,
+                            CurrentPage = page,
+                            PageSize = pageSize
+                        }
+                    });
+                }
+
+                var result = await _bannerService.SearchBannersAsync(keyword, page, pageSize);
+
+                if (result.Total == 0)
+                {
+                    return Ok(new
+                    {
+                        message = $"No banners found matching '{keyword}'.",
+                        data = result
+                    });
+                }
+
+                return Ok(new
+                {
+                    message = $"Found {result.Total} banner(s) matching '{keyword}'.",
+                    data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while searching for banners.", details = ex.Message });
+            }
+        }
+
         // GET: api/Banners/active?page=1&pageSize=10
         [HttpGet("active")]
         [AllowAnonymous]
