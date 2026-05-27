@@ -71,9 +71,11 @@ namespace TourAPI.Controllers
             return Ok(list);
         }
 
+
+
         [AllowAnonymous]
-        [HttpGet("public")]
-        public async Task<ActionResult> GetPublicTours(
+        [HttpGet("search")]
+        public async Task<ActionResult> SearchTours(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] string? searchTerm = null,
@@ -87,7 +89,16 @@ namespace TourAPI.Controllers
             [FromQuery] int? duration = null,
             [FromQuery] string? sortBy = null)
         {
-            var list = await _tourService.GetActiveTours(page, pageSize, searchTerm, categoryId, country, city, minPrice, maxPrice, startDate, endDate, duration, sortBy);
+            var list = await _tourService.SearchTours(page, pageSize, searchTerm, categoryId, country, city, minPrice, maxPrice, startDate, endDate, duration, sortBy);
+            return Ok(list);
+        }
+
+
+        // GET: api/Tours
+        [HttpGet("public")]
+        public async Task<ActionResult> GetPublicTours(int page = 1, int pageSize = 10)
+        {
+            var list = await _tourService.GetActiveTours(page, pageSize);
             return Ok(list);
         }
 
