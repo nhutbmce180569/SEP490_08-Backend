@@ -155,7 +155,30 @@ namespace TourAPI.Services.Implements
             return tours;
         }
 
-        public async Task<PaginationDTO<ReadTourDTO>> GetActiveTours(int page, int pageSize, string? searchTerm = null, int? categoryId = null, string? country = null, string? city = null, long? minPrice = null, long? maxPrice = null, DateTime? startDate = null, DateTime? endDate = null, int? duration = null, string? sortBy = null)
+        public async Task<PaginationDTO<ReadTourDTO>> GetActiveTours(int page, int pageSize)
+        {
+            var list = _mapper.Map<List<ReadTourDTO>>(await _repository.GetActiveTours());
+            int total = list.Count;
+
+            list = list
+                    .OrderBy(x => x.Id)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+
+            var tours = new PaginationDTO<ReadTourDTO>
+            {
+                Data = list,
+                CurrentPage = page,
+                PageSize = pageSize,
+                Total = total,
+                TotalPages = (int)Math.Ceiling(total / (double)pageSize)
+            };
+            return tours;
+        }
+
+        public async Task<PaginationDTO<ReadTourDTO>> SearchTours(int page, int pageSize, string? searchTerm = null, int? categoryId = null, string? country = null, string? city = null, long? minPrice = null, long? maxPrice = null, DateTime? startDate = null, DateTime? endDate = null, int? duration = null, string? sortBy = null)
         {
             var tours = await _repository.GetActiveTours();
             var query = tours.AsEnumerable();
