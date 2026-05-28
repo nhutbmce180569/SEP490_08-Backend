@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using TourAPI.DTOs;
 using TourAPI.Services;
+using TourAPI.Services.Implements;
 
 namespace TourAPI.Controllers
 {
@@ -92,35 +93,28 @@ namespace TourAPI.Controllers
             }
         }
 
-        // --- ENDPOINTS DÀNH CHO MICROSERVICES (BookingAPI gọi sang) ---
-
-        [HttpPost("{id}/reserve")]
-        // Có thể cấu hình Policy "MicroserviceOnly" hoặc giữ nguyên Authorize tùy kiến trúc bảo mật của bạn
-        public async Task<ActionResult> ReserveSeats(int id, [FromBody] ReserveScheduleSeatsDTO dto)
+        [HttpPatch("{id}/reserve-seats")]
+        public async Task<IActionResult> ReserveSeats(int id, [FromBody] ReserveScheduleSeatsDTO dto)
         {
-            try
+            var reserved = await _scheduleService.ReserveSeatsAsync(id, dto.Quantity);
+            if (!reserved)
             {
-                await _scheduleService.ReserveSeatsAsync(id, dto);
-                return Ok(new { message = "Seats reserved successfully." });
+                return BadRequest(new { message = "Schedule not found or not enough available seats." });
             }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+
+            return Ok(new { message = "Seats reserved successfully.", scheduleId = id, quantity = dto.Quantity });
         }
 
-        [HttpPost("{id}/release")]
-        public async Task<ActionResult> ReleaseSeats(int id, [FromBody] ReleaseScheduleSeatsDTO dto)
+        [HttpPatch("{id}/release-seats")]
+        public async Task<IActionResult> ReleaseSeats(int id, [FromBody] ReleaseScheduleSeatsDTO dto)
         {
-            try
+            var released = await _scheduleService.ReleaseSeatsAsync(id, dto.Quantity);
+            if (!released)
             {
-                await _scheduleService.ReleaseSeatsAsync(id, dto);
-                return Ok(new { message = "Seats released successfully." });
+                return BadRequest(new { message = "Schedule not found or invalid quantity." });
             }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+
+            return Ok(new { message = "Seats released successfully.", scheduleId = id, quantity = dto.Quantity });
         }
     }
 }
