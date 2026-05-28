@@ -1,0 +1,86 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using PaymentAPI.DTOs;
+using PaymentAPI.Services;
+
+namespace PaymentAPI.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class VNPayController : ControllerBase
+    {
+        private readonly IVnPayService _vnPayService;
+        private readonly IConfiguration _configuration;
+
+        public VNPayController(IVnPayService vnPayService, IConfiguration configuration)
+        {
+            _vnPayService = vnPayService;
+            _configuration = configuration;
+        }
+
+        [HttpPost("create-payment")]
+        [Authorize]
+        public async Task<ActionResult<string>> CreatePayment([FromBody] CreateTransactionDTO transactionDto)
+        {
+            if (transactionDto.Amount <= 0) return BadRequest("Invalid amount");
+
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.MapToIPv4()?.ToString()
+                            ?? HttpContext.Connection.RemoteIpAddress?.ToString();
+            var paymentUrl = await _vnPayService.CreatePaymentUrl(transactionDto, ipAddress);
+
+            return Ok(new { paymentUrl });
+        }
+
+        [HttpGet("vnpay-return")]
+        public async Task<IActionResult> VnPayReturn()
+        {
+            var query = Request.Query;
+            string rawQuery = Request.QueryString.Value ?? string.Empty;
+            var frontendBaseUrl = _configuration["Frontend:BaseUrl"]?.TrimEnd('/')
+                                  ?? "http://localhost:5173";
+
+            var result = await _vnPayService.HandleVnPayReturnAsync(query, rawQuery);
+
+            if (result.Status != "Success" || string.IsNullOrEmpty(result.OrderId))
+            {
+                if (!string.IsNullOrEmpty(result.OrderId))
+                {
+                    return Redirect($"{frontendBaseUrl}/my-bookings/{result.OrderId}?payment=cancelled");
+                }
+
+                return Redirect($"{frontendBaseUrl}/my-bookings?payment=cancelled");
+            }
+
+            return Redirect($"{frontendBaseUrl}/my-bookings/{result.OrderId}?payment=success");
+        }
+
+        /// <summary>
+        /// Fallback: sync order status when user lands on order detail after payment.
+        /// </summary>
+        [HttpPost("confirm/{orderId}")]
+        [Authorize]
+        public async Task<IActionResult> ConfirmPayment(int orderId)
+        {
+            var confirmed = await _vnPayService.ConfirmOrderPaymentAsync(orderId);
+            if (!confirmed)
+            {
+                return BadRequest(new { message = "Payment not completed or order could not be updated." });
+            }
+
+            return Ok(new { message = "Order payment confirmed.", orderId });
+        }
+
+        [HttpPost("cancel/{orderId}")]
+        [Authorize]
+        public async Task<IActionResult> CancelPayment(int orderId)
+        {
+            var cancelled = await _vnPayService.CancelOrderPaymentAsync(orderId);
+            if (!cancelled)
+            {
+                return BadRequest(new { message = "Payment was already completed or order could not be cancelled." });
+            }
+
+            return Ok(new { message = "Order cancelled due to payment cancellation.", orderId });
+        }
+    }
+}
