@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using NuGet.Protocol.Core.Types;
 using TourAPI.DTOs;
 using TourAPI.Models;
 using TourAPI.Repositories;
@@ -85,38 +86,38 @@ namespace TourAPI.Services.Implements
             await _scheduleRepo.DeleteAsync(schedule);
         }
 
-        // --- NGHIỆP VỤ ĐẶT/HỦY VÉ ---
-
-        public async Task ReserveSeatsAsync(int id, ReserveScheduleSeatsDTO dto)
+        public async Task<bool> ReserveSeatsAsync(int scheduleId, int quantity)
         {
-            var schedule = await _scheduleRepo.GetByIdAsync(id);
-            if (schedule == null) throw new Exception("Tour schedule not found.");
+            if (quantity <= 0) return false;
 
-            if (schedule.AvailableSeats < dto.Quantity)
-            {
-                throw new Exception("Not enough available seats for this reservation.");
-            }
+            var schedule = await _scheduleRepo.GetByIdAsync(scheduleId);
+            if (schedule == null) return false;
 
-            schedule.AvailableSeats -= dto.Quantity;
-            schedule.SoldQuantity = (schedule.SoldQuantity ?? 0) + dto.Quantity;
+            if (schedule.AvailableSeats < quantity) return false;
+
+            var sold = schedule.SoldQuantity ?? 0;
+            schedule.SoldQuantity = sold + quantity;
+            schedule.AvailableSeats -= quantity;
 
             await _scheduleRepo.UpdateAsync(schedule);
+            return true;
         }
 
-        public async Task ReleaseSeatsAsync(int id, ReleaseScheduleSeatsDTO dto)
+        public async Task<bool> ReleaseSeatsAsync(int scheduleId, int quantity)
         {
-            var schedule = await _scheduleRepo.GetByIdAsync(id);
-            if (schedule == null) throw new Exception("Tour schedule not found.");
+            if (quantity <= 0) return false;
 
-            if ((schedule.SoldQuantity ?? 0) < dto.Quantity)
-            {
-                throw new Exception("Cannot release more seats than currently sold.");
-            }
+            var schedule = await _scheduleRepo.GetByIdAsync(scheduleId);
+            if (schedule == null) return false;
 
-            schedule.AvailableSeats += dto.Quantity;
-            schedule.SoldQuantity -= dto.Quantity;
+            var sold = schedule.SoldQuantity ?? 0;
+            if (sold < quantity) return false; // Cannot release more seats than sold
+
+            schedule.SoldQuantity = sold - quantity;
+            schedule.AvailableSeats += quantity;
 
             await _scheduleRepo.UpdateAsync(schedule);
+            return true;
         }
     }
 }

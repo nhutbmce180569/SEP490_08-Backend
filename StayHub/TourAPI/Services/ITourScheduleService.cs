@@ -9,7 +9,7 @@ namespace TourAPI.Services
         Task<ReadTourScheduleDTO> CreateScheduleAsync(CreateTourScheduleDTO dto);
         Task<ReadTourScheduleDTO> UpdateScheduleAsync(int id, UpdateTourScheduleDTO dto);
         Task DeleteScheduleAsync(int id);
-        Task ReserveSeatsAsync(int id, ReserveScheduleSeatsDTO dto);
-        Task ReleaseSeatsAsync(int id, ReleaseScheduleSeatsDTO dto);
+        Task<bool> ReserveSeatsAsync(int scheduleId, int quantity);
+        Task<bool> ReleaseSeatsAsync(int scheduleId, int quantity);
     }
 }
