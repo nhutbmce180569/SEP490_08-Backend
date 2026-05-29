@@ -212,13 +212,13 @@ namespace TourAPI.Services.Implements
                 query = query.Where(t => t.City != null && t.City.Equals(city, StringComparison.OrdinalIgnoreCase));
             }
 
-            if (minPrice.HasValue || maxPrice.HasValue)
-            {
-                query = query.Where(t => t.TourSchedules != null && t.TourSchedules.Any(s =>
-                    (!minPrice.HasValue || s.Price >= minPrice.Value) &&
-                    (!maxPrice.HasValue || s.Price <= maxPrice.Value)
-                ));
-            }
+            //if (minPrice.HasValue || maxPrice.HasValue)
+            //{
+            //    query = query.Where(t => t.TourSchedules != null && t.TourSchedules.Any(s =>
+            //        (!minPrice.HasValue || s.Price >= minPrice.Value) &&
+            //        (!maxPrice.HasValue || s.Price <= maxPrice.Value)
+            //    ));
+            //}
 
             if (startDate.HasValue || endDate.HasValue)
             {
@@ -239,31 +239,31 @@ namespace TourAPI.Services.Implements
                 );
             }
 
-            if (!string.IsNullOrWhiteSpace(sortBy))
-            {
-                switch (sortBy.ToLower())
-                {
-                    case "price_asc":
-                        query = query.OrderBy(t => t.TourSchedules != null && t.TourSchedules.Any() ? t.TourSchedules.Min(s => s.Price) : long.MaxValue);
-                        break;
-                    case "price_desc":
-                        query = query.OrderByDescending(t => t.TourSchedules != null && t.TourSchedules.Any() ? t.TourSchedules.Min(s => s.Price) : 0);
-                        break;
-                    case "date_asc":
-                        query = query.OrderBy(t => t.TourSchedules != null && t.TourSchedules.Any() ? t.TourSchedules.Min(s => s.DepartureDate) : DateTime.MaxValue);
-                        break;
-                    case "date_desc":
-                        query = query.OrderByDescending(t => t.TourSchedules != null && t.TourSchedules.Any() ? t.TourSchedules.Min(s => s.DepartureDate) : DateTime.MinValue);
-                        break;
-                    default:
-                        query = query.OrderBy(t => t.Id);
-                        break;
-                }
-            }
-            else
-            {
-                query = query.OrderBy(t => t.Id);
-            }
+            //if (!string.IsNullOrWhiteSpace(sortBy))
+            //{
+            //    switch (sortBy.ToLower())
+            //    {
+            //        case "price_asc":
+            //            query = query.OrderBy(t => t.TourSchedules != null && t.TourSchedules.Any() ? t.TourSchedules.Min(s => s.Price) : long.MaxValue);
+            //            break;
+            //        case "price_desc":
+            //            query = query.OrderByDescending(t => t.TourSchedules != null && t.TourSchedules.Any() ? t.TourSchedules.Min(s => s.Price) : 0);
+            //            break;
+            //        case "date_asc":
+            //            query = query.OrderBy(t => t.TourSchedules != null && t.TourSchedules.Any() ? t.TourSchedules.Min(s => s.DepartureDate) : DateTime.MaxValue);
+            //            break;
+            //        case "date_desc":
+            //            query = query.OrderByDescending(t => t.TourSchedules != null && t.TourSchedules.Any() ? t.TourSchedules.Min(s => s.DepartureDate) : DateTime.MinValue);
+            //            break;
+            //        default:
+            //            query = query.OrderBy(t => t.Id);
+            //            break;
+            //    }
+            //}
+            //else
+            //{
+            //    query = query.OrderBy(t => t.Id);
+            //}
 
             var filteredTours = query.ToList();
             int total = filteredTours.Count;
