@@ -19,7 +19,7 @@ namespace BookingAPI.Repositories.Implements
             return await _context.Orders.AnyAsync(o =>
                 o.CustomerId == customerId &&
                 scheduleIds.Contains(o.ScheduleId) &&
-                (o.Status == "Paid") &&
+                (o.Status == "Completed") &&
                 o.Tickets.Any(t => t.CheckInStatus == "Checked")
             );
         }
