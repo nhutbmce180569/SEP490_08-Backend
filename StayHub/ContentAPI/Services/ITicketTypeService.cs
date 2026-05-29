@@ -4,7 +4,7 @@ namespace ContentAPI.Services
 {
     public interface ITicketTypeService
     {
-        Task<PaginationDTO<ReadTicketTypeDTO>> GetAllTicketTypes(int page, int pageSize);
+        Task<PaginationDTO<ReadTicketTypeDTO>> GetAllTicketTypes(int page, int pageSize, string? searchTerm);
         Task<List<ReadTicketTypeDTO>> GetActiveTicketTypes();
         Task<ReadTicketTypeDTO?> GetTicketTypeById(int id);
         Task<ReadTicketTypeDTO> CreateTicketType(CreateTicketTypeDTO dto);
