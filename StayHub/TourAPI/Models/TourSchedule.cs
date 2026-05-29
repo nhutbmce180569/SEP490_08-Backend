@@ -13,14 +13,6 @@ public partial class TourSchedule
 
     public DateTime ReturnDate { get; set; }
 
-    public long Price { get; set; }
-
-    public int MaxCapacity { get; set; }
-
-    public int? SoldQuantity { get; set; }
-
-    public int AvailableSeats { get; set; }
-
     public string? Note { get; set; }
 
     public virtual Tour Tour { get; set; } = null!;
@@ -28,4 +20,6 @@ public partial class TourSchedule
     public virtual ICollection<TourScheduleItinerary> TourScheduleItineraries { get; set; } = new List<TourScheduleItinerary>();
 
     public virtual ICollection<TourScheduleStaff> TourScheduleStaffs { get; set; } = new List<TourScheduleStaff>();
+
+    public virtual ICollection<TourScheduleTicket> TourScheduleTickets { get; set; } = new List<TourScheduleTicket>();
 }
