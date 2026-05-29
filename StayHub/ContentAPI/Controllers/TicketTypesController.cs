@@ -16,12 +16,15 @@ namespace ContentAPI.Controllers
             _ticketTypeService = ticketTypeService;
         }
 
-        // GET: api/TicketTypes?page=1&pageSize=10
+        // GET: api/TicketTypes?page=1&pageSize=10&searchTerm=vip
         [HttpGet]
         [AllowAnonymous]
-        public async Task<ActionResult<PaginationDTO<ReadTicketTypeDTO>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<ActionResult<PaginationDTO<ReadTicketTypeDTO>>> GetAll(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchTerm = null)
         {
-            var ticketTypes = await _ticketTypeService.GetAllTicketTypes(page, pageSize);
+            var ticketTypes = await _ticketTypeService.GetAllTicketTypes(page, pageSize, searchTerm);
             return Ok(ticketTypes);
         }
 
