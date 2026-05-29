@@ -159,7 +159,6 @@ CREATE TABLE Tours (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     
     CategoryId INT NOT NULL,
-
     Name NVARCHAR(255) NOT NULL,
     Description NVARCHAR(MAX),
 
@@ -168,7 +167,10 @@ CREATE TABLE Tours (
     Address NVARCHAR(255),
 
     ImageUrl NVARCHAR(500),
-
+	CreatedBy INT NOT NULL,
+	UpdatedBy INT NULL,
+	CreatedAt DATETIME DEFAULT GETDATE(),
+	UpdatedAt DATETIME NULL,
     Status VARCHAR(50) DEFAULT 'Active'
 );
 

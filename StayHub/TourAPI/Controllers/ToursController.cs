@@ -166,7 +166,7 @@ namespace TourAPI.Controllers
 
             try
             {
-                await _tourService.Update(id, tourDto);
+                await _tourService.Update(id, tourDto, userId);
             }
             catch (Exception ex)
             {
@@ -190,8 +190,7 @@ namespace TourAPI.Controllers
                     return Unauthorized(new { message = "Cannot extract user ID from token" });
                 }
 
-                tourDto.OperatorId = userId;
-                await _tourService.Add(tourDto);
+                await _tourService.Add(tourDto, userId);
             }
             catch (Exception ex)
             {

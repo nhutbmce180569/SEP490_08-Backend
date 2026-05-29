@@ -12,9 +12,10 @@ namespace GatewayAPI
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
 
+            // 1. SỬA LẠI CẤU HÌNH CORS CHO SIGNALR
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowAll", policy =>
+                options.AddPolicy("AllowFrontend", policy =>
                 {
                     policy.WithOrigins("http://localhost:5173") 
                           .AllowAnyMethod()
@@ -34,18 +35,31 @@ namespace GatewayAPI
 
             var app = builder.Build();
 
-
             app.UseHttpsRedirection();
 
-            app.UseCors("AllowAll");
+            // Áp dụng CORS vừa sửa
+            app.UseCors("AllowFrontend");
 
+            // 2. MIDDLEWARE CHECK REVOKE TOKEN (CẬP NHẬT CHO SIGNALR)
             app.Use(async (context, next) =>
             {
-                var authHeader = context.Request.Headers["Authorization"].ToString();
+                string token = string.Empty;
 
+                // TH1: Tìm token trong Header (Cho các API thông thường)
+                var authHeader = context.Request.Headers["Authorization"].ToString();
                 if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
                 {
-                    var token = authHeader.Substring("Bearer ".Length).Trim();
+                    token = authHeader.Substring("Bearer ".Length).Trim();
+                }
+                // TH2: Tìm token trong Query String (Cho SignalR WebSockets)
+                else if (context.Request.Query.ContainsKey("access_token"))
+                {
+                    token = context.Request.Query["access_token"].ToString();
+                }
+
+                // Nếu có token (từ Header hoặc Query String), tiến hành kiểm tra với Redis
+                if (!string.IsNullOrEmpty(token))
+                {
                     var handler = new JwtSecurityTokenHandler();
 
                     if (handler.CanReadToken(token))
@@ -60,7 +74,6 @@ namespace GatewayAPI
                             if (redis != null)
                             {
                                 var db = redis.GetDatabase();
-
                                 var revokeTimestampStr = await db.StringGetAsync($"revoke_user_{userId}");
 
                                 if (revokeTimestampStr.HasValue)
@@ -86,6 +99,7 @@ namespace GatewayAPI
 
             app.UseAuthorization();
 
+            // YARP tự động hỗ trợ WebSockets, cứ thế Map là nó đi qua
             app.MapReverseProxy();
             app.MapControllers();
 
