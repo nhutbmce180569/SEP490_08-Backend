@@ -23,4 +23,5 @@ public interface IMomentService
     Task DeleteMomentAsync(int momentId, int userId);
     Task<IEnumerable<MomentResponseDto>> GetMomentFeedWithUsersAsync(int scheduleId, int currentUserId, int skip, int top);
     Task<IEnumerable<FootprintDto>> GetMyFootprintsAsync(int userId);
+    Task<IEnumerable<UserMomentResponseDto>> GetUserMomentsAsync(int targetUserId, int currentUserId);
 }
