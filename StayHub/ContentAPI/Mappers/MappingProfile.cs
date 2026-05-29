@@ -19,6 +19,10 @@ namespace ContentAPI.Mappers
             CreateMap<Category, ReadCategoryDTO>();
             CreateMap<CreateCategoryDTO, Category>().ForMember(dest => dest.IconUrl, opt => opt.Ignore());
             CreateMap<UpdateCategoryDTO, Category>().ForMember(dest => dest.IconUrl, opt => opt.Ignore());
+
+            CreateMap<TicketType, ReadTicketTypeDTO>();
+            CreateMap<CreateTicketTypeDTO, TicketType>();
+            CreateMap<UpdateTicketTypeDTO, TicketType>();
         }
     }
 }
