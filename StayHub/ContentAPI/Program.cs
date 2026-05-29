@@ -102,11 +102,13 @@ namespace ContentAPI
             //Repo
             builder.Services.AddScoped<IBannerRepository, BannerRepository>();
             builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+            builder.Services.AddScoped<ITicketTypeRepository, TicketTypeRepository>();
 
             //Service
             builder.Services.AddScoped<IBannerService, BannerService>();
             builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();
+            builder.Services.AddScoped<ITicketTypeService, TicketTypeService>();
 
             var app = builder.Build();
 
