@@ -65,6 +65,16 @@ INSERT INTO TourismInformation (Id, Name, Type, Description, Address, City, Coun
 SET IDENTITY_INSERT TourismInformation OFF;
 GO
 
+SET IDENTITY_INSERT TicketTypes ON;
+INSERT INTO TicketTypes (Id, Name, Description, IsActive, CreatedAt, UpdatedAt) VALUES
+(1, N'Adult', N'Standard ticket for adult travelers.', 1, GETDATE(), NULL),
+(2, N'Child', N'Discounted ticket for children, usually from 6 to 11 years old.', 1, GETDATE(), NULL),
+(3, N'Infant', N'Ticket for infants or toddlers, usually under 6 years old.', 1, GETDATE(), NULL),
+(4, N'Senior', N'Discounted ticket for senior travelers.', 1, GETDATE(), NULL),
+(5, N'Student', N'Discounted ticket for students with valid student identification.', 1, GETDATE(), NULL);
+SET IDENTITY_INSERT TicketTypes OFF;
+GO
+
 /* =========================================================
    2. IDENTITY DB
    ========================================================= */
@@ -190,23 +200,23 @@ SET IDENTITY_INSERT TourItineraries OFF;
 GO
 
 SET IDENTITY_INSERT TourSchedules ON;
-INSERT INTO TourSchedules (Id, TourId, DepartureDate, ReturnDate, Price, MaxCapacity, SoldQuantity, AvailableSeats, Note) VALUES
-(1, 1, '2026-06-01 08:00:00', '2026-06-04 18:00:00', 5490000, 30, 8, 22, N'Includes domestic flight tickets depending on the package.'),
-(2, 1, '2026-06-15 08:00:00', '2026-06-18 18:00:00', 5790000, 30, 12, 18, N'Suitable schedule for families.'),
-(3, 2, '2026-06-07 06:00:00', '2026-06-09 20:00:00', 2890000, 25, 15, 10, N'Bring warm clothes for cloud hunting.'),
-(4, 2, '2026-07-05 06:00:00', '2026-07-07 20:00:00', 3090000, 25, 5, 20, N'Weekend schedule.'),
-(5, 3, '2026-06-20 09:00:00', '2026-06-21 17:00:00', 1890000, 20, 6, 14, N'Includes flower lantern release ticket.'),
-(6, 4, '2026-06-10 07:00:00', '2026-06-11 18:00:00', 4290000, 18, 10, 8, N'Cabin for 2 guests.'),
-(7, 5, '2026-06-12 05:00:00', '2026-06-13 18:00:00', 1690000, 28, 18, 10, N'Departs from Can Tho.'),
-(8, 6, '2026-07-01 06:00:00', '2026-07-04 20:00:00', 4990000, 22, 4, 18, N'Moderate trekking level.'),
-(9, 7, '2026-06-25 07:00:00', '2026-06-26 18:00:00', 1990000, 30, 9, 21, N'Boat ride in Trang An included.'),
-(10, 8, '2026-07-10 08:00:00', '2026-07-12 20:00:00', 3590000, 32, 12, 20, N'Ba Na Hills ticket included.'),
-(11, 9, '2026-06-05 18:00:00', '2026-06-05 22:30:00', 790000, 12, 7, 5, N'Evening tour by motorbike.'),
-(12, 10, '2026-07-20 09:00:00', '2026-07-22 12:00:00', 6990000, 16, 3, 13, N'Suitable for couples.'),
-(13, 11, '2026-06-09 07:00:00', '2026-06-09 17:00:00', 990000, 15, 4, 11, N'Guide available to support photography.'),
-(14, 12, '2026-06-28 08:00:00', '2026-06-29 17:00:00', 2490000, 24, 8, 16, N'Includes boat ride to the island.'),
-(15, 4, '2026-07-18 07:00:00', '2026-07-19 18:00:00', 4590000, 18, 2, 16, N'Luxury cruise.'),
-(16, 8, '2026-08-01 08:00:00', '2026-08-03 20:00:00', 3790000, 32, 0, 32, N'Summer schedule.');
+INSERT INTO TourSchedules (Id, TourId, DepartureDate, ReturnDate, Note) VALUES
+(1, 1, '2026-06-01 08:00:00', '2026-06-04 18:00:00', N'Includes domestic flight tickets depending on the package.'),
+(2, 1, '2026-06-15 08:00:00', '2026-06-18 18:00:00', N'Suitable schedule for families.'),
+(3, 2, '2026-06-07 06:00:00', '2026-06-09 20:00:00', N'Bring warm clothes for cloud hunting.'),
+(4, 2, '2026-07-05 06:00:00', '2026-07-07 20:00:00', N'Weekend schedule.'),
+(5, 3, '2026-06-20 09:00:00', '2026-06-21 17:00:00', N'Includes flower lantern release ticket.'),
+(6, 4, '2026-06-10 07:00:00', '2026-06-11 18:00:00', N'Cabin for 2 guests.'),
+(7, 5, '2026-06-12 05:00:00', '2026-06-13 18:00:00', N'Departs from Can Tho.'),
+(8, 6, '2026-07-01 06:00:00', '2026-07-04 20:00:00', N'Moderate trekking level.'),
+(9, 7, '2026-06-25 07:00:00', '2026-06-26 18:00:00', N'Boat ride in Trang An included.'),
+(10, 8, '2026-07-10 08:00:00', '2026-07-12 20:00:00', N'Ba Na Hills ticket included.'),
+(11, 9, '2026-06-05 18:00:00', '2026-06-05 22:30:00', N'Evening tour by motorbike.'),
+(12, 10, '2026-07-20 09:00:00', '2026-07-22 12:00:00', N'Suitable for couples.'),
+(13, 11, '2026-06-09 07:00:00', '2026-06-09 17:00:00', N'Guide available to support photography.'),
+(14, 12, '2026-06-28 08:00:00', '2026-06-29 17:00:00', N'Includes boat ride to the island.'),
+(15, 4, '2026-07-18 07:00:00', '2026-07-19 18:00:00', N'Luxury cruise.'),
+(16, 8, '2026-08-01 08:00:00', '2026-08-03 20:00:00', N'Summer schedule.');
 SET IDENTITY_INSERT TourSchedules OFF;
 GO
 
@@ -252,6 +262,59 @@ INSERT INTO TourScheduleStaffs (Id, ScheduleId, StaffId, AssignedRole) VALUES
 (15, 14, 7, N'Island Tour Guide'),
 (16, 15, 5, N'Cruise Coordinator');
 SET IDENTITY_INSERT TourScheduleStaffs OFF;
+GO
+
+SET IDENTITY_INSERT TourScheduleTickets ON;
+INSERT INTO TourScheduleTickets (Id, ScheduleId, TicketTypeId, Price, Quantity, SoldQuantity, AvailableQuantity, IsActive, Note) VALUES
+(1, 1, 1, 5490000, 20, 6, 14, 1, N'Standard adult fare.'),
+(2, 1, 2, 3843000, 8, 2, 6, 1, N'Child fare for this departure.'),
+(3, 1, 4, 4666000, 2, 0, 2, 1, N'Senior fare for this departure.'),
+(4, 2, 1, 5790000, 20, 8, 12, 1, N'Standard adult fare.'),
+(5, 2, 2, 4053000, 8, 2, 6, 1, N'Child fare for this departure.'),
+(6, 2, 4, 4922000, 2, 2, 0, 1, N'Senior fare for this departure.'),
+(7, 3, 1, 2890000, 16, 10, 6, 1, N'Standard adult fare.'),
+(8, 3, 2, 2023000, 6, 3, 3, 1, N'Child fare for this departure.'),
+(9, 3, 4, 2456000, 3, 2, 1, 1, N'Senior fare for this departure.'),
+(10, 4, 1, 3090000, 16, 4, 12, 1, N'Standard adult fare.'),
+(11, 4, 2, 2163000, 6, 1, 5, 1, N'Child fare for this departure.'),
+(12, 4, 4, 2626000, 3, 0, 3, 1, N'Senior fare for this departure.'),
+(13, 5, 1, 1890000, 13, 4, 9, 1, N'Standard adult fare.'),
+(14, 5, 2, 1323000, 5, 1, 4, 1, N'Child fare for this departure.'),
+(15, 5, 4, 1606000, 2, 1, 1, 1, N'Senior fare for this departure.'),
+(16, 6, 1, 4290000, 12, 7, 5, 1, N'Standard adult fare.'),
+(17, 6, 2, 3003000, 4, 2, 2, 1, N'Child fare for this departure.'),
+(18, 6, 4, 3646000, 2, 1, 1, 1, N'Senior fare for this departure.'),
+(19, 7, 1, 1690000, 18, 13, 5, 1, N'Standard adult fare.'),
+(20, 7, 2, 1183000, 7, 4, 3, 1, N'Child fare for this departure.'),
+(21, 7, 4, 1436000, 3, 1, 2, 1, N'Senior fare for this departure.'),
+(22, 8, 1, 4990000, 14, 3, 11, 1, N'Standard adult fare.'),
+(23, 8, 2, 3493000, 6, 1, 5, 1, N'Child fare for this departure.'),
+(24, 8, 4, 4242000, 2, 0, 2, 1, N'Senior fare for this departure.'),
+(25, 9, 1, 1990000, 20, 6, 14, 1, N'Standard adult fare.'),
+(26, 9, 2, 1393000, 8, 2, 6, 1, N'Child fare for this departure.'),
+(27, 9, 4, 1692000, 2, 1, 1, 1, N'Senior fare for this departure.'),
+(28, 10, 1, 3590000, 21, 8, 13, 1, N'Standard adult fare.'),
+(29, 10, 2, 2513000, 8, 2, 6, 1, N'Child fare for this departure.'),
+(30, 10, 4, 3052000, 3, 2, 1, 1, N'Senior fare for this departure.'),
+(31, 11, 1, 790000, 8, 5, 3, 1, N'Standard adult fare.'),
+(32, 11, 2, 553000, 3, 1, 2, 1, N'Child fare for this departure.'),
+(33, 11, 4, 672000, 1, 1, 0, 1, N'Senior fare for this departure.'),
+(34, 12, 1, 6990000, 10, 2, 8, 1, N'Standard adult fare.'),
+(35, 12, 2, 4893000, 4, 1, 3, 1, N'Child fare for this departure.'),
+(36, 12, 4, 5942000, 2, 0, 2, 1, N'Senior fare for this departure.'),
+(37, 13, 1, 990000, 10, 3, 7, 1, N'Standard adult fare.'),
+(38, 13, 2, 693000, 4, 1, 3, 1, N'Child fare for this departure.'),
+(39, 13, 4, 842000, 1, 0, 1, 1, N'Senior fare for this departure.'),
+(40, 14, 1, 2490000, 16, 6, 10, 1, N'Standard adult fare.'),
+(41, 14, 2, 1743000, 6, 2, 4, 1, N'Child fare for this departure.'),
+(42, 14, 4, 2116000, 2, 0, 2, 1, N'Senior fare for this departure.'),
+(43, 15, 1, 4590000, 12, 1, 11, 1, N'Standard adult fare.'),
+(44, 15, 2, 3213000, 4, 0, 4, 1, N'Child fare for this departure.'),
+(45, 15, 4, 3902000, 2, 1, 1, 1, N'Senior fare for this departure.'),
+(46, 16, 1, 3790000, 21, 0, 21, 1, N'Standard adult fare.'),
+(47, 16, 2, 2653000, 8, 0, 8, 1, N'Child fare for this departure.'),
+(48, 16, 4, 3222000, 3, 0, 3, 1, N'Senior fare for this departure.');
+SET IDENTITY_INSERT TourScheduleTickets OFF;
 GO
 
 SET IDENTITY_INSERT Wishlists ON;
