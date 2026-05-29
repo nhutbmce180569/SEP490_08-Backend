@@ -19,17 +19,15 @@ public partial class StayHubContentDbContext : DbContext
 
     public virtual DbSet<Category> Categories { get; set; }
 
-    public virtual DbSet<TourismInformation> TourismInformations { get; set; }
+    public virtual DbSet<TicketType> TicketTypes { get; set; }
 
-//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-//        => optionsBuilder.UseSqlServer("Server=.\\SQLEXPRESS;Database=StayHub_ContentDb;User Id=sa;Password=admin;TrustServerCertificate=True;Encrypt=False;");
+    public virtual DbSet<TourismInformation> TourismInformations { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Banner>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Banners__3214EC0731605D13");
+            entity.HasKey(e => e.Id).HasName("PK__Banners__3214EC07B4CB6B89");
 
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.Priority).HasDefaultValue(0);
@@ -38,9 +36,9 @@ public partial class StayHubContentDbContext : DbContext
 
         modelBuilder.Entity<Category>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Categori__3214EC07B35AE28C");
+            entity.HasKey(e => e.Id).HasName("PK__Categori__3214EC076FDE3FE9");
 
-            entity.HasIndex(e => e.Slug, "UQ__Categori__BC7B5FB670ED40C7").IsUnique();
+            entity.HasIndex(e => e.Slug, "UQ__Categori__BC7B5FB6A180FF0F").IsUnique();
 
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.Name).HasMaxLength(255);
@@ -49,9 +47,18 @@ public partial class StayHubContentDbContext : DbContext
                 .IsUnicode(false);
         });
 
+        modelBuilder.Entity<TicketType>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__TicketTy__3214EC07160337BF");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Name).HasMaxLength(100);
+        });
+
         modelBuilder.Entity<TourismInformation>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__TourismI__3214EC0767DE8C0C");
+            entity.HasKey(e => e.Id).HasName("PK__TourismI__3214EC07C376ED0B");
 
             entity.ToTable("TourismInformation");
 
