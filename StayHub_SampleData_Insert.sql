@@ -74,7 +74,7 @@ GO
 SET IDENTITY_INSERT Roles ON;
 INSERT INTO Roles (Id, Name, Description) VALUES
 (1, 'Customer', N'Customers booking tours and using community features.'),
-(2, 'Tour Manager', N'Manages tours, departure schedules, staff, and tour content.'),
+(2, 'Manager', N'Manages tours, departure schedules, staff, and tour content.'),
 (3, 'Staff', N'Staff supporting tour operations and customer service.'),
 (4, 'Admin', N'System administrator.');
 SET IDENTITY_INSERT Roles OFF;
@@ -134,21 +134,37 @@ USE StayHub_CatalogDb;
 GO
 
 SET IDENTITY_INSERT Tours ON;
-INSERT INTO Tours (Id, CategoryId, Name, Description, Country, City, Address, ImageUrl, Status) VALUES
-(1, 1, N'Phu Quoc 4D3N - Blue Sea and Sunset Town', N'Phu Quoc resort stay, visit Sao Beach, Sunset Town, and the night market.', N'Vietnam', N'Phu Quoc', N'An Thoi, Phu Quoc', 'https://cdn.stayhub.vn/tours/phu-quoc.jpg', 'Active'),
-(2, 2, N'Da Lat 3D2N - Cloud Hunting and Chilling', N'Experience youthful Da Lat, cloud hunting, coffee, and night market.', N'Vietnam', N'Da Lat', N'Da Lat Center', 'https://cdn.stayhub.vn/tours/da-lat.jpg', 'Active'),
-(3, 3, N'Hoi An 2D1N - Lanterns and Ancient Town', N'Visit the ancient town, enjoy Cao Lau, and release flower lanterns.', N'Vietnam', N'Hoi An', N'Hoi An Ancient Town', 'https://cdn.stayhub.vn/tours/hoi-an.jpg', 'Active'),
-(4, 12, N'Ha Long 2D1N - Luxury Cruise', N'Ha Long Bay cruise, cave visits, and dinner party.', N'Vietnam', N'Quang Ninh', N'Ha Long Marina', 'https://cdn.stayhub.vn/tours/ha-long.jpg', 'Active'),
-(5, 9, N'Mekong Delta 2D1N - Cai Rang Floating Market', N'Explore the river landscape, fruit orchards, and Mekong cuisine.', N'Vietnam', N'Can Tho', N'Ninh Kieu, Can Tho', 'https://cdn.stayhub.vn/tours/mekong.jpg', 'Active'),
-(6, 6, N'Sapa 4D3N - Village Trekking', N'Trek through terraced fields, Cat Cat Village, and Fansipan.', N'Vietnam', N'Lao Cai', N'Sapa', 'https://cdn.stayhub.vn/tours/sapa.jpg', 'Active'),
-(7, 3, N'Ninh Binh 2D1N - Trang An and Mua Cave', N'Explore Trang An, Mua Cave, and Hoa Lu ancient capital.', N'Vietnam', N'Ninh Binh', N'Trang An', 'https://cdn.stayhub.vn/tours/ninh-binh.jpg', 'Active'),
-(8, 5, N'Da Nang 3D2N - Dragon Bridge and Ba Na Hills', N'Da Nang coastal city tour, Dragon Bridge, Ba Na Hills, and Hoi An.', N'Vietnam', N'Da Nang', N'Da Nang Center', 'https://cdn.stayhub.vn/tours/da-nang.jpg', 'Active'),
-(9, 4, N'Saigon Evening Food Tour', N'Explore Saigon street food by motorbike.', N'Vietnam', N'Ho Chi Minh City', N'District 1', 'https://cdn.stayhub.vn/tours/saigon-food.jpg', 'Active'),
-(10, 8, N'Cam Ranh Honeymoon 3D2N', N'Private beach resort, spa, and romantic dinner.', N'Vietnam', N'Khanh Hoa', N'Cam Ranh', 'https://cdn.stayhub.vn/tours/cam-ranh.jpg', 'Active'),
-(11, 11, N'Hanoi Photo Walk 1 Day', N'Photo hunting in the Old Quarter, Hoan Kiem Lake, enjoy Bun Cha and egg coffee.', N'Vietnam', N'Hanoi', N'Hanoi Old Quarter', 'https://cdn.stayhub.vn/tours/ha-noi-photo.jpg', 'Active'),
-(12, 1, N'Nha Trang Island Hopping 2D1N', N'Scuba diving, Binh Ba Island, seafood, and Banh Can.', N'Vietnam', N'Nha Trang', N'Nha Trang Pier', 'https://cdn.stayhub.vn/tours/nha-trang.jpg', 'Active');
+
+INSERT INTO Tours 
+(Id, CategoryId, CreatedBy, Name, Description, Country, City, Address, ImageUrl, Status) 
+VALUES
+(1, 1, 1, N'Phu Quoc 4D3N - Blue Sea and Sunset Town', N'Phu Quoc resort stay, visit Sao Beach, Sunset Town, and the night market.', N'Vietnam', N'Phu Quoc', N'An Thoi, Phu Quoc', 'https://cdn.stayhub.vn/tours/phu-quoc.jpg', 'Active'),
+
+(2, 2, 1, N'Da Lat 3D2N - Cloud Hunting and Chilling', N'Experience youthful Da Lat, cloud hunting, coffee, and night market.', N'Vietnam', N'Da Lat', N'Da Lat Center', 'https://cdn.stayhub.vn/tours/da-lat.jpg', 'Active'),
+
+(3, 3, 1, N'Hoi An 2D1N - Lanterns and Ancient Town', N'Visit the ancient town, enjoy Cao Lau, and release flower lanterns.', N'Vietnam', N'Hoi An', N'Hoi An Ancient Town', 'https://cdn.stayhub.vn/tours/hoi-an.jpg', 'Active'),
+
+(4, 12, 1, N'Ha Long 2D1N - Luxury Cruise', N'Ha Long Bay cruise, cave visits, and dinner party.', N'Vietnam', N'Quang Ninh', N'Ha Long Marina', 'https://cdn.stayhub.vn/tours/ha-long.jpg', 'Active'),
+
+(5, 9, 1, N'Mekong Delta 2D1N - Cai Rang Floating Market', N'Explore the river landscape, fruit orchards, and Mekong cuisine.', N'Vietnam', N'Can Tho', N'Ninh Kieu, Can Tho', 'https://cdn.stayhub.vn/tours/mekong.jpg', 'Active'),
+
+(6, 6, 1, N'Sapa 4D3N - Village Trekking', N'Trek through terraced fields, Cat Cat Village, and Fansipan.', N'Vietnam', N'Lao Cai', N'Sapa', 'https://cdn.stayhub.vn/tours/sapa.jpg', 'Active'),
+
+(7, 3, 1, N'Ninh Binh 2D1N - Trang An and Mua Cave', N'Explore Trang An, Mua Cave, and Hoa Lu ancient capital.', N'Vietnam', N'Ninh Binh', N'Trang An', 'https://cdn.stayhub.vn/tours/ninh-binh.jpg', 'Active'),
+
+(8, 5, 1, N'Da Nang 3D2N - Dragon Bridge and Ba Na Hills', N'Da Nang coastal city tour, Dragon Bridge, Ba Na Hills, and Hoi An.', N'Vietnam', N'Da Nang', N'Da Nang Center', 'https://cdn.stayhub.vn/tours/da-nang.jpg', 'Active'),
+
+(9, 4, 1, N'Saigon Evening Food Tour', N'Explore Saigon street food by motorbike.', N'Vietnam', N'Ho Chi Minh City', N'District 1', 'https://cdn.stayhub.vn/tours/saigon-food.jpg', 'Active'),
+
+(10, 8, 1, N'Cam Ranh Honeymoon 3D2N', N'Private beach resort, spa, and romantic dinner.', N'Vietnam', N'Khanh Hoa', N'Cam Ranh', 'https://cdn.stayhub.vn/tours/cam-ranh.jpg', 'Active'),
+
+(11, 11, 1, N'Hanoi Photo Walk 1 Day', N'Photo hunting in the Old Quarter, Hoan Kiem Lake, enjoy Bun Cha and egg coffee.', N'Vietnam', N'Hanoi', N'Hanoi Old Quarter', 'https://cdn.stayhub.vn/tours/ha-noi-photo.jpg', 'Active'),
+
+(12, 1, 1, N'Nha Trang Island Hopping 2D1N', N'Scuba diving, Binh Ba Island, seafood, and Banh Can.', N'Vietnam', N'Nha Trang', N'Nha Trang Pier', 'https://cdn.stayhub.vn/tours/nha-trang.jpg', 'Active');
+
 SET IDENTITY_INSERT Tours OFF;
 GO
+
 
 SET IDENTITY_INSERT TourItineraries ON;
 INSERT INTO TourItineraries (Id, TourId, DayNumber, Title, Description, StartDuration, EndDuration, LocationName, LocationLat, LocationLng, TourismInfoId) VALUES
