@@ -17,10 +17,10 @@ namespace GatewayAPI
             {
                 options.AddPolicy("AllowFrontend", policy =>
                 {
-                    policy.WithOrigins("http://localhost:5173") // Điền đúng port React của bạn
+                    policy.WithOrigins("http://localhost:5173") 
                           .AllowAnyMethod()
                           .AllowAnyHeader()
-                          .AllowCredentials(); // RẤT QUAN TRỌNG: Cấp quyền cho SignalR
+                          .AllowCredentials();
                 });
             });
 
