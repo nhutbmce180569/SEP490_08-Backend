@@ -5,7 +5,7 @@ namespace TourAPI.Services
 {
     public interface ITourService
     {
-        Task Add(CreateTourDTO model);
+        Task Add(CreateTourDTO model, int createdBy);
         Task<PaginationDTO<ReadTourDTO>> GetByAdmin(int page, int pageSize, string? searchTerm = null);
         Task UpdateTourStatusAsync(int id, string status);
         Task<PaginationDTO<ReadTourDTO>> GetAll(int page, int pageSize);
@@ -13,7 +13,7 @@ namespace TourAPI.Services
         Task<ReadTourDTO> GetActiveTour(int id);
         Task<PaginationDTO<ReadTourDTO>> GetActiveTours(int page, int pageSize);
         Task<ReadTourDTO> GetById(int id);
-        Task Update(int id, UpdateTourDTO model);
+        Task Update(int id, UpdateTourDTO model, int updatedBy);
         Task Delete(int id);
         Task ActiveTour(int id, bool isActive);
         Task<int> CountToursByCategoryIdAsync(int categoryId);

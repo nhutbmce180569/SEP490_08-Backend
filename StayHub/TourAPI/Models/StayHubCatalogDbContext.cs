@@ -35,46 +35,50 @@ public partial class StayHubCatalogDbContext : DbContext
     {
         modelBuilder.Entity<Review>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Reviews__3214EC0722144CCC");
+            entity.HasKey(e => e.Id).HasName("PK__Reviews__3214EC07BD3EF357");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
 
             entity.HasOne(d => d.Tour).WithMany(p => p.Reviews)
                 .HasForeignKey(d => d.TourId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Reviews__TourId__48CFD27E");
+                .HasConstraintName("FK__Reviews__TourId__49C3F6B7");
         });
 
         modelBuilder.Entity<ReviewReply>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__ReviewRe__3214EC07AC7BE0E4");
+            entity.HasKey(e => e.Id).HasName("PK__ReviewRe__3214EC074327E6E2");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
 
             entity.HasOne(d => d.Review).WithMany(p => p.ReviewReplies)
                 .HasForeignKey(d => d.ReviewId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ReviewRep__Revie__4D94879B");
+                .HasConstraintName("FK__ReviewRep__Revie__4E88ABD4");
         });
 
         modelBuilder.Entity<Tour>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Tours__3214EC0793C4F950");
+            entity.HasKey(e => e.Id).HasName("PK__Tours__3214EC07E480390D");
 
             entity.Property(e => e.Address).HasMaxLength(255);
             entity.Property(e => e.City).HasMaxLength(100);
             entity.Property(e => e.Country).HasMaxLength(100);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
             entity.Property(e => e.ImageUrl).HasMaxLength(500);
             entity.Property(e => e.Name).HasMaxLength(255);
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasDefaultValue("Active");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
         });
 
         modelBuilder.Entity<TourItinerary>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__TourItin__3214EC070CDAD78C");
+            entity.HasKey(e => e.Id).HasName("PK__TourItin__3214EC0772E01C05");
 
             entity.Property(e => e.LocationName).HasMaxLength(255);
             entity.Property(e => e.Title).HasMaxLength(255);
@@ -82,22 +86,22 @@ public partial class StayHubCatalogDbContext : DbContext
             entity.HasOne(d => d.Tour).WithMany(p => p.TourItineraries)
                 .HasForeignKey(d => d.TourId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__TourItine__TourI__3A81B327");
+                .HasConstraintName("FK__TourItine__TourI__3B75D760");
         });
 
         modelBuilder.Entity<TourSchedule>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__TourSche__3214EC07891A2DE7");
+            entity.HasKey(e => e.Id).HasName("PK__TourSche__3214EC07AAD53A2E");
 
             entity.HasOne(d => d.Tour).WithMany(p => p.TourSchedules)
                 .HasForeignKey(d => d.TourId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__TourSched__TourI__3D5E1FD2");
+                .HasConstraintName("FK__TourSched__TourI__3E52440B");
         });
 
         modelBuilder.Entity<TourScheduleItinerary>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__TourSche__3214EC07F0F71901");
+            entity.HasKey(e => e.Id).HasName("PK__TourSche__3214EC071C9B6D6D");
 
             entity.Property(e => e.ItineraryDate).HasColumnType("datetime");
             entity.Property(e => e.LocationName).HasMaxLength(255);
@@ -106,29 +110,29 @@ public partial class StayHubCatalogDbContext : DbContext
             entity.HasOne(d => d.Schedule).WithMany(p => p.TourScheduleItineraries)
                 .HasForeignKey(d => d.ScheduleId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__TourSched__Sched__403A8C7D");
+                .HasConstraintName("FK__TourSched__Sched__412EB0B6");
         });
 
         modelBuilder.Entity<TourScheduleStaff>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__TourSche__3214EC07E8BD784C");
+            entity.HasKey(e => e.Id).HasName("PK__TourSche__3214EC07445F9B0B");
 
             entity.Property(e => e.AssignedRole).HasMaxLength(255);
 
             entity.HasOne(d => d.Schedule).WithMany(p => p.TourScheduleStaffs)
                 .HasForeignKey(d => d.ScheduleId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__TourSched__Sched__4316F928");
+                .HasConstraintName("FK__TourSched__Sched__440B1D61");
         });
 
         modelBuilder.Entity<Wishlist>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Wishlist__3214EC074608718B");
+            entity.HasKey(e => e.Id).HasName("PK__Wishlist__3214EC078FE57A75");
 
             entity.HasOne(d => d.Tour).WithMany(p => p.Wishlists)
                 .HasForeignKey(d => d.TourId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Wishlists__TourI__45F365D3");
+                .HasConstraintName("FK__Wishlists__TourI__46E78A0C");
         });
 
         OnModelCreatingPartial(modelBuilder);

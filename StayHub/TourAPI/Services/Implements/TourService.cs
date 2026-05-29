@@ -30,7 +30,7 @@ namespace TourAPI.Services.Implements
             _categoryService = categoryService;
             _bookingService = bookingService;
         }
-        public async Task Add(CreateTourDTO model)
+        public async Task Add(CreateTourDTO model, int createdBy)
         {
             var checkCategory =
                 await _categoryService.CheckCategoryExist(model.CategoryId);
@@ -41,7 +41,8 @@ namespace TourAPI.Services.Implements
             var tour = _mapper.Map<Tour>(model);
 
             tour.Status = "Inactive";
-
+            tour.CreatedAt = DateTime.Now;
+            tour.CreatedBy = createdBy;
             await _repository.Add(tour);
 
             await _repository.SaveChangesAsync();
@@ -61,7 +62,7 @@ namespace TourAPI.Services.Implements
             await _repository.SaveChangesAsync();
         }
 
-        public async Task Update(int id, UpdateTourDTO model)
+        public async Task Update(int id, UpdateTourDTO model, int updatedBy)
         {
 
             var checkCategory = await _categoryService.CheckCategoryExist(model.CategoryId);
@@ -80,6 +81,7 @@ namespace TourAPI.Services.Implements
             {
                 throw new Exception("Please inactive tour before edit");
             }
+
             _mapper.Map(model, tour);
 
             if (model.RemoveImage)
@@ -102,6 +104,8 @@ namespace TourAPI.Services.Implements
                 tour.ImageUrl = imageUrl;
             }
 
+            tour.UpdatedAt = DateTime.Now;
+            tour.UpdatedBy = updatedBy;
             _repository.Update(tour);
             await _repository.SaveChangesAsync();
         }
@@ -297,7 +301,11 @@ namespace TourAPI.Services.Implements
             {
                 // Lấy tên Operator cho 1 tour này
                 //await PopulateOperatorNamesAsync(new List<ReadTourDTO> { tourDto });
-
+                tourDto.CreatedByName = await GetAccountNameByIdAsync(tourDto.CreatedBy);
+                if (tourDto.UpdatedBy != null)
+                {
+                    tourDto.UpdatedByName = await GetAccountNameByIdAsync((int)tourDto.UpdatedBy);
+                }
                 // Lấy tên Reviewer
                 if (tourDto.Reviews != null && tourDto.Reviews.Any())
                 {
@@ -446,7 +454,7 @@ namespace TourAPI.Services.Implements
                         var apiResponse = await response.Content.ReadFromJsonAsync<UserApiResponse>();
 
                         var fullName = apiResponse?.Data?.FullName ?? "Unknown User";
-                        var avatar = apiResponse?.Data?.Avatar;
+                        var avatar = apiResponse?.Data?.AvatarUrl;
 
                         userDict.TryAdd(id, (fullName, avatar));
                     }
@@ -473,49 +481,24 @@ namespace TourAPI.Services.Implements
             }
         }
 
-//        // Hàm Helper lấy tên Operator từ AuthAPI
-//        private async Task PopulateOperatorNamesAsync(IEnumerable<ReadTourDTO> tours)
-//        {
-//            if (tours == null || !tours.Any()) return;
+        // Hàm Helper lấy tên Operator từ AuthAPI
+        private async Task<string> GetAccountNameByIdAsync(int id)
+        {
+            // Lấy danh sách OperatorId duy nhất (tránh gọi API trùng lặp)
+            //            var uniqueOperatorIds = tours.Select(t => t.OperatorId).Distinct().ToList();
 
-//            // Lấy danh sách OperatorId duy nhất (tránh gọi API trùng lặp)
-////            var uniqueOperatorIds = tours.Select(t => t.OperatorId).Distinct().ToList();
+            var gatewayUrl = "https://localhost:7010"; // Cổng Gateway của bạn
 
-//            var gatewayUrl = "https://localhost:7010"; // Cổng Gateway của bạn
 
-//            var operatorDict = new ConcurrentDictionary<int, string>();
-
-//            var tasks = uniqueOperatorIds.Select(async id =>
-//            {
-//                try
-//                {
-//                    var response = await _httpClient.GetAsync($"{gatewayUrl}/api/users/{id}");
-//                    if (response.IsSuccessStatusCode)
-//                    {
-//                        var apiResponse = await response.Content.ReadFromJsonAsync<UserApiResponse>();
-//                        operatorDict.TryAdd(id, apiResponse?.Data?.FullName ?? $"Operator #{id}");
-//                    }
-//                    else
-//                    {
-//                        operatorDict.TryAdd(id, $"Operator #{id}");
-//                    }
-//                }
-//                catch
-//                {
-//                    operatorDict.TryAdd(id, $"Operator #{id}");
-//                }
-//            });
-
-//            await Task.WhenAll(tasks);
-
-//            foreach (var tour in tours)
-//            {
-//                if (operatorDict.TryGetValue(tour.OperatorId, out var name))
-//                {
-//                    tour.OperatorName = name;
-//                }
-//            }
-//        }
+            var response = await _httpClient.GetAsync($"{gatewayUrl}/api/users/{id}");
+            string name = "";
+            if (response.IsSuccessStatusCode)
+            {
+                var apiResponse = await response.Content.ReadFromJsonAsync<UserApiResponse>();
+                name = apiResponse?.Data?.FullName;
+            }
+            return name;
+        }
         public async Task<int> CountToursByCategoryIdAsync(int categoryId)
         {
             return await _repository.CountByCategoryIdAsync(categoryId);
