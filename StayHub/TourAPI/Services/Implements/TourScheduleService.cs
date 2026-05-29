@@ -41,8 +41,8 @@ namespace TourAPI.Services.Implements
             var schedule = _mapper.Map<TourSchedule>(dto);
 
             // Thiết lập giá trị mặc định khi tạo mới
-            schedule.SoldQuantity = 0;
-            schedule.AvailableSeats = dto.MaxCapacity;
+            //schedule.SoldQuantity = 0;
+            //schedule.AvailableSeats = dto.MaxCapacity;
 
             await _scheduleRepo.AddAsync(schedule);
             return _mapper.Map<ReadTourScheduleDTO>(schedule);
@@ -58,16 +58,16 @@ namespace TourAPI.Services.Implements
             var existingSchedule = await _scheduleRepo.GetByIdAsync(id);
             if (existingSchedule == null) throw new Exception("Tour schedule not found.");
 
-            // Kiểm tra xem MaxCapacity mới có hợp lệ với số vé đã bán không
-            if (dto.MaxCapacity < existingSchedule.SoldQuantity)
-            {
-                throw new Exception($"Cannot reduce capacity below the number of sold tickets ({existingSchedule.SoldQuantity}).");
-            }
+            //// Kiểm tra xem MaxCapacity mới có hợp lệ với số vé đã bán không
+            //if (dto.MaxCapacity < existingSchedule.SoldQuantity)
+            //{
+            //    throw new Exception($"Cannot reduce capacity below the number of sold tickets ({existingSchedule.SoldQuantity}).");
+            //}
 
-            _mapper.Map(dto, existingSchedule);
+            //_mapper.Map(dto, existingSchedule);
 
-            // Cập nhật lại số ghế trống theo MaxCapacity mới
-            existingSchedule.AvailableSeats = existingSchedule.MaxCapacity - (existingSchedule.SoldQuantity ?? 0);
+            //// Cập nhật lại số ghế trống theo MaxCapacity mới
+            //existingSchedule.AvailableSeats = existingSchedule.MaxCapacity - (existingSchedule.SoldQuantity ?? 0);
 
             await _scheduleRepo.UpdateAsync(existingSchedule);
             return _mapper.Map<ReadTourScheduleDTO>(existingSchedule);
@@ -78,10 +78,10 @@ namespace TourAPI.Services.Implements
             var schedule = await _scheduleRepo.GetByIdAsync(id);
             if (schedule == null) throw new Exception("Tour schedule not found.");
 
-            if (schedule.SoldQuantity > 0)
-            {
-                throw new Exception("Cannot delete a schedule that already has booked tickets.");
-            }
+            //if (schedule.SoldQuantity > 0)
+            //{
+            //    throw new Exception("Cannot delete a schedule that already has booked tickets.");
+            //}
 
             await _scheduleRepo.DeleteAsync(schedule);
         }
@@ -93,11 +93,11 @@ namespace TourAPI.Services.Implements
             var schedule = await _scheduleRepo.GetByIdAsync(scheduleId);
             if (schedule == null) return false;
 
-            if (schedule.AvailableSeats < quantity) return false;
+            //if (schedule.AvailableSeats < quantity) return false;
 
-            var sold = schedule.SoldQuantity ?? 0;
-            schedule.SoldQuantity = sold + quantity;
-            schedule.AvailableSeats -= quantity;
+            //var sold = schedule.SoldQuantity ?? 0;
+            //schedule.SoldQuantity = sold + quantity;
+            //schedule.AvailableSeats -= quantity;
 
             await _scheduleRepo.UpdateAsync(schedule);
             return true;
@@ -110,11 +110,11 @@ namespace TourAPI.Services.Implements
             var schedule = await _scheduleRepo.GetByIdAsync(scheduleId);
             if (schedule == null) return false;
 
-            var sold = schedule.SoldQuantity ?? 0;
-            if (sold < quantity) return false; // Cannot release more seats than sold
+            //var sold = schedule.SoldQuantity ?? 0;
+            //if (sold < quantity) return false; // Cannot release more seats than sold
 
-            schedule.SoldQuantity = sold - quantity;
-            schedule.AvailableSeats += quantity;
+            //schedule.SoldQuantity = sold - quantity;
+            //schedule.AvailableSeats += quantity;
 
             await _scheduleRepo.UpdateAsync(schedule);
             return true;

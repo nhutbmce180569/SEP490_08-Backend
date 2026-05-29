@@ -83,6 +83,15 @@ CREATE TABLE TourismInformation (
     UpdatedAt DATETIME2 DEFAULT GETDATE()
 );
 
+CREATE TABLE TicketTypes (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Name NVARCHAR(100) NOT NULL,
+    Description NVARCHAR(MAX),
+    IsActive BIT DEFAULT 1,
+    CreatedAt DATETIME2 DEFAULT GETDATE(),
+    UpdatedAt DATETIME2 NULL
+);
+
 GO
 
 -- -------------------------------------------------------------------------
@@ -195,10 +204,6 @@ CREATE TABLE TourSchedules (
     TourId INT NOT NULL FOREIGN KEY REFERENCES Tours(Id),
     DepartureDate DATETIME2 NOT NULL,
     ReturnDate DATETIME2 NOT NULL,
-    Price BIGINT NOT NULL, -- CHUYỂN SANG BIGINT CHO VND
-    MaxCapacity INT NOT NULL,
-	SoldQuantity INT,
-    AvailableSeats INT NOT NULL,
     Note NVARCHAR(MAX)
 );
 CREATE TABLE TourScheduleItineraries (
@@ -224,7 +229,19 @@ CREATE TABLE TourScheduleStaffs (
     StaffId INT NOT NULL, -- Logical FK -> IdentityDb.Users (Role: Staff)
     AssignedRole NVARCHAR(255) -- Vai trò: Hướng dẫn viên, Tài xế, Hậu cần...
 );
+CREATE TABLE TourScheduleTickets (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    ScheduleId INT NOT NULL, -- Logical/FK -> TourSchedules.Id
+    TicketTypeId INT NOT NULL, -- FK -> TicketTypes.Id
+    Price BIGINT NOT NULL,
+    Quantity INT NOT NULL,
+    SoldQuantity INT DEFAULT 0,
+    AvailableQuantity INT NOT NULL,
+    IsActive BIT DEFAULT 1,
+    Note NVARCHAR(MAX),
 
+    FOREIGN KEY (ScheduleId) REFERENCES TourSchedules(Id)
+);
 CREATE TABLE Wishlists (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     CustomerId INT NOT NULL, -- Logical FK -> IdentityDb.Users
