@@ -1,0 +1,129 @@
+using Microsoft.EntityFrameworkCore;
+using SocialAPI.DTOs;
+using SocialAPI.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace SocialAPI.Repositories.Implements;
+
+public class MomentRepository : IMomentRepository
+{
+    private readonly StayHubSocialDbContext _context;
+
+    public MomentRepository(StayHubSocialDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<TourMoment> CreateMomentAsync(TourMoment moment)
+    {
+        await _context.TourMoments.AddAsync(moment);
+        await _context.SaveChangesAsync();
+        return moment;
+    }
+
+    public async Task<IEnumerable<TourMoment>> GetMomentsByScheduleIdAsync(int scheduleId, int currentUserId)
+    {
+        return await _context.TourMoments
+            .AsNoTracking()
+            // Prevent Cartesian explosion for multiple includes
+            .AsSplitQuery()
+            .Include(m => m.MomentComments)
+            .Include(m => m.MomentReactions)
+            .Where(m => m.ScheduleId == scheduleId &&
+                        (m.UserId == currentUserId ||
+                         m.Privacy == "Public" ||
+                         (m.Privacy == "Friend" && _context.Friendships.Any(f => f.Status == "Accepted" &&
+                             ((f.RequesterId == currentUserId && f.ReceiverId == m.UserId) ||
+                              (f.ReceiverId == currentUserId && f.RequesterId == m.UserId))))))
+            .OrderByDescending(m => m.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<TourMoment>> GetMomentFeedPagedAsync(int scheduleId, int currentUserId, int skip, int top)
+    {
+        return await _context.TourMoments
+            .AsNoTracking()
+            // Prevent Cartesian explosion for multiple includes
+            .AsSplitQuery()
+            .Include(m => m.MomentComments)
+            .Include(m => m.MomentReactions)
+            .Where(m => m.ScheduleId == scheduleId &&
+                        (m.UserId == currentUserId ||
+                         m.Privacy == "Public" ||
+                         (m.Privacy == "Friend" && _context.Friendships.Any(f => f.Status == "Accepted" &&
+                             ((f.RequesterId == currentUserId && f.ReceiverId == m.UserId) ||
+                              (f.ReceiverId == currentUserId && f.RequesterId == m.UserId))))))
+            .OrderByDescending(m => m.CreatedAt)
+            .Skip(skip) 
+            .Take(top)  
+            .ToListAsync();
+    }
+    public IQueryable<TourMoment> GetMomentsAsQueryable()
+    {
+        return _context.TourMoments.AsQueryable();
+    }
+
+    public async Task<TourMoment?> GetMomentByIdAsync(int id)
+    {
+        return await _context.TourMoments
+            .Include(m => m.MomentComments)
+            .Include(m => m.MomentReactions)
+            .FirstOrDefaultAsync(m => m.Id == id);
+    }
+
+    public async Task DeleteMomentAsync(TourMoment moment)
+    {
+        if (moment.MomentReactions.Any()) _context.MomentReactions.RemoveRange(moment.MomentReactions);
+        if (moment.MomentComments.Any()) _context.MomentComments.RemoveRange(moment.MomentComments);
+
+        _context.TourMoments.Remove(moment);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<MomentReaction?> GetReactionAsync(int momentId, int userId) =>
+        await _context.MomentReactions.FirstOrDefaultAsync(r => r.MomentId == momentId && r.UserId == userId);
+
+    public async Task AddReactionAsync(MomentReaction reaction)
+    {
+        await _context.MomentReactions.AddAsync(reaction);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task RemoveReactionAsync(MomentReaction reaction)
+    {
+        _context.MomentReactions.Remove(reaction);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<MomentComment> AddCommentAsync(MomentComment comment)
+    {
+        await _context.MomentComments.AddAsync(comment);
+        await _context.SaveChangesAsync();
+        return comment;
+    }
+
+    public async Task<MomentComment?> GetCommentByIdAsync(int commentId) =>
+        await _context.MomentComments.FirstOrDefaultAsync(c => c.Id == commentId);
+
+    public async Task UpdateCommentAsync(MomentComment comment) { _context.MomentComments.Update(comment); await _context.SaveChangesAsync(); }
+    public async Task DeleteCommentAsync(MomentComment comment) { _context.MomentComments.Remove(comment); await _context.SaveChangesAsync(); }
+
+    public async Task<List<FootprintDto>> GetUserFootprintsAsync(int userId)
+    {
+        return await _context.TourMoments
+            .AsNoTracking()
+            .Where(m => m.UserId == userId && m.Lat.HasValue && m.Lng.HasValue)
+            // Project to DTO, rounding coordinates to 3 decimal places for grouping nearby points.
+            .Select(m => new FootprintDto
+            {
+                Lat = Math.Round(m.Lat.Value, 3),
+                Lng = Math.Round(m.Lng.Value, 3)
+            })
+            // The database will return only unique coordinate pairs.
+            .Distinct()
+            .ToListAsync();
+    }
+}
