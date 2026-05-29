@@ -258,5 +258,19 @@ namespace AuthAPI.Controllers
                 });
             }
         }
+
+        // GET: api/users/{id}/profile
+        [HttpGet("{id}/profile")]
+        public async Task<IActionResult> GetUserProfile(int id)
+        {
+            var profile = await _userService.GetUserProfileAsync(id);
+
+            if (profile == null)
+            {
+                return NotFound(new { message = "User profile not found." });
+            }
+
+            return Ok(new { message = "User profile retrieved successfully.", data = profile });
+        }
     }
 }
