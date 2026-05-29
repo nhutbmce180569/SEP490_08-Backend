@@ -6,21 +6,33 @@ namespace TourAPI.DTOs
     public class ReadTourDTO
     {
         public int Id { get; set; }
+
         public int CategoryId { get; set; }
 
         public string Name { get; set; } = null!;
 
         public string? Description { get; set; }
 
-        public string? Status { get; set; }
-
-        public string? ImageUrl { get; set; }
-
         public string? Country { get; set; }
 
         public string? City { get; set; }
 
         public string? Address { get; set; }
+
+        public string? ImageUrl { get; set; }
+
+        public int CreatedBy { get; set; }
+        public string? CreatedByName { get; set; }
+
+        public int? UpdatedBy { get; set; }
+        public string? UpdatedByName { get; set; }
+
+        public DateTime? CreatedAt { get; set; }
+
+        public DateTime? UpdatedAt { get; set; }
+
+        public string? Status { get; set; }
+
         public double? AverageStar { get; set; }
 
         public ICollection<ReadTourItineraryDTO>? TourItineraries { get; set; }
@@ -43,10 +55,6 @@ namespace TourAPI.DTOs
     }
     public abstract class BaseTourDTO
     {
-        [Required(ErrorMessage = "OperatorId is required")]
-        [Range(1, int.MaxValue, ErrorMessage = "OperatorId must be greater than 0")]
-        public int OperatorId { get; set; }
-
         [Required(ErrorMessage = "CategoryId is required")]
         [Range(1, int.MaxValue, ErrorMessage = "CategoryId must be greater than 0")]
         public int CategoryId { get; set; }
@@ -82,8 +90,9 @@ namespace TourAPI.DTOs
 
     public class ReadUserDTO
     {
-        public string? FullName { get; set; }
-        public string? Avatar { get; set; }
+        public string FullName { get; set; } = null!;
+        public string? AvatarUrl { get; set; }
+
     }
 
     public class UserApiResponse

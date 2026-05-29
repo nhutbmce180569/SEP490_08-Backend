@@ -21,6 +21,14 @@ public partial class Tour
 
     public string? ImageUrl { get; set; }
 
+    public int CreatedBy { get; set; }
+
+    public int? UpdatedBy { get; set; }
+
+    public DateTime? CreatedAt { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
+
     public string? Status { get; set; }
 
     public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
