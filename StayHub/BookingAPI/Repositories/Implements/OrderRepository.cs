@@ -41,13 +41,17 @@ namespace BookingAPI.Repositories.Implements
         public async Task<Order?> GetByIdAsync(int id)
         {
             return await _context.Orders
-                .Include(o => o.Tickets) // Kèm theo chi tiết vé
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Tickets)
+                .Include(o => o.Tickets)
                 .FirstOrDefaultAsync(o => o.Id == id);
         }
 
         public async Task<Order?> GetByIdAndCustomerIdAsync(int id, int customerId)
         {
             return await _context.Orders
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Tickets)
                 .Include(o => o.Tickets)
                 .FirstOrDefaultAsync(o => o.Id == id && o.CustomerId == customerId);
         }
@@ -56,6 +60,8 @@ namespace BookingAPI.Repositories.Implements
         {
             return await _context.Orders
                 .Where(o => o.ScheduleId == scheduleId)
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Tickets)
                 .Include(o => o.Tickets)
                 .OrderBy(o => o.Id)
                 .ToListAsync();
@@ -65,6 +71,8 @@ namespace BookingAPI.Repositories.Implements
         {
             return await _context.Orders
                 .Where(o => o.CustomerId == userId)
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Tickets)
                 .Include(o => o.Tickets)
                 .OrderByDescending(o => o.OrderedAt)
                 .ToListAsync();
@@ -77,6 +85,8 @@ namespace BookingAPI.Repositories.Implements
 
             var query = _context.Orders
                 .Where(o => o.CustomerId == userId)
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Tickets)
                 .Include(o => o.Tickets);
 
             var total = await query.CountAsync();
@@ -163,12 +173,14 @@ namespace BookingAPI.Repositories.Implements
                 query = query.Where(o => o.Id != excludeOrderId.Value);
             }
 
-            return await query.SumAsync(o => o.TicketCount);
+            return await query.SumAsync(o => o.TotalQuantity);
         }
 
         public async Task<bool> CancelOrderWithTicketsAsync(int orderId)
         {
             var order = await _context.Orders
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Tickets)
                 .Include(o => o.Tickets)
                 .FirstOrDefaultAsync(o => o.Id == orderId);
 
