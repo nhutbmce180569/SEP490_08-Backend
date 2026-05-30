@@ -9,7 +9,11 @@ public partial class Ticket
 
     public int OrderId { get; set; }
 
+    public int OrderDetailId { get; set; }
+
     public int? UserId { get; set; }
+
+    public int TicketTypeId { get; set; }
 
     public string AttendeeName { get; set; } = null!;
 
@@ -26,4 +30,6 @@ public partial class Ticket
     public string? CheckInStatus { get; set; }
 
     public virtual Order Order { get; set; } = null!;
+
+    public virtual OrderDetail OrderDetail { get; set; } = null!;
 }

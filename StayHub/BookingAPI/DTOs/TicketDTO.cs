@@ -9,7 +9,11 @@ namespace BookingAPI.DTOs
 
         public int OrderId { get; set; }
 
+        public int OrderDetailId { get; set; }
+
         public int? UserId { get; set; }
+
+        public int TicketTypeId { get; set; }
 
         public string AttendeeName { get; set; } = null!;
 
@@ -30,6 +34,8 @@ namespace BookingAPI.DTOs
         public int? OrderId { get; set; }
 
         public int? UserId { get; set; }
+
+        public int? TicketTypeId { get; set; }
 
         public string AttendeeName { get; set; } = null!;
 
