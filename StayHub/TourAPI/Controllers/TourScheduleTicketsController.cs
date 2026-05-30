@@ -85,18 +85,75 @@ namespace TourAPI.Controllers
             }
         }
 
-        [HttpDelete("{id}")]
+        [HttpPatch("{id}/activate")]
         [Authorize(Roles = "Manager, Admin")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<ActionResult<ReadTourScheduleTicketDTO>> Activate(int id)
         {
             try
             {
-                await _service.Delete(id);
-                return NoContent();
+                var result = await _service.Activate(id);
+                return Ok(result);
             }
             catch (Exception ex) when (ex.Message == "TourScheduleTicket not found")
             {
                 return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPatch("{id}/deactivate")]
+        [Authorize(Roles = "Manager, Admin")]
+        public async Task<ActionResult<ReadTourScheduleTicketDTO>> Deactivate(int id)
+        {
+            try
+            {
+                var result = await _service.Deactivate(id);
+                return Ok(result);
+            }
+            catch (Exception ex) when (ex.Message == "TourScheduleTicket not found")
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPatch("{id}/reserve")]
+        public async Task<IActionResult> Reserve(int id, [FromBody] UpdateTourScheduleTicketQuantityDTO dto)
+        {
+            try
+            {
+                var reserved = await _service.Reserve(id, dto.Quantity);
+                if (!reserved)
+                {
+                    return BadRequest(new { message = "Not enough available tickets or ticket type is inactive." });
+                }
+
+                return Ok(new { message = "Tickets reserved.", id, dto.Quantity });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPatch("{id}/release")]
+        public async Task<IActionResult> Release(int id, [FromBody] UpdateTourScheduleTicketQuantityDTO dto)
+        {
+            try
+            {
+                var released = await _service.Release(id, dto.Quantity);
+                if (!released)
+                {
+                    return BadRequest(new { message = "Could not release tickets for this ticket type." });
+                }
+
+                return Ok(new { message = "Tickets released.", id, dto.Quantity });
             }
             catch (Exception ex)
             {

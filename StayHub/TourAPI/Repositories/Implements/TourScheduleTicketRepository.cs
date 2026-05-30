@@ -44,9 +44,10 @@ namespace TourAPI.Repositories.Implements
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(TourScheduleTicket entity)
+        public async Task SetActiveAsync(TourScheduleTicket entity, bool isActive)
         {
-            _context.TourScheduleTickets.Remove(entity);
+            entity.IsActive = isActive;
+            _context.TourScheduleTickets.Update(entity);
             await _context.SaveChangesAsync();
         }
 
@@ -56,6 +57,43 @@ namespace TourAPI.Repositories.Implements
                 x.ScheduleId == scheduleId &&
                 x.TicketTypeId == ticketTypeId &&
                 (exceptId == null || x.Id != exceptId));
+        }
+
+        public async Task<bool> ReserveAsync(int id, int quantity)
+        {
+            if (quantity <= 0)
+            {
+                return false;
+            }
+
+            var affected = await _context.TourScheduleTickets
+                .Where(x =>
+                    x.Id == id &&
+                    (x.IsActive ?? true) &&
+                    x.AvailableQuantity >= quantity)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(x => x.SoldQuantity, x => (x.SoldQuantity ?? 0) + quantity)
+                    .SetProperty(x => x.AvailableQuantity, x => x.AvailableQuantity - quantity));
+
+            return affected == 1;
+        }
+
+        public async Task<bool> ReleaseAsync(int id, int quantity)
+        {
+            if (quantity <= 0)
+            {
+                return false;
+            }
+
+            var affected = await _context.TourScheduleTickets
+                .Where(x =>
+                    x.Id == id &&
+                    (x.SoldQuantity ?? 0) >= quantity)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(x => x.SoldQuantity, x => (x.SoldQuantity ?? 0) - quantity)
+                    .SetProperty(x => x.AvailableQuantity, x => x.AvailableQuantity + quantity));
+
+            return affected == 1;
         }
     }
 }

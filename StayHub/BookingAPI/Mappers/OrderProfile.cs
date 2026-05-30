@@ -8,9 +8,13 @@ namespace BookingAPI.Mappers
     {
         public OrderProfile()
         {
-            CreateMap<CreateOrderDTO, Order>();
+            CreateMap<CreateOrderDTO, Order>()
+                .ForMember(dest => dest.OrderDetails, opt => opt.Ignore())
+                .ForMember(dest => dest.Tickets, opt => opt.Ignore());
             CreateMap<CreateTicketDTO, Ticket>();
-            CreateMap<Order, ReadOrderDTO>();
+            CreateMap<OrderDetail, ReadOrderDetailDTO>();
+            CreateMap<Order, ReadOrderDTO>()
+                .ForMember(dest => dest.TicketCount, opt => opt.MapFrom(src => src.TotalQuantity));
         }
     }
 }
