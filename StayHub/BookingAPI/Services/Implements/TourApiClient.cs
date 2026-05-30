@@ -48,9 +48,27 @@ namespace BookingAPI.Services.Implements
             }
         }
 
-        public async Task<bool> ReserveScheduleSeatsAsync(int scheduleId, int quantity)
+        public async Task<ReadOrderScheduleTicketDTO?> GetScheduleTicketByIdAsync(int tourScheduleTicketId)
         {
-            if (scheduleId <= 0 || quantity <= 0 || _httpClient.BaseAddress == null)
+            if (tourScheduleTicketId <= 0 || _httpClient.BaseAddress == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                return await _httpClient.GetFromJsonAsync<ReadOrderScheduleTicketDTO>(
+                    $"api/tourscheduletickets/{tourScheduleTicketId}");
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public async Task<bool> ReserveScheduleTicketAsync(int tourScheduleTicketId, int quantity)
+        {
+            if (tourScheduleTicketId <= 0 || quantity <= 0 || _httpClient.BaseAddress == null)
             {
                 return false;
             }
@@ -58,7 +76,7 @@ namespace BookingAPI.Services.Implements
             try
             {
                 var response = await _httpClient.PatchAsJsonAsync(
-                    $"api/tourschedules/{scheduleId}/reserve-seats",
+                    $"api/tourscheduletickets/{tourScheduleTicketId}/reserve",
                     new { quantity });
 
                 return response.IsSuccessStatusCode;
@@ -69,9 +87,9 @@ namespace BookingAPI.Services.Implements
             }
         }
 
-        public async Task<bool> ReleaseScheduleSeatsAsync(int scheduleId, int quantity)
+        public async Task<bool> ReleaseScheduleTicketAsync(int tourScheduleTicketId, int quantity)
         {
-            if (scheduleId <= 0 || quantity <= 0 || _httpClient.BaseAddress == null)
+            if (tourScheduleTicketId <= 0 || quantity <= 0 || _httpClient.BaseAddress == null)
             {
                 return false;
             }
@@ -79,7 +97,7 @@ namespace BookingAPI.Services.Implements
             try
             {
                 var response = await _httpClient.PatchAsJsonAsync(
-                    $"api/tourschedules/{scheduleId}/release-seats",
+                    $"api/tourscheduletickets/{tourScheduleTicketId}/release",
                     new { quantity });
 
                 return response.IsSuccessStatusCode;

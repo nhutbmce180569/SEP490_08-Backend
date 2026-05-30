@@ -22,7 +22,7 @@ namespace TourAPI.DTOs
 
         public virtual ICollection<ReadTourScheduleItineraryDTO>? TourScheduleItineraries { get; set; }
 
-        //public virtual ICollection<ReadTourScheduleTicketDTO>? TourScheduleTickets { get; set; }
+        public virtual ICollection<ReadTourScheduleTicketDTO>? TourScheduleTickets { get; set; }
     }
 
     public abstract class BaseTourScheduleDTO

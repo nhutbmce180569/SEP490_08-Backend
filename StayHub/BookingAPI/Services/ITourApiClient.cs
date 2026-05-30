@@ -6,7 +6,8 @@ namespace BookingAPI.Services
     {
         Task<ReadOrderTourDTO?> GetTourByIdAsync(int tourId);
         Task<ReadOrderScheduleDTO?> GetScheduleByIdAsync(int scheduleId);
-        Task<bool> ReserveScheduleSeatsAsync(int scheduleId, int quantity);
-        Task<bool> ReleaseScheduleSeatsAsync(int scheduleId, int quantity);
+        Task<ReadOrderScheduleTicketDTO?> GetScheduleTicketByIdAsync(int tourScheduleTicketId);
+        Task<bool> ReserveScheduleTicketAsync(int tourScheduleTicketId, int quantity);
+        Task<bool> ReleaseScheduleTicketAsync(int tourScheduleTicketId, int quantity);
     }
 }

@@ -50,6 +50,7 @@ namespace TourAPI.Repositories.Implements
                 return await _context.Tours
                     .Include(t => t.TourItineraries)
                     .Include(t => t.TourSchedules)
+                        .ThenInclude(t => t.TourScheduleTickets)
                     .Include(t => t.Reviews)
                         .ThenInclude(r => r.ReviewReplies)
                     .ToListAsync();
@@ -68,6 +69,7 @@ namespace TourAPI.Repositories.Implements
                 return await _context.Tours
                     .Include(t => t.TourItineraries)
                     .Include(t => t.TourSchedules)
+                        .ThenInclude(t => t.TourScheduleTickets)
                     .Include(t => t.Reviews)
                         .ThenInclude(r => r.ReviewReplies)
                     .Where(t => t.Status == "Active")
@@ -86,6 +88,7 @@ namespace TourAPI.Repositories.Implements
                 return await _context.Tours
                     .Include(t => t.TourItineraries.OrderBy(x => x.DayNumber))
                     .Include(t => t.TourSchedules)
+                        .ThenInclude(t => t.TourScheduleTickets)
                     .Include(t => t.Reviews)
                         .ThenInclude(r => r.ReviewReplies)
                     .FirstOrDefaultAsync(g => g.Id == id);
