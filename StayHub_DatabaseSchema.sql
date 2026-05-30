@@ -426,12 +426,14 @@ CREATE TABLE Vouchers (
     TourId INT NULL, -- Logical FK -> CatalogDb.Tours (Null = All Tours)
     DiscountType VARCHAR(50) NOT NULL, -- Percent, Amount
     DiscountValue BIGINT NOT NULL, -- CHUYỂN SANG BIGINT (Giữ % dưới dạng số nguyên hoặc số tiền trực tiếp)
+    MaxDiscountAmount BIGINT NULL, -- Chỉ áp dụng khi DiscountType = Percent (trần tiền giảm tối đa)
     UsedCount INT DEFAULT 0,
     AvailableCount INT NOT NULL,
     StartDate DATETIME2 NOT NULL,
     EndDate DATETIME2 NOT NULL,
     Description NVARCHAR(MAX),
-    CreatorId INT NOT NULL -- Logical FK -> IdentityDb.Users (System Admin / Operator)
+    CreatorId INT NOT NULL, -- Logical FK -> IdentityDb.Users (System Admin / Operator)
+    IsActive BIT DEFAULT 1
 );
 
 CREATE TABLE UserVouchers (
