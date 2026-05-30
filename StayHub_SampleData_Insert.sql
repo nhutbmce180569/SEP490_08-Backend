@@ -494,19 +494,19 @@ USE StayHub_VoucherDb;
 GO
 
 SET IDENTITY_INSERT Vouchers ON;
-INSERT INTO Vouchers (Id, Code, TourId, DiscountType, DiscountValue, UsedCount, AvailableCount, StartDate, EndDate, Description, CreatorId) VALUES
-(1, 'WELCOME100', NULL, 'Amount', 100000, 25, 500, '2026-01-01', '2026-12-31', N'Discount 100k for new customers.', 1),
-(2, 'PHUQUOC300', 1, 'Amount', 300000, 8, 100, '2026-05-01', '2026-08-31', N'Phu Quoc summer tour offer.', 2),
-(3, 'DALAT10', 2, 'Percent', 10, 12, 80, '2026-05-01', '2026-07-31', N'10% off Da Lat tour.', 2),
-(4, 'HOIAN100', 3, 'Amount', 100000, 4, 60, '2026-05-15', '2026-09-30', N'Hoi An weekend offer.', 3),
-(5, 'HALONGVIP', 4, 'Amount', 500000, 6, 40, '2026-05-01', '2026-10-31', N'Discount on Ha Long cruise.', 3),
-(6, 'MEKONGFUN', 5, 'Amount', 200000, 10, 120, '2026-05-01', '2026-12-31', N'Mekong Delta offer.', 2),
-(7, 'SAPA15', 6, 'Percent', 15, 3, 50, '2026-06-01', '2026-09-30', N'Discount on Sapa trekking tour.', 2),
-(8, 'DANANG300', 8, 'Amount', 300000, 8, 100, '2026-06-01', '2026-08-31', N'Da Nang summer combo.', 3),
-(9, 'FOODIE50', 9, 'Amount', 50000, 20, 200, '2026-01-01', '2026-12-31', N'Food tour discount.', 1),
-(10, 'HONEYMOON500', 10, 'Amount', 500000, 2, 30, '2026-06-01', '2026-12-31', N'Honeymoon offer.', 1),
-(11, 'PHOTO99', 11, 'Amount', 99000, 6, 100, '2026-05-01', '2026-12-31', N'Photo walk offer.', 2),
-(12, 'ISLAND200', 12, 'Amount', 200000, 5, 70, '2026-05-01', '2026-09-30', N'Island hopping offer.', 3);
+INSERT INTO Vouchers (Id, Code, TourId, DiscountType, DiscountValue, MaxDiscountAmount, UsedCount, AvailableCount, StartDate, EndDate, Description, CreatorId, IsActive) VALUES
+(1, 'WELCOME100', NULL, 'Amount', 100000, NULL, 25, 500, '2026-01-01', '2026-12-31', N'Discount 100k for new customers.', 1, 1),
+(2, 'PHUQUOC300', 1, 'Amount', 300000, NULL, 8, 100, '2026-05-01', '2026-08-31', N'Phu Quoc summer tour offer.', 2, 1),
+(3, 'DALAT10', 2, 'Percent', 10, 500000, 12, 80, '2026-05-01', '2026-07-31', N'10% off Da Lat tour, max 500k.', 2, 1),
+(4, 'HOIAN100', 3, 'Amount', 100000, NULL, 4, 60, '2026-05-15', '2026-09-30', N'Hoi An weekend offer.', 3, 1),
+(5, 'HALONGVIP', 4, 'Amount', 500000, NULL, 6, 40, '2026-05-01', '2026-10-31', N'Discount on Ha Long cruise.', 3, 1),
+(6, 'MEKONGFUN', 5, 'Amount', 200000, NULL, 10, 120, '2026-05-01', '2026-12-31', N'Mekong Delta offer.', 2, 1),
+(7, 'SAPA15', 6, 'Percent', 15, 1000000, 3, 50, '2026-06-01', '2026-09-30', N'15% off Sapa tour, max 1M.', 2, 1),
+(8, 'DANANG300', 8, 'Amount', 300000, NULL, 8, 100, '2026-06-01', '2026-08-31', N'Da Nang summer combo.', 3, 1),
+(9, 'FOODIE50', 9, 'Amount', 50000, NULL, 20, 200, '2026-01-01', '2026-12-31', N'Food tour discount.', 1, 1),
+(10, 'HONEYMOON500', 10, 'Amount', 500000, NULL, 2, 30, '2026-06-01', '2026-12-31', N'Honeymoon offer.', 1, 1),
+(11, 'PHOTO99', 11, 'Amount', 99000, NULL, 6, 100, '2026-05-01', '2026-12-31', N'Photo walk offer.', 2, 1),
+(12, 'ISLAND200', 12, 'Amount', 200000, NULL, 5, 70, '2026-05-01', '2026-09-30', N'Island hopping offer.', 3, 1);
 SET IDENTITY_INSERT Vouchers OFF;
 GO
 

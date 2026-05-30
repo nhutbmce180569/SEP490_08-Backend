@@ -1,0 +1,6 @@
+namespace VoucherAPI.Services;
+
+public interface IUserValidationService
+{
+    Task<(bool Exists, string? FullName, string? Email, string? Status)> ValidateUserAsync(int userId);
+}
