@@ -326,19 +326,29 @@ SET IDENTITY_INSERT Wishlists OFF;
 GO
 
 SET IDENTITY_INSERT Reviews ON;
-INSERT INTO Reviews (Id, CustomerId, TourId, Rating, Comment, CreatedAt, UpdatedAt) VALUES
-(1, 8, 1, 5, N'Phu Quoc is very beautiful, the guide is enthusiastic, and the schedule is well-paced.', DATEADD(DAY, -20, GETUTCDATE()), NULL),
-(2, 9, 4, 5, N'The Ha Long cruise is premium, food is good, and rooms are clean.', DATEADD(DAY, -18, GETUTCDATE()), NULL),
-(3, 10, 3, 4, N'Hoi An is beautiful but the time was a bit short.', DATEADD(DAY, -15, GETUTCDATE()), NULL),
-(4, 11, 5, 5, N'The floating market is fun, a true Mekong Delta experience.', DATEADD(DAY, -14, GETUTCDATE()), NULL),
-(5, 12, 7, 4, N'Trang An is worth visiting, but Mua Cave was a bit crowded.', DATEADD(DAY, -13, GETUTCDATE()), NULL),
-(6, 13, 10, 5, N'The Cam Ranh resort is beautiful, great for relaxing.', DATEADD(DAY, -12, GETUTCDATE()), NULL),
-(7, 14, 11, 5, N'Hanoi photo walk is very chill, the guide knows great angles.', DATEADD(DAY, -11, GETUTCDATE()), NULL),
-(8, 15, 12, 4, N'Nha Trang beach is nice, seafood is decent.', DATEADD(DAY, -10, GETUTCDATE()), NULL),
-(9, 16, 2, 5, N'Da Lat cloud hunting is stunning, worth the money.', DATEADD(DAY, -9, GETUTCDATE()), NULL),
-(10, 17, 8, 4, N'Ba Na is beautiful, the schedule is a bit tight but fun.', DATEADD(DAY, -8, GETUTCDATE()), NULL),
-(11, 8, 6, 5, N'Sapa trekking is tiring but the scenery is extremely beautiful.', DATEADD(DAY, -7, GETUTCDATE()), NULL),
-(12, 9, 9, 4, N'Food tour was delicious, should add more dishes.', DATEADD(DAY, -6, GETUTCDATE()), NULL);
+INSERT INTO Reviews (
+    Id,
+    CustomerId,
+    TourId,
+    Rating,
+    Comment,
+    IsHidden,
+    CreatedAt,
+    UpdatedAt
+) VALUES
+(1, 8, 1, 5, N'Phu Quoc is very beautiful, the guide is enthusiastic, and the schedule is well-paced.', 0, DATEADD(DAY, -20, GETUTCDATE()), NULL),
+(2, 9, 4, 5, N'The Ha Long cruise is premium, food is good, and rooms are clean.', 0, DATEADD(DAY, -18, GETUTCDATE()), NULL),
+(3, 10, 3, 4, N'Hoi An is beautiful but the time was a bit short.', 0, DATEADD(DAY, -15, GETUTCDATE()), NULL),
+(4, 11, 5, 5, N'The floating market is fun, a true Mekong Delta experience.', 0, DATEADD(DAY, -14, GETUTCDATE()), NULL),
+(5, 12, 7, 4, N'Trang An is worth visiting, but Mua Cave was a bit crowded.', 0, DATEADD(DAY, -13, GETUTCDATE()), NULL),
+(6, 13, 10, 5, N'The Cam Ranh resort is beautiful, great for relaxing.', 0, DATEADD(DAY, -12, GETUTCDATE()), NULL),
+(7, 14, 11, 5, N'Hanoi photo walk is very chill, the guide knows great angles.', 0, DATEADD(DAY, -11, GETUTCDATE()), NULL),
+(8, 15, 12, 4, N'Nha Trang beach is nice, seafood is decent.', 0, DATEADD(DAY, -10, GETUTCDATE()), NULL),
+(9, 16, 2, 5, N'Da Lat cloud hunting is stunning, worth the money.', 0, DATEADD(DAY, -9, GETUTCDATE()), NULL),
+(10, 17, 8, 4, N'Ba Na is beautiful, the schedule is a bit tight but fun.', 0, DATEADD(DAY, -8, GETUTCDATE()), NULL),
+(11, 8, 6, 5, N'Sapa trekking is tiring but the scenery is extremely beautiful.', 0, DATEADD(DAY, -7, GETUTCDATE()), NULL),
+(12, 9, 9, 4, N'Food tour was delicious, should add more dishes.', 0, DATEADD(DAY, -6, GETUTCDATE()), NULL);
+
 SET IDENTITY_INSERT Reviews OFF;
 GO
 

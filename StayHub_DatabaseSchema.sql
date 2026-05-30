@@ -255,8 +255,8 @@ CREATE TABLE Reviews (
     Rating INT CHECK (Rating >= 1 AND Rating <= 5),
     Comment NVARCHAR(MAX),
     CreatedAt DATETIME2 DEFAULT GETUTCDATE(),
-    UpdatedAt DATETIME2 NULL
-
+    UpdatedAt DATETIME2 NULL,
+    IsHidden BIT NOT NULL DEFAULT 0
 );
 CREATE TABLE ReviewReplies (
     Id INT IDENTITY(1,1) PRIMARY KEY,
