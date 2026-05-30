@@ -28,6 +28,7 @@ namespace TourAPI.Repositories.Implements
                 .Include(x => x.Tour)
                 .Include(x => x.TourScheduleItineraries)
                 .Include(x => x.TourScheduleStaffs)
+                .Include(x => x.TourScheduleTickets)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 
