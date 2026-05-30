@@ -20,6 +20,7 @@ using SocialAPI.Repositories;
 using SocialAPI.Repositories.Implements;
 using SocialAPI.Services;
 using SocialAPI.Services.Implements;
+using StackExchange.Redis;
 using System.Text;
 
 namespace SocialAPI
@@ -133,7 +134,11 @@ namespace SocialAPI
 
             // 4.1 Cấu hình Cloudinary
             builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
+            var redisConnectionString = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
+            builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnectionString));
 
+            // 2. Đăng ký Location Service
+            builder.Services.AddScoped<ILocationService, LocationService>();
             // 4.2 Đăng ký Repositories & Services
             builder.Services.AddScoped<IMomentRepository, MomentRepository>();
             builder.Services.AddScoped<ICloudStorageService, CloudStorageService>();
