@@ -20,17 +20,20 @@ public class MomentService : IMomentService
     private readonly IMapper _mapper;
 
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IFriendshipRepository _friendshipRepository;
 
     public MomentService(
         IMomentRepository momentRepository,
         ICloudStorageService cloudStorageService,
         IMapper mapper,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        IFriendshipRepository friendshipRepository)
     {
         _momentRepository = momentRepository;
         _cloudStorageService = cloudStorageService;
         _mapper = mapper;
         _httpClientFactory = httpClientFactory;
+        _friendshipRepository = friendshipRepository;
     }
 
     public async Task<MomentResponseDto> CreateMomentAsync(MomentCreateDto dto)
@@ -176,5 +179,17 @@ public class MomentService : IMomentService
     public async Task<IEnumerable<FootprintDto>> GetMyFootprintsAsync(int userId)
     {
         return await _momentRepository.GetUserFootprintsAsync(userId);
+    }
+
+    public async Task<IEnumerable<UserMomentResponseDto>> GetUserMomentsAsync(int targetUserId, int currentUserId)
+    {
+        bool isFriend = false;
+        if (targetUserId != currentUserId)
+        {
+            isFriend = await _friendshipRepository.CheckAreFriendsAsync(currentUserId, targetUserId);
+        }
+
+        var moments = await _momentRepository.GetUserMomentsAsync(targetUserId, currentUserId, isFriend);
+        return _mapper.Map<IEnumerable<UserMomentResponseDto>>(moments);
     }
 }

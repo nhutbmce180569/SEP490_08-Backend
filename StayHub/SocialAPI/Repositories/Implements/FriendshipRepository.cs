@@ -80,4 +80,12 @@ public class FriendshipRepository : IFriendshipRepository
 
         return (friends, total);
     }
+
+    public async Task<bool> CheckAreFriendsAsync(int userId1, int userId2)
+    {
+        return await _context.Friendships.AnyAsync(f =>
+            f.Status == "Accepted" &&
+            ((f.RequesterId == userId1 && f.ReceiverId == userId2) ||
+             (f.RequesterId == userId2 && f.ReceiverId == userId1)));
+    }
 }

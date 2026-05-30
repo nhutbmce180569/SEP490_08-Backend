@@ -32,6 +32,20 @@ namespace TourAPI.Repositories.Implements
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 
+        public async Task<List<TourSchedule>> GetByIdsAsync(List<int> ids)
+        {
+            return await _context.TourSchedules
+                .Where(x => ids.Contains(x.Id))
+                .ToListAsync();
+        }
+
+        public async Task<List<TourSchedule>> GetByTourIdAsync(int tourId)
+        {
+            return await _context.TourSchedules
+                .Where(x => x.TourId == tourId)
+                .ToListAsync();
+        }
+
         public async Task AddAsync(TourSchedule tourSchedule)
         {
             await _context.TourSchedules.AddAsync(tourSchedule);

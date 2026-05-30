@@ -34,5 +34,6 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.FullName, opt => opt.Ignore()); 
             CreateMap<TourMoment, MomentResponseDto>()
     .ForMember(dest => dest.Privacy, opt => opt.MapFrom(src => src.Privacy ?? "Public"));
+        CreateMap<TourMoment, UserMomentResponseDto>();
     }
 }

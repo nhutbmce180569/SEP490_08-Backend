@@ -300,5 +300,12 @@ namespace AuthAPI.Services.Implements
                 PageSize = filter.PageSize
             };
         }
+
+        public async Task<UserProfileResponseDto?> GetUserProfileAsync(int userId)
+        {
+            var user = await _userRepository.GetById(userId);
+            if (user == null) return null;
+            return _mapper.Map<UserProfileResponseDto>(user);
+        }
     }
 }

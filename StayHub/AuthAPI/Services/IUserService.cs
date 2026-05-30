@@ -17,5 +17,6 @@ namespace AuthAPI.Services
         Task<IEnumerable<UserSearchResultDto>> GetUsersBatchAsync(List<int> userIds);
         Task<bool> ChangeUserStatusAsync(int id, string newStatus);
         Task<PaginationDTO<ReadUserDTO>> FilterUsersAsync(UserFilterDTO filter);
+        Task<UserProfileResponseDto?> GetUserProfileAsync(int userId);
     }
 }
