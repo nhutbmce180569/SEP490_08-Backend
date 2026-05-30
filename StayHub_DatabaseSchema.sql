@@ -551,6 +551,21 @@ CREATE TABLE AILogs (
     CreatedAt DATETIME2 DEFAULT GETDATE()
 );
 GO
+USE StayHub_SocialDb;
+GO
+
+-- Thêm cột Privacy với giá trị mặc định là 'Public'
+ALTER TABLE TourMoments
+ADD Privacy VARCHAR(20) DEFAULT 'Public';
+GO
+
+-- (Tùy chọn) Thêm Ràng buộc (Constraint) để dữ liệu luôn chuẩn xác
+ALTER TABLE TourMoments
+ADD CONSTRAINT CHK_MomentPrivacy CHECK (Privacy IN ('Public', 'Private', 'Friend'));
+GO
+-- Xong! Trả về database Master để hoàn tất.
+USE StayHub_SocialDb;
+GO
 
 -- Xong! Trả về database Master để hoàn tất.
 USE master;
