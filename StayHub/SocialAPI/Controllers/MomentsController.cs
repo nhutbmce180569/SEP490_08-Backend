@@ -181,4 +181,30 @@ public class MomentsController : ControllerBase
             return StatusCode(500, new { message = "An error occurred while deleting the moment.", details = ex.Message });
         }
     }
+
+    [Authorize]
+    [HttpGet("user/{targetUserId}")]
+    public async Task<IActionResult> GetUserMoments(int targetUserId)
+    {
+        try
+        {
+            // TỐI ƯU: Quét qua 3 key phổ biến nhất để bắt bằng được ID người dùng
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                              ?? User.FindFirst("sub")?.Value
+                              ?? User.FindFirst("id")?.Value;
+
+            if (!int.TryParse(userIdClaim, out int currentUserId))
+            {
+                return Unauthorized(new { message = "User ID not found in token." });
+            }
+
+            var result = await _momentService.GetUserMomentsAsync(targetUserId, currentUserId);
+
+            return Ok(new { message = "User moments retrieved successfully.", data = result });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while fetching user moments.", details = ex.Message });
+        }
+    }
 }

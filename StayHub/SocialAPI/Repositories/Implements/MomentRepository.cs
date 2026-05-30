@@ -126,4 +126,25 @@ public class MomentRepository : IMomentRepository
             .Distinct()
             .ToListAsync();
     }
+
+    public async Task<IEnumerable<TourMoment>> GetUserMomentsAsync(int targetUserId, int currentUserId, bool isFriend)
+    {
+        var query = _context.TourMoments
+            .AsNoTracking()
+            .Where(m => m.UserId == targetUserId);
+
+        if (currentUserId != targetUserId)
+        {
+            if (isFriend)
+            {
+                query = query.Where(m => m.Privacy == "Public" || m.Privacy == "Friend");
+            }
+            else
+            {
+                query = query.Where(m => m.Privacy == "Public");
+            }
+        }
+
+        return await query.OrderByDescending(m => m.CreatedAt).ToListAsync();
+    }
 }

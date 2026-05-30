@@ -28,6 +28,7 @@ namespace AuthAPI.Mappers
                 .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.AvatarUrl));
             CreateMap<User, UserProfileDto>();
             CreateMap<UpdateProfileDTO, User>();;
+            CreateMap<User, UserProfileResponseDto>();
 
         }
     }
