@@ -65,5 +65,27 @@ namespace TourAPI.Services.Implements
 
             await _scheduleRepo.DeleteAsync(schedule);
         }
+
+        public async Task<List<ItineraryLocationDto>> GetItinerariesByScheduleIdAsync(int scheduleId)
+        {
+            var schedule = await _scheduleRepo.GetByIdAsync(scheduleId);
+            if (schedule == null) 
+            {
+                throw new Exception("Tour schedule not found.");
+            }
+
+            var query = schedule.TourScheduleItineraries?.AsEnumerable() ?? Enumerable.Empty<TourScheduleItinerary>();
+            var result = query.Where(x => x.ScheduleId == scheduleId)
+                              .OrderBy(x => x.DayNumber)
+                              .ThenBy(x => x.StartDuration).ToList();
+            return _mapper.Map<List<ItineraryLocationDto>>(result);
+        }
+
+        public async Task<IEnumerable<ReadTourScheduleDTO>> GetSchedulesByIdsAsync(IEnumerable<int> scheduleIds)
+        {
+            var schedules = await _scheduleRepo.GetAllAsync();
+            var filtered = schedules.Where(s => scheduleIds.Contains(s.Id)).ToList();
+            return _mapper.Map<IEnumerable<ReadTourScheduleDTO>>(filtered);
+        }
     }
 }

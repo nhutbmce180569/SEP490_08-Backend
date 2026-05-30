@@ -503,5 +503,20 @@ namespace TourAPI.Services.Implements
         {
             return await _repository.CountByCategoryIdAsync(categoryId);
         }
+
+        public async Task<List<ItineraryLocationDto>> GetItinerariesByTourIdAsync(int tourId)
+        {
+            var tour = await _repository.GetById(tourId);
+            if (tour == null)
+            {
+                throw new Exception("Tour not found.");
+            }
+
+            var query = tour.TourItineraries?.AsEnumerable() ?? Enumerable.Empty<TourItinerary>();
+            var result = query.Where(x => x.TourId == tourId)
+                              .OrderBy(x => x.DayNumber)
+                              .ThenBy(x => x.StartDuration).ToList();
+            return _mapper.Map<List<ItineraryLocationDto>>(result);
+        }
     }
 }

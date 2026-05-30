@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+﻿﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -236,6 +236,22 @@ namespace TourAPI.Controllers
         {
             var count = await _tourService.CountToursByCategoryIdAsync(categoryId);
             return Ok(count);
+        }
+
+        // GET: api/Tours/{tourId}/itineraries
+        [AllowAnonymous]
+        [HttpGet("{tourId}/itineraries")]
+        public async Task<IActionResult> GetTourItinerariesLocation(int tourId)
+        {
+            try
+            {
+                var result = await _tourService.GetItinerariesByTourIdAsync(tourId);
+                return Ok(new { message = "Itineraries retrieved successfully.", data = result });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
         }
     }
 }

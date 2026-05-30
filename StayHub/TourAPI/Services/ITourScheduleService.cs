@@ -9,5 +9,7 @@ namespace TourAPI.Services
         Task<ReadTourScheduleDTO> CreateScheduleAsync(CreateTourScheduleDTO dto);
         Task<ReadTourScheduleDTO> UpdateScheduleAsync(int id, UpdateTourScheduleDTO dto);
         Task DeleteScheduleAsync(int id);
+        Task<List<ItineraryLocationDto>> GetItinerariesByScheduleIdAsync(int scheduleId);
+        Task<IEnumerable<ReadTourScheduleDTO>> GetSchedulesByIdsAsync(IEnumerable<int> scheduleIds);
     }
 }
