@@ -19,6 +19,8 @@ public partial class Review
 
     public DateTime? UpdatedAt { get; set; }
 
+    public bool IsHidden { get; set; }
+
     public virtual ICollection<ReviewReply> ReviewReplies { get; set; } = new List<ReviewReply>();
 
     public virtual Tour Tour { get; set; } = null!;
