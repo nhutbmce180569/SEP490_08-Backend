@@ -20,6 +20,8 @@ namespace TourAPI.DTOs
         public string? LocationName { get; set; }
         public double? LocationLat { get; set; }
         public double? LocationLng { get; set; }
+        public int? TourismInfoId { get; set; }
+
     }
 
     public abstract class BaseTourScheduleItineraryDTO
@@ -51,6 +53,8 @@ namespace TourAPI.DTOs
         public double? LocationLat { get; set; }
 
         public double? LocationLng { get; set; }
+        public int? TourismInfoId { get; set; }
+
     }
 
     public class CreateTourScheduleItineraryDTO : BaseTourScheduleItineraryDTO { }
