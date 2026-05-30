@@ -24,4 +24,5 @@ public interface IMomentRepository
     Task DeleteCommentAsync(MomentComment comment);
     Task<IEnumerable<TourMoment>> GetMomentFeedPagedAsync(int scheduleId, int currentUserId, int skip, int top);
     Task<List<FootprintDto>> GetUserFootprintsAsync(int userId);
+    Task<IEnumerable<TourMoment>> GetUserMomentsAsync(int targetUserId, int currentUserId, bool isFriend);
 }
