@@ -9,6 +9,9 @@ namespace TourAPI.Services
         Task<ReadTourScheduleTicketDTO?> GetById(int id);
         Task<ReadTourScheduleTicketDTO> Create(CreateTourScheduleTicketDTO dto);
         Task<ReadTourScheduleTicketDTO> Update(int id, UpdateTourScheduleTicketDTO dto);
-        Task Delete(int id);
+        Task<ReadTourScheduleTicketDTO> Activate(int id);
+        Task<ReadTourScheduleTicketDTO> Deactivate(int id);
+        Task<bool> Reserve(int id, int quantity);
+        Task<bool> Release(int id, int quantity);
     }
 }

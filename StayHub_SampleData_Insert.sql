@@ -364,47 +364,75 @@ USE StayHub_BookingDb;
 GO
 
 SET IDENTITY_INSERT Orders ON;
-INSERT INTO Orders (Id, CustomerId, ScheduleId, TicketCount, DiscountValue, FinalAmount, Note, Status, OrderedAt, InviteToken) VALUES
-(1, 8, 1, 2, 300000, 10680000, N'Prefer a room near the beach.', 'Paid', DATEADD(DAY, -25, GETDATE()), 'INVITE_ORDER_001'),
-(2, 9, 6, 2, 0, 8580000, N'1 vegetarian guest.', 'Paid', DATEADD(DAY, -22, GETDATE()), 'INVITE_ORDER_002'),
-(3, 10, 5, 1, 100000, 1790000, NULL, 'Completed', DATEADD(DAY, -20, GETDATE()), 'INVITE_ORDER_003'),
-(4, 11, 7, 3, 200000, 4870000, N'Traveling with a child.', 'Paid', DATEADD(DAY, -18, GETDATE()), 'INVITE_ORDER_004'),
-(5, 12, 9, 2, 0, 3980000, NULL, 'Pending', DATEADD(DAY, -16, GETDATE()), 'INVITE_ORDER_005'),
-(6, 13, 12, 2, 500000, 13480000, N'Honeymoon setup.', 'Paid', DATEADD(DAY, -15, GETDATE()), 'INVITE_ORDER_006'),
-(7, 14, 13, 1, 0, 990000, NULL, 'Completed', DATEADD(DAY, -12, GETDATE()), 'INVITE_ORDER_007'),
-(8, 15, 14, 2, 200000, 4780000, N'No spicy food.', 'Paid', DATEADD(DAY, -10, GETDATE()), 'INVITE_ORDER_008'),
-(9, 16, 3, 2, 0, 5780000, NULL, 'Cancelled', DATEADD(DAY, -9, GETDATE()), 'INVITE_ORDER_009'),
-(10, 17, 10, 2, 300000, 6880000, N'Need a twin room.', 'Paid', DATEADD(DAY, -8, GETDATE()), 'INVITE_ORDER_010'),
-(11, 8, 8, 1, 0, 4990000, NULL, 'Pending', DATEADD(DAY, -6, GETDATE()), 'INVITE_ORDER_011'),
-(12, 9, 11, 2, 0, 1580000, N'Evening food tour.', 'Paid', DATEADD(DAY, -5, GETDATE()), 'INVITE_ORDER_012'),
-(13, 10, 2, 2, 500000, 11080000, N'Family of 2.', 'Paid', DATEADD(DAY, -4, GETDATE()), 'INVITE_ORDER_013'),
-(14, 11, 15, 2, 0, 9180000, NULL, 'Pending', DATEADD(DAY, -3, GETDATE()), 'INVITE_ORDER_014'),
-(15, 12, 4, 1, 0, 3090000, N'Front seat on the bus if possible.', 'Paid', DATEADD(DAY, -2, GETDATE()), 'INVITE_ORDER_015');
+INSERT INTO Orders (Id, CustomerId, ScheduleId, TotalQuantity, DiscountValue, TotalAmount, FinalAmount, Note, Status, OrderedAt, InviteToken) VALUES
+(1, 8, 1, 2, 300000, 10980000, 10680000, N'Prefer a room near the beach.', 'Paid', DATEADD(DAY, -25, GETDATE()), 'INVITE_ORDER_001'),
+(2, 9, 6, 2, 0, 8580000, 8580000, N'1 vegetarian guest.', 'Paid', DATEADD(DAY, -22, GETDATE()), 'INVITE_ORDER_002'),
+(3, 10, 5, 1, 100000, 1890000, 1790000, NULL, 'Completed', DATEADD(DAY, -20, GETDATE()), 'INVITE_ORDER_003'),
+(4, 11, 7, 3, 200000, 4563000, 4363000, N'Traveling with a child.', 'Paid', DATEADD(DAY, -18, GETDATE()), 'INVITE_ORDER_004'),
+(5, 12, 9, 2, 0, 3980000, 3980000, NULL, 'Pending', DATEADD(DAY, -16, GETDATE()), 'INVITE_ORDER_005'),
+(6, 13, 12, 2, 500000, 13980000, 13480000, N'Honeymoon setup.', 'Paid', DATEADD(DAY, -15, GETDATE()), 'INVITE_ORDER_006'),
+(7, 14, 13, 1, 0, 990000, 990000, NULL, 'Completed', DATEADD(DAY, -12, GETDATE()), 'INVITE_ORDER_007'),
+(8, 15, 14, 2, 200000, 4980000, 4780000, N'No spicy food.', 'Paid', DATEADD(DAY, -10, GETDATE()), 'INVITE_ORDER_008'),
+(9, 16, 3, 2, 0, 5780000, 5780000, NULL, 'Cancelled', DATEADD(DAY, -9, GETDATE()), 'INVITE_ORDER_009'),
+(10, 17, 10, 2, 300000, 7180000, 6880000, N'Need a twin room.', 'Paid', DATEADD(DAY, -8, GETDATE()), 'INVITE_ORDER_010'),
+(11, 8, 8, 1, 0, 4990000, 4990000, NULL, 'Pending', DATEADD(DAY, -6, GETDATE()), 'INVITE_ORDER_011'),
+(12, 9, 11, 2, 0, 1580000, 1580000, N'Evening food tour.', 'Paid', DATEADD(DAY, -5, GETDATE()), 'INVITE_ORDER_012'),
+(13, 10, 2, 2, 500000, 11580000, 11080000, N'Family of 2.', 'Paid', DATEADD(DAY, -4, GETDATE()), 'INVITE_ORDER_013'),
+(14, 11, 15, 2, 0, 9180000, 9180000, NULL, 'Pending', DATEADD(DAY, -3, GETDATE()), 'INVITE_ORDER_014'),
+(15, 12, 4, 1, 0, 3090000, 3090000, N'Front seat on the bus if possible.', 'Paid', DATEADD(DAY, -2, GETDATE()), 'INVITE_ORDER_015');
 SET IDENTITY_INSERT Orders OFF;
 GO
 
+SET IDENTITY_INSERT OrderDetails ON;
+INSERT INTO OrderDetails (Id, OrderId, TicketTypeId, TourScheduleTicketId, Quantity, UnitPrice, TotalPrice) VALUES
+(1, 1, 1, 1, 2, 5490000, 10980000),
+(2, 2, 1, 16, 2, 4290000, 8580000),
+(3, 3, 1, 13, 1, 1890000, 1890000),
+(4, 4, 1, 19, 2, 1690000, 3380000),
+(5, 4, 2, 20, 1, 1183000, 1183000),
+(6, 5, 1, 25, 2, 1990000, 3980000),
+(7, 6, 1, 34, 2, 6990000, 13980000),
+(8, 7, 1, 37, 1, 990000, 990000),
+(9, 8, 1, 40, 2, 2490000, 4980000),
+(10, 9, 1, 7, 2, 2890000, 5780000),
+(11, 10, 1, 28, 2, 3590000, 7180000),
+(12, 11, 1, 22, 1, 4990000, 4990000),
+(13, 12, 1, 31, 2, 790000, 1580000),
+(14, 13, 1, 4, 2, 5790000, 11580000),
+(15, 14, 1, 43, 2, 4590000, 9180000),
+(16, 15, 1, 10, 1, 3090000, 3090000);
+SET IDENTITY_INSERT OrderDetails OFF;
+GO
+
 SET IDENTITY_INSERT Tickets ON;
-INSERT INTO Tickets (Id, OrderId, UserId, AttendeeName, IdCard, DateOfBirth, Gender, Nationality, QrCode, CheckInStatus) VALUES
-(1, 1, 8, N'Bui Thien An', '079201000001', '2001-03-08', 'Male', N'Vietnam', 'QR_TICKET_001', 'Pending'),
-(2, 1, NULL, N'Nguyen Minh Quan', '079200000002', '2000-08-21', 'Male', N'Vietnam', 'QR_TICKET_002', 'Pending'),
-(3, 2, 9, N'Ngo Quoc Bao', '079200000003', '2000-07-22', 'Male', N'Vietnam', 'QR_TICKET_003', 'Pending'),
-(4, 2, NULL, N'Le Thao Vy', '079200000004', '2001-12-11', 'Female', N'Vietnam', 'QR_TICKET_004', 'Pending'),
-(5, 3, 10, N'Do Ngoc Chi', '079200000005', '2002-10-15', 'Female', N'Vietnam', 'QR_TICKET_005', 'CheckedIn'),
-(6, 4, 11, N'Phan Anh Duy', '079200000006', '1999-05-30', 'Male', N'Vietnam', 'QR_TICKET_006', 'Pending'),
-(7, 4, NULL, N'Phan Minh Khang', '079200000007', '2012-02-14', 'Male', N'Vietnam', 'QR_TICKET_007', 'Pending'),
-(8, 4, NULL, N'Tran My Hanh', '079200000008', '1988-09-09', 'Female', N'Vietnam', 'QR_TICKET_008', 'Pending'),
-(9, 5, 12, N'Vo Huong Giang', '079200000009', '2001-01-19', 'Female', N'Vietnam', 'QR_TICKET_009', 'Pending'),
-(10, 5, NULL, N'Le Gia Han', '079200000010', '2001-04-22', 'Female', N'Vietnam', 'QR_TICKET_010', 'Pending'),
-(11, 6, 13, N'Nguyen Duc Huy', '079200000011', '1998-08-11', 'Male', N'Vietnam', 'QR_TICKET_011', 'Pending'),
-(12, 6, NULL, N'Mai Thanh Tu', '079200000012', '1999-11-03', 'Female', N'Vietnam', 'QR_TICKET_012', 'Pending'),
-(13, 7, 14, N'Le Khanh Lan', '079200000013', '2003-04-01', 'Female', N'Vietnam', 'QR_TICKET_013', 'CheckedIn'),
-(14, 8, 15, N'Tran Nhat Minh', '079200000014', '1997-09-17', 'Male', N'Vietnam', 'QR_TICKET_014', 'Pending'),
-(15, 8, NULL, N'Dinh Phuong Nam', '079200000015', '1996-01-01', 'Male', N'Vietnam', 'QR_TICKET_015', 'Pending'),
-(16, 9, 16, N'Hoang Yen Nhi', '079200000016', '2002-12-12', 'Female', N'Vietnam', 'QR_TICKET_016', 'Pending'),
-(17, 10, 17, N'Mai An Phuong', '079200000017', '2001-06-06', 'Female', N'Vietnam', 'QR_TICKET_017', 'Pending'),
-(18, 10, NULL, N'Ngo Tuan Kiet', '079200000018', '2000-05-09', 'Male', N'Vietnam', 'QR_TICKET_018', 'Pending'),
-(19, 12, 9, N'Ngo Quoc Bao', '079200000019', '2000-07-22', 'Male', N'Vietnam', 'QR_TICKET_019', 'Pending'),
-(20, 12, NULL, N'Vu Minh Tri', '079200000020', '2001-06-16', 'Male', N'Vietnam', 'QR_TICKET_020', 'Pending');
+INSERT INTO Tickets (Id, OrderId, OrderDetailId, UserId, TicketTypeId, AttendeeName, IdCard, DateOfBirth, Gender, Nationality, QrCode, CheckInStatus) VALUES
+(1, 1, 1, 8, 1, N'Bui Thien An', '079201000001', '2001-03-08', 'Male', N'Vietnam', 'QR_TICKET_001', 'Pending'),
+(2, 1, 1, NULL, 1, N'Nguyen Minh Quan', '079200000002', '2000-08-21', 'Male', N'Vietnam', 'QR_TICKET_002', 'Pending'),
+(3, 2, 2, 9, 1, N'Ngo Quoc Bao', '079200000003', '2000-07-22', 'Male', N'Vietnam', 'QR_TICKET_003', 'Pending'),
+(4, 2, 2, NULL, 1, N'Le Thao Vy', '079200000004', '2001-12-11', 'Female', N'Vietnam', 'QR_TICKET_004', 'Pending'),
+(5, 3, 3, 10, 1, N'Do Ngoc Chi', '079200000005', '2002-10-15', 'Female', N'Vietnam', 'QR_TICKET_005', 'CheckedIn'),
+(6, 4, 4, 11, 1, N'Phan Anh Duy', '079200000006', '1999-05-30', 'Male', N'Vietnam', 'QR_TICKET_006', 'Pending'),
+(7, 4, 5, NULL, 2, N'Phan Minh Khang', '079200000007', '2012-02-14', 'Male', N'Vietnam', 'QR_TICKET_007', 'Pending'),
+(8, 4, 4, NULL, 1, N'Tran My Hanh', '079200000008', '1988-09-09', 'Female', N'Vietnam', 'QR_TICKET_008', 'Pending'),
+(9, 5, 6, 12, 1, N'Vo Huong Giang', '079200000009', '2001-01-19', 'Female', N'Vietnam', 'QR_TICKET_009', 'Pending'),
+(10, 5, 6, NULL, 1, N'Le Gia Han', '079200000010', '2001-04-22', 'Female', N'Vietnam', 'QR_TICKET_010', 'Pending'),
+(11, 6, 7, 13, 1, N'Nguyen Duc Huy', '079200000011', '1998-08-11', 'Male', N'Vietnam', 'QR_TICKET_011', 'Pending'),
+(12, 6, 7, NULL, 1, N'Mai Thanh Tu', '079200000012', '1999-11-03', 'Female', N'Vietnam', 'QR_TICKET_012', 'Pending'),
+(13, 7, 8, 14, 1, N'Le Khanh Lan', '079200000013', '2003-04-01', 'Female', N'Vietnam', 'QR_TICKET_013', 'CheckedIn'),
+(14, 8, 9, 15, 1, N'Tran Nhat Minh', '079200000014', '1997-09-17', 'Male', N'Vietnam', 'QR_TICKET_014', 'Pending'),
+(15, 8, 9, NULL, 1, N'Dinh Phuong Nam', '079200000015', '1996-01-01', 'Male', N'Vietnam', 'QR_TICKET_015', 'Pending'),
+(16, 9, 10, 16, 1, N'Hoang Yen Nhi', '079200000016', '2002-12-12', 'Female', N'Vietnam', 'QR_TICKET_016', 'Pending'),
+(17, 9, 10, NULL, 1, N'Le Gia Bao', '079200000017', '2000-05-09', 'Male', N'Vietnam', 'QR_TICKET_017', 'Pending'),
+(18, 10, 11, 17, 1, N'Mai An Phuong', '079200000018', '2001-06-06', 'Female', N'Vietnam', 'QR_TICKET_018', 'Pending'),
+(19, 10, 11, NULL, 1, N'Ngo Tuan Kiet', '079200000019', '2000-05-09', 'Male', N'Vietnam', 'QR_TICKET_019', 'Pending'),
+(20, 11, 12, 8, 1, N'Bui Thien An', '079201000020', '2001-03-08', 'Male', N'Vietnam', 'QR_TICKET_020', 'Pending'),
+(21, 12, 13, 9, 1, N'Ngo Quoc Bao', '079200000021', '2000-07-22', 'Male', N'Vietnam', 'QR_TICKET_021', 'Pending'),
+(22, 12, 13, NULL, 1, N'Vu Minh Tri', '079200000022', '2001-06-16', 'Male', N'Vietnam', 'QR_TICKET_022', 'Pending'),
+(23, 13, 14, 10, 1, N'Do Ngoc Chi', '079200000023', '2002-10-15', 'Female', N'Vietnam', 'QR_TICKET_023', 'Pending'),
+(24, 13, 14, NULL, 1, N'Nguyen Ngoc Diep', '079200000024', '2005-02-20', 'Female', N'Vietnam', 'QR_TICKET_024', 'Pending'),
+(25, 14, 15, 11, 1, N'Phan Anh Duy', '079200000025', '1999-05-30', 'Male', N'Vietnam', 'QR_TICKET_025', 'Pending'),
+(26, 14, 15, NULL, 1, N'Pham Hoai Nam', '079200000026', '1998-11-10', 'Male', N'Vietnam', 'QR_TICKET_026', 'Pending'),
+(27, 15, 16, 12, 1, N'Vo Huong Giang', '079200000027', '2001-01-19', 'Female', N'Vietnam', 'QR_TICKET_027', 'Pending');
 SET IDENTITY_INSERT Tickets OFF;
 GO
 
@@ -415,7 +443,7 @@ INSERT INTO CancellationRequests (Id, OrderId, CustomerId, BankName, AccountNumb
 (3, 11, 8, N'Techcombank', '9988776655', N'BUI THIEN AN', DATEADD(DAY, -3, GETDATE()), 4990000, 499000, 10, 4491000, N'Work schedule changed.', 'Pending', NULL, NULL, NULL),
 (4, 14, 11, N'ACB', '6677889900', N'PHAN ANH DUY', DATEADD(DAY, -2, GETDATE()), 9180000, 918000, 10, 8262000, N'Ordered the wrong number of tickets.', 'Rejected', N'Order is unpaid, no refund request needed.', DATEADD(DAY, -1, GETDATE()), 1),
 (5, 15, 12, N'VPBank', '5566778899', N'VO HUONG GIANG', DATEADD(DAY, -1, GETDATE()), 3090000, 309000, 10, 2781000, N'Health condition is not fit for the tour.', 'Pending', NULL, NULL, NULL),
-(6, 3, 10, N'VietinBank', '1112223334', N'DO NGOC CHI', DATEADD(DAY, -15, GETDATE()), 1890000, 189000, 10, 1701000, N'Tour completed but need to correct invoice information.', 'Rejected', N'Tour is completed, not eligible for cancellation.', DATEADD(DAY, -14, GETDATE()), 1),
+(6, 3, 10, N'VietinBank', '1112223334', N'DO NGOC CHI', DATEADD(DAY, -15, GETDATE()), 1790000, 179000, 10, 1611000, N'Tour completed but need to correct invoice information.', 'Rejected', N'Tour is completed, not eligible for cancellation.', DATEADD(DAY, -14, GETDATE()), 1),
 (7, 2, 9, N'BIDV', '9990001112', N'NGO QUOC BAO', DATEADD(DAY, -4, GETDATE()), 8580000, 858000, 10, 7722000, N'Want to reschedule to next month.', 'Approved', NULL, DATEADD(DAY, -3, GETDATE()), 1),
 (8, 7, 14, N'Sacombank', '1212121212', N'LE KHANH LAN', DATEADD(DAY, -9, GETDATE()), 990000, 99000, 10, 891000, N'Accidentally created a request after taking the tour.', 'Rejected', N'Ticket already checked-in and tour completed.', DATEADD(DAY, -8, GETDATE()), 1),
 (9, 8, 15, N'TPBank', '3434343434', N'TRAN NHAT MINH', DATEADD(DAY, -2, GETDATE()), 4780000, 478000, 10, 4302000, N'One guest cannot participate.', 'Refunded', NULL, DATEADD(DAY, -1, GETDATE()), 1),
@@ -434,7 +462,7 @@ INSERT INTO Transactions (Id, OrderId, Amount, Provider, ProviderTxnId, Status) 
 (1, 1, 10680000, 'VNPay', 'VNP_202606010001', 'Success'),
 (2, 2, 8580000, 'MoMo', 'MOMO_202606010002', 'Success'),
 (3, 3, 1790000, 'PayOS', 'PAYOS_202606010003', 'Success'),
-(4, 4, 4870000, 'VNPay', 'VNP_202606010004', 'Success'),
+(4, 4, 4363000, 'VNPay', 'VNP_202606010004', 'Success'),
 (5, 5, 3980000, 'VNPay', 'VNP_202606010005', 'Pending'),
 (6, 6, 13480000, 'MoMo', 'MOMO_202606010006', 'Success'),
 (7, 7, 990000, 'PayOS', 'PAYOS_202606010007', 'Success'),

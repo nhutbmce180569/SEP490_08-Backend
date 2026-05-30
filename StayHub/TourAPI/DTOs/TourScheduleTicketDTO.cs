@@ -52,4 +52,11 @@ namespace TourAPI.DTOs
     public class CreateTourScheduleTicketDTO : BaseTourScheduleTicketDTO { }
 
     public class UpdateTourScheduleTicketDTO : BaseTourScheduleTicketDTO { }
+
+    public class UpdateTourScheduleTicketQuantityDTO
+    {
+        [Required(ErrorMessage = "Quantity is required")]
+        [Range(1, int.MaxValue, ErrorMessage = "Quantity must be greater than 0")]
+        public int Quantity { get; set; }
+    }
 }

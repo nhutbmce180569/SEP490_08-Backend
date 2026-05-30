@@ -11,7 +11,11 @@ namespace BookingAPI.DTOs
 
         public int ScheduleId { get; set; }
 
+        public int TotalQuantity { get; set; }
+
         public int TicketCount { get; set; }
+
+        public long TotalAmount { get; set; }
 
         public long? DiscountValue { get; set; }
 
@@ -27,6 +31,8 @@ namespace BookingAPI.DTOs
         public ReadOrderScheduleDTO? Schedule { get; set; }
 
         public ReadOrderTourDTO? Tour { get; set; }
+
+        public List<ReadOrderDetailDTO> OrderDetails { get; set; } = new List<ReadOrderDetailDTO>();
 
         public List<ReadTicketDTO> Tickets { get; set; } = new List<ReadTicketDTO>();
 
@@ -50,17 +56,24 @@ namespace BookingAPI.DTOs
 
         public DateTime ReturnDate { get; set; }
 
-        public long Price { get; set; }
-
-        public int MaxCapacity { get; set; }
-
-        public int SoldQuantity { get; set; }
-
-        public int AvailableSeats { get; set; }
-
         public string? Note { get; set; }
 
         public ICollection<ReadOrderScheduleItineraryDTO>? TourScheduleItineraries { get; set; }
+
+        public ICollection<ReadOrderScheduleTicketDTO>? TourScheduleTickets { get; set; }
+    }
+
+    public class ReadOrderScheduleTicketDTO
+    {
+        public int Id { get; set; }
+        public int ScheduleId { get; set; }
+        public int TicketTypeId { get; set; }
+        public long Price { get; set; }
+        public int Quantity { get; set; }
+        public int? SoldQuantity { get; set; }
+        public int AvailableQuantity { get; set; }
+        public bool? IsActive { get; set; }
+        public string? Note { get; set; }
     }
 
     public class ReadOrderScheduleItineraryDTO
@@ -122,6 +135,8 @@ namespace BookingAPI.DTOs
 
         public int ScheduleId { get; set; }
 
+        public int? TotalQuantity { get; set; }
+
         public int? TicketCount { get; set; }
 
         public long? DiscountValue { get; set; }
@@ -137,10 +152,34 @@ namespace BookingAPI.DTOs
 
     public class CreateOrderDTO : BaseOrderDTO
     {
-        [Required] public List<CreateTicketDTO> Tickets { get; set; } = new List<CreateTicketDTO>();
+        [Required] public List<CreateOrderDetailDTO> OrderDetails { get; set; } = new List<CreateOrderDetailDTO>();
     }
     public class UpdateOrderDTO : BaseOrderDTO
     {
+    }
+
+    public class CreateOrderDetailDTO
+    {
+        [Required]
+        [Range(1, int.MaxValue, ErrorMessage = "TourScheduleTicketId must be greater than 0")]
+        public int TourScheduleTicketId { get; set; }
+
+        public int? TicketTypeId { get; set; }
+
+        [Required]
+        public List<CreateTicketDTO> Tickets { get; set; } = new List<CreateTicketDTO>();
+    }
+
+    public class ReadOrderDetailDTO
+    {
+        public int Id { get; set; }
+        public int OrderId { get; set; }
+        public int TicketTypeId { get; set; }
+        public int TourScheduleTicketId { get; set; }
+        public int Quantity { get; set; }
+        public long UnitPrice { get; set; }
+        public long TotalPrice { get; set; }
+        public List<ReadTicketDTO> Tickets { get; set; } = new List<ReadTicketDTO>();
     }
 
     public class CheckBookingRequest

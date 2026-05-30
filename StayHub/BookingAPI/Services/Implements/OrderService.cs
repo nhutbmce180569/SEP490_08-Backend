@@ -47,41 +47,94 @@ namespace BookingAPI.Services.Implements
         }
         public async Task<ReadOrderDTO> CreateOrderAsync(int customerId, CreateOrderDTO request)
         {
-            if (request.Tickets == null || !request.Tickets.Any())
+            if (request.OrderDetails == null || !request.OrderDetails.Any())
             {
-                throw new BookingValidationException("At least one ticket is required.");
+                throw new BookingValidationException("At least one order detail is required.");
             }
 
-            var ticketCount = request.Tickets.Count;
-            await ValidateScheduleForBookingAsync(request.ScheduleId, ticketCount);
+            await ValidateScheduleForBookingAsync(request.ScheduleId);
+            var detailRequests = await ValidateOrderDetailsAsync(request);
 
-            var order = _mapper.Map<Order>(request);
-
-            // Thiết lập giá trị mặc định cho đơn hàng
-            order.CustomerId = customerId;
-            order.TicketCount = ticketCount;
-            order.Status = "Pending";
-            order.InviteToken = Guid.NewGuid().ToString();
-            order.OrderedAt = DateTime.Now;
-            // Thiết lập giá trị mặc định cho từng vé
-            foreach (var ticket in order.Tickets)
+            var totalQuantity = detailRequests.Sum(x => x.Quantity);
+            var totalAmount = detailRequests.Sum(x => x.TotalPrice);
+            var discountValue = request.DiscountValue ?? 0;
+            if (discountValue < 0)
             {
-                ticket.CheckInStatus = "Pending";
-                ticket.QrCode = Guid.NewGuid().ToString(); // Tạo mã QR ngẫu nhiên
+                throw new BookingValidationException("Discount value must be greater than or equal to 0.");
             }
 
-            var savedOrder = await _orderRepository.AddAsync(order);
-
-            var seatsReserved = await _tourApiClient.ReserveScheduleSeatsAsync(request.ScheduleId, ticketCount);
-            if (!seatsReserved)
+            var order = new Order
             {
-                throw new BookingValidationException("Could not reserve seats for this departure. Please try again.");
+                CustomerId = customerId,
+                ScheduleId = request.ScheduleId,
+                TotalQuantity = totalQuantity,
+                TotalAmount = totalAmount,
+                DiscountValue = discountValue,
+                FinalAmount = Math.Max(0, totalAmount - discountValue),
+                Note = request.Note,
+                Status = "Pending",
+                InviteToken = Guid.NewGuid().ToString(),
+                OrderedAt = DateTime.Now
+            };
+
+            foreach (var detailRequest in detailRequests)
+            {
+                var orderDetail = new OrderDetail
+                {
+                    TicketTypeId = detailRequest.TicketTypeId,
+                    TourScheduleTicketId = detailRequest.TourScheduleTicketId,
+                    Quantity = detailRequest.Quantity,
+                    UnitPrice = detailRequest.UnitPrice,
+                    TotalPrice = detailRequest.TotalPrice,
+                    Order = order
+                };
+
+                foreach (var ticketRequest in detailRequest.Tickets)
+                {
+                    var ticket = _mapper.Map<Ticket>(ticketRequest);
+                    ticket.TicketTypeId = detailRequest.TicketTypeId;
+                    ticket.CheckInStatus = "Pending";
+                    ticket.QrCode = Guid.NewGuid().ToString();
+                    ticket.Order = order;
+                    ticket.OrderDetail = orderDetail;
+
+                    orderDetail.Tickets.Add(ticket);
+                    order.Tickets.Add(ticket);
+                }
+
+                order.OrderDetails.Add(orderDetail);
             }
 
-            _backgroundJobService.ScheduleAutoCancelOrder(savedOrder.Id);
-            var dto = _mapper.Map<ReadOrderDTO>(savedOrder);
-            await EnrichOrderDtoAsync(dto);
-            return dto;
+            var reservedDetails = new List<ValidatedOrderDetail>();
+
+            try
+            {
+                foreach (var detailRequest in detailRequests)
+                {
+                    var reserved = await _tourApiClient.ReserveScheduleTicketAsync(
+                        detailRequest.TourScheduleTicketId,
+                        detailRequest.Quantity);
+
+                    if (!reserved)
+                    {
+                        throw new BookingValidationException("Could not reserve tickets for this departure. Please try again.");
+                    }
+
+                    reservedDetails.Add(detailRequest);
+                }
+
+                var savedOrder = await _orderRepository.AddAsync(order);
+
+                _backgroundJobService.ScheduleAutoCancelOrder(savedOrder.Id);
+                var dto = _mapper.Map<ReadOrderDTO>(savedOrder);
+                await EnrichOrderDtoAsync(dto);
+                return dto;
+            }
+            catch
+            {
+                await ReleaseReservedTicketsAsync(reservedDetails);
+                throw;
+            }
         }
 
         public async Task<ReadOrderDTO?> GetOrderByIdAsync(int id, int customerId)
@@ -175,21 +228,14 @@ namespace BookingAPI.Services.Implements
 
             if (isCancelled)
             {
-                await _tourApiClient.ReleaseScheduleSeatsAsync(order.ScheduleId, order.TicketCount);
+                await ReleaseOrderTicketsAsync(order);
             }
 
             return isCancelled;
         }
 
-        private async Task ValidateScheduleForBookingAsync(
-            int scheduleId,
-            int ticketCount)
+        private async Task ValidateScheduleForBookingAsync(int scheduleId)
         {
-            if (ticketCount <= 0)
-            {
-                throw new BookingValidationException("Ticket quantity must be at least 1.");
-            }
-
             var schedule = await _tourApiClient.GetScheduleByIdAsync(scheduleId);
             if (schedule == null)
             {
@@ -200,13 +246,101 @@ namespace BookingAPI.Services.Implements
             {
                 throw new BookingValidationException("This departure has expired and can no longer be booked.");
             }
+        }
 
-            if (schedule.AvailableSeats < ticketCount)
+        private async Task<List<ValidatedOrderDetail>> ValidateOrderDetailsAsync(CreateOrderDTO request)
+        {
+            var duplicateTicket = request.OrderDetails
+                .GroupBy(x => x.TourScheduleTicketId)
+                .FirstOrDefault(x => x.Count() > 1);
+            if (duplicateTicket != null)
             {
                 throw new BookingValidationException(
-                    schedule.AvailableSeats <= 0
-                        ? "This departure is sold out."
-                        : $"Only {schedule.AvailableSeats} seat(s) remaining for this departure.");
+                    $"TourScheduleTicketId {duplicateTicket.Key} is duplicated in this order.");
+            }
+
+            var result = new List<ValidatedOrderDetail>();
+
+            foreach (var detail in request.OrderDetails)
+            {
+                if (detail.Tickets == null || !detail.Tickets.Any())
+                {
+                    throw new BookingValidationException("Each order detail must contain at least one ticket.");
+                }
+
+                var scheduleTicket = await _tourApiClient.GetScheduleTicketByIdAsync(detail.TourScheduleTicketId);
+                if (scheduleTicket == null)
+                {
+                    throw new BookingValidationException(
+                        $"Tour schedule ticket {detail.TourScheduleTicketId} not found.");
+                }
+
+                if (scheduleTicket.ScheduleId != request.ScheduleId)
+                {
+                    throw new BookingValidationException(
+                        $"Tour schedule ticket {detail.TourScheduleTicketId} does not belong to schedule {request.ScheduleId}.");
+                }
+
+                if (!(scheduleTicket.IsActive ?? true))
+                {
+                    throw new BookingValidationException(
+                        $"Tour schedule ticket {detail.TourScheduleTicketId} is inactive.");
+                }
+
+                if (detail.TicketTypeId.HasValue && detail.TicketTypeId.Value != scheduleTicket.TicketTypeId)
+                {
+                    throw new BookingValidationException(
+                        $"TicketTypeId does not match TourScheduleTicketId {detail.TourScheduleTicketId}.");
+                }   
+
+                if (detail.Tickets.Any(ticket =>
+                    ticket.TicketTypeId.HasValue &&
+                    ticket.TicketTypeId.Value != scheduleTicket.TicketTypeId))
+                {
+                    throw new BookingValidationException(
+                        $"Ticket contains a TicketTypeId that does not match TourScheduleTicketId {detail.TourScheduleTicketId}.");
+                }
+
+                var quantity = detail.Tickets.Count;
+                if (scheduleTicket.AvailableQuantity < quantity)
+                {
+                    throw new BookingValidationException(
+                        scheduleTicket.AvailableQuantity <= 0
+                            ? "This ticket type is sold out."
+                            : $"Only {scheduleTicket.AvailableQuantity} ticket(s) remaining for this ticket type.");
+                }
+
+                result.Add(new ValidatedOrderDetail
+                {
+                    TourScheduleTicketId = scheduleTicket.Id,
+                    TicketTypeId = scheduleTicket.TicketTypeId,
+                    Quantity = quantity,
+                    UnitPrice = scheduleTicket.Price,
+                    TotalPrice = scheduleTicket.Price * quantity,
+                    Tickets = detail.Tickets
+                });
+            }
+
+            return result;
+        }
+
+        private async Task ReleaseOrderTicketsAsync(Order order)
+        {
+            foreach (var detail in order.OrderDetails)
+            {
+                await _tourApiClient.ReleaseScheduleTicketAsync(
+                    detail.TourScheduleTicketId,
+                    detail.Quantity);
+            }
+        }
+
+        private async Task ReleaseReservedTicketsAsync(IEnumerable<ValidatedOrderDetail> details)
+        {
+            foreach (var detail in details)
+            {
+                await _tourApiClient.ReleaseScheduleTicketAsync(
+                    detail.TourScheduleTicketId,
+                    detail.Quantity);
             }
         }
 
@@ -238,6 +372,5 @@ namespace BookingAPI.Services.Implements
                 }
             }
         }
-
     }
 }
