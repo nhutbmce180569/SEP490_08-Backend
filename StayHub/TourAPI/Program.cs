@@ -78,7 +78,8 @@ namespace TourAPI
             // builder.Services.AddScoped<ITourScheduleStaffRepository, TourScheduleStaffRepository>();
             builder.Services.AddScoped<ITourScheduleItineraryRepository, TourScheduleItineraryRepository>();
            // builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
-            //builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
+            builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
+            builder.Services.AddScoped<IReviewService, ReviewService>();
             //builder.Services.AddScoped<IReviewReplyService, ReviewReplyService>();
             //builder.Services.AddScoped<IReviewReplyRepository, ReviewReplyRepository>();
             builder.Services.AddScoped<IEmailService, EmailService>();

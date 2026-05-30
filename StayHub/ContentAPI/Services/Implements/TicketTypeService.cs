@@ -16,12 +16,20 @@ namespace ContentAPI.Services.Implements
             _mapper = mapper;
         }
 
-        public async Task<PaginationDTO<ReadTicketTypeDTO>> GetAllTicketTypes(int page, int pageSize)
+        public async Task<PaginationDTO<ReadTicketTypeDTO>> GetAllTicketTypes(int page, int pageSize, string? searchTerm)
         {
             page = page < 1 ? 1 : page;
             pageSize = pageSize < 1 ? 10 : pageSize;
 
             var ticketTypes = await _ticketTypeRepository.GetAllAsync();
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                ticketTypes = ticketTypes
+                    .Where(t => t.Name.Contains(searchTerm.Trim(), StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
             var total = ticketTypes.Count;
             var pagedTicketTypes = ticketTypes
                 .Skip((page - 1) * pageSize)

@@ -92,29 +92,5 @@ namespace TourAPI.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
-
-        [HttpPatch("{id}/reserve-seats")]
-        public async Task<IActionResult> ReserveSeats(int id, [FromBody] ReserveScheduleSeatsDTO dto)
-        {
-            var reserved = await _scheduleService.ReserveSeatsAsync(id, dto.Quantity);
-            if (!reserved)
-            {
-                return BadRequest(new { message = "Schedule not found or not enough available seats." });
-            }
-
-            return Ok(new { message = "Seats reserved successfully.", scheduleId = id, quantity = dto.Quantity });
-        }
-
-        [HttpPatch("{id}/release-seats")]
-        public async Task<IActionResult> ReleaseSeats(int id, [FromBody] ReleaseScheduleSeatsDTO dto)
-        {
-            var released = await _scheduleService.ReleaseSeatsAsync(id, dto.Quantity);
-            if (!released)
-            {
-                return BadRequest(new { message = "Schedule not found or invalid quantity." });
-            }
-
-            return Ok(new { message = "Seats released successfully.", scheduleId = id, quantity = dto.Quantity });
-        }
     }
 }
