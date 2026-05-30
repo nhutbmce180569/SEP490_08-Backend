@@ -9,7 +9,9 @@ namespace TourAPI.Repositories
         Task<TourScheduleTicket?> GetByIdAsync(int id);
         Task AddAsync(TourScheduleTicket entity);
         Task UpdateAsync(TourScheduleTicket entity);
-        Task DeleteAsync(TourScheduleTicket entity);
+        Task SetActiveAsync(TourScheduleTicket entity, bool isActive);
         Task<bool> ExistsByScheduleAndTicketTypeAsync(int scheduleId, int ticketTypeId, int? exceptId = null);
+        Task<bool> ReserveAsync(int id, int quantity);
+        Task<bool> ReleaseAsync(int id, int quantity);
     }
 }

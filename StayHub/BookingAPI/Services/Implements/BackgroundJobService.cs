@@ -59,10 +59,13 @@ namespace BookingAPI.Services.Implements
 
             if (cancelled)
             {
-                await _tourApiClient.ReleaseScheduleSeatsAsync(
-                    order.ScheduleId,
-                    order.TicketCount
-                );
+                foreach (var detail in order.OrderDetails)
+                {
+                    await _tourApiClient.ReleaseScheduleTicketAsync(
+                        detail.TourScheduleTicketId,
+                        detail.Quantity
+                    );
+                }
             }
         }
 
@@ -135,7 +138,9 @@ namespace BookingAPI.Services.Implements
             var locationText = WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(location) ? "N/A" : location);
             var finalAmount = $"{order.FinalAmount:N0} VND";
             var scheduleId = schedule?.Id.ToString() ?? order.ScheduleId.ToString();
-            var pricePerTicket = schedule == null ? "N/A" : $"{schedule.Price:N0} VND";
+            var priceSummary = order.OrderDetails.Count == 1
+                ? $"{order.OrderDetails.First().UnitPrice:N0} VND"
+                : $"{order.OrderDetails.Count} ticket type(s)";
             var orderDetailUrl = BuildOrderDetailUrl(order.Id);
             var safeOrderDetailUrl = WebUtility.HtmlEncode(orderDetailUrl);
             var html = new StringBuilder();
@@ -181,8 +186,8 @@ namespace BookingAPI.Services.Implements
                     <div style=""font-size:14px;color:#0f172a;font-weight:700;margin-top:4px;"">#{scheduleId}</div>
                   </td>
                   <td style=""padding:14px 16px;border-bottom:1px solid #e2e8f0;"">
-                    <div style=""font-size:12px;color:#64748b;text-transform:uppercase;"">Price per ticket</div>
-                    <div style=""font-size:14px;color:#0f172a;font-weight:700;margin-top:4px;"">{pricePerTicket}</div>
+                    <div style=""font-size:12px;color:#64748b;text-transform:uppercase;"">Ticket pricing</div>
+                    <div style=""font-size:14px;color:#0f172a;font-weight:700;margin-top:4px;"">{priceSummary}</div>
                   </td>
                 </tr>
                 <tr>
@@ -192,7 +197,7 @@ namespace BookingAPI.Services.Implements
                   </td>
                   <td style=""padding:14px 16px;"">
                     <div style=""font-size:12px;color:#64748b;text-transform:uppercase;"">Tickets / Total</div>
-                    <div style=""font-size:14px;color:#0f172a;font-weight:700;margin-top:4px;"">{order.TicketCount} ticket(s) - {finalAmount}</div>
+                    <div style=""font-size:14px;color:#0f172a;font-weight:700;margin-top:4px;"">{order.TotalQuantity} ticket(s) - {finalAmount}</div>
                   </td>
                 </tr>
               </table>

@@ -293,9 +293,10 @@ CREATE TABLE Orders (
     CustomerId INT NOT NULL, -- Logical FK -> IdentityDb.Users
     ScheduleId INT NOT NULL, -- Logical FK -> CatalogDb.TourSchedules
 
-    TicketCount INT NOT NULL,
+    TotalQuantity INT NOT NULL,
 
     DiscountValue BIGINT DEFAULT 0,
+    TotalAmount BIGINT NOT NULL,
     FinalAmount BIGINT NOT NULL,
 
     Note NVARCHAR(MAX),
@@ -309,14 +310,31 @@ CREATE TABLE Orders (
 );
 GO
 
--- =========================
--- TICKETS
--- =========================
+CREATE TABLE OrderDetails (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+
+    OrderId INT NOT NULL,
+    TicketTypeId INT NOT NULL, -- Logical FK -> ContentDb.TicketTypes
+    TourScheduleTicketId INT NOT NULL, -- Logical FK -> CatalogDb.TourScheduleTickets
+
+    Quantity INT NOT NULL,
+    UnitPrice BIGINT NOT NULL,
+    TotalPrice BIGINT NOT NULL,
+
+    CONSTRAINT FK_OrderDetails_Orders
+        FOREIGN KEY (OrderId)
+        REFERENCES Orders(Id)
+);
+GO
+
 CREATE TABLE Tickets (
     Id INT IDENTITY(1,1) PRIMARY KEY,
 
     OrderId INT NOT NULL,
+    OrderDetailId INT NOT NULL,
+
     UserId INT NULL, -- Logical FK -> IdentityDb.Users
+    TicketTypeId INT NOT NULL, -- Logical FK -> ContentDb.TicketTypes
 
     AttendeeName NVARCHAR(255) NOT NULL,
     IdCard VARCHAR(50) NOT NULL,
@@ -332,7 +350,11 @@ CREATE TABLE Tickets (
 
     CONSTRAINT FK_Tickets_Orders
         FOREIGN KEY (OrderId)
-        REFERENCES Orders(Id)
+        REFERENCES Orders(Id),
+
+    CONSTRAINT FK_Tickets_OrderDetails
+        FOREIGN KEY (OrderDetailId)
+        REFERENCES OrderDetails(Id)
 );
 GO
 

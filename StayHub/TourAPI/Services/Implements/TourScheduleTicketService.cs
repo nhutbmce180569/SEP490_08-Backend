@@ -99,12 +99,42 @@ namespace TourAPI.Services.Implements
             return _mapper.Map<ReadTourScheduleTicketDTO>(entity);
         }
 
-        public async Task Delete(int id)
+        public async Task<ReadTourScheduleTicketDTO> Activate(int id)
         {
             var entity = await _repository.GetByIdAsync(id);
             if (entity == null) throw new Exception("TourScheduleTicket not found");
 
-            await _repository.DeleteAsync(entity);
+            await _repository.SetActiveAsync(entity, true);
+            return _mapper.Map<ReadTourScheduleTicketDTO>(entity);
+        }
+
+        public async Task<ReadTourScheduleTicketDTO> Deactivate(int id)
+        {
+            var entity = await _repository.GetByIdAsync(id);
+            if (entity == null) throw new Exception("TourScheduleTicket not found");
+
+            await _repository.SetActiveAsync(entity, false);
+            return _mapper.Map<ReadTourScheduleTicketDTO>(entity);
+        }
+
+        public async Task<bool> Reserve(int id, int quantity)
+        {
+            if (quantity <= 0)
+            {
+                throw new Exception("Quantity must be greater than 0");
+            }
+
+            return await _repository.ReserveAsync(id, quantity);
+        }
+
+        public async Task<bool> Release(int id, int quantity)
+        {
+            if (quantity <= 0)
+            {
+                throw new Exception("Quantity must be greater than 0");
+            }
+
+            return await _repository.ReleaseAsync(id, quantity);
         }
 
         private async Task ValidateSchedule(int scheduleId)
