@@ -52,6 +52,7 @@ namespace TourAPI
                 cfg.AddProfile<TourScheduleItineraryProfile>();
                 cfg.AddProfile<ReviewProfile>();
                 cfg.AddProfile<ReviewReplyProfile>();
+                cfg.AddProfile<WishlistProfile>();
             });
 
             builder.Services.AddScoped<CloudinaryService>();
@@ -73,19 +74,19 @@ namespace TourAPI
             //builder.Services.AddScoped<ITourScheduleStaffService, TourScheduleStaffService>();
             builder.Services.AddScoped<ITourScheduleTicketService, TourScheduleTicketService>();
             builder.Services.AddScoped<ITourScheduleItineraryService, TourScheduleItineraryService>();
-           // builder.Services.AddScoped<IWishlistService, WishlistService>();
+            builder.Services.AddScoped<IWishlistService, WishlistService>();
             builder.Services.AddScoped<ITourRepository, TourRepository>();
             builder.Services.AddScoped<ITourItineraryRepository, TourItineraryRepository>();
             builder.Services.AddScoped<ITourScheduleRepository, TourScheduleRepository>();
             // builder.Services.AddScoped<ITourScheduleStaffRepository, TourScheduleStaffRepository>();
             builder.Services.AddScoped<ITourScheduleTicketRepository, TourScheduleTicketRepository>();
             builder.Services.AddScoped<ITourScheduleItineraryRepository, TourScheduleItineraryRepository>();
-           // builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
+            builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
             builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
+            builder.Services.AddScoped<IReviewReplyRepository, ReviewReplyRepository>();
             builder.Services.AddScoped<IReviewService, ReviewService>();
-            //builder.Services.AddScoped<IReviewReplyService, ReviewReplyService>();
-            //builder.Services.AddScoped<IReviewReplyRepository, ReviewReplyRepository>();
             builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddHttpClient<INotificationInternalService, NotificationInternalService>();
             //builder.Services.AddHttpClient<IReviewService, ReviewService>(client =>
             //{
             //    client.Timeout = TimeSpan.FromSeconds(10);

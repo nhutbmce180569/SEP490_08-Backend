@@ -103,12 +103,14 @@ namespace ContentAPI
             builder.Services.AddScoped<IBannerRepository, BannerRepository>();
             builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
             builder.Services.AddScoped<ITicketTypeRepository, TicketTypeRepository>();
+            builder.Services.AddScoped<ITourismInformationRepository, TourismInformationRepository>();
 
             //Service
             builder.Services.AddScoped<IBannerService, BannerService>();
             builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
             builder.Services.AddScoped<ICategoryService, CategoryService>();
             builder.Services.AddScoped<ITicketTypeService, TicketTypeService>();
+            builder.Services.AddScoped<ITourismInformationService, TourismInformationService>();
 
             var app = builder.Build();
 

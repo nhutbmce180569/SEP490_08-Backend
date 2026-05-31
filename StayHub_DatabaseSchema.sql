@@ -245,7 +245,8 @@ CREATE TABLE TourScheduleTickets (
 CREATE TABLE Wishlists (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     CustomerId INT NOT NULL, -- Logical FK -> IdentityDb.Users
-    TourId INT NOT NULL FOREIGN KEY REFERENCES Tours(Id)
+    TourId INT NOT NULL FOREIGN KEY REFERENCES Tours(Id),
+    CONSTRAINT UQ_Wishlists_Customer_Tour UNIQUE (CustomerId, TourId)
 );
 
 CREATE TABLE Reviews (
@@ -255,8 +256,8 @@ CREATE TABLE Reviews (
     Rating INT CHECK (Rating >= 1 AND Rating <= 5),
     Comment NVARCHAR(MAX),
     CreatedAt DATETIME2 DEFAULT GETUTCDATE(),
-    UpdatedAt DATETIME2 NULL
-
+    UpdatedAt DATETIME2 NULL,
+    IsHidden BIT NOT NULL DEFAULT 0
 );
 CREATE TABLE ReviewReplies (
     Id INT IDENTITY(1,1) PRIMARY KEY,
@@ -296,6 +297,7 @@ CREATE TABLE Orders (
     TotalQuantity INT NOT NULL,
 
     DiscountValue BIGINT DEFAULT 0,
+    VoucherCode VARCHAR(50) NULL,
     TotalAmount BIGINT NOT NULL,
     FinalAmount BIGINT NOT NULL,
 
@@ -426,12 +428,14 @@ CREATE TABLE Vouchers (
     TourId INT NULL, -- Logical FK -> CatalogDb.Tours (Null = All Tours)
     DiscountType VARCHAR(50) NOT NULL, -- Percent, Amount
     DiscountValue BIGINT NOT NULL, -- CHUYỂN SANG BIGINT (Giữ % dưới dạng số nguyên hoặc số tiền trực tiếp)
+    MaxDiscountAmount BIGINT NULL, -- Chỉ áp dụng khi DiscountType = Percent (trần tiền giảm tối đa)
     UsedCount INT DEFAULT 0,
     AvailableCount INT NOT NULL,
     StartDate DATETIME2 NOT NULL,
     EndDate DATETIME2 NOT NULL,
     Description NVARCHAR(MAX),
-    CreatorId INT NOT NULL -- Logical FK -> IdentityDb.Users (System Admin / Operator)
+    CreatorId INT NOT NULL, -- Logical FK -> IdentityDb.Users (System Admin / Operator)
+    IsActive BIT DEFAULT 1
 );
 
 CREATE TABLE UserVouchers (

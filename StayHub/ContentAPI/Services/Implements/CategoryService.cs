@@ -87,7 +87,7 @@ namespace ContentAPI.Services.Implements
 
             if (dto.IconFile != null && dto.IconFile.Length > 0)
             {
-                var uploadResult = await _cloudinaryService.UploadImageAsync(dto.IconFile);
+                var uploadResult = await _cloudinaryService.UploadImageAsync(dto.IconFile, "StayHub_Categories");
                 if (uploadResult.Error == null)
                 {
                     iconUrl = uploadResult.SecureUrl.ToString();
@@ -122,7 +122,7 @@ namespace ContentAPI.Services.Implements
                 }
 
                 // Upload icon mới
-                var uploadResult = await _cloudinaryService.UploadImageAsync(dto.IconFile);
+                var uploadResult = await _cloudinaryService.UploadImageAsync(dto.IconFile, "StayHub_Categories");
                 if (uploadResult.Error == null)
                 {
                     existingCategory.IconUrl = uploadResult.SecureUrl.ToString();

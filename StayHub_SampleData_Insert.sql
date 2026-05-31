@@ -326,19 +326,29 @@ SET IDENTITY_INSERT Wishlists OFF;
 GO
 
 SET IDENTITY_INSERT Reviews ON;
-INSERT INTO Reviews (Id, CustomerId, TourId, Rating, Comment, CreatedAt, UpdatedAt) VALUES
-(1, 8, 1, 5, N'Phu Quoc is very beautiful, the guide is enthusiastic, and the schedule is well-paced.', DATEADD(DAY, -20, GETUTCDATE()), NULL),
-(2, 9, 4, 5, N'The Ha Long cruise is premium, food is good, and rooms are clean.', DATEADD(DAY, -18, GETUTCDATE()), NULL),
-(3, 10, 3, 4, N'Hoi An is beautiful but the time was a bit short.', DATEADD(DAY, -15, GETUTCDATE()), NULL),
-(4, 11, 5, 5, N'The floating market is fun, a true Mekong Delta experience.', DATEADD(DAY, -14, GETUTCDATE()), NULL),
-(5, 12, 7, 4, N'Trang An is worth visiting, but Mua Cave was a bit crowded.', DATEADD(DAY, -13, GETUTCDATE()), NULL),
-(6, 13, 10, 5, N'The Cam Ranh resort is beautiful, great for relaxing.', DATEADD(DAY, -12, GETUTCDATE()), NULL),
-(7, 14, 11, 5, N'Hanoi photo walk is very chill, the guide knows great angles.', DATEADD(DAY, -11, GETUTCDATE()), NULL),
-(8, 15, 12, 4, N'Nha Trang beach is nice, seafood is decent.', DATEADD(DAY, -10, GETUTCDATE()), NULL),
-(9, 16, 2, 5, N'Da Lat cloud hunting is stunning, worth the money.', DATEADD(DAY, -9, GETUTCDATE()), NULL),
-(10, 17, 8, 4, N'Ba Na is beautiful, the schedule is a bit tight but fun.', DATEADD(DAY, -8, GETUTCDATE()), NULL),
-(11, 8, 6, 5, N'Sapa trekking is tiring but the scenery is extremely beautiful.', DATEADD(DAY, -7, GETUTCDATE()), NULL),
-(12, 9, 9, 4, N'Food tour was delicious, should add more dishes.', DATEADD(DAY, -6, GETUTCDATE()), NULL);
+INSERT INTO Reviews (
+    Id,
+    CustomerId,
+    TourId,
+    Rating,
+    Comment,
+    IsHidden,
+    CreatedAt,
+    UpdatedAt
+) VALUES
+(1, 8, 1, 5, N'Phu Quoc is very beautiful, the guide is enthusiastic, and the schedule is well-paced.', 0, DATEADD(DAY, -20, GETUTCDATE()), NULL),
+(2, 9, 4, 5, N'The Ha Long cruise is premium, food is good, and rooms are clean.', 0, DATEADD(DAY, -18, GETUTCDATE()), NULL),
+(3, 10, 3, 4, N'Hoi An is beautiful but the time was a bit short.', 0, DATEADD(DAY, -15, GETUTCDATE()), NULL),
+(4, 11, 5, 5, N'The floating market is fun, a true Mekong Delta experience.', 0, DATEADD(DAY, -14, GETUTCDATE()), NULL),
+(5, 12, 7, 4, N'Trang An is worth visiting, but Mua Cave was a bit crowded.', 0, DATEADD(DAY, -13, GETUTCDATE()), NULL),
+(6, 13, 10, 5, N'The Cam Ranh resort is beautiful, great for relaxing.', 0, DATEADD(DAY, -12, GETUTCDATE()), NULL),
+(7, 14, 11, 5, N'Hanoi photo walk is very chill, the guide knows great angles.', 0, DATEADD(DAY, -11, GETUTCDATE()), NULL),
+(8, 15, 12, 4, N'Nha Trang beach is nice, seafood is decent.', 0, DATEADD(DAY, -10, GETUTCDATE()), NULL),
+(9, 16, 2, 5, N'Da Lat cloud hunting is stunning, worth the money.', 0, DATEADD(DAY, -9, GETUTCDATE()), NULL),
+(10, 17, 8, 4, N'Ba Na is beautiful, the schedule is a bit tight but fun.', 0, DATEADD(DAY, -8, GETUTCDATE()), NULL),
+(11, 8, 6, 5, N'Sapa trekking is tiring but the scenery is extremely beautiful.', 0, DATEADD(DAY, -7, GETUTCDATE()), NULL),
+(12, 9, 9, 4, N'Food tour was delicious, should add more dishes.', 0, DATEADD(DAY, -6, GETUTCDATE()), NULL);
+
 SET IDENTITY_INSERT Reviews OFF;
 GO
 
@@ -484,19 +494,19 @@ USE StayHub_VoucherDb;
 GO
 
 SET IDENTITY_INSERT Vouchers ON;
-INSERT INTO Vouchers (Id, Code, TourId, DiscountType, DiscountValue, UsedCount, AvailableCount, StartDate, EndDate, Description, CreatorId) VALUES
-(1, 'WELCOME100', NULL, 'Amount', 100000, 25, 500, '2026-01-01', '2026-12-31', N'Discount 100k for new customers.', 1),
-(2, 'PHUQUOC300', 1, 'Amount', 300000, 8, 100, '2026-05-01', '2026-08-31', N'Phu Quoc summer tour offer.', 2),
-(3, 'DALAT10', 2, 'Percent', 10, 12, 80, '2026-05-01', '2026-07-31', N'10% off Da Lat tour.', 2),
-(4, 'HOIAN100', 3, 'Amount', 100000, 4, 60, '2026-05-15', '2026-09-30', N'Hoi An weekend offer.', 3),
-(5, 'HALONGVIP', 4, 'Amount', 500000, 6, 40, '2026-05-01', '2026-10-31', N'Discount on Ha Long cruise.', 3),
-(6, 'MEKONGFUN', 5, 'Amount', 200000, 10, 120, '2026-05-01', '2026-12-31', N'Mekong Delta offer.', 2),
-(7, 'SAPA15', 6, 'Percent', 15, 3, 50, '2026-06-01', '2026-09-30', N'Discount on Sapa trekking tour.', 2),
-(8, 'DANANG300', 8, 'Amount', 300000, 8, 100, '2026-06-01', '2026-08-31', N'Da Nang summer combo.', 3),
-(9, 'FOODIE50', 9, 'Amount', 50000, 20, 200, '2026-01-01', '2026-12-31', N'Food tour discount.', 1),
-(10, 'HONEYMOON500', 10, 'Amount', 500000, 2, 30, '2026-06-01', '2026-12-31', N'Honeymoon offer.', 1),
-(11, 'PHOTO99', 11, 'Amount', 99000, 6, 100, '2026-05-01', '2026-12-31', N'Photo walk offer.', 2),
-(12, 'ISLAND200', 12, 'Amount', 200000, 5, 70, '2026-05-01', '2026-09-30', N'Island hopping offer.', 3);
+INSERT INTO Vouchers (Id, Code, TourId, DiscountType, DiscountValue, MaxDiscountAmount, UsedCount, AvailableCount, StartDate, EndDate, Description, CreatorId, IsActive) VALUES
+(1, 'WELCOME100', NULL, 'Amount', 100000, NULL, 25, 500, '2026-01-01', '2026-12-31', N'Discount 100k for new customers.', 1, 1),
+(2, 'PHUQUOC300', 1, 'Amount', 300000, NULL, 8, 100, '2026-05-01', '2026-08-31', N'Phu Quoc summer tour offer.', 2, 1),
+(3, 'DALAT10', 2, 'Percent', 10, 500000, 12, 80, '2026-05-01', '2026-07-31', N'10% off Da Lat tour, max 500k.', 2, 1),
+(4, 'HOIAN100', 3, 'Amount', 100000, NULL, 4, 60, '2026-05-15', '2026-09-30', N'Hoi An weekend offer.', 3, 1),
+(5, 'HALONGVIP', 4, 'Amount', 500000, NULL, 6, 40, '2026-05-01', '2026-10-31', N'Discount on Ha Long cruise.', 3, 1),
+(6, 'MEKONGFUN', 5, 'Amount', 200000, NULL, 10, 120, '2026-05-01', '2026-12-31', N'Mekong Delta offer.', 2, 1),
+(7, 'SAPA15', 6, 'Percent', 15, 1000000, 3, 50, '2026-06-01', '2026-09-30', N'15% off Sapa tour, max 1M.', 2, 1),
+(8, 'DANANG300', 8, 'Amount', 300000, NULL, 8, 100, '2026-06-01', '2026-08-31', N'Da Nang summer combo.', 3, 1),
+(9, 'FOODIE50', 9, 'Amount', 50000, NULL, 20, 200, '2026-01-01', '2026-12-31', N'Food tour discount.', 1, 1),
+(10, 'HONEYMOON500', 10, 'Amount', 500000, NULL, 2, 30, '2026-06-01', '2026-12-31', N'Honeymoon offer.', 1, 1),
+(11, 'PHOTO99', 11, 'Amount', 99000, NULL, 6, 100, '2026-05-01', '2026-12-31', N'Photo walk offer.', 2, 1),
+(12, 'ISLAND200', 12, 'Amount', 200000, NULL, 5, 70, '2026-05-01', '2026-09-30', N'Island hopping offer.', 3, 1);
 SET IDENTITY_INSERT Vouchers OFF;
 GO
 
