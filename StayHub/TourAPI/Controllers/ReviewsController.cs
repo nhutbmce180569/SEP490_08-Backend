@@ -97,14 +97,94 @@ namespace TourAPI.Controllers
             }
         }
 
+        // 1. API DÀNH CHO KHÁCH (Không cần đăng nhập, tự động giấu review bị ẩn)
         [AllowAnonymous]
         [HttpGet("tour/{tourId}")]
         public async Task<IActionResult> GetReviewsByTour(int tourId)
         {
             try
             {
-                var result = await _reviewService.GetReviewsByTourAsync(tourId);
+                var result = await _reviewService.GetReviewsByTourAsync(tourId, includeHidden: false);
                 return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Manager,Staff")]
+        [HttpGet("tour/{tourId}/admin")]
+        public async Task<IActionResult> GetReviewsByTourAdmin(int tourId)
+        {
+            try
+            {
+                var result = await _reviewService.GetReviewsByTourAsync(tourId, includeHidden: true);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Manager,Staff")]
+        [HttpPost("{reviewId}/replies")]
+        public async Task<IActionResult> CreateReviewReply(int reviewId, [FromBody] CreateReviewReplyDTO request)
+        {
+            try
+            {
+                var currentUserId = GetCurrentUserId();
+                request.ReviewId = reviewId;
+                var result = await _reviewService.CreateReviewReplyAsync(currentUserId, request);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Manager,Staff")]
+        [HttpPut("replies/{replyId}")]
+        public async Task<IActionResult> UpdateReviewReply(int replyId, [FromBody] UpdateReviewReplyDTO request)
+        {
+            try
+            {
+                var currentUserId = GetCurrentUserId();
+                var result = await _reviewService.UpdateReviewReplyAsync(replyId, currentUserId, request);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Manager,Staff")]
+        [HttpDelete("replies/{replyId}")]
+        public async Task<IActionResult> DeleteReviewReply(int replyId)
+        {
+            try
+            {
+                var currentUserId = GetCurrentUserId();
+                await _reviewService.DeleteReviewReplyAsync(replyId, currentUserId);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [Authorize(Roles = "Manager,Staff")]
+        [HttpPatch("{id}/hide")]
+        public async Task<IActionResult> HideReview(int id, [FromQuery] bool hidden = true)
+        {
+            try
+            {
+                await _reviewService.HideReviewAsync(id, hidden);
+                return NoContent();
             }
             catch (Exception ex)
             {

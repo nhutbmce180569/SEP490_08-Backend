@@ -9,12 +9,12 @@ namespace TourAPI.DTOs
         public int Id { get; set; }
         public int CustomerId { get; set; }
         public int TourId { get; set; }
-
         public string? TourName { get; set; }
         public string? CustomerName { get; set; }
         public string? CustomerAvatar { get; set; }
         public int? Rating { get; set; }
         public string? Comment { get; set; }
+        public bool IsHidden { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public ICollection<ReadReviewReplyDTO>? Replies { get; set; }

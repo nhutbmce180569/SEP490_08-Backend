@@ -6,6 +6,7 @@ using BookingAPI.Repositories;
 using BookingAPI.Services;
 using System;
 using System.Linq;
+using System.Net.Http;
 
 namespace BookingAPI.Services.Implements
 {
@@ -14,16 +15,19 @@ namespace BookingAPI.Services.Implements
         private readonly IOrderRepository _orderRepository;
         private readonly IMapper _mapper;
         private readonly ITourApiClient _tourApiClient;
+        private readonly IVoucherApiClient _voucherApiClient;
         private readonly IBackgroundJobService _backgroundJobService;
         public OrderService(
          IOrderRepository orderRepository,
          IMapper mapper,
          ITourApiClient tourApiClient,
+         IVoucherApiClient voucherApiClient,
          IBackgroundJobService backgroundJobService)
         {
             _orderRepository = orderRepository;
             _mapper = mapper;
             _tourApiClient = tourApiClient;
+            _voucherApiClient = voucherApiClient;
             _backgroundJobService = backgroundJobService;
         }
 
@@ -57,10 +61,40 @@ namespace BookingAPI.Services.Implements
 
             var totalQuantity = detailRequests.Sum(x => x.Quantity);
             var totalAmount = detailRequests.Sum(x => x.TotalPrice);
-            var discountValue = request.DiscountValue ?? 0;
-            if (discountValue < 0)
+
+            var hasVoucherCode = !string.IsNullOrWhiteSpace(request.VoucherCode);
+            if (!hasVoucherCode && request.DiscountValue.HasValue && request.DiscountValue.Value > 0)
             {
-                throw new BookingValidationException("Discount value must be greater than or equal to 0.");
+                throw new BookingValidationException("Discount without voucher is not allowed. Provide VoucherCode.");
+            }
+
+            var schedule = await _tourApiClient.GetScheduleByIdAsync(request.ScheduleId);
+            var tourId = schedule?.TourId;
+
+            long discountValue = 0;
+            string? voucherCode = null;
+            var voucherRedeemed = false;
+
+            if (hasVoucherCode)
+            {
+                voucherCode = request.VoucherCode.Trim().ToUpperInvariant();
+                try
+                {
+                    var redeemResult = await _voucherApiClient.RedeemVoucherAsync(new ApplyVoucherRequest
+                    {
+                        Code = voucherCode,
+                        TourId = tourId,
+                        BillAmount = totalAmount
+                    });
+
+                    discountValue = redeemResult.DiscountAmount;
+                    voucherCode = redeemResult.Code;
+                    voucherRedeemed = true;
+                }
+                catch (Exception ex) when (ex is InvalidOperationException or HttpRequestException)
+                {
+                    throw new BookingValidationException(ex.Message);
+                }
             }
 
             var order = new Order
@@ -70,6 +104,7 @@ namespace BookingAPI.Services.Implements
                 TotalQuantity = totalQuantity,
                 TotalAmount = totalAmount,
                 DiscountValue = discountValue,
+                VoucherCode = voucherCode,
                 FinalAmount = Math.Max(0, totalAmount - discountValue),
                 Note = request.Note,
                 Status = "Pending",
@@ -133,6 +168,19 @@ namespace BookingAPI.Services.Implements
             catch
             {
                 await ReleaseReservedTicketsAsync(reservedDetails);
+
+                if (voucherRedeemed && !string.IsNullOrWhiteSpace(voucherCode))
+                {
+                    try
+                    {
+                        await _voucherApiClient.RestoreVoucherAsync(customerId, voucherCode);
+                    }
+                    catch
+                    {
+                        // Best-effort rollback; order creation already failed.
+                    }
+                }
+
                 throw;
             }
         }
@@ -229,9 +277,32 @@ namespace BookingAPI.Services.Implements
             if (isCancelled)
             {
                 await ReleaseOrderTicketsAsync(order);
+                await RestoreOrderVoucherAsync(order);
             }
 
             return isCancelled;
+        }
+
+        private async Task RestoreOrderVoucherAsync(Order order)
+        {
+            if (string.IsNullOrWhiteSpace(order.VoucherCode))
+            {
+                return;
+            }
+
+            if (order.Status != "Pending")
+            {
+                return;
+            }
+
+            try
+            {
+                await _voucherApiClient.RestoreVoucherAsync(order.CustomerId, order.VoucherCode);
+            }
+            catch
+            {
+                // Logged by caller context; cancellation should still succeed.
+            }
         }
 
         private async Task ValidateScheduleForBookingAsync(int scheduleId)

@@ -23,6 +23,12 @@ namespace ContentAPI.Mappers
             CreateMap<TicketType, ReadTicketTypeDTO>();
             CreateMap<CreateTicketTypeDTO, TicketType>();
             CreateMap<UpdateTicketTypeDTO, TicketType>();
+
+            CreateMap<TourismInformation, ReadTourismInformationDTO>();
+            CreateMap<CreateTourismInformationDTO, TourismInformation>()
+                .ForMember(dest => dest.ImageUrl, opt => opt.Ignore());
+            CreateMap<UpdateTourismInformationDTO, TourismInformation>()
+                .ForMember(dest => dest.ImageUrl, opt => opt.Ignore());
         }
     }
 }

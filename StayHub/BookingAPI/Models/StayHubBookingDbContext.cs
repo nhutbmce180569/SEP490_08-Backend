@@ -58,6 +58,9 @@ public partial class StayHubBookingDbContext : DbContext
             entity.HasIndex(e => e.InviteToken, "UQ__Orders__AB479560AAAFDD9F").IsUnique();
 
             entity.Property(e => e.DiscountValue).HasDefaultValue(0L);
+            entity.Property(e => e.VoucherCode)
+                .HasMaxLength(50)
+                .IsUnicode(false);
             entity.Property(e => e.InviteToken)
                 .HasMaxLength(255)
                 .IsUnicode(false);

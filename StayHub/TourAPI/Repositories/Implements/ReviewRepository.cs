@@ -34,21 +34,29 @@ namespace TourAPI.Repositories.Implements
                 .FirstOrDefaultAsync(r => r.TourId == tourId && r.CustomerId == customerId);
         }
 
-        public async Task<List<Review>> GetByCustomerAsync(int customerId)
+        public async Task<List<Review>> GetByCustomerAsync(int customerId, bool includeHidden = true)
         {
-            return await _context.Reviews
+            var query = _context.Reviews
                 .Include(r => r.Tour)
                 .Include(r => r.ReviewReplies)
-                .Where(r => r.CustomerId == customerId)
-                .ToListAsync();
+                .Where(r => r.CustomerId == customerId);
+
+            if (!includeHidden)
+                query = query.Where(r => !r.IsHidden);
+
+            return await query.ToListAsync();
         }
 
-        public async Task<List<Review>> GetByTourAsync(int tourId)
+        public async Task<List<Review>> GetByTourAsync(int tourId, bool includeHidden = false)
         {
-            return await _context.Reviews
+            var query = _context.Reviews
                 .Include(r => r.ReviewReplies)
-                .Where(r => r.TourId == tourId)
-                .ToListAsync();
+                .Where(r => r.TourId == tourId);
+
+            if (!includeHidden)
+                query = query.Where(r => !r.IsHidden);
+
+            return await query.ToListAsync();
         }
 
         public void Update(Review review)
