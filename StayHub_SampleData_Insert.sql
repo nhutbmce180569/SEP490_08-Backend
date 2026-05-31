@@ -721,6 +721,23 @@ INSERT INTO AILogs (Id, UserId, Budget, Days, ResultIds, CreatedAt) VALUES
 SET IDENTITY_INSERT AILogs OFF;
 GO
 
+SET IDENTITY_INSERT UserTourInteractions ON;
+INSERT INTO UserTourInteractions (Id, CustomerId, TourId, InteractionType, Weight, SessionId, CreatedAt) VALUES
+(1, 8, 1, 'view', 1, 'seed-session-001', DATEADD(DAY, -5, GETUTCDATE())),
+(2, 8, 1, 'click', 1.5, 'seed-session-001', DATEADD(DAY, -5, GETUTCDATE())),
+(3, 8, 12, 'wishlist', 4, 'seed-session-001', DATEADD(DAY, -4, GETUTCDATE())),
+(4, 9, 4, 'booking', 5, 'seed-session-002', DATEADD(DAY, -3, GETUTCDATE())),
+(5, 10, 3, 'chat_recommend', 2, 'seed-session-003', DATEADD(DAY, -2, GETUTCDATE())),
+(6, NULL, 7, 'view', 1, 'anon-session-004', DATEADD(DAY, -1, GETUTCDATE()));
+SET IDENTITY_INSERT UserTourInteractions OFF;
+GO
+
+SET IDENTITY_INSERT ModelTrainingRuns ON;
+INSERT INTO ModelTrainingRuns (Id, ModelName, Status, TourCount, TourismCount, InteractionCount, IntentAccuracy, Message, StartedAt, CompletedAt) VALUES
+(1, 'tour_assistant_bundle', 'Completed', 12, 18, 6, 0.92, N'Initial seed training run.', DATEADD(HOUR, -2, GETUTCDATE()), DATEADD(HOUR, -2, GETUTCDATE()));
+SET IDENTITY_INSERT ModelTrainingRuns OFF;
+GO
+
 USE master;
 GO
 PRINT '=======================================================';

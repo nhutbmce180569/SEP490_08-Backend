@@ -576,6 +576,34 @@ CREATE TABLE AILogs (
     ResultIds VARCHAR(MAX), -- Lưu danh sách ID Tour dạng chuỗi "1,5,12"
     CreatedAt DATETIME2 DEFAULT GETDATE()
 );
+
+-- Bảng ghi tín hiệu tương tác để huấn luyện / cá nhân hóa gợi ý tour (ML.NET)
+CREATE TABLE UserTourInteractions (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    CustomerId INT NULL, -- Logical FK -> IdentityDb.Users (NULL = anonymous session)
+    TourId INT NOT NULL, -- Logical FK -> CatalogDb.Tours
+    InteractionType VARCHAR(50) NOT NULL, -- view | click | wishlist | booking | chat_recommend
+    Weight FLOAT NOT NULL DEFAULT 1,
+    SessionId VARCHAR(64) NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+);
+
+CREATE INDEX IX_UserTourInteractions_Customer_Tour_Type
+    ON UserTourInteractions (CustomerId, TourId, InteractionType);
+
+-- Lịch sử huấn luyện model ML nội bộ
+CREATE TABLE ModelTrainingRuns (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    ModelName VARCHAR(100) NOT NULL,
+    Status VARCHAR(30) NOT NULL, -- Running | Completed | Failed
+    TourCount INT NOT NULL DEFAULT 0,
+    TourismCount INT NOT NULL DEFAULT 0,
+    InteractionCount INT NOT NULL DEFAULT 0,
+    IntentAccuracy FLOAT NULL,
+    Message NVARCHAR(MAX) NULL,
+    StartedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    CompletedAt DATETIME2 NULL
+);
 GO
 USE StayHub_SocialDb;
 GO
