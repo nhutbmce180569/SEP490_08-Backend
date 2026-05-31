@@ -95,6 +95,7 @@ namespace TourAPI.Controllers
 
 
         // GET: api/Tours
+        [AllowAnonymous]
         [HttpGet("public")]
         public async Task<ActionResult> GetPublicTours(int page = 1, int pageSize = 10)
         {
