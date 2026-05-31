@@ -22,5 +22,6 @@ namespace BookingAPI.Repositories
         Task<bool> UpdateStatusAsync(int orderId, string status);
         Task<int> GetPendingTicketCountByScheduleAsync(int scheduleId, int? excludeOrderId = null);
         Task<bool> CancelOrderWithTicketsAsync(int orderId);
+        Task<List<int>> GetEligibleScheduleIdsByUserIdAsync(int userId);
     }
 }

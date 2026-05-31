@@ -117,8 +117,8 @@ namespace SocialAPI
                         // Lấy path của request
                         var path = context.HttpContext.Request.Path;
 
-                        // Nếu có token và request đang gọi vào Hub của bạn
-                        if (!string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/hubs/friendship") || path.StartsWithSegments("/hubs/chat")))
+                        // 🚨 FIX LỖI: Chỉ cần check bắt đầu bằng "/hubs" là nhận hết mọi Hub
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
                         {
                             // Gắn token vào context để hệ thống xác thực
                             context.Token = accessToken;

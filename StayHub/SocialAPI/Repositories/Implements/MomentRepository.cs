@@ -24,41 +24,57 @@ public class MomentRepository : IMomentRepository
         return moment;
     }
 
-    public async Task<IEnumerable<TourMoment>> GetMomentsByScheduleIdAsync(int scheduleId, int currentUserId)
+    // Đã sửa int thành int? để khớp với Interface
+    public async Task<IEnumerable<TourMoment>> GetMomentsByScheduleIdAsync(int? scheduleId, int currentUserId)
     {
-        return await _context.TourMoments
+        var query = _context.TourMoments
             .AsNoTracking()
-            // Prevent Cartesian explosion for multiple includes
             .AsSplitQuery()
             .Include(m => m.MomentComments)
             .Include(m => m.MomentReactions)
-            .Where(m => m.ScheduleId == scheduleId &&
-                        (m.UserId == currentUserId ||
-                         m.Privacy == "Public" ||
-                         (m.Privacy == "Friend" && _context.Friendships.Any(f => f.Status == "Accepted" &&
-                             ((f.RequesterId == currentUserId && f.ReceiverId == m.UserId) ||
-                              (f.ReceiverId == currentUserId && f.RequesterId == m.UserId))))))
+            .AsQueryable();
+
+        if (scheduleId.HasValue && scheduleId.Value > 0)
+        {
+            query = query.Where(m => m.ScheduleId == scheduleId.Value);
+        }
+
+        query = query.Where(m => m.UserId == currentUserId ||
+                     m.Privacy == "Public" ||
+                     (m.Privacy == "Friend" && _context.Friendships.Any(f => f.Status == "Accepted" &&
+                         ((f.RequesterId == currentUserId && f.ReceiverId == m.UserId) ||
+                          (f.ReceiverId == currentUserId && f.RequesterId == m.UserId)))));
+
+        return await query
             .OrderByDescending(m => m.CreatedAt)
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<TourMoment>> GetMomentFeedPagedAsync(int scheduleId, int currentUserId, int skip, int top)
+    public async Task<IEnumerable<TourMoment>> GetMomentFeedPagedAsync(int? scheduleId, int currentUserId, int skip, int top)
     {
-        return await _context.TourMoments
+        var query = _context.TourMoments
             .AsNoTracking()
-            // Prevent Cartesian explosion for multiple includes
             .AsSplitQuery()
             .Include(m => m.MomentComments)
             .Include(m => m.MomentReactions)
-            .Where(m => m.ScheduleId == scheduleId &&
-                        (m.UserId == currentUserId ||
-                         m.Privacy == "Public" ||
-                         (m.Privacy == "Friend" && _context.Friendships.Any(f => f.Status == "Accepted" &&
-                             ((f.RequesterId == currentUserId && f.ReceiverId == m.UserId) ||
-                              (f.ReceiverId == currentUserId && f.RequesterId == m.UserId))))))
+            .AsQueryable();
+
+        if (scheduleId.HasValue && scheduleId.Value > 0)
+        {
+            query = query.Where(m => m.ScheduleId == scheduleId.Value);
+        }
+
+        query = query.Where(m =>
+            m.UserId == currentUserId ||
+            m.Privacy == "Public" ||
+            (m.Privacy == "Friend" && _context.Friendships.Any(f => f.Status == "Accepted" &&
+                ((f.RequesterId == currentUserId && f.ReceiverId == m.UserId) ||
+                 (f.ReceiverId == currentUserId && f.RequesterId == m.UserId)))));
+
+        return await query
             .OrderByDescending(m => m.CreatedAt)
-            .Skip(skip) 
-            .Take(top)  
+            .Skip(skip)
+            .Take(top)
             .ToListAsync();
     }
     public IQueryable<TourMoment> GetMomentsAsQueryable()
