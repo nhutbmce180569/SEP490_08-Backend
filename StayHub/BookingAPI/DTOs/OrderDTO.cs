@@ -173,6 +173,9 @@ namespace BookingAPI.DTOs
 
         public int? TicketTypeId { get; set; }
 
+        [Range(0, long.MaxValue, ErrorMessage = "UnitPrice must be greater than or equal to 0")]
+        public long? UnitPrice { get; set; }
+
         [Required]
         public List<CreateTicketDTO> Tickets { get; set; } = new List<CreateTicketDTO>();
     }
