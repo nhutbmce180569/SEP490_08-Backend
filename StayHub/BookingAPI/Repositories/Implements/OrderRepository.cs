@@ -195,5 +195,15 @@ namespace BookingAPI.Repositories.Implements
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<List<int>> GetEligibleScheduleIdsByUserIdAsync(int userId)
+        {
+            return await _context.Orders
+                .Where(o => o.CustomerId == userId && (o.Status == "Paid" || o.Status == "Completed"))
+                .Select(o => o.ScheduleId)
+                .Distinct() 
+                .ToListAsync();
+        }
     }
+    
 }

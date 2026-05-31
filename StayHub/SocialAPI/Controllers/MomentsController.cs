@@ -40,17 +40,26 @@ public class MomentsController : ControllerBase
 
     [Authorize]
     [HttpGet]
-    public async Task<IActionResult> GetMomentFeed([FromQuery] int scheduleId, [FromQuery(Name = "$skip")] int skip = 0, [FromQuery(Name = "$top")] int top = 5)
+    // 💡 SỬA TẠI ĐÂY: Đổi int scheduleId thành int? scheduleId
+    public async Task<IActionResult> GetMomentFeed([FromQuery] int? scheduleId, [FromQuery(Name = "$skip")] int skip = 0, [FromQuery(Name = "$top")] int top = 5)
     {
         try
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                              ?? User.FindFirst("sub")?.Value
+                              ?? User.FindFirst("id")?.Value;
+
             if (!int.TryParse(userIdClaim, out int userId))
             {
                 return Unauthorized(new { message = "User ID not found in token." });
             }
 
+            // Truyền scheduleId (nullable) xuống Service
             var result = await _momentService.GetMomentFeedWithUsersAsync(scheduleId, userId, skip, top);
+
+            Response.Headers.Add("Cache-Control", "no-store, no-cache, must-revalidate, post-check=0, pre-check=0");
+            Response.Headers.Add("Pragma", "no-cache");
+
             return Ok(result);
         }
         catch (Exception ex)
@@ -188,7 +197,6 @@ public class MomentsController : ControllerBase
     {
         try
         {
-            // TỐI ƯU: Quét qua 3 key phổ biến nhất để bắt bằng được ID người dùng
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                               ?? User.FindFirst("sub")?.Value
                               ?? User.FindFirst("id")?.Value;

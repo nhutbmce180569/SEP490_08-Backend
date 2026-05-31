@@ -31,7 +31,7 @@ namespace BookingAPI
             builder.Configuration.GetConnectionString("DefaultConnection")));
             builder.Services.AddHangfireServer();
 
-
+            builder.Services.AddScoped<IEligibleScheduleService, EligibleScheduleService>();
             builder.Services.AddScoped<IBackgroundJobService, BackgroundJobService>();
             builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddSingleton<IQrCodeService, QrCodeService>();

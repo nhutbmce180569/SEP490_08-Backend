@@ -17,6 +17,7 @@ namespace TourAPI.Services
         Task Delete(int id);
         Task ActiveTour(int id, bool isActive);
         Task<int> CountToursByCategoryIdAsync(int categoryId);
+        Task<List<ItineraryLocationDto>> GetItinerariesByTourIdAsync(int tourId);
 
     }
 }

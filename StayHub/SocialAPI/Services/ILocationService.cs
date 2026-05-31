@@ -8,5 +8,7 @@ namespace SocialAPI.Services
     {
         Task PingLocationAsync(int currentUserId, LocationPingDto dto);
         Task<IEnumerable<FriendLocationResponseDto>> GetLiveFriendsLocationsAsync(int currentUserId);
+        Task<string> GenerateTrackingTokenAsync(int currentUserId);
+        Task<FriendLocationResponseDto> GetLocationByTrackingTokenAsync(string token);
     }
 }
