@@ -21,7 +21,7 @@ public interface IMomentService
     Task<CommentResponseDto> UpdateCommentAsync(int commentId, CommentRequestDto dto);
     Task DeleteCommentAsync(int commentId, int userId);
     Task DeleteMomentAsync(int momentId, int userId);
-    Task<IEnumerable<MomentResponseDto>> GetMomentFeedWithUsersAsync(int scheduleId, int currentUserId, int skip, int top);
+    Task<IEnumerable<MomentResponseDto>> GetMomentFeedWithUsersAsync(int? scheduleId, int currentUserId, int skip, int top);
     Task<IEnumerable<FootprintDto>> GetMyFootprintsAsync(int userId);
     Task<IEnumerable<UserMomentResponseDto>> GetUserMomentsAsync(int targetUserId, int currentUserId);
 }
