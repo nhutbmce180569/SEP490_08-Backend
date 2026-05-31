@@ -1,0 +1,227 @@
+using AIAPI.Models.Catalog;
+using AIAPI.Settings;
+using Microsoft.Extensions.Options;
+using Microsoft.ML;
+
+namespace AIAPI.ML;
+
+public interface IMlModelRegistry
+{
+    TrainedModelBundle Status { get; }
+    (string Intent, float Confidence) PredictIntent(string text);
+    IReadOnlyList<(int TourId, float Score)> SearchTours(string query, int top, Func<TourCatalogItem, bool>? filter = null);
+    IReadOnlyList<(int TourismId, float Score)> SearchTourism(string query, int top, string? city = null);
+    Task<TrainedModelBundle> TrainAndLoadAsync(
+        IReadOnlyList<TourCatalogItem> tours,
+        IReadOnlyList<TourismKnowledgeItem> tourismItems,
+        CancellationToken cancellationToken = default);
+    void LoadFromDiskIfExists();
+    void AttachCatalogVectors(IReadOnlyList<TourCatalogItem> tours, IReadOnlyList<TourismKnowledgeItem> tourismItems);
+}
+
+public class MlModelRegistry : IMlModelRegistry
+{
+    private readonly TourMlModelTrainer _trainer = new();
+    private readonly MlSettings _settings;
+    private readonly object _lock = new();
+    private readonly MLContext _mlContext = new(seed: 42);
+
+    private ITransformer? _intentModel;
+    private PredictionEngine<IntentExample, IntentPrediction>? _intentEngine;
+    private ITransformer? _tourSearchModel;
+    private ITransformer? _tourismSearchModel;
+    private Dictionary<int, float[]> _tourVectors = new();
+    private Dictionary<int, float[]> _tourismVectors = new();
+
+    public MlModelRegistry(IOptions<MlSettings> settings)
+    {
+        _settings = settings.Value;
+        Directory.CreateDirectory(GetModelsDirectory());
+    }
+
+    public TrainedModelBundle Status { get; private set; } = new();
+
+    public (string Intent, float Confidence) PredictIntent(string text)
+    {
+        lock (_lock)
+        {
+            if (_intentEngine == null)
+            {
+                return (TourIntents.Unknown, 0f);
+            }
+
+            var prediction = _intentEngine.Predict(new IntentExample { Text = text });
+            var confidence = prediction.Score.Length > 0 ? prediction.Score.Max() : 0f;
+            return (string.IsNullOrWhiteSpace(prediction.Label) ? TourIntents.Unknown : prediction.Label, confidence);
+        }
+    }
+
+    public IReadOnlyList<(int TourId, float Score)> SearchTours(string query, int top, Func<TourCatalogItem, bool>? filter = null)
+    {
+        lock (_lock)
+        {
+            if (_tourSearchModel == null || _tourVectors.Count == 0)
+            {
+                return Array.Empty<(int, float)>();
+            }
+
+            var queryVector = _trainer.GetFeatureVector(_tourSearchModel, query);
+            return _tourVectors
+                .Select(kv => (TourId: kv.Key, Score: _trainer.CosineSimilarity(queryVector, kv.Value)))
+                .Where(x => x.Score >= _settings.MinSemanticScore)
+                .OrderByDescending(x => x.Score)
+                .Take(top)
+                .ToList();
+        }
+    }
+
+    public IReadOnlyList<(int TourismId, float Score)> SearchTourism(string query, int top, string? city = null)
+    {
+        lock (_lock)
+        {
+            if (_tourismSearchModel == null || _tourismVectors.Count == 0)
+            {
+                return Array.Empty<(int, float)>();
+            }
+
+            var queryVector = _trainer.GetFeatureVector(_tourismSearchModel, query);
+            return _tourismVectors
+                .Select(kv => (TourismId: kv.Key, Score: _trainer.CosineSimilarity(queryVector, kv.Value)))
+                .Where(x => x.Score >= _settings.MinSemanticScore)
+                .OrderByDescending(x => x.Score)
+                .Take(top)
+                .ToList();
+        }
+    }
+
+    public async Task<TrainedModelBundle> TrainAndLoadAsync(
+        IReadOnlyList<TourCatalogItem> tours,
+        IReadOnlyList<TourismKnowledgeItem> tourismItems,
+        CancellationToken cancellationToken = default)
+    {
+        if (tours.Count == 0)
+        {
+            throw new InvalidOperationException("Cannot train models without active tours in catalog.");
+        }
+
+        return await Task.Run(() =>
+        {
+            var (intentModel, accuracy) = _trainer.TrainIntentModel(IntentTrainingData.GetSamples());
+
+            var tourDocs = tours.Select(t => new TourDocument { TourId = t.Id, Text = t.SearchDocument }).ToList();
+            var tourSearchModel = _trainer.TrainTextSearchModel(tourDocs);
+            var tourVectors = tourDocs.ToDictionary(
+                d => d.TourId,
+                d => _trainer.GetFeatureVector(tourSearchModel, d.Text));
+
+            var tourismDocs = tourismItems
+                .Select(t => new TourismDocument { TourismId = t.Id, Text = t.SearchDocument })
+                .ToList();
+
+            ITransformer? tourismSearchModel = null;
+            Dictionary<int, float[]> tourismVectors = new();
+            if (tourismDocs.Count > 0)
+            {
+                tourismSearchModel = _trainer.TrainTourismSearchModel(tourismDocs);
+                tourismVectors = tourismDocs.ToDictionary(
+                    d => d.TourismId,
+                    d => _trainer.GetFeatureVector(tourismSearchModel, d.Text));
+            }
+
+            lock (_lock)
+            {
+                _intentModel = intentModel;
+                _intentEngine = _mlContext.Model.CreatePredictionEngine<IntentExample, IntentPrediction>(_intentModel);
+                _tourSearchModel = tourSearchModel;
+                _tourismSearchModel = tourismSearchModel;
+                _tourVectors = tourVectors;
+                _tourismVectors = tourismVectors;
+
+                SaveModels(intentModel, tourSearchModel, tourismSearchModel);
+            }
+
+            Status = new TrainedModelBundle
+            {
+                IsReady = true,
+                TrainedAt = DateTime.UtcNow,
+                IntentAccuracy = accuracy,
+                TourCount = tours.Count,
+                TourismCount = tourismItems.Count
+            };
+
+            return Status;
+        }, cancellationToken);
+    }
+
+    public void LoadFromDiskIfExists()
+    {
+        var dir = GetModelsDirectory();
+        var intentPath = Path.Combine(dir, MlModelFiles.IntentModel);
+        var tourPath = Path.Combine(dir, MlModelFiles.TourSearchModel);
+        if (!File.Exists(intentPath) || !File.Exists(tourPath))
+        {
+            return;
+        }
+
+        lock (_lock)
+        {
+            _intentModel = _mlContext.Model.Load(intentPath, out _);
+            _intentEngine = _mlContext.Model.CreatePredictionEngine<IntentExample, IntentPrediction>(_intentModel);
+            _tourSearchModel = _mlContext.Model.Load(tourPath, out _);
+
+            var tourismPath = Path.Combine(dir, MlModelFiles.TourismSearchModel);
+            if (File.Exists(tourismPath))
+            {
+                _tourismSearchModel = _mlContext.Model.Load(tourismPath, out _);
+            }
+
+            Status = new TrainedModelBundle
+            {
+                IsReady = _tourSearchModel != null && _intentModel != null,
+                TrainedAt = File.GetLastWriteTimeUtc(tourPath)
+            };
+        }
+    }
+
+    public void AttachCatalogVectors(IReadOnlyList<TourCatalogItem> tours, IReadOnlyList<TourismKnowledgeItem> tourismItems)
+    {
+        lock (_lock)
+        {
+            if (_tourSearchModel == null)
+            {
+                return;
+            }
+
+            _tourVectors = tours.ToDictionary(
+                t => t.Id,
+                t => _trainer.GetFeatureVector(_tourSearchModel, t.SearchDocument));
+
+            if (_tourismSearchModel != null)
+            {
+                _tourismVectors = tourismItems.ToDictionary(
+                    t => t.Id,
+                    t => _trainer.GetFeatureVector(_tourismSearchModel, t.SearchDocument));
+            }
+
+            Status.TourCount = tours.Count;
+            Status.TourismCount = tourismItems.Count;
+            Status.IsReady = _tourVectors.Count > 0 && _intentEngine != null;
+        }
+    }
+
+    private void SaveModels(ITransformer intentModel, ITransformer tourModel, ITransformer? tourismModel)
+    {
+        var dir = GetModelsDirectory();
+        _mlContext.Model.Save(intentModel, null, Path.Combine(dir, MlModelFiles.IntentModel));
+        _mlContext.Model.Save(tourModel, null, Path.Combine(dir, MlModelFiles.TourSearchModel));
+        if (tourismModel != null)
+        {
+            _mlContext.Model.Save(tourismModel, null, Path.Combine(dir, MlModelFiles.TourismSearchModel));
+        }
+    }
+
+    private string GetModelsDirectory() =>
+        Path.IsPathRooted(_settings.ModelsDirectory)
+            ? _settings.ModelsDirectory
+            : Path.Combine(AppContext.BaseDirectory, _settings.ModelsDirectory);
+}
