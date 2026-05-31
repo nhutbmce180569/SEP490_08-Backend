@@ -62,5 +62,39 @@ namespace SocialAPI.Controllers
                 return StatusCode(500, new { message = "An error occurred while retrieving friends locations.", details = ex.Message });
             }
         }
+
+        [HttpPost("share")]
+        public async Task<IActionResult> GenerateTrackingToken()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var token = await _locationService.GenerateTrackingTokenAsync(userId);
+                return Ok(new { message = "Token generated successfully.", data = token });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while generating tracking token.", details = ex.Message });
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpGet("track/{token}")]
+        public async Task<IActionResult> GetLocationByTrackingToken(string token)
+        {
+            try
+            {
+                var location = await _locationService.GetLocationByTrackingTokenAsync(token);
+                return Ok(new { message = "Location retrieved successfully.", data = location });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while retrieving location.", details = ex.Message });
+            }
+        }
     }
 }
