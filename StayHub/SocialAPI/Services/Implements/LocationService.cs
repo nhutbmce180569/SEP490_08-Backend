@@ -20,17 +20,20 @@ namespace SocialAPI.Services.Implements
         private readonly IConnectionMultiplexer _redis;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IHubContext<FriendshipHub> _hubContext;
+        private readonly IHubContext<TrackingHub> _trackingHubContext;
 
         public LocationService(
             StayHubSocialDbContext context,
             IConnectionMultiplexer redis,
             IHttpClientFactory httpClientFactory,
-            IHubContext<FriendshipHub> hubContext)
+            IHubContext<FriendshipHub> hubContext,
+            IHubContext<TrackingHub> trackingHubContext)
         {
             _context = context;
             _redis = redis;
             _httpClientFactory = httpClientFactory;
             _hubContext = hubContext;
+            _trackingHubContext = trackingHubContext;
         }
 
         public async Task PingLocationAsync(int currentUserId, LocationPingDto dto)
@@ -97,6 +100,17 @@ namespace SocialAPI.Services.Implements
             foreach (var friendId in friendIds)
             {
                 await _hubContext.Clients.User(friendId.ToString()).SendAsync("ReceiveFriendLocation", responseDto);
+            }
+
+            // 6. Bắn SignalR cho public tracking
+            var userTokensKey = $"user_tokens_{currentUserId}";
+            var activeTokens = await db.SetMembersAsync(userTokensKey);
+            if (activeTokens != null && activeTokens.Length > 0)
+            {
+                foreach (var tokenVal in activeTokens)
+                {
+                    await _trackingHubContext.Clients.Group(tokenVal.ToString()).SendAsync("ReceivePublicLocation", responseDto);
+                }
             }
         }
 
@@ -184,6 +198,66 @@ namespace SocialAPI.Services.Implements
             }
 
             return liveFriends;
+        }
+
+        public async Task<string> GenerateTrackingTokenAsync(int currentUserId)
+        {
+            var token = Guid.NewGuid().ToString("N"); // Tạo GUID không gạch ngang
+            var db = _redis.GetDatabase();
+
+            // Lưu cặp Token - UserId (Tồn tại 24 giờ)
+            var trackingKey = $"tracking_{token}";
+            await db.StringSetAsync(trackingKey, currentUserId, TimeSpan.FromHours(24));
+
+            // Lưu Token này vào danh sách token đang hoạt động của người dùng (Để sau này lấy tên Group SignalR)
+            var userTokensKey = $"user_tokens_{currentUserId}";
+            await db.SetAddAsync(userTokensKey, token);
+            await db.KeyExpireAsync(userTokensKey, TimeSpan.FromHours(24));
+
+            return token;
+        }
+
+        public async Task<FriendLocationResponseDto> GetLocationByTrackingTokenAsync(string token)
+        {
+            var db = _redis.GetDatabase();
+            var trackingKey = $"tracking_{token}";
+            var userIdVal = await db.StringGetAsync(trackingKey);
+
+            if (!userIdVal.HasValue || !int.TryParse(userIdVal.ToString(), out int userId))
+            {
+                throw new KeyNotFoundException("Tracking token is invalid or has expired.");
+            }
+
+            var locKey = $"live_loc_{userId}";
+            var locVal = await db.StringGetAsync(locKey);
+
+            if (!locVal.HasValue)
+            {
+                throw new KeyNotFoundException("User's live location is currently unavailable.");
+            }
+
+            try
+            {
+                using var doc = JsonDocument.Parse(locVal.ToString());
+                var root = doc.RootElement;
+                var lat = root.GetProperty("lat").GetDouble();
+                var lng = root.GetProperty("lng").GetDouble();
+                var lastUpdated = root.GetProperty("lastUpdated").GetDateTime();
+
+                return new FriendLocationResponseDto
+                {
+                    UserId = userId,
+                    FullName = "Anonymous user", // Tối ưu: Không gọi AuthAPI cho tính năng public để giảm tải
+                    AvatarUrl = null,
+                    Lat = lat,
+                    Lng = lng,
+                    LastUpdated = lastUpdated
+                };
+            }
+            catch (Exception)
+            {
+                throw new KeyNotFoundException("Location data is corrupt or cannot be parsed.");
+            }
         }
     }
 }

@@ -92,5 +92,37 @@ namespace TourAPI.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
+
+        // GET: api/TourSchedules/{scheduleId}/itineraries
+        [AllowAnonymous]
+        [HttpGet("{scheduleId}/itineraries")]
+        public async Task<IActionResult> GetScheduleItinerariesLocation(int scheduleId)
+        {
+            try
+            {
+                var result = await _scheduleService.GetItinerariesByScheduleIdAsync(scheduleId);
+                return Ok(new { message = "Itineraries retrieved successfully.", data = result });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        // POST: api/TourSchedules/batch
+        [AllowAnonymous]
+        [HttpPost("batch")]
+        public async Task<ActionResult<IEnumerable<ReadTourScheduleDTO>>> GetBatchSchedules([FromBody] List<int> scheduleIds)
+        {
+            try
+            {
+                var result = await _scheduleService.GetSchedulesByIdsAsync(scheduleIds);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
     }
 }
