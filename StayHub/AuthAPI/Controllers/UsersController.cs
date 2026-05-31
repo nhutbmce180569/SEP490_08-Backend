@@ -31,7 +31,7 @@ namespace AuthAPI.Controllers
 
         // GET: api/users/{id}
         [HttpGet("{id}")]
-        [Authorize(Roles = "Admin, Manager")]
+        [Authorize(Roles = "Admin, Manager, Staff")]
         public async Task<IActionResult> GetUserById(int id)
         {
             var user = await _userService.GetUserById(id);

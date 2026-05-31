@@ -1,4 +1,6 @@
-﻿namespace TourAPI.DTOs
+﻿using System;
+
+namespace TourAPI.DTOs
 {
     public class CreateReviewReplyDTO
     {
@@ -19,5 +21,9 @@
         public string Content { get; set; } = null!;
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+
+        // Populated by service: name and avatar of the user who replied (manager/staff)
+        public string? UserName { get; set; }
+        public string? UserAvatar { get; set; }
     }
 }
