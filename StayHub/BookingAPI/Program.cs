@@ -1,6 +1,7 @@
 ﻿
 using BookingAPI.Helpers;
 using BookingAPI.Mappers;
+using BookingAPI.Mappings;
 using BookingAPI.Models;
 using BookingAPI.Repositories;
 using BookingAPI.Repositories.Implements;
@@ -37,6 +38,9 @@ namespace BookingAPI
             builder.Services.AddSingleton<IQrCodeService, QrCodeService>();
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<IOrderService, OrderService>();
+            builder.Services.AddScoped<ICancellationRepository, CancellationRepository>();
+            builder.Services.AddScoped<ICancellationService, CancellationService>();
+
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddTransient<AuthorizationHeaderHandler>();
             builder.Services.AddHttpClient<ITourApiClient, TourApiClient>(client =>
@@ -73,6 +77,7 @@ namespace BookingAPI
             {
                 cfg.AddProfile<OrderProfile>();
                 cfg.AddProfile<TicketProfile>();
+                cfg.AddProfile<CancellationProfile>();
             });
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
