@@ -366,6 +366,12 @@ namespace BookingAPI.Services.Implements
                         $"Tour schedule ticket {detail.TourScheduleTicketId} is inactive.");
                 }
 
+                if (detail.UnitPrice.HasValue && detail.UnitPrice.Value != scheduleTicket.Price)
+                {
+                    throw new BookingValidationException(
+                        "Ticket price has changed. Please return to the tour detail page to update the latest price.");
+                }
+
                 if (detail.TicketTypeId.HasValue && detail.TicketTypeId.Value != scheduleTicket.TicketTypeId)
                 {
                     throw new BookingValidationException(
