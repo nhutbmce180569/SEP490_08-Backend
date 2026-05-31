@@ -62,9 +62,10 @@ namespace BookingAPI.Services.Implements
             var totalQuantity = detailRequests.Sum(x => x.Quantity);
             var totalAmount = detailRequests.Sum(x => x.TotalPrice);
 
-            if (request.DiscountValue.HasValue && request.DiscountValue.Value > 0)
+            var hasVoucherCode = !string.IsNullOrWhiteSpace(request.VoucherCode);
+            if (!hasVoucherCode && request.DiscountValue.HasValue && request.DiscountValue.Value > 0)
             {
-                throw new BookingValidationException("DiscountValue is calculated server-side. Provide VoucherCode instead.");
+                throw new BookingValidationException("Discount without voucher is not allowed. Provide VoucherCode.");
             }
 
             var schedule = await _tourApiClient.GetScheduleByIdAsync(request.ScheduleId);
@@ -74,7 +75,7 @@ namespace BookingAPI.Services.Implements
             string? voucherCode = null;
             var voucherRedeemed = false;
 
-            if (!string.IsNullOrWhiteSpace(request.VoucherCode))
+            if (hasVoucherCode)
             {
                 voucherCode = request.VoucherCode.Trim().ToUpperInvariant();
                 try
