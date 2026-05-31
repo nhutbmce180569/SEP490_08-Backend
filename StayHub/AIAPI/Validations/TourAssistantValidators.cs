@@ -61,3 +61,47 @@ public class LogInteractionRequestValidator : AbstractValidator<LogInteractionRe
             .WithMessage("Invalid interaction type.");
     }
 }
+
+public class TourPreferenceQuestionnaireValidator : AbstractValidator<TourPreferenceQuestionnaireDTO>
+{
+    private static readonly string[] ValidInterests =
+        ["beach", "culture", "nature", "food", "adventure", "relax", "photography", "city", "river"];
+
+    public TourPreferenceQuestionnaireValidator()
+    {
+        RuleFor(x => x.CompanionType)
+            .Must(v => new[] { TravelCompanionTypes.Solo, TravelCompanionTypes.Couple, TravelCompanionTypes.Family, TravelCompanionTypes.Group }.Contains(v))
+            .WithMessage("Invalid companion type.");
+
+        RuleFor(x => x.NationalityType)
+            .Must(v => v is TravelerNationalityTypes.Vietnamese or TravelerNationalityTypes.Foreigner)
+            .WithMessage("Invalid nationality type.");
+
+        RuleFor(x => x.PreferredStartDate)
+            .Must(d => d.Date >= DateTime.UtcNow.Date.AddDays(-1))
+            .WithMessage("PreferredStartDate cannot be too far in the past.");
+
+        RuleFor(x => x)
+            .Must(x => !x.PreferredEndDate.HasValue || x.PreferredEndDate.Value.Date >= x.PreferredStartDate.Date)
+            .WithMessage("PreferredEndDate cannot be before PreferredStartDate.");
+
+        RuleFor(x => x.TravelInterests)
+            .NotEmpty()
+            .Must(list => list.All(i => ValidInterests.Contains(i, StringComparer.OrdinalIgnoreCase)))
+            .WithMessage("TravelInterests contains invalid value.");
+
+        RuleFor(x => x.Top).InclusiveBetween(1, 30);
+
+        RuleFor(x => x.ChildrenCount)
+            .NotNull()
+            .GreaterThan(0)
+            .When(x => x.HasChildren)
+            .WithMessage("ChildrenCount is required when HasChildren is true.");
+
+        RuleFor(x => x.ElderlyCount)
+            .NotNull()
+            .GreaterThan(0)
+            .When(x => x.HasElderly)
+            .WithMessage("ElderlyCount is required when HasElderly is true.");
+    }
+}

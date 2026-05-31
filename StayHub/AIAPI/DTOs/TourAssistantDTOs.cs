@@ -91,6 +91,20 @@ public class TourRecommendationItemDTO
     public int? DurationDays { get; set; }
     public float Score { get; set; }
     public string Reason { get; set; } = "";
+    public List<string> MatchReasons { get; set; } = new();
+    public TourScoreBreakdownDTO? ScoreBreakdown { get; set; }
+}
+
+public class TourScoreBreakdownDTO
+{
+    public float FairnessScore { get; set; }
+    public float MinPersonaScore { get; set; }
+    public float MeanPersonaScore { get; set; }
+    public Dictionary<string, float> PersonaScores { get; set; } = new();
+    public Dictionary<string, float> DimensionScores { get; set; } = new();
+    public float EnvyGap { get; set; }
+    public float DissatisfactionVariance { get; set; }
+    public string AggregationFormula { get; set; } = "";
 }
 
 public class TourSearchResultItemDTO : TourRecommendationItemDTO
@@ -109,6 +123,8 @@ public class TourismInsightDTO
     public string? SourceName { get; set; }
     public string? SourceUrl { get; set; }
     public float RelevanceScore { get; set; }
+    public string? AuthorityLevel { get; set; }
+    public string? KnowledgeProvider { get; set; }
 }
 
 public class ChatResponseDTO

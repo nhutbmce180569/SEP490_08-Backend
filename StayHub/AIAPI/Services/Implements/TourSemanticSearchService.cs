@@ -318,7 +318,7 @@ public class TourRecommendationService : ITourRecommendationService
             .ToListAsync(cancellationToken);
 
         return grouped
-            .Select(g => (g.TourId, Math.Min(g.Weight / 10f, 1f), "Có tín hiệu tương tác từ người dùng tương tự."))
+            .Select(g => (g.TourId, Math.Min((float)(g.Weight / 10.0), 1f), "Có tín hiệu tương tác từ người dùng tương tự."))
             .ToList();
     }
 

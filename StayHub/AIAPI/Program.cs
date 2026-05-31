@@ -4,6 +4,7 @@ using AIAPI.Clients;
 using AIAPI.Helpers;
 using AIAPI.ML;
 using AIAPI.Models;
+using AIAPI.Recommender;
 using AIAPI.Services;
 using AIAPI.Services.Implements;
 using AIAPI.Settings;
@@ -19,6 +20,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<GatewaySettings>(builder.Configuration.GetSection(GatewaySettings.SectionName));
 builder.Services.Configure<MlSettings>(builder.Configuration.GetSection(MlSettings.SectionName));
+builder.Services.Configure<WeatherSettings>(builder.Configuration.GetSection(WeatherSettings.SectionName));
+
+builder.Services.Configure<RecommenderSettings>(builder.Configuration.GetSection(RecommenderSettings.SectionName));
 
 builder.Services.AddDbContext<StayHubAiDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -32,7 +36,22 @@ builder.Services.AddHttpClient<IGatewayCatalogClient, GatewayCatalogClient>(clie
 })
 .AddHttpMessageHandler<AuthorizationHeaderHandler>();
 
+builder.Services.AddHttpClient<IWeatherService, OpenMeteoWeatherService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(20);
+    client.BaseAddress = new Uri("https://api.open-meteo.com/");
+});
+
+builder.Services.AddHttpClient("Wikidata", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(15);
+    client.BaseAddress = new Uri("https://www.wikidata.org/");
+});
+
 builder.Services.AddSingleton<ICatalogStore, CatalogStore>();
+builder.Services.AddSingleton<IRagKnowledgeIndex, RagKnowledgeIndex>();
+builder.Services.AddSingleton<TourScoringEngine>();
+builder.Services.AddScoped<TourRanker>();
 builder.Services.AddSingleton<IMlModelRegistry, MlModelRegistry>();
 builder.Services.AddSingleton<QueryEntityExtractor>();
 
@@ -41,6 +60,15 @@ builder.Services.AddScoped<IModelTrainingService, ModelTrainingService>();
 builder.Services.AddScoped<ITourSemanticSearchService, TourSemanticSearchService>();
 builder.Services.AddScoped<ITourRecommendationService, TourRecommendationService>();
 builder.Services.AddScoped<ITourAssistantService, TourAssistantService>();
+builder.Services.AddScoped<ICulturalKnowledgeService, CulturalKnowledgeService>();
+builder.Services.AddScoped<IPersonalizedTourRecommendationService, PersonalizedTourRecommendationService>();
+builder.Services.AddScoped<IRecommenderEvaluationService, RecommenderEvaluationService>();
+builder.Services.AddScoped<IGroundTruthLabelService, GroundTruthLabelService>();
+builder.Services.AddScoped<IUserStudyService, UserStudyService>();
+builder.Services.AddScoped<IUserStudyPilotSeeder, UserStudyPilotSeeder>();
+builder.Services.AddScoped<IPaperExportService, PaperExportService>();
+builder.Services.AddScoped<IInterRaterAgreementService, InterRaterAgreementService>();
+builder.Services.AddSingleton<IEvaluationResultsExporter, EvaluationResultsExporter>();
 
 builder.Services.AddHostedService<TourAiWarmupBackgroundService>();
 

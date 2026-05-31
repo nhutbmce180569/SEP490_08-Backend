@@ -61,7 +61,12 @@ INSERT INTO TourismInformation (Id, Name, Type, Description, Address, City, Coun
 (15, N'Da Nang Dragon Bridge', 'Destination', N'Iconic bridge in Da Nang with fire-breathing shows on weekends.', N'An Hai', N'Da Nang', N'Vietnam', 16.0610, 108.2276, 'https://cdn.stayhub.vn/tourism/cau-rong.jpg', N'StayHub Local Guide', 'https://stayhub.vn/guide/cau-rong', 'Active'),
 (16, N'Ba Na Hills', 'Activity', N'Mountain resort with the Golden Bridge and many entertainment activities.', N'Hoa Vang', N'Da Nang', N'Vietnam', 15.9950, 107.9967, 'https://cdn.stayhub.vn/tourism/ba-na.jpg', N'StayHub Local Guide', 'https://stayhub.vn/guide/ba-na', 'Active'),
 (17, N'Nha Trang Mini Pancake (Banh Can)', 'LocalFood', N'Small mold-baked cakes, served with dipping sauce and seafood.', N'Nha Trang Center', N'Nha Trang', N'Vietnam', 12.2388, 109.1967, 'https://cdn.stayhub.vn/tourism/banh-can.jpg', N'StayHub Food Guide', 'https://stayhub.vn/food/banh-can', 'Active'),
-(18, N'Binh Ba Island', 'Destination', N'Small island famous for its blue sea and fresh seafood.', N'Cam Ranh', N'Khanh Hoa', N'Vietnam', 11.8462, 109.2221, 'https://cdn.stayhub.vn/tourism/binh-ba.jpg', N'StayHub Local Guide', 'https://stayhub.vn/guide/binh-ba', 'Active');
+(18, N'Binh Ba Island', 'Destination', N'Small island famous for its blue sea and fresh seafood.', N'Cam Ranh', N'Khanh Hoa', N'Vietnam', 11.8462, 109.2221, 'https://cdn.stayhub.vn/tourism/binh-ba.jpg', N'StayHub Local Guide', 'https://stayhub.vn/guide/binh-ba', 'Active'),
+(19, N'My Son Sanctuary', 'Heritage', N'UNESCO Cham tower complex from 4th-13th century near Hoi An.', N'Duy Phu', N'Hoi An', N'Vietnam', 15.7644, 108.1242, 'https://cdn.stayhub.vn/tourism/my-son.jpg', N'UNESCO World Heritage Centre', 'https://whc.unesco.org/en/list/949', 'Active'),
+(20, N'Perfume River Hue', 'Heritage', N'Perfume River boat trips linking imperial monuments in Hue.', N'Huong River', N'Hue', N'Vietnam', 16.4637, 107.5909, 'https://cdn.stayhub.vn/tourism/perfume-river.jpg', N'UNESCO - Complex of Hue Monuments', 'https://whc.unesco.org/en/list/678', 'Active'),
+(21, N'Water Puppet Theatre Hanoi', 'Culture', N'Traditional Vietnamese water puppetry performance.', N'Hoan Kiem', N'Hanoi', N'Vietnam', 21.0285, 105.8522, 'https://cdn.stayhub.vn/tourism/water-puppet.jpg', N'UNESCO Intangible Heritage', 'https://ich.unesco.org/', 'Active'),
+(22, N'Golden Bridge Ba Na', 'Destination', N'Pedestrian bridge at Ba Na Hills held by giant stone hands.', N'Hoa Vang', N'Da Nang', N'Vietnam', 15.9950, 107.9967, 'https://cdn.stayhub.vn/tourism/golden-bridge.jpg', N'VNAT', 'https://vietnamtourism.gov.vn/en', 'Active'),
+(23, N'Ben Thanh Market Saigon', 'LocalFood', N'Historic market for street food and local goods in District 1.', N'District 1', N'Ho Chi Minh City', N'Vietnam', 10.7725, 106.6980, 'https://cdn.stayhub.vn/tourism/ben-thanh.jpg', N'VNAT', 'https://vietnamtourism.gov.vn/en', 'Active');
 SET IDENTITY_INSERT TourismInformation OFF;
 GO
 
@@ -728,8 +733,27 @@ INSERT INTO UserTourInteractions (Id, CustomerId, TourId, InteractionType, Weigh
 (3, 8, 12, 'wishlist', 4, 'seed-session-001', DATEADD(DAY, -4, GETUTCDATE())),
 (4, 9, 4, 'booking', 5, 'seed-session-002', DATEADD(DAY, -3, GETUTCDATE())),
 (5, 10, 3, 'chat_recommend', 2, 'seed-session-003', DATEADD(DAY, -2, GETUTCDATE())),
-(6, NULL, 7, 'view', 1, 'anon-session-004', DATEADD(DAY, -1, GETUTCDATE()));
+(6, NULL, 7, 'view', 1, 'anon-session-004', DATEADD(DAY, -1, GETUTCDATE())),
+(7, 8, 4, 'view', 1, 'seed-session-005', DATEADD(DAY, -6, GETUTCDATE())),
+(8, 8, 4, 'click', 1.5, 'seed-session-005', DATEADD(DAY, -6, GETUTCDATE())),
+(9, 9, 4, 'wishlist', 4, 'seed-session-006', DATEADD(DAY, -5, GETUTCDATE())),
+(10, 10, 1, 'booking', 5, 'seed-session-007', DATEADD(DAY, -4, GETUTCDATE())),
+(11, NULL, 12, 'click', 2, 'anon-session-008', DATEADD(DAY, -3, GETUTCDATE())),
+(12, NULL, 12, 'wishlist', 4, 'anon-session-008', DATEADD(DAY, -3, GETUTCDATE()));
 SET IDENTITY_INSERT UserTourInteractions OFF;
+GO
+
+INSERT INTO TourRelevanceJudgments (ProfileSignature, ProfileQueryKey, TourId, RelevanceGrade, Source, JudgeId, Notes, CreatedAt) VALUES
+('seed-cantho-river', 'foreigner_can_tho_couple_river', 5, 3, 'expert', 'reviewer-01', N'Mekong floating market matches river + culture for foreign couples', GETUTCDATE()),
+('seed-cantho-river', 'foreigner_can_tho_couple_river', 9, 0, 'expert', 'reviewer-01', N'Saigon food tour irrelevant for Can Tho river trip', GETUTCDATE()),
+('seed-phuquoc-beach', 'vietnamese_phu_quoc_solo_beach', 1, 3, 'expert', 'reviewer-01', N'Phu Quoc beach resort fit', GETUTCDATE()),
+('seed-phuquoc-beach', 'vietnamese_phu_quoc_solo_beach', 6, 0, 'expert', 'reviewer-01', N'Sapa trek poor fit for beach solo', GETUTCDATE()),
+('seed-hoian-culture', 'vietnamese_hoi_an_family_culture', 3, 3, 'expert', 'reviewer-02', N'Ancient town + lanterns for family culture trip', GETUTCDATE()),
+('seed-hoian-culture', 'vietnamese_hoi_an_family_culture', 9, 1, 'expert', 'reviewer-02', N'Food tour weak match vs Hoi An focus', GETUTCDATE()),
+('seed-dalat-nature', 'foreigner_da_lat_couple_nature', 2, 3, 'expert', 'reviewer-02', N'Cloud hunting / nature in Da Lat', GETUTCDATE()),
+('seed-dalat-nature', 'foreigner_da_lat_couple_nature', 10, 1, 'expert', 'reviewer-02', N'Honeymoon resort partial overlap only', GETUTCDATE()),
+('seed-hanoi-city', 'vietnamese_hanoi_solo_city', 11, 3, 'expert', 'reviewer-03', N'Photo walk Old Quarter', GETUTCDATE()),
+('seed-halong-relax', 'vietnamese_quang_ninh_couple_relax', 4, 3, 'expert', 'reviewer-03', N'Luxury cruise matches relax + couple', GETUTCDATE());
 GO
 
 SET IDENTITY_INSERT ModelTrainingRuns ON;
