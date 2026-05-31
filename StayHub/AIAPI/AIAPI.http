@@ -1,6 +1,51 @@
-@AIAPI_HostAddress = http://localhost:5218
+@AIAPI_HostAddress = https://localhost:7007
+@Gateway_HostAddress = https://localhost:7010
 
-GET {{AIAPI_HostAddress}}/weatherforecast/
-Accept: application/json
+### Health check
+GET {{AIAPI_HostAddress}}/api/ai/tour-assistant/health
 
-###
+### Chat - natural language (via Gateway)
+POST {{Gateway_HostAddress}}/api/ai/tour-assistant/chat
+Content-Type: application/json
+
+{
+  "message": "Gợi ý tour biển giá dưới 5 triệu cho 2 người",
+  "sessionId": "demo-session-001"
+}
+
+### Semantic search
+POST {{Gateway_HostAddress}}/api/ai/tour-assistant/search
+Content-Type: application/json
+
+{
+  "query": "tour khám phá văn hóa miền Trung 4 ngày",
+  "top": 8,
+  "maxPrice": 6000000
+}
+
+### Consultation with structured criteria
+POST {{Gateway_HostAddress}}/api/ai/tour-assistant/consult
+Content-Type: application/json
+
+{
+  "city": "Da Lat",
+  "durationDays": 3,
+  "maxPrice": 5000000,
+  "groupSize": 2,
+  "travelStyle": "thiên nhiên nghỉ dưỡng",
+  "top": 6
+}
+
+### Tourism culture insights (authoritative content)
+GET {{Gateway_HostAddress}}/api/ai/tour-assistant/tourism?query=dac san van hoa&city=Hoi An&top=5
+
+### Similar tours
+GET {{Gateway_HostAddress}}/api/ai/tour-assistant/recommend/similar/1?top=5
+
+### Admin - training status (requires Admin JWT)
+GET {{Gateway_HostAddress}}/api/ai/training/status
+Authorization: Bearer {{admin_token}}
+
+### Admin - retrain ML models
+POST {{Gateway_HostAddress}}/api/ai/training/retrain
+Authorization: Bearer {{admin_token}}
