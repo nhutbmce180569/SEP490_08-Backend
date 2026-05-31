@@ -15,6 +15,7 @@ namespace BookingAPI.Mappers
             CreateMap<OrderDetail, ReadOrderDetailDTO>();
             CreateMap<Order, ReadOrderDTO>()
                 .ForMember(dest => dest.TicketCount, opt => opt.MapFrom(src => src.TotalQuantity));
+
         }
     }
 }

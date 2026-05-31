@@ -17,18 +17,24 @@ namespace BookingAPI.Services.Implements
         private readonly ITourApiClient _tourApiClient;
         private readonly IVoucherApiClient _voucherApiClient;
         private readonly IBackgroundJobService _backgroundJobService;
+        private readonly INotificationInternalService _notificationInternalService;
+        private readonly ILogger<OrderService> _logger;
         public OrderService(
          IOrderRepository orderRepository,
          IMapper mapper,
          ITourApiClient tourApiClient,
          IVoucherApiClient voucherApiClient,
-         IBackgroundJobService backgroundJobService)
+         IBackgroundJobService backgroundJobService,
+         INotificationInternalService notificationInternalService,
+         ILogger<OrderService> logger)
         {
             _orderRepository = orderRepository;
             _mapper = mapper;
             _tourApiClient = tourApiClient;
             _voucherApiClient = voucherApiClient;
             _backgroundJobService = backgroundJobService;
+            _notificationInternalService = notificationInternalService;
+            _logger = logger;
         }
 
         public async Task<bool> CheckCompletedBookingAsync(CheckBookingRequest request)
@@ -161,6 +167,7 @@ namespace BookingAPI.Services.Implements
                 var savedOrder = await _orderRepository.AddAsync(order);
 
                 _backgroundJobService.ScheduleAutoCancelOrder(savedOrder.Id);
+
                 var dto = _mapper.Map<ReadOrderDTO>(savedOrder);
                 await EnrichOrderDtoAsync(dto);
                 return dto;
@@ -253,6 +260,7 @@ namespace BookingAPI.Services.Implements
             }
 
             _backgroundJobService.EnqueueSendTicketsEmail(orderId, customerEmail);
+            await NotifyBookingPaidAsync(order);
 
             return true;
         }
@@ -358,6 +366,12 @@ namespace BookingAPI.Services.Implements
                         $"Tour schedule ticket {detail.TourScheduleTicketId} is inactive.");
                 }
 
+                if (detail.UnitPrice.HasValue && detail.UnitPrice.Value != scheduleTicket.Price)
+                {
+                    throw new BookingValidationException(
+                        "Ticket price has changed. Please return to the tour detail page to update the latest price.");
+                }
+
                 if (detail.TicketTypeId.HasValue && detail.TicketTypeId.Value != scheduleTicket.TicketTypeId)
                 {
                     throw new BookingValidationException(
@@ -441,6 +455,21 @@ namespace BookingAPI.Services.Implements
                         };
                     }
                 }
+            }
+        }
+
+        private async Task NotifyBookingPaidAsync(Order order)
+        {
+            try
+            {
+                await _notificationInternalService.NotifyUserAsync(
+                    order.CustomerId,
+                    "Booking payment successful",
+                    $"Your booking #{order.Id} has been paid successfully. Your tickets are being sent to your email.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to send paid booking notification for order {OrderId}.", order.Id);
             }
         }
     }
