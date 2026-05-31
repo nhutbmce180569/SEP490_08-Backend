@@ -129,7 +129,7 @@ public class MomentService : IMomentService
         await _momentRepository.DeleteMomentAsync(moment);
     }
 
-    public async Task<IEnumerable<MomentResponseDto>> GetMomentFeedWithUsersAsync(int scheduleId, int currentUserId, int skip, int top)
+    public async Task<IEnumerable<MomentResponseDto>> GetMomentFeedWithUsersAsync(int? scheduleId, int currentUserId, int skip, int top)
     {
         var moments = await _momentRepository.GetMomentFeedPagedAsync(scheduleId, currentUserId, skip, top);
         var dtos = _mapper.Map<List<MomentResponseDto>>(moments);
