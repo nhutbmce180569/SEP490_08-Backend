@@ -245,7 +245,8 @@ CREATE TABLE TourScheduleTickets (
 CREATE TABLE Wishlists (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     CustomerId INT NOT NULL, -- Logical FK -> IdentityDb.Users
-    TourId INT NOT NULL FOREIGN KEY REFERENCES Tours(Id)
+    TourId INT NOT NULL FOREIGN KEY REFERENCES Tours(Id),
+    CONSTRAINT UQ_Wishlists_Customer_Tour UNIQUE (CustomerId, TourId)
 );
 
 CREATE TABLE Reviews (
@@ -296,6 +297,7 @@ CREATE TABLE Orders (
     TotalQuantity INT NOT NULL,
 
     DiscountValue BIGINT DEFAULT 0,
+    VoucherCode VARCHAR(50) NULL,
     TotalAmount BIGINT NOT NULL,
     FinalAmount BIGINT NOT NULL,
 

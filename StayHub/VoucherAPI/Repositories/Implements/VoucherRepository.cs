@@ -38,6 +38,13 @@ public class VoucherRepository : IVoucherRepository
             .FirstOrDefaultAsync(v => v.Code == code);
     }
 
+    public async Task<Voucher?> GetByCodeWithUserVouchersAsync(string code)
+    {
+        return await _context.Vouchers
+            .Include(v => v.UserVouchers)
+            .FirstOrDefaultAsync(v => v.Code == code);
+    }
+
     public async Task<bool> CodeExistsAsync(string code, int? exceptId = null)
     {
         return await _context.Vouchers.AnyAsync(v =>
@@ -90,5 +97,75 @@ public class VoucherRepository : IVoucherRepository
         entity.IsActive = isActive;
         _context.Vouchers.Update(entity);
         await _context.SaveChangesAsync();
+    }
+
+    public async Task RedeemAsync(int voucherId, int userVoucherId)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var voucher = await _context.Vouchers.FindAsync(voucherId)
+                ?? throw new Exception("Voucher not found");
+
+            var userVoucher = await _context.UserVouchers.FindAsync(userVoucherId)
+                ?? throw new Exception("User voucher not found");
+
+            if (voucher.UsedCount >= voucher.AvailableCount)
+            {
+                throw new Exception("This voucher has reached its usage limit");
+            }
+
+            voucher.UsedCount += 1;
+            userVoucher.Quantity -= 1;
+
+            if (userVoucher.Quantity <= 0)
+            {
+                userVoucher.Quantity = 0;
+                userVoucher.Status = "Used";
+            }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
+    public async Task RestoreAsync(int voucherId, int userVoucherId)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var voucher = await _context.Vouchers.FindAsync(voucherId)
+                ?? throw new Exception("Voucher not found");
+
+            var userVoucher = await _context.UserVouchers
+                .Include(uv => uv.Voucher)
+                .FirstOrDefaultAsync(uv => uv.Id == userVoucherId)
+                ?? throw new Exception("User voucher not found");
+
+            if (voucher.UsedCount > 0)
+            {
+                voucher.UsedCount -= 1;
+            }
+
+            userVoucher.Quantity += 1;
+
+            if (userVoucher.Voucher.EndDate >= DateTime.Now)
+            {
+                userVoucher.Status = "Available";
+            }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 }

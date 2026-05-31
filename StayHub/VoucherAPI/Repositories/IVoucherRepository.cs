@@ -12,6 +12,8 @@ public interface IVoucherRepository
 
     Task<Voucher?> GetByCodeAsync(string code);
 
+    Task<Voucher?> GetByCodeWithUserVouchersAsync(string code);
+
     Task<bool> CodeExistsAsync(string code, int? exceptId = null);
 
     Task AddAsync(Voucher entity);
@@ -21,4 +23,8 @@ public interface IVoucherRepository
     Task UpdateAsync(Voucher entity);
 
     Task SetActiveAsync(Voucher entity, bool isActive);
+
+    Task RedeemAsync(int voucherId, int userVoucherId);
+
+    Task RestoreAsync(int voucherId, int userVoucherId);
 }
