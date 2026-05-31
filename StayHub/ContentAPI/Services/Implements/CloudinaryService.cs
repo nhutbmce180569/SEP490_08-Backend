@@ -20,18 +20,23 @@ namespace ContentAPI.Services.Implements
             _cloudinary = new Cloudinary(account);
         }
 
-        public async Task<ImageUploadResult> UploadImageAsync(IFormFile file)
+        public async Task<ImageUploadResult> UploadImageAsync(IFormFile file, string folderName = "StayHub_General")
         {
             var uploadResult = new ImageUploadResult();
 
-            if (file.Length > 0)
+            if (file != null && file.Length > 0)
             {
                 using var stream = file.OpenReadStream();
                 var uploadParams = new ImageUploadParams
                 {
                     File = new FileDescription(file.FileName, stream),
-                    Folder = "StayHub_Banners",
-                    Transformation = new Transformation().Quality("auto").FetchFormat("auto")
+                    Folder = folderName,
+                    Transformation = new Transformation()
+                        .Width(1280)
+                        .Height(1280)
+                        .Crop("limit")
+                        .Quality("auto:eco")
+                        .FetchFormat("auto")
                 };
 
                 uploadResult = await _cloudinary.UploadAsync(uploadParams);
@@ -46,7 +51,6 @@ namespace ContentAPI.Services.Implements
             return await _cloudinary.DestroyAsync(deleteParams);
         }
 
-        // ĐƯA HÀM CẮT CHUỖI VÀO ĐÂY ĐỂ DÙNG CHUNG
         public string? ExtractPublicIdFromUrl(string imageUrl)
         {
             if (string.IsNullOrEmpty(imageUrl)) return null;

@@ -79,7 +79,7 @@ namespace ContentAPI.Services.Implements
 
             if (dto.ImageFile != null && dto.ImageFile.Length > 0)
             {
-                var uploadResult = await _cloudinaryService.UploadImageAsync(dto.ImageFile);
+                var uploadResult = await _cloudinaryService.UploadImageAsync(dto.ImageFile, "StayHub_Banners");
                 if (uploadResult.Error == null)
                 {
                     imageUrl = uploadResult.SecureUrl.ToString();
@@ -113,7 +113,7 @@ namespace ContentAPI.Services.Implements
                     await _cloudinaryService.DeleteImageAsync(oldPublicId);
                 }
 
-                var uploadResult = await _cloudinaryService.UploadImageAsync(dto.ImageFile);
+                var uploadResult = await _cloudinaryService.UploadImageAsync(dto.ImageFile, "StayHub_Banners");
                 if (uploadResult.Error == null)
                 {
                     existingBanner.ImageUrl = uploadResult.SecureUrl.ToString();
