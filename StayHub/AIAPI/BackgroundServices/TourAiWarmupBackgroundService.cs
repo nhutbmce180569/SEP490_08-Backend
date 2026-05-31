@@ -32,6 +32,9 @@ public class TourAiWarmupBackgroundService : BackgroundService
 
         registry.LoadFromDiskIfExists();
 
+        var ragIndex = scope.ServiceProvider.GetRequiredService<IRagKnowledgeIndex>();
+        ragIndex.Initialize();
+
         try
         {
             await catalogSync.SyncCatalogAsync(stoppingToken);

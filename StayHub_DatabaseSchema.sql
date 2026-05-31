@@ -604,6 +604,57 @@ CREATE TABLE ModelTrainingRuns (
     StartedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
     CompletedAt DATETIME2 NULL
 );
+
+-- Nhãn relevance chuyên gia cho offline evaluation (ground truth)
+CREATE TABLE TourRelevanceJudgments (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    ProfileSignature VARCHAR(32) NOT NULL,
+    ProfileQueryKey VARCHAR(128) NULL,
+    TourId INT NOT NULL,
+    RelevanceGrade INT NOT NULL CHECK (RelevanceGrade BETWEEN 0 AND 3),
+    Source VARCHAR(30) NOT NULL DEFAULT 'expert',
+    JudgeId VARCHAR(64) NULL,
+    Notes NVARCHAR(500) NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+);
+
+CREATE INDEX IX_TourRelevanceJudgments_Profile_Tour
+    ON TourRelevanceJudgments (ProfileSignature, TourId);
+
+-- User study: blind A/B assignments + Likert responses (paper Section 5)
+CREATE TABLE UserStudyAssignments (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    SessionId VARCHAR(64) NOT NULL,
+    ScenarioId INT NOT NULL,
+    StrategyForListA VARCHAR(32) NOT NULL,
+    StrategyForListB VARCHAR(32) NOT NULL,
+    ComparisonPair VARCHAR(64) NOT NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    CONSTRAINT UQ_UserStudyAssignments_Session_Scenario UNIQUE (SessionId, ScenarioId)
+);
+
+CREATE TABLE UserStudyResponses (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    AssignmentId INT NOT NULL,
+    SessionId VARCHAR(64) NOT NULL,
+    ScenarioId INT NOT NULL,
+    PreferredList VARCHAR(8) NOT NULL,
+    FairnessListA INT NOT NULL CHECK (FairnessListA BETWEEN 1 AND 7),
+    FairnessListB INT NOT NULL CHECK (FairnessListB BETWEEN 1 AND 7),
+    SatisfactionListA INT NOT NULL CHECK (SatisfactionListA BETWEEN 1 AND 7),
+    SatisfactionListB INT NOT NULL CHECK (SatisfactionListB BETWEEN 1 AND 7),
+    GroupFairnessListA INT NOT NULL CHECK (GroupFairnessListA BETWEEN 1 AND 7),
+    GroupFairnessListB INT NOT NULL CHECK (GroupFairnessListB BETWEEN 1 AND 7),
+    WouldBookListA INT NOT NULL CHECK (WouldBookListA BETWEEN 1 AND 7),
+    WouldBookListB INT NOT NULL CHECK (WouldBookListB BETWEEN 1 AND 7),
+    AgeGroup VARCHAR(20) NULL,
+    TravelExperience VARCHAR(30) NULL,
+    OpenComment NVARCHAR(500) NULL,
+    ResponseSource VARCHAR(32) NOT NULL DEFAULT 'human',
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    CONSTRAINT UQ_UserStudyResponses_Session_Scenario UNIQUE (SessionId, ScenarioId),
+    CONSTRAINT FK_UserStudyResponses_Assignment FOREIGN KEY (AssignmentId) REFERENCES UserStudyAssignments(Id)
+);
 GO
 USE StayHub_SocialDb;
 GO

@@ -19,22 +19,66 @@ public class TourAssistantController : ControllerBase
     private readonly IValidator<TourConsultationRequestDTO> _consultValidator;
     private readonly IValidator<LogInteractionRequestDTO> _interactionValidator;
 
+    private readonly IPersonalizedTourRecommendationService _personalizedService;
+    private readonly IValidator<TourPreferenceQuestionnaireDTO> _profileValidator;
+
     public TourAssistantController(
         ITourAssistantService assistantService,
         ITourSemanticSearchService searchService,
         ITourRecommendationService recommendationService,
+        IPersonalizedTourRecommendationService personalizedService,
         IValidator<ChatRequestDTO> chatValidator,
         IValidator<NaturalLanguageSearchRequestDTO> searchValidator,
         IValidator<TourConsultationRequestDTO> consultValidator,
-        IValidator<LogInteractionRequestDTO> interactionValidator)
+        IValidator<LogInteractionRequestDTO> interactionValidator,
+        IValidator<TourPreferenceQuestionnaireDTO> profileValidator)
     {
         _assistantService = assistantService;
         _searchService = searchService;
         _recommendationService = recommendationService;
+        _personalizedService = personalizedService;
         _chatValidator = chatValidator;
         _searchValidator = searchValidator;
         _consultValidator = consultValidator;
         _interactionValidator = interactionValidator;
+        _profileValidator = profileValidator;
+    }
+
+    [AllowAnonymous]
+    [HttpGet("scoring-model")]
+    public ActionResult<ScoringModelDocumentationDTO> GetScoringModel()
+    {
+        return Ok(_personalizedService.GetScoringDocumentation());
+    }
+
+    [AllowAnonymous]
+    [HttpGet("questionnaire")]
+    public ActionResult<StandardQuestionnaireDTO> GetQuestionnaire()
+    {
+        return Ok(_personalizedService.GetStandardQuestionnaire());
+    }
+
+    [AllowAnonymous]
+    [HttpPost("recommend-from-profile")]
+    public async Task<ActionResult<PersonalizedRecommendationResponseDTO>> RecommendFromProfile(
+        [FromBody] TourPreferenceQuestionnaireDTO request,
+        CancellationToken cancellationToken)
+    {
+        var validation = await _profileValidator.ValidateAsync(request, cancellationToken);
+        if (!validation.IsValid)
+        {
+            return BadRequest(new { message = string.Join("; ", validation.Errors.Select(e => e.ErrorMessage)) });
+        }
+
+        try
+        {
+            var result = await _personalizedService.RecommendFromProfileAsync(request, GetOptionalCustomerId(), cancellationToken);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [AllowAnonymous]
