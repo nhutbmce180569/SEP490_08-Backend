@@ -57,6 +57,16 @@ namespace BookingAPI
                 }
             })
             .AddHttpMessageHandler<AuthorizationHeaderHandler>();
+            builder.Services.AddHttpClient<INotificationInternalService, NotificationInternalService>(client =>
+            {
+                var systemApiBaseUrl = builder.Configuration["SystemApi:BaseUrl"]
+                    ?? builder.Configuration["GatewayApi:BaseUrl"];
+
+                if (!string.IsNullOrWhiteSpace(systemApiBaseUrl))
+                {
+                    client.BaseAddress = new Uri(systemApiBaseUrl.TrimEnd('/') + "/");
+                }
+            });
             builder.Services.AddScoped<ITicketRepository, TicketRepository>();
             builder.Services.AddScoped<ITicketService, TicketService>();
             builder.Services.AddAutoMapper(cfg =>
