@@ -19,6 +19,8 @@ namespace BookingAPI.DTOs
 
         public long? DiscountValue { get; set; }
 
+        public string? VoucherCode { get; set; }
+
         public long FinalAmount { get; set; }
 
         public string? Note { get; set; }
@@ -154,6 +156,9 @@ namespace BookingAPI.DTOs
 
     public class CreateOrderDTO : BaseOrderDTO
     {
+        [StringLength(50, MinimumLength = 3, ErrorMessage = "VoucherCode must be between 3 and 50 characters")]
+        public string? VoucherCode { get; set; }
+
         [Required] public List<CreateOrderDetailDTO> OrderDetails { get; set; } = new List<CreateOrderDetailDTO>();
     }
     public class UpdateOrderDTO : BaseOrderDTO

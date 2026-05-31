@@ -25,6 +25,7 @@ public class Program
         builder.Services.AddAutoMapper(cfg =>
         {
             cfg.AddProfile<VoucherProfile>();
+            cfg.AddProfile<CustomerVoucherProfile>();
         });
 
         builder.Services.AddHttpContextAccessor();
@@ -45,6 +46,7 @@ public class Program
         builder.Services.AddScoped<IVoucherRepository, VoucherRepository>();
         builder.Services.AddScoped<IUserVoucherRepository, UserVoucherRepository>();
         builder.Services.AddScoped<IVoucherService, VoucherService>();
+        builder.Services.AddScoped<ICustomerVoucherService, CustomerVoucherService>();
 
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();

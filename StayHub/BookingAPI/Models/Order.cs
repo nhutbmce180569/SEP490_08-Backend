@@ -15,6 +15,8 @@ public partial class Order
 
     public long? DiscountValue { get; set; }
 
+    public string? VoucherCode { get; set; }
+
     public long TotalAmount { get; set; }
 
     public long FinalAmount { get; set; }

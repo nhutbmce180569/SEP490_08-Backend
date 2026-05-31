@@ -11,6 +11,7 @@ namespace BookingAPI.Services.Implements
     {
         private readonly IOrderRepository _orderRepository;
         private readonly ITourApiClient _tourApiClient;
+        private readonly IVoucherApiClient _voucherApiClient;
         private readonly IEmailService _emailService;
         private readonly IQrCodeService _qrCodeService;
         private readonly IConfiguration _configuration;
@@ -19,6 +20,7 @@ namespace BookingAPI.Services.Implements
         public BackgroundJobService(
             IOrderRepository orderRepository,
             ITourApiClient tourApiClient,
+            IVoucherApiClient voucherApiClient,
             IEmailService emailService,
             IQrCodeService qrCodeService,
             IConfiguration configuration,
@@ -26,6 +28,7 @@ namespace BookingAPI.Services.Implements
         {
             _orderRepository = orderRepository;
             _tourApiClient = tourApiClient;
+            _voucherApiClient = voucherApiClient;
             _emailService = emailService;
             _qrCodeService = qrCodeService;
             _configuration = configuration;
@@ -65,6 +68,22 @@ namespace BookingAPI.Services.Implements
                         detail.TourScheduleTicketId,
                         detail.Quantity
                     );
+                }
+
+                if (!string.IsNullOrWhiteSpace(order.VoucherCode))
+                {
+                    try
+                    {
+                        await _voucherApiClient.RestoreVoucherAsync(order.CustomerId, order.VoucherCode);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(
+                            ex,
+                            "Failed to restore voucher {VoucherCode} for auto-cancelled order {OrderId}",
+                            order.VoucherCode,
+                            orderId);
+                    }
                 }
             }
         }
