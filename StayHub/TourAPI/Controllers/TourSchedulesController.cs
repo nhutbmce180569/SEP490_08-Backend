@@ -47,9 +47,9 @@ namespace TourAPI.Controllers
             }
         }
 
-        // Chỉ Admin/Operator được thao tác
+        // Chỉ Admin/Operator/Manager/Staff được thao tác
         [HttpPost]
-        [Authorize(Roles = "Operator,Admin")]
+        [Authorize(Roles = "Manager,Admin")]
         public async Task<ActionResult<ReadTourScheduleDTO>> Create([FromBody] CreateTourScheduleDTO dto)
         {
             try
@@ -64,7 +64,7 @@ namespace TourAPI.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "Operator,Admin")]
+        [Authorize(Roles = "Manager,Admin")]
         public async Task<ActionResult<ReadTourScheduleDTO>> Update(int id, [FromBody] UpdateTourScheduleDTO dto)
         {
             try
@@ -79,7 +79,7 @@ namespace TourAPI.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Operator,Admin")]
+        [Authorize(Roles = "Manager,Admin")]
         public async Task<ActionResult> Delete(int id)
         {
             try

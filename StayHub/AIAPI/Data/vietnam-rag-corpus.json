@@ -1,0 +1,2256 @@
+{
+  "version": "2.0-rag-conference",
+  "description": "StayHub Vietnam RAG corpus for multi-source knowledge augmentation (FCAHR). Structured retrieval chunks with UNESCO citations, interest/persona tags, and tour linkage. Designed for ML.NET semantic retrieval + cultural_fit scoring.",
+  "paperMetadata": {
+    "corpusName": "StayHub-VN-RAG-Corpus-v2",
+    "targetVenue": "Q4 conference knowledge augmentation ablation",
+    "sourceTypes": [
+      "UNESCO World Heritage Centre",
+      "VNAT",
+      "Curated accessibility/seasonality"
+    ],
+    "chunkSchema": "id, title, content, cityKeys, interestTags, personaTags, relatedTourIds, chunkType, heritageLevel, source"
+  },
+  "statistics": {
+    "totalChunks": 75,
+    "unescoChunks": 6,
+    "chunkTypes": [
+      "accessibility",
+      "etiquette",
+      "food",
+      "group_fairness",
+      "heritage",
+      "season",
+      "topic",
+      "tour_package"
+    ],
+    "interestCoverage": [
+      "adventure",
+      "beach",
+      "city",
+      "culture",
+      "food",
+      "nature",
+      "photography",
+      "relax",
+      "river"
+    ],
+    "personaCoverage": [
+      "children",
+      "couple",
+      "elderly",
+      "family",
+      "foreigner",
+      "group",
+      "solo",
+      "vietnamese"
+    ]
+  },
+  "chunks": [
+    {
+      "id": "rag-001",
+      "title": "Hoi An Ancient Town UNESCO heritage significance",
+      "content": "Hoi An Ancient Town (UNESCO 1999) preserves a trading port from the 15th-19th centuries with Japanese Bridge, merchant houses, and assembly halls. Lantern festivals and pedestrian evenings support slow cultural tourism. Best for culture, photography, and food-focused itineraries.",
+      "cityKeys": [
+        "hoian",
+        "hoi an"
+      ],
+      "region": "Central Vietnam",
+      "interestTags": [
+        "culture",
+        "photography",
+        "food"
+      ],
+      "personaTags": [
+        "foreigner",
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [
+        3,
+        8
+      ],
+      "heritageLevel": "UNESCO World Heritage",
+      "chunkType": "heritage",
+      "source": {
+        "name": "UNESCO - Hoi An",
+        "url": "https://whc.unesco.org/en/list/874",
+        "authority": "International"
+      }
+    },
+    {
+      "id": "rag-002",
+      "title": "Ha Long Bay karst seascape and cruise tourism",
+      "content": "Ha Long Bay UNESCO site features ~1,600 limestone islands. Overnight luxury cruises combine cave visits (Sung Sot), kayaking, and onboard dining. Elderly travelers should select cruises with elevator cabins; families need life jackets for kayak segments.",
+      "cityKeys": [
+        "halong",
+        "quangninh",
+        "ha long"
+      ],
+      "region": "Northeast Vietnam",
+      "interestTags": [
+        "relax",
+        "nature",
+        "photography"
+      ],
+      "personaTags": [
+        "couple",
+        "family",
+        "foreigner"
+      ],
+      "relatedTourIds": [
+        4
+      ],
+      "heritageLevel": "UNESCO World Heritage",
+      "chunkType": "heritage",
+      "source": {
+        "name": "UNESCO - Ha Long Bay",
+        "url": "https://whc.unesco.org/en/list/672",
+        "authority": "International"
+      }
+    },
+    {
+      "id": "rag-003",
+      "title": "Trang An Ninh Binh mixed natural-cultural landscape",
+      "content": "Trang An Landscape Complex (UNESCO 2014) offers boat routes through limestone caves and temples. Seated boat tours suit elderly and children. Combine with Mua Cave viewpoint and Hoa Lu ancient capital.",
+      "cityKeys": [
+        "ninhbinh",
+        "trangan",
+        "ninh binh"
+      ],
+      "region": "Red River Delta",
+      "interestTags": [
+        "culture",
+        "nature",
+        "river"
+      ],
+      "personaTags": [
+        "family",
+        "elderly",
+        "foreigner"
+      ],
+      "relatedTourIds": [
+        7
+      ],
+      "heritageLevel": "UNESCO World Heritage",
+      "chunkType": "heritage",
+      "source": {
+        "name": "UNESCO - Trang An",
+        "url": "https://whc.unesco.org/en/list/1438",
+        "authority": "International"
+      }
+    },
+    {
+      "id": "rag-004",
+      "title": "Thang Long Imperial Citadel Hanoi",
+      "content": "Central Sector of Thang Long Imperial Citadel (UNESCO 2010) documents Vietnamese dynastic history. Pair with Old Quarter street food walks, Hoan Kiem Lake, and water puppet theatre for city tours.",
+      "cityKeys": [
+        "hanoi",
+        "ha noi"
+      ],
+      "region": "Red River Delta",
+      "interestTags": [
+        "culture",
+        "city",
+        "food"
+      ],
+      "personaTags": [
+        "foreigner",
+        "solo"
+      ],
+      "relatedTourIds": [
+        11
+      ],
+      "heritageLevel": "UNESCO World Heritage",
+      "chunkType": "heritage",
+      "source": {
+        "name": "UNESCO - Thang Long",
+        "url": "https://whc.unesco.org/en/list/1328",
+        "authority": "International"
+      }
+    },
+    {
+      "id": "rag-005",
+      "title": "Complex of Hue Monuments imperial heritage",
+      "content": "Hue imperial citadel and royal tombs form a UNESCO ensemble reflecting Nguyen dynasty architecture. Perfume River boat trips and royal cuisine tasting are signature experiences. Electric carts recommended inside the citadel for elderly visitors.",
+      "cityKeys": [
+        "hue"
+      ],
+      "region": "Central Vietnam",
+      "interestTags": [
+        "culture",
+        "river",
+        "food"
+      ],
+      "personaTags": [
+        "foreigner",
+        "couple",
+        "elderly"
+      ],
+      "relatedTourIds": [],
+      "heritageLevel": "UNESCO World Heritage",
+      "chunkType": "heritage",
+      "source": {
+        "name": "UNESCO - Hue",
+        "url": "https://whc.unesco.org/en/list/678",
+        "authority": "International"
+      }
+    },
+    {
+      "id": "rag-006",
+      "title": "My Son Cham sanctuary near Hoi An",
+      "content": "My Son Sanctuary (UNESCO 1999) preserves red-brick Cham tower temples from the 4th-13th centuries. Day trips from Hoi An or Da Nang suit culture-focused travelers. Morning visits avoid heat.",
+      "cityKeys": [
+        "myson",
+        "hoian",
+        "da nang"
+      ],
+      "region": "Central Vietnam",
+      "interestTags": [
+        "culture",
+        "photography"
+      ],
+      "personaTags": [
+        "foreigner",
+        "couple"
+      ],
+      "relatedTourIds": [
+        3,
+        8
+      ],
+      "heritageLevel": "UNESCO World Heritage",
+      "chunkType": "heritage",
+      "source": {
+        "name": "UNESCO - My Son",
+        "url": "https://whc.unesco.org/en/list/949",
+        "authority": "International"
+      }
+    },
+    {
+      "id": "rag-007",
+      "title": "Can Tho / Mekong Delta — heritage",
+      "content": "Cai Rang floating market operates at dawn; river tourism needs sun protection and stable footwear.",
+      "cityKeys": [
+        "cantho",
+        "can tho"
+      ],
+      "region": "Mekong Delta",
+      "interestTags": [
+        "culture"
+      ],
+      "personaTags": [
+        "foreigner"
+      ],
+      "relatedTourIds": [
+        5
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "heritage",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-008",
+      "title": "Can Tho / Mekong Delta — food",
+      "content": "Mekong cuisine: Banh Xeo, freshwater fish, coconut candy. Cash preferred at floating vendors.",
+      "cityKeys": [
+        "cantho",
+        "can tho"
+      ],
+      "region": "Mekong Delta",
+      "interestTags": [
+        "food"
+      ],
+      "personaTags": [
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [
+        5
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "food",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-009",
+      "title": "Can Tho / Mekong Delta — accessibility",
+      "content": "Morning boat departures suit elderly; avoid long open-deck midday segments with children.",
+      "cityKeys": [
+        "cantho",
+        "can tho"
+      ],
+      "region": "Mekong Delta",
+      "interestTags": [
+        "relax"
+      ],
+      "personaTags": [
+        "elderly",
+        "children"
+      ],
+      "relatedTourIds": [
+        5
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "accessibility",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-010",
+      "title": "Can Tho / Mekong Delta — season",
+      "content": "Dry season Dec-May lowers flood risk; floating markets busiest before 8 AM.",
+      "cityKeys": [
+        "cantho",
+        "can tho"
+      ],
+      "region": "Mekong Delta",
+      "interestTags": [
+        "nature"
+      ],
+      "personaTags": [
+        "solo",
+        "group"
+      ],
+      "relatedTourIds": [
+        5
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "season",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-011",
+      "title": "Phu Quoc Island — heritage",
+      "content": "Phu Quoc offers marine parks, Sao Beach white sand, and night market seafood.",
+      "cityKeys": [
+        "phuquoc",
+        "phu quoc"
+      ],
+      "region": "Southwest Coast",
+      "interestTags": [
+        "culture"
+      ],
+      "personaTags": [
+        "foreigner"
+      ],
+      "relatedTourIds": [
+        1,
+        10
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "heritage",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-012",
+      "title": "Phu Quoc Island — food",
+      "content": "Phu Quoc fish sauce and pepper farms support food tourism; try herring salad (goi ca mai).",
+      "cityKeys": [
+        "phuquoc",
+        "phu quoc"
+      ],
+      "region": "Southwest Coast",
+      "interestTags": [
+        "food"
+      ],
+      "personaTags": [
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [
+        1,
+        10
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "food",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-013",
+      "title": "Phu Quoc Island — accessibility",
+      "content": "Resort-based tours reduce mobility strain for elderly; shallow beaches suit families.",
+      "cityKeys": [
+        "phuquoc",
+        "phu quoc"
+      ],
+      "region": "Southwest Coast",
+      "interestTags": [
+        "relax"
+      ],
+      "personaTags": [
+        "elderly",
+        "children"
+      ],
+      "relatedTourIds": [
+        1,
+        10
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "accessibility",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-014",
+      "title": "Phu Quoc Island — season",
+      "content": "Dry season Nov-Apr preferred for beach; monsoon Jun-Oct may restrict boat trips.",
+      "cityKeys": [
+        "phuquoc",
+        "phu quoc"
+      ],
+      "region": "Southwest Coast",
+      "interestTags": [
+        "nature"
+      ],
+      "personaTags": [
+        "solo",
+        "group"
+      ],
+      "relatedTourIds": [
+        1,
+        10
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "season",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-015",
+      "title": "Da Lat Central Highlands — heritage",
+      "content": "Da Lat temperate climate supports colonial villas, flower gardens, and specialty coffee.",
+      "cityKeys": [
+        "dalat",
+        "da lat"
+      ],
+      "region": "Central Highlands",
+      "interestTags": [
+        "culture"
+      ],
+      "personaTags": [
+        "foreigner"
+      ],
+      "relatedTourIds": [
+        2
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "heritage",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-016",
+      "title": "Da Lat Central Highlands — food",
+      "content": "Night market street food and avocado ice cream are local highlights.",
+      "cityKeys": [
+        "dalat",
+        "da lat"
+      ],
+      "region": "Central Highlands",
+      "interestTags": [
+        "food"
+      ],
+      "personaTags": [
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [
+        2
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "food",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-017",
+      "title": "Da Lat Central Highlands — accessibility",
+      "content": "Cloud-hunting requires pre-dawn departures — not ideal for very young children.",
+      "cityKeys": [
+        "dalat",
+        "da lat"
+      ],
+      "region": "Central Highlands",
+      "interestTags": [
+        "relax"
+      ],
+      "personaTags": [
+        "elderly",
+        "children"
+      ],
+      "relatedTourIds": [
+        2
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "accessibility",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-018",
+      "title": "Da Lat Central Highlands — season",
+      "content": "Year-round cool evenings; bring light jacket even in summer.",
+      "cityKeys": [
+        "dalat",
+        "da lat"
+      ],
+      "region": "Central Highlands",
+      "interestTags": [
+        "nature"
+      ],
+      "personaTags": [
+        "solo",
+        "group"
+      ],
+      "relatedTourIds": [
+        2
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "season",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-019",
+      "title": "Sapa / Lao Cai — heritage",
+      "content": "Sapa terraced fields and ethnic minority villages (Hmong, Dao) define cultural trekking.",
+      "cityKeys": [
+        "sapa",
+        "sapa"
+      ],
+      "region": "Northwest Vietnam",
+      "interestTags": [
+        "culture"
+      ],
+      "personaTags": [
+        "foreigner"
+      ],
+      "relatedTourIds": [
+        6
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "heritage",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-020",
+      "title": "Sapa / Lao Cai — food",
+      "content": "Local cuisine includes thang co and grilled mountain pork; homestays offer authentic meals.",
+      "cityKeys": [
+        "sapa",
+        "sapa"
+      ],
+      "region": "Northwest Vietnam",
+      "interestTags": [
+        "food"
+      ],
+      "personaTags": [
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [
+        6
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "food",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-021",
+      "title": "Sapa / Lao Cai — accessibility",
+      "content": "Long treks unsuitable for elderly and toddlers; Fansipan cable car is lower-impact alternative.",
+      "cityKeys": [
+        "sapa",
+        "sapa"
+      ],
+      "region": "Northwest Vietnam",
+      "interestTags": [
+        "relax"
+      ],
+      "personaTags": [
+        "elderly",
+        "children"
+      ],
+      "relatedTourIds": [
+        6
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "accessibility",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-022",
+      "title": "Sapa / Lao Cai — season",
+      "content": "Sep-Nov and Mar-May offer clearer views; winter fog common Dec-Feb.",
+      "cityKeys": [
+        "sapa",
+        "sapa"
+      ],
+      "region": "Northwest Vietnam",
+      "interestTags": [
+        "nature"
+      ],
+      "personaTags": [
+        "solo",
+        "group"
+      ],
+      "relatedTourIds": [
+        6
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "season",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-023",
+      "title": "Da Nang Central Coast — heritage",
+      "content": "Da Nang links Dragon Bridge, My Khe Beach, and gateway to Ba Na Hills Golden Bridge.",
+      "cityKeys": [
+        "danang",
+        "da nang"
+      ],
+      "region": "Central Coast",
+      "interestTags": [
+        "culture"
+      ],
+      "personaTags": [
+        "foreigner"
+      ],
+      "relatedTourIds": [
+        8
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "heritage",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-024",
+      "title": "Da Nang Central Coast — food",
+      "content": "Mi Quang noodles and seafood boulevard are culinary anchors.",
+      "cityKeys": [
+        "danang",
+        "da nang"
+      ],
+      "region": "Central Coast",
+      "interestTags": [
+        "food"
+      ],
+      "personaTags": [
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [
+        8
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "food",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-025",
+      "title": "Da Nang Central Coast — accessibility",
+      "content": "Ba Na Hills cable car aids elderly access to hill attractions.",
+      "cityKeys": [
+        "danang",
+        "da nang"
+      ],
+      "region": "Central Coast",
+      "interestTags": [
+        "relax"
+      ],
+      "personaTags": [
+        "elderly",
+        "children"
+      ],
+      "relatedTourIds": [
+        8
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "accessibility",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-026",
+      "title": "Da Nang Central Coast — season",
+      "content": "Beach safety flags critical during Sep-Dec monsoon swells.",
+      "cityKeys": [
+        "danang",
+        "da nang"
+      ],
+      "region": "Central Coast",
+      "interestTags": [
+        "nature"
+      ],
+      "personaTags": [
+        "solo",
+        "group"
+      ],
+      "relatedTourIds": [
+        8
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "season",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-027",
+      "title": "Nha Trang / Khanh Hoa — heritage",
+      "content": "Nha Trang bay supports island hopping, diving, and Ponagar Cham towers.",
+      "cityKeys": [
+        "nhatrang",
+        "nha trang"
+      ],
+      "region": "South Central Coast",
+      "interestTags": [
+        "culture"
+      ],
+      "personaTags": [
+        "foreigner"
+      ],
+      "relatedTourIds": [
+        12,
+        10
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "heritage",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-028",
+      "title": "Nha Trang / Khanh Hoa — food",
+      "content": "Banh Can mini pancakes and fresh seafood define local food identity.",
+      "cityKeys": [
+        "nhatrang",
+        "nha trang"
+      ],
+      "region": "South Central Coast",
+      "interestTags": [
+        "food"
+      ],
+      "personaTags": [
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [
+        12,
+        10
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "food",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-029",
+      "title": "Nha Trang / Khanh Hoa — accessibility",
+      "content": "Licensed dive operators required; island day trips with seated transport suit elderly.",
+      "cityKeys": [
+        "nhatrang",
+        "nha trang"
+      ],
+      "region": "South Central Coast",
+      "interestTags": [
+        "relax"
+      ],
+      "personaTags": [
+        "elderly",
+        "children"
+      ],
+      "relatedTourIds": [
+        12,
+        10
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "accessibility",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-030",
+      "title": "Nha Trang / Khanh Hoa — season",
+      "content": "Best sea conditions Feb-Aug; typhoon season Oct-Dec may cancel boats.",
+      "cityKeys": [
+        "nhatrang",
+        "nha trang"
+      ],
+      "region": "South Central Coast",
+      "interestTags": [
+        "nature"
+      ],
+      "personaTags": [
+        "solo",
+        "group"
+      ],
+      "relatedTourIds": [
+        12,
+        10
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "season",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-031",
+      "title": "Ho Chi Minh City — heritage",
+      "content": "Saigon blends colonial Notre-Dame area, Ben Thanh Market, and Cu Chi tunnel day trips.",
+      "cityKeys": [
+        "hochiminh",
+        "ho chi minh"
+      ],
+      "region": "Southeast Vietnam",
+      "interestTags": [
+        "culture"
+      ],
+      "personaTags": [
+        "foreigner"
+      ],
+      "relatedTourIds": [
+        9
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "heritage",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-032",
+      "title": "Ho Chi Minh City — food",
+      "content": "Street food tours (Banh Mi, Hu Tieu) are signature urban experiences.",
+      "cityKeys": [
+        "hochiminh",
+        "ho chi minh"
+      ],
+      "region": "Southeast Vietnam",
+      "interestTags": [
+        "food"
+      ],
+      "personaTags": [
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [
+        9
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "food",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-033",
+      "title": "Ho Chi Minh City — accessibility",
+      "content": "Air-conditioned vehicle tours reduce heat stress for elderly in dry season.",
+      "cityKeys": [
+        "hochiminh",
+        "ho chi minh"
+      ],
+      "region": "Southeast Vietnam",
+      "interestTags": [
+        "relax"
+      ],
+      "personaTags": [
+        "elderly",
+        "children"
+      ],
+      "relatedTourIds": [
+        9
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "accessibility",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-034",
+      "title": "Ho Chi Minh City — season",
+      "content": "Hot dry season Mar-May; rainy afternoons May-Nov — plan indoor museums.",
+      "cityKeys": [
+        "hochiminh",
+        "ho chi minh"
+      ],
+      "region": "Southeast Vietnam",
+      "interestTags": [
+        "nature"
+      ],
+      "personaTags": [
+        "solo",
+        "group"
+      ],
+      "relatedTourIds": [
+        9
+      ],
+      "heritageLevel": "Regional",
+      "chunkType": "season",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-035",
+      "title": "Vietnam coastal beach tourism patterns",
+      "content": "Key beach clusters: Phu Quoc, Nha Trang, Da Nang, Mui Ne, Phu Quy. Resort packages suit couples; check jellyfish season and lifeguard presence for family beach days.",
+      "cityKeys": [
+        "vietnam"
+      ],
+      "region": "National",
+      "interestTags": [
+        "beach"
+      ],
+      "personaTags": [
+        "foreigner",
+        "vietnamese",
+        "solo",
+        "couple"
+      ],
+      "relatedTourIds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "heritageLevel": "National",
+      "chunkType": "topic",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-036",
+      "title": "Mekong and Red River delta river tourism",
+      "content": "River tourism spans Cai Rang floating market, Mekong homestays, Perfume River Hue, and Trang An boats. Life jackets and licensed operators are mandatory safety requirements.",
+      "cityKeys": [
+        "vietnam"
+      ],
+      "region": "National",
+      "interestTags": [
+        "river"
+      ],
+      "personaTags": [
+        "foreigner",
+        "vietnamese",
+        "solo",
+        "couple"
+      ],
+      "relatedTourIds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "heritageLevel": "National",
+      "chunkType": "topic",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-037",
+      "title": "Vietnamese intangible cultural heritage for tourists",
+      "content": "Water puppetry (Hanoi), Quan Ho folk songs (Bac Ninh), Ca Tru, and lantern festivals (Hoi An) provide accessible cultural entry points for international visitors.",
+      "cityKeys": [
+        "vietnam"
+      ],
+      "region": "National",
+      "interestTags": [
+        "culture"
+      ],
+      "personaTags": [
+        "foreigner",
+        "vietnamese",
+        "solo",
+        "couple"
+      ],
+      "relatedTourIds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "heritageLevel": "National",
+      "chunkType": "topic",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-038",
+      "title": "Vietnamese regional cuisine map for tour planning",
+      "content": "North: Pho, Bun Cha. Central: Mi Quang, Cao Lau. South: Hu Tieu, Banh Xeo. Street food tours need reputable operators for hygiene-conscious foreign guests.",
+      "cityKeys": [
+        "vietnam"
+      ],
+      "region": "National",
+      "interestTags": [
+        "food"
+      ],
+      "personaTags": [
+        "foreigner",
+        "vietnamese",
+        "solo",
+        "couple"
+      ],
+      "relatedTourIds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "heritageLevel": "National",
+      "chunkType": "topic",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-039",
+      "title": "Vietnam nature and national park tourism",
+      "content": "National parks include Cat Ba, Cuc Phuong, Phong Nha-Ke Bang, Bach Ma. Trek difficulty varies; elderly should prefer cable car or boat-based nature experiences.",
+      "cityKeys": [
+        "vietnam"
+      ],
+      "region": "National",
+      "interestTags": [
+        "nature"
+      ],
+      "personaTags": [
+        "foreigner",
+        "vietnamese",
+        "solo",
+        "couple"
+      ],
+      "relatedTourIds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "heritageLevel": "National",
+      "chunkType": "topic",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-040",
+      "title": "Adventure tourism safety in Vietnam",
+      "content": "Trekking (Sapa), diving (Nha Trang), kayaking (Ha Long), canyoning (Da Lat) require operator licensing. Not recommended for groups with young children or mobility-limited elderly.",
+      "cityKeys": [
+        "vietnam"
+      ],
+      "region": "National",
+      "interestTags": [
+        "adventure"
+      ],
+      "personaTags": [
+        "foreigner",
+        "vietnamese",
+        "solo",
+        "couple"
+      ],
+      "relatedTourIds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "heritageLevel": "National",
+      "chunkType": "topic",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-041",
+      "title": "Resort and wellness tourism in Vietnam",
+      "content": "Cam Ranh and Phu Quoc lead resort/spa offerings; Ha Long luxury cruises combine relaxation with scenery. Honeymoon packages emphasize privacy and spa access.",
+      "cityKeys": [
+        "vietnam"
+      ],
+      "region": "National",
+      "interestTags": [
+        "relax"
+      ],
+      "personaTags": [
+        "foreigner",
+        "vietnamese",
+        "solo",
+        "couple"
+      ],
+      "relatedTourIds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "heritageLevel": "National",
+      "chunkType": "topic",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-042",
+      "title": "Photography tourism hotspots Vietnam",
+      "content": "Golden hour spots: Hoi An lanterns, Ha Long sunrise decks, Sapa terraces (Sep harvest), Da Lat cloud hunting (Cau Dat 4:30 AM departures).",
+      "cityKeys": [
+        "vietnam"
+      ],
+      "region": "National",
+      "interestTags": [
+        "photography"
+      ],
+      "personaTags": [
+        "foreigner",
+        "vietnamese",
+        "solo",
+        "couple"
+      ],
+      "relatedTourIds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "heritageLevel": "National",
+      "chunkType": "topic",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-043",
+      "title": "Urban tourism in Vietnam major cities",
+      "content": "Hanoi and Ho Chi Minh City offer museums, markets, and colonial architecture. Traffic density requires guided transport for first-time foreign visitors.",
+      "cityKeys": [
+        "vietnam"
+      ],
+      "region": "National",
+      "interestTags": [
+        "city"
+      ],
+      "personaTags": [
+        "foreigner",
+        "vietnamese",
+        "solo",
+        "couple"
+      ],
+      "relatedTourIds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "heritageLevel": "National",
+      "chunkType": "topic",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-044",
+      "title": "Foreign visitor etiquette and visa basics",
+      "content": "Dress modestly at temples; remove shoes; ask before photographing people. E-visa available for many nationalities; Phu Quoc special zone policies may differ. Tipping not mandatory but appreciated for guides.",
+      "cityKeys": [
+        "vietnam"
+      ],
+      "region": "National",
+      "interestTags": [
+        "culture",
+        "city"
+      ],
+      "personaTags": [
+        "foreigner"
+      ],
+      "relatedTourIds": [],
+      "heritageLevel": "National",
+      "chunkType": "etiquette",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-045",
+      "title": "Elderly-friendly tour design principles Vietnam",
+      "content": "Prefer morning schedules, seated transport, elevator-equipped hotels/cruises, minimal stair climbing. Avoid motorbike street food tours and multi-hour treks. Ha Long cruises and Trang An boats offer seated experiences.",
+      "cityKeys": [
+        "vietnam"
+      ],
+      "region": "National",
+      "interestTags": [
+        "relax",
+        "culture"
+      ],
+      "personaTags": [
+        "elderly"
+      ],
+      "relatedTourIds": [
+        4,
+        5,
+        7,
+        11
+      ],
+      "heritageLevel": "National",
+      "chunkType": "accessibility",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-046",
+      "title": "Family travel with children in Vietnam",
+      "content": "Theme parks (Ba Na Hills), shallow beaches (Phu Quoc), water puppet shows (Hanoi), and lantern workshops (Hoi An) suit mixed-age groups. Limit dive/trek/motorbike activities.",
+      "cityKeys": [
+        "vietnam"
+      ],
+      "region": "National",
+      "interestTags": [
+        "beach",
+        "culture",
+        "relax"
+      ],
+      "personaTags": [
+        "children",
+        "family"
+      ],
+      "relatedTourIds": [
+        1,
+        2,
+        3,
+        8
+      ],
+      "heritageLevel": "National",
+      "chunkType": "accessibility",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-047",
+      "title": "Group dynamics and fair activity selection",
+      "content": "Group tour fairness requires balancing adventure seekers with comfort-preferring members. Itineraries with optional activities (kayak vs deck rest) reduce dissatisfaction variance. River and resort bases offer natural split activity windows.",
+      "cityKeys": [
+        "vietnam"
+      ],
+      "region": "National",
+      "interestTags": [
+        "adventure",
+        "relax"
+      ],
+      "personaTags": [
+        "group",
+        "couple"
+      ],
+      "relatedTourIds": [
+        4,
+        5,
+        8
+      ],
+      "heritageLevel": "National",
+      "chunkType": "group_fairness",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-048",
+      "title": "Vietnam monsoon and typhoon travel advisories",
+      "content": "Central coast typhoon risk peaks Sep-Dec affecting Da Nang, Hoi An, Nha Trang boats. Mekong Delta flooding possible Jun-Nov. North winter fog affects Sapa views Dec-Feb.",
+      "cityKeys": [
+        "vietnam",
+        "da nang",
+        "nha trang",
+        "can tho",
+        "sapa"
+      ],
+      "region": "National",
+      "interestTags": [
+        "nature",
+        "beach"
+      ],
+      "personaTags": [
+        "foreigner",
+        "family"
+      ],
+      "relatedTourIds": [
+        4,
+        6,
+        8,
+        12
+      ],
+      "heritageLevel": "National",
+      "chunkType": "season",
+      "source": {
+        "name": "General Statistics Office Vietnam - Climate",
+        "url": "https://www.gso.gov.vn",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-049",
+      "title": "Phu Quoc 4D3N resort package",
+      "content": "Resort stay on Phu Quoc with Sao Beach, Sunset Town, and night market. Ideal beach-relax couples and solo.",
+      "cityKeys": [
+        "phuquoc",
+        "phu quoc"
+      ],
+      "region": "Tour Package",
+      "interestTags": [
+        "beach",
+        "relax",
+        "photography"
+      ],
+      "personaTags": [
+        "solo",
+        "couple"
+      ],
+      "relatedTourIds": [
+        1
+      ],
+      "heritageLevel": "Platform-Aligned",
+      "chunkType": "tour_package",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-050",
+      "title": "Da Lat 3D2N cloud hunting",
+      "content": "Youthful Da Lat itinerary: Cau Dat cloud hunting, coffee farms, night market. Culture-nature blend.",
+      "cityKeys": [
+        "dalat",
+        "da lat"
+      ],
+      "region": "Tour Package",
+      "interestTags": [
+        "nature",
+        "photography",
+        "food"
+      ],
+      "personaTags": [
+        "couple",
+        "group"
+      ],
+      "relatedTourIds": [
+        2
+      ],
+      "heritageLevel": "Platform-Aligned",
+      "chunkType": "tour_package",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-051",
+      "title": "Hoi An 2D1N ancient town lanterns",
+      "content": "Ancient town walking, Cao Lau tasting, flower lantern release. UNESCO core experience.",
+      "cityKeys": [
+        "hoian",
+        "hoi an"
+      ],
+      "region": "Tour Package",
+      "interestTags": [
+        "culture",
+        "food",
+        "photography"
+      ],
+      "personaTags": [
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [
+        3
+      ],
+      "heritageLevel": "Platform-Aligned",
+      "chunkType": "tour_package",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-052",
+      "title": "Ha Long 2D1N luxury cruise",
+      "content": "Overnight bay cruise with cave visits and gala dinner. Premium relax-nature product.",
+      "cityKeys": [
+        "halong",
+        "ha long"
+      ],
+      "region": "Tour Package",
+      "interestTags": [
+        "relax",
+        "nature",
+        "photography"
+      ],
+      "personaTags": [
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [
+        4
+      ],
+      "heritageLevel": "Platform-Aligned",
+      "chunkType": "tour_package",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-053",
+      "title": "Mekong Delta 2D1N floating market",
+      "content": "Cai Rang floating market, fruit orchards, homestay cuisine. River-food-cultural triangle.",
+      "cityKeys": [
+        "cantho",
+        "can tho"
+      ],
+      "region": "Tour Package",
+      "interestTags": [
+        "river",
+        "food",
+        "culture"
+      ],
+      "personaTags": [
+        "family",
+        "foreigner"
+      ],
+      "relatedTourIds": [
+        5
+      ],
+      "heritageLevel": "Platform-Aligned",
+      "chunkType": "tour_package",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-054",
+      "title": "Sapa 4D3N village trekking",
+      "content": "Cat Cat village, terraced fields, Fansipan option. Adventure-nature; limited elderly fit.",
+      "cityKeys": [
+        "sapa",
+        "sapa"
+      ],
+      "region": "Tour Package",
+      "interestTags": [
+        "nature",
+        "adventure",
+        "culture"
+      ],
+      "personaTags": [
+        "group",
+        "solo"
+      ],
+      "relatedTourIds": [
+        6
+      ],
+      "heritageLevel": "Platform-Aligned",
+      "chunkType": "tour_package",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-055",
+      "title": "Ninh Binh 2D1N Trang An Mua Cave",
+      "content": "Trang An boat, Mua Cave viewpoint, Hoa Lu capital. Accessible nature-culture day trips.",
+      "cityKeys": [
+        "ninhbinh",
+        "ninh binh"
+      ],
+      "region": "Tour Package",
+      "interestTags": [
+        "culture",
+        "nature",
+        "river"
+      ],
+      "personaTags": [
+        "family",
+        "elderly"
+      ],
+      "relatedTourIds": [
+        7
+      ],
+      "heritageLevel": "Platform-Aligned",
+      "chunkType": "tour_package",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-056",
+      "title": "Da Nang 3D2N Dragon Bridge Ba Na",
+      "content": "Coastal city, Dragon Bridge show, Ba Na Hills Golden Bridge. Mixed beach-city-theme.",
+      "cityKeys": [
+        "danang",
+        "da nang"
+      ],
+      "region": "Tour Package",
+      "interestTags": [
+        "beach",
+        "city",
+        "photography"
+      ],
+      "personaTags": [
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [
+        8
+      ],
+      "heritageLevel": "Platform-Aligned",
+      "chunkType": "tour_package",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-057",
+      "title": "Saigon evening food tour",
+      "content": "Motorbike or walking street food: Banh Mi, Hu Tieu, district nightlife. Urban food focus.",
+      "cityKeys": [
+        "hochiminh",
+        "ho chi minh"
+      ],
+      "region": "Tour Package",
+      "interestTags": [
+        "food",
+        "city",
+        "culture"
+      ],
+      "personaTags": [
+        "solo",
+        "couple"
+      ],
+      "relatedTourIds": [
+        9
+      ],
+      "heritageLevel": "Platform-Aligned",
+      "chunkType": "tour_package",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-058",
+      "title": "Cam Ranh honeymoon 3D2N",
+      "content": "Private beach resort, spa, romantic dinner. Couple-relax premium positioning.",
+      "cityKeys": [
+        "camranh",
+        "cam ranh"
+      ],
+      "region": "Tour Package",
+      "interestTags": [
+        "relax",
+        "beach"
+      ],
+      "personaTags": [
+        "couple"
+      ],
+      "relatedTourIds": [
+        10
+      ],
+      "heritageLevel": "Platform-Aligned",
+      "chunkType": "tour_package",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-059",
+      "title": "Hanoi photo walk 1 day",
+      "content": "Old Quarter, Hoan Kiem, Bun Cha, egg coffee photo hunting. Short city-photography product.",
+      "cityKeys": [
+        "hanoi",
+        "hanoi"
+      ],
+      "region": "Tour Package",
+      "interestTags": [
+        "city",
+        "photography",
+        "food"
+      ],
+      "personaTags": [
+        "solo",
+        "couple"
+      ],
+      "relatedTourIds": [
+        11
+      ],
+      "heritageLevel": "Platform-Aligned",
+      "chunkType": "tour_package",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-060",
+      "title": "Nha Trang island hopping dive",
+      "content": "Scuba, Binh Ba Island, Banh Can. Adventure-beach; check child age for diving.",
+      "cityKeys": [
+        "nhatrang",
+        "nha trang"
+      ],
+      "region": "Tour Package",
+      "interestTags": [
+        "beach",
+        "adventure",
+        "food"
+      ],
+      "personaTags": [
+        "group",
+        "couple"
+      ],
+      "relatedTourIds": [
+        12
+      ],
+      "heritageLevel": "Platform-Aligned",
+      "chunkType": "tour_package",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-061",
+      "title": "Hoi An Cao Lau noodles",
+      "content": "Signature chewy noodles with char siu — UNESCO town food icon.",
+      "cityKeys": [
+        "hoian"
+      ],
+      "region": "Culinary",
+      "interestTags": [
+        "food",
+        "culture"
+      ],
+      "personaTags": [
+        "foreigner",
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [
+        3
+      ],
+      "heritageLevel": "Intangible Cultural Practice",
+      "chunkType": "food",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-062",
+      "title": "Mekong Banh Xeo",
+      "content": "Crispy turmeric crepe with herbs — delta street food staple.",
+      "cityKeys": [
+        "cantho"
+      ],
+      "region": "Culinary",
+      "interestTags": [
+        "food",
+        "culture"
+      ],
+      "personaTags": [
+        "foreigner",
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [
+        5
+      ],
+      "heritageLevel": "Intangible Cultural Practice",
+      "chunkType": "food",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-063",
+      "title": "Hanoi Bun Cha",
+      "content": "Grilled pork with noodles — Obama-era global fame dish.",
+      "cityKeys": [
+        "hanoi"
+      ],
+      "region": "Culinary",
+      "interestTags": [
+        "food",
+        "culture"
+      ],
+      "personaTags": [
+        "foreigner",
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [
+        11
+      ],
+      "heritageLevel": "Intangible Cultural Practice",
+      "chunkType": "food",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-064",
+      "title": "Nha Trang Banh Can",
+      "content": "Mini clay-oven cakes with dipping sauce.",
+      "cityKeys": [
+        "nhatrang"
+      ],
+      "region": "Culinary",
+      "interestTags": [
+        "food",
+        "culture"
+      ],
+      "personaTags": [
+        "foreigner",
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [
+        12
+      ],
+      "heritageLevel": "Intangible Cultural Practice",
+      "chunkType": "food",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-065",
+      "title": "Da Nang Mi Quang",
+      "content": "Turmeric noodles with minimal broth — central Vietnam icon.",
+      "cityKeys": [
+        "danang"
+      ],
+      "region": "Culinary",
+      "interestTags": [
+        "food",
+        "culture"
+      ],
+      "personaTags": [
+        "foreigner",
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [
+        8
+      ],
+      "heritageLevel": "Intangible Cultural Practice",
+      "chunkType": "food",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-066",
+      "title": "Saigon Banh Mi",
+      "content": "French-Vietnamese baguette sandwich — global street food export.",
+      "cityKeys": [
+        "hochiminh"
+      ],
+      "region": "Culinary",
+      "interestTags": [
+        "food",
+        "culture"
+      ],
+      "personaTags": [
+        "foreigner",
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [
+        9
+      ],
+      "heritageLevel": "Intangible Cultural Practice",
+      "chunkType": "food",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-067",
+      "title": "Sapa bamboo rice",
+      "content": "Sticky rice in bamboo tube — ethnic highland specialty.",
+      "cityKeys": [
+        "sapa"
+      ],
+      "region": "Culinary",
+      "interestTags": [
+        "food",
+        "culture"
+      ],
+      "personaTags": [
+        "foreigner",
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [
+        6
+      ],
+      "heritageLevel": "Intangible Cultural Practice",
+      "chunkType": "food",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-068",
+      "title": "Hue lemongrass skewers",
+      "content": "Royal city finger food with peanut sauce.",
+      "cityKeys": [
+        "hue"
+      ],
+      "region": "Culinary",
+      "interestTags": [
+        "food",
+        "culture"
+      ],
+      "personaTags": [
+        "foreigner",
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [],
+      "heritageLevel": "Intangible Cultural Practice",
+      "chunkType": "food",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-069",
+      "title": "Fresh spring rolls national",
+      "content": "Universal light appetizer — elderly-friendly food format.",
+      "cityKeys": [
+        "vietnam"
+      ],
+      "region": "Culinary",
+      "interestTags": [
+        "food",
+        "culture"
+      ],
+      "personaTags": [
+        "foreigner",
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "heritageLevel": "Intangible Cultural Practice",
+      "chunkType": "food",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-070",
+      "title": "Vietnamese coffee culture",
+      "content": "Robusta drip coffee and egg coffee — Da Lat cafe tourism.",
+      "cityKeys": [
+        "dalat"
+      ],
+      "region": "Culinary",
+      "interestTags": [
+        "food",
+        "culture"
+      ],
+      "personaTags": [
+        "foreigner",
+        "couple",
+        "family"
+      ],
+      "relatedTourIds": [
+        2
+      ],
+      "heritageLevel": "Intangible Cultural Practice",
+      "chunkType": "food",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-071",
+      "title": "Hoi An flat terrain elderly access",
+      "content": "Ancient town core is pedestrian flat — wheelchair partial access.",
+      "cityKeys": [
+        "hoi_an"
+      ],
+      "region": "Accessibility",
+      "interestTags": [
+        "relax"
+      ],
+      "personaTags": [
+        "elderly",
+        "children",
+        "family"
+      ],
+      "relatedTourIds": [
+        3
+      ],
+      "heritageLevel": "Curated",
+      "chunkType": "accessibility",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-072",
+      "title": "Ha Long cruise mobility",
+      "content": "Select operators with cabin elevators and minimal kayak-only routes.",
+      "cityKeys": [
+        "ha_long"
+      ],
+      "region": "Accessibility",
+      "interestTags": [
+        "relax"
+      ],
+      "personaTags": [
+        "elderly",
+        "children",
+        "family"
+      ],
+      "relatedTourIds": [
+        4
+      ],
+      "heritageLevel": "Curated",
+      "chunkType": "accessibility",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-073",
+      "title": "Phu Quoc resort accessibility",
+      "content": "International resorts offer pool lifts and ground-floor rooms.",
+      "cityKeys": [
+        "phu_quoc"
+      ],
+      "region": "Accessibility",
+      "interestTags": [
+        "relax"
+      ],
+      "personaTags": [
+        "elderly",
+        "children",
+        "family"
+      ],
+      "relatedTourIds": [
+        1,
+        10
+      ],
+      "heritageLevel": "Curated",
+      "chunkType": "accessibility",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-074",
+      "title": "Da Nang family theme access",
+      "content": "Ba Na Hills cable car eliminates uphill climb for strollers.",
+      "cityKeys": [
+        "da_nang"
+      ],
+      "region": "Accessibility",
+      "interestTags": [
+        "relax"
+      ],
+      "personaTags": [
+        "elderly",
+        "children",
+        "family"
+      ],
+      "relatedTourIds": [
+        8
+      ],
+      "heritageLevel": "Curated",
+      "chunkType": "accessibility",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    },
+    {
+      "id": "rag-075",
+      "title": "Hanoi rest-stop walking tours",
+      "content": "Old Quarter tours with cafe breaks every 30 minutes recommended.",
+      "cityKeys": [
+        "hanoi"
+      ],
+      "region": "Accessibility",
+      "interestTags": [
+        "relax"
+      ],
+      "personaTags": [
+        "elderly",
+        "children",
+        "family"
+      ],
+      "relatedTourIds": [
+        11
+      ],
+      "heritageLevel": "Curated",
+      "chunkType": "accessibility",
+      "source": {
+        "name": "Vietnam National Administration of Tourism",
+        "url": "https://vietnamtourism.gov.vn/en",
+        "authority": "National"
+      }
+    }
+  ]
+}

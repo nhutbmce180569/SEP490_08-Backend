@@ -52,7 +52,7 @@ namespace ContentAPI.Controllers
 
         // GET: api/TourismInformation/5
         [HttpGet("{id}")]
-        [Authorize(Roles = "Admin")]
+        [AllowAnonymous]
         public async Task<ActionResult<ReadTourismInformationDTO>> GetById(int id)
         {
             var tourismInfo = await _tourismInformationService.GetByIdAsync(id);

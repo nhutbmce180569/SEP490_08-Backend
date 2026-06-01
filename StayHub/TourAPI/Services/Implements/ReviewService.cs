@@ -1,7 +1,12 @@
 using AutoMapper;
+using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Http;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 using TourAPI.DTOs;
 using TourAPI.Models;
@@ -19,6 +24,9 @@ namespace TourAPI.Services.Implements
         private readonly IOrderService _orderService;
         private readonly INotificationInternalService _notificationInternalService;
         private readonly IMapper _mapper;
+        private readonly HttpClient _httpClient;
+        private readonly string _gatewayUrl;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public ReviewService(
             IReviewRepository reviewRepository,
@@ -27,7 +35,10 @@ namespace TourAPI.Services.Implements
             ITourScheduleRepository tourScheduleRepository,
             IOrderService orderService,
             INotificationInternalService notificationInternalService,
-            IMapper mapper)
+            IMapper mapper,
+            HttpClient httpClient,
+            IConfiguration configuration,
+            IHttpContextAccessor httpContextAccessor)
         {
             _reviewRepository = reviewRepository;
             _reviewReplyRepository = reviewReplyRepository;
@@ -36,6 +47,10 @@ namespace TourAPI.Services.Implements
             _orderService = orderService;
             _notificationInternalService = notificationInternalService;
             _mapper = mapper;
+            _httpClient = httpClient;
+            _httpContextAccessor = httpContextAccessor;
+            _gatewayUrl = configuration.GetValue<string>("GatewayApi:BaseUrl") ?? "https://localhost:7010";
+            _httpClient.BaseAddress = new Uri(_gatewayUrl);
         }
 
         public async Task<ReadReviewDTO> CreateReviewAsync(CreateReviewDTO model, int customerId)
@@ -78,7 +93,9 @@ namespace TourAPI.Services.Implements
             await _reviewRepository.AddAsync(review);
             await _reviewRepository.SaveChangesAsync();
 
-            return _mapper.Map<ReadReviewDTO>(review);
+            var result = _mapper.Map<ReadReviewDTO>(review);
+            await PopulateReviewerNamesAsync(new[] { result });
+            return result;
         }
 
         public async Task<ReadReviewDTO> UpdateReviewAsync(int reviewId, UpdateReviewDTO model, int customerId)
@@ -106,7 +123,9 @@ namespace TourAPI.Services.Implements
             _reviewRepository.Update(review);
             await _reviewRepository.SaveChangesAsync();
 
-            return _mapper.Map<ReadReviewDTO>(review);
+            var dto = _mapper.Map<ReadReviewDTO>(review);
+            await PopulateReviewerNamesAsync(new[] { dto });
+            return dto;
         }
 
         public async Task<ReadReviewReplyDTO> CreateReviewReplyAsync(int staffId, CreateReviewReplyDTO model)
@@ -130,10 +149,14 @@ namespace TourAPI.Services.Implements
             await _notificationInternalService.NotifyUserAsync(
                 review.CustomerId,
                 "Your review has a new reply",
-                $"Manager/Staff vừa trả lời review của bạn: {model.Content}"
+                $"A Manager/Staff member has replied to your review: {model.Content}"
             );
 
-            return _mapper.Map<ReadReviewReplyDTO>(reply);
+            var dto = _mapper.Map<ReadReviewReplyDTO>(reply);
+            var userInfo = await GetUserInfoAsync(staffId);
+            dto.UserName = userInfo.Name;
+            dto.UserAvatar = userInfo.Avatar;
+            return dto;
         }
 
         public async Task<ReadReviewReplyDTO> UpdateReviewReplyAsync(int replyId, int staffId, UpdateReviewReplyDTO model)
@@ -151,7 +174,11 @@ namespace TourAPI.Services.Implements
             _reviewReplyRepository.Update(reply);
             await _reviewReplyRepository.SaveChangesAsync();
 
-            return _mapper.Map<ReadReviewReplyDTO>(reply);
+            var dto = _mapper.Map<ReadReviewReplyDTO>(reply);
+            var userInfo = await GetUserInfoAsync(staffId);
+            dto.UserName = userInfo.Name;
+            dto.UserAvatar = userInfo.Avatar;
+            return dto;
         }
 
         public async Task DeleteReviewReplyAsync(int replyId, int staffId)
@@ -170,20 +197,28 @@ namespace TourAPI.Services.Implements
         public async Task<ReadReviewDTO?> GetMyReviewByTourAsync(int tourId, int customerId)
         {
             var review = await _reviewRepository.GetByTourAndCustomerAsync(tourId, customerId);
-            return review == null ? null : _mapper.Map<ReadReviewDTO>(review);
+            if (review == null)
+                return null;
+
+            var dto = _mapper.Map<ReadReviewDTO>(review);
+            await PopulateReviewerNamesAsync(new[] { dto });
+            return dto;
         }
 
         public async Task<IEnumerable<ReadReviewDTO>> GetMyReviewsAsync(int customerId)
         {
             var reviews = await _reviewRepository.GetByCustomerAsync(customerId);
-            return _mapper.Map<IEnumerable<ReadReviewDTO>>(reviews);
+            var dtos = _mapper.Map<IEnumerable<ReadReviewDTO>>(reviews);
+            await PopulateReviewerNamesAsync(dtos);
+            return dtos;
         }
 
         public async Task<IEnumerable<ReadReviewDTO>> GetReviewsByTourAsync(int tourId, bool includeHidden = false)
         {
             var reviews = await _reviewRepository.GetByTourAsync(tourId, includeHidden);
-
-            return _mapper.Map<IEnumerable<ReadReviewDTO>>(reviews);
+            var dtos = _mapper.Map<IEnumerable<ReadReviewDTO>>(reviews);
+            await PopulateReviewerNamesAsync(dtos);
+            return dtos;
         }
 
         public async Task HideReviewAsync(int reviewId, bool hidden)
@@ -196,6 +231,97 @@ namespace TourAPI.Services.Implements
             review.UpdatedAt = DateTime.UtcNow;
             _reviewRepository.Update(review);
             await _reviewRepository.SaveChangesAsync();
+        }
+
+        private async Task PopulateReviewerNamesAsync(IEnumerable<ReadReviewDTO> reviews)
+        {
+            if (reviews == null)
+                return;
+
+            var reviewList = reviews.ToList();
+            if (!reviewList.Any())
+                return;
+
+            var uniqueCustomerIds = reviewList.Select(x => x.CustomerId).Distinct().ToList();
+            var uniqueReplyUserIds = reviewList
+                .SelectMany(r => r.Replies?.Select(rep => rep.UserId) ?? Enumerable.Empty<int>())
+                .Distinct()
+                .ToList();
+
+            var userNames = new ConcurrentDictionary<int, (string Name, string? Avatar)>();
+
+            var customerTasks = uniqueCustomerIds.Select(async id =>
+            {
+                var userInfo = await GetUserInfoAsync(id);
+                userNames.TryAdd(id, userInfo);
+            });
+
+            var replyTasks = uniqueReplyUserIds.Select(async id =>
+            {
+                if (!userNames.ContainsKey(id))
+                {
+                    var userInfo = await GetUserInfoAsync(id);
+                    userNames.TryAdd(id, userInfo);
+                }
+            });
+
+            await Task.WhenAll(customerTasks.Concat(replyTasks));
+
+            foreach (var review in reviewList)
+            {
+                if (userNames.TryGetValue(review.CustomerId, out var userInfo))
+                {
+                    review.CustomerName = userInfo.Name;
+                    review.CustomerAvatar = userInfo.Avatar;
+                }
+
+                if (review.Replies != null && review.Replies.Any())
+                {
+                    foreach (var rep in review.Replies)
+                    {
+                        if (userNames.TryGetValue(rep.UserId, out var replyUserInfo))
+                        {
+                            rep.UserName = replyUserInfo.Name;
+                            rep.UserAvatar = replyUserInfo.Avatar;
+                        }
+                    }
+                }
+            }
+        }
+
+        private async Task<(string Name, string? Avatar)> GetUserInfoAsync(int userId)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"/api/users/{userId}");
+
+                // Forward incoming Authorization header if present so Gateway can authenticate
+                try
+                {
+                    var ctx = _httpContextAccessor?.HttpContext;
+                    if (ctx != null && ctx.Request.Headers.TryGetValue("Authorization", out var auth))
+                    {
+                        request.Headers.Add("Authorization", (string)auth);
+                    }
+                }
+                catch
+                {
+                    // ignore if no context
+                }
+
+                var response = await _httpClient.SendAsync(request);
+                if (!response.IsSuccessStatusCode)
+                    return ("Unknown User", null);
+
+                var apiResponse = await response.Content.ReadFromJsonAsync<UserApiResponse>();
+                var fullName = apiResponse?.Data?.FullName ?? "Unknown User";
+                var avatar = apiResponse?.Data?.AvatarUrl;
+                return (fullName, avatar);
+            }
+            catch
+            {
+                return ("Unknown User", null);
+            }
         }
     }
 }

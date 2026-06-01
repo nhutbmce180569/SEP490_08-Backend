@@ -1,0 +1,202 @@
+{
+  "version": "2.0",
+  "description": "Curated Vietnam cultural corpus (regional entries). Complements StayHub-VN-RAG-Corpus-v2 (75 retrieval chunks). Sources: UNESCO, VNAT.",
+  "entries": [
+    {
+      "cityKeys": ["cantho", "cairang", "mekong"],
+      "displayName": "Can Tho / Mekong Delta",
+      "region": "Mekong Delta",
+      "facts": [
+        "Cai Rang floating market is one of the largest floating markets in the Mekong Delta, best visited at dawn.",
+        "Mekong Delta cuisine features freshwater fish, coconut products, and Banh Xeo (savoury crepes).",
+        "River-based tourism requires sun protection and stable footwear on boat decks."
+      ],
+      "foreignVisitorNotes": [
+        "Carry VND cash for floating market vendors; card acceptance is limited.",
+        "Dress modestly when visiting local homes or temples near the delta.",
+        "Confirm boat safety equipment and life jackets before departure."
+      ],
+      "elderlyNotes": [
+        "Prefer morning departures to avoid midday heat on open boats.",
+        "Choose tours with seated intervals and minimal stair climbing."
+      ],
+      "childNotes": [
+        "Short boat segments and fruit-garden visits are engaging for children.",
+        "Bring snacks and hydration; market areas can be crowded."
+      ],
+      "sources": [
+        { "name": "UNESCO World Heritage Centre", "url": "https://whc.unesco.org/en/statesparties/vn", "authority": "International" },
+        { "name": "Vietnam National Administration of Tourism", "url": "https://vietnamtourism.gov.vn/en", "authority": "National" }
+      ]
+    },
+    {
+      "cityKeys": ["hoian"],
+      "displayName": "Hoi An",
+      "region": "Central Vietnam",
+      "facts": [
+        "Hoi An Ancient Town is a UNESCO World Heritage Site known for lantern festivals and merchant architecture.",
+        "Signature dishes include Cao Lau and White Rose dumplings.",
+        "Evening pedestrian zones are ideal for cultural walking tours."
+      ],
+      "foreignVisitorNotes": [
+        "Purchase combined ancient town tickets for heritage sites.",
+        "Respect photography restrictions inside worship houses."
+      ],
+      "elderlyNotes": ["Flat terrain in the ancient town core suits slow-paced walking."],
+      "childNotes": ["Lantern-making workshops and river boat rides are family-friendly."],
+      "sources": [
+        { "name": "UNESCO - Hoi An", "url": "https://whc.unesco.org/en/list/874", "authority": "International" }
+      ]
+    },
+    {
+      "cityKeys": ["halong", "quangninh"],
+      "displayName": "Ha Long Bay / Quang Ninh",
+      "region": "Northeast Vietnam",
+      "facts": [
+        "Ha Long Bay is a UNESCO World Heritage Site with karst islands and cave systems.",
+        "Overnight cruises combine scenic sailing with cave and kayak activities."
+      ],
+      "foreignVisitorNotes": ["Verify cruise operator licensing and cabin safety briefing."],
+      "elderlyNotes": ["Select cruises with elevator access and limited kayak requirements."],
+      "childNotes": ["Choose family cabins and short kayak sessions with life jackets."],
+      "sources": [
+        { "name": "UNESCO - Ha Long Bay", "url": "https://whc.unesco.org/en/list/672", "authority": "International" }
+      ]
+    },
+    {
+      "cityKeys": ["hue"],
+      "displayName": "Hue",
+      "region": "Central Vietnam",
+      "facts": [
+        "The Complex of Hue Monuments is a UNESCO World Heritage Site of imperial citadel architecture.",
+        "Royal cuisine and Perfume River boat trips are cultural highlights."
+      ],
+      "foreignVisitorNotes": ["Formal attire recommended for imperial palace areas."],
+      "elderlyNotes": ["Use electric carts inside the citadel to reduce walking distance."],
+      "childNotes": ["Interactive craft villages can supplement monument visits."],
+      "sources": [
+        { "name": "UNESCO - Hue", "url": "https://whc.unesco.org/en/list/678", "authority": "International" }
+      ]
+    },
+    {
+      "cityKeys": ["sapa", "laocai"],
+      "displayName": "Sapa / Lao Cai",
+      "region": "Northwest Vietnam",
+      "facts": [
+        "Sapa features terraced rice fields and ethnic minority cultural experiences.",
+        "Mountain weather changes rapidly; layered clothing is recommended."
+      ],
+      "foreignVisitorNotes": ["Support community-based tourism with licensed local guides."],
+      "elderlyNotes": ["Avoid long trekking routes; choose cable car or gentle valley walks."],
+      "childNotes": ["Not ideal for very young children on multi-hour treks."],
+      "sources": [
+        { "name": "Vietnam National Administration of Tourism", "url": "https://vietnamtourism.gov.vn/en", "authority": "National" }
+      ]
+    },
+    {
+      "cityKeys": ["phuquoc"],
+      "displayName": "Phu Quoc",
+      "region": "Southwest Coast",
+      "facts": [
+        "Phu Quoc is known for island resorts, marine ecosystems, and seafood.",
+        "Dry season (Nov-Apr) is generally preferred for beach activities."
+      ],
+      "foreignVisitorNotes": ["Check visa policy for Phu Quoc special zone if applicable."],
+      "elderlyNotes": ["Resort-based tours reduce mobility strain."],
+      "childNotes": ["Shallow beaches and resort pools suit family travel."],
+      "sources": [
+        { "name": "Vietnam National Administration of Tourism", "url": "https://vietnamtourism.gov.vn/en", "authority": "National" }
+      ]
+    },
+    {
+      "cityKeys": ["dalat"],
+      "displayName": "Da Lat",
+      "region": "Central Highlands",
+      "facts": [
+        "Da Lat has temperate climate, colonial architecture, and specialty coffee culture.",
+        "Cloud-hunting viewpoints require early-morning departures."
+      ],
+      "foreignVisitorNotes": ["Cool evenings year-round; bring a light jacket."],
+      "elderlyNotes": ["Garden and lake tours are lower intensity."],
+      "childNotes": ["Flower gardens and farms are suitable for children."],
+      "sources": [
+        { "name": "Vietnam National Administration of Tourism", "url": "https://vietnamtourism.gov.vn/en", "authority": "National" }
+      ]
+    },
+    {
+      "cityKeys": ["danang"],
+      "displayName": "Da Nang",
+      "region": "Central Coast",
+      "facts": [
+        "Da Nang connects coastal recreation with access to Ba Na Hills and Hoi An.",
+        "Dragon Bridge fire-water shows occur on weekends."
+      ],
+      "foreignVisitorNotes": ["Beach safety flags should be observed during monsoon swells."],
+      "elderlyNotes": ["Cable car access to Ba Na Hills reduces climbing."],
+      "childNotes": ["Theme attractions and beaches offer mixed-age activities."],
+      "sources": [
+        { "name": "Vietnam National Administration of Tourism", "url": "https://vietnamtourism.gov.vn/en", "authority": "National" }
+      ]
+    },
+    {
+      "cityKeys": ["hanoi"],
+      "displayName": "Hanoi",
+      "region": "Red River Delta",
+      "facts": [
+        "Hanoi Old Quarter preserves street-food culture and French-colonial architecture.",
+        "Thang Long Imperial Citadel is a UNESCO World Heritage Site."
+      ],
+      "foreignVisitorNotes": ["Street food tours should use reputable operators for hygiene."],
+      "elderlyNotes": ["Choose walking tours with frequent rest stops."],
+      "childNotes": ["Water puppet shows are popular cultural experiences for children."],
+      "sources": [
+        { "name": "UNESCO - Thang Long", "url": "https://whc.unesco.org/en/list/1328", "authority": "International" }
+      ]
+    },
+    {
+      "cityKeys": ["nhatrang", "khanhhoa", "camranh"],
+      "displayName": "Nha Trang / Khanh Hoa",
+      "region": "South Central Coast",
+      "facts": [
+        "Nha Trang offers island hopping, diving, and seafood cuisine.",
+        "Marine activities depend on seasonal sea conditions."
+      ],
+      "foreignVisitorNotes": ["Use licensed dive operators with international safety standards."],
+      "elderlyNotes": ["Island day trips with seated transport are preferable."],
+      "childNotes": ["Snorkeling in shallow bays can be arranged for older children."],
+      "sources": [
+        { "name": "Vietnam National Administration of Tourism", "url": "https://vietnamtourism.gov.vn/en", "authority": "National" }
+      ]
+    },
+    {
+      "cityKeys": ["ninhbinh", "trangan"],
+      "displayName": "Ninh Binh / Trang An",
+      "region": "Red River Delta",
+      "facts": [
+        "Trang An Landscape Complex is a UNESCO mixed natural and cultural heritage site.",
+        "Boat routes pass through limestone caves and temples."
+      ],
+      "foreignVisitorNotes": ["Boat routes are fixed; allow 2-3 hours for full experience."],
+      "elderlyNotes": ["Boat seating is suitable for limited-mobility travelers."],
+      "childNotes": ["Scenic boat rides are engaging; bring sun hats."],
+      "sources": [
+        { "name": "UNESCO - Trang An", "url": "https://whc.unesco.org/en/list/1438", "authority": "International" }
+      ]
+    },
+    {
+      "cityKeys": ["hochiminh", "saigon"],
+      "displayName": "Ho Chi Minh City",
+      "region": "Southeast Vietnam",
+      "facts": [
+        "Ho Chi Minh City combines colonial landmarks, museums, and street-food culture.",
+        "Evening food tours by foot or cyclo are popular urban experiences."
+      ],
+      "foreignVisitorNotes": ["Traffic density is high; use marked crosswalks and guided transport."],
+      "elderlyNotes": ["Air-conditioned vehicle tours reduce heat exposure."],
+      "childNotes": ["Interactive museums and parks suit mixed-age groups."],
+      "sources": [
+        { "name": "Vietnam National Administration of Tourism", "url": "https://vietnamtourism.gov.vn/en", "authority": "National" }
+      ]
+    }
+  ]
+}
