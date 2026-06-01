@@ -671,7 +671,15 @@ GO
 -- Xong! Trả về database Master để hoàn tất.
 USE StayHub_SocialDb;
 GO
+USE StayHub_SocialDb;
+GO
 
+-- Thêm cột IsPinned và IsMuted cho bảng ChatMembers
+ALTER TABLE ChatMembers ADD IsPinned BIT DEFAULT 0;
+ALTER TABLE ChatMembers ADD IsMuted BIT DEFAULT 0;
+GO
+
+PRINT 'Cap nhat Database SocialDb thanh cong!';
 -- Xong! Trả về database Master để hoàn tất.
 USE master;
 GO
