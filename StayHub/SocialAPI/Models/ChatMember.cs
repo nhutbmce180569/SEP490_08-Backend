@@ -14,4 +14,6 @@ public partial class ChatMember
     public DateTime? JoinedAt { get; set; }
 
     public virtual ChatRoom ChatRoom { get; set; } = null!;
+    public bool? IsPinned { get; set; }
+    public bool? IsMuted { get; set; }
 }
