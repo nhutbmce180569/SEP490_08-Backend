@@ -40,6 +40,8 @@ namespace SocialAPI
                 options.Select().Filter().OrderBy().Expand().Count().SetMaxTop(100)
                        .AddRouteComponents("api", GetEdmModel())
             );
+            builder.Services.AddScoped<IChatRepository, ChatRepository>();
+            builder.Services.AddScoped<IChatService, ChatService>();
             builder.Services.AddFluentValidationAutoValidation();
             builder.Services.AddFluentValidationClientsideAdapters();
             builder.Services.AddValidatorsFromAssemblyContaining<Program>();
@@ -176,7 +178,7 @@ namespace SocialAPI
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
+            app.MapHub<ChatHub>("/hubs/chat");
             app.UseHttpsRedirection();
 
             app.UseCors("AllowSignalR");
@@ -186,7 +188,6 @@ namespace SocialAPI
 
             app.MapControllers();
             app.MapHub<FriendshipHub>("/hubs/friendship");
-            app.MapHub<ChatHub>("/hubs/chat");
 
             app.Run();
         }
