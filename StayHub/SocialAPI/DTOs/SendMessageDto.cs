@@ -1,7 +1,13 @@
-﻿namespace SocialAPI.DTOs
+using System.ComponentModel.DataAnnotations;
+
+namespace SocialAPI.DTOs
 {
     public class SendMessageDto
     {
-        public string Content { get; set; } = string.Empty;
+        [Required]
+        public int ChatRoomId { get; set; }
+
+        [Required]
+        public string Content { get; set; } = null!;
     }
 }
