@@ -84,10 +84,13 @@ namespace TourAPI
             builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
             builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
             builder.Services.AddScoped<IReviewReplyRepository, ReviewReplyRepository>();
-            builder.Services.AddScoped<IReviewService, ReviewService>();
+            builder.Services.AddHttpClient<IReviewService, ReviewService>(client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(10);
+            })
+            .AddHttpMessageHandler<AuthorizationHeaderHandler>();
             builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddHttpClient<INotificationInternalService, NotificationInternalService>();
-            //builder.Services.AddHttpClient<IReviewService, ReviewService>(client =>
             //{
             //    client.Timeout = TimeSpan.FromSeconds(10);
             //}).AddHttpMessageHandler<AuthorizationHeaderHandler>();
