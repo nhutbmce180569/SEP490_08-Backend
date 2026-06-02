@@ -84,6 +84,22 @@ namespace TourAPI
             builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
             builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
             builder.Services.AddScoped<IReviewReplyRepository, ReviewReplyRepository>();
+            builder.Services.AddScoped<ICustomerEngagementRepository, CustomerEngagementRepository>();
+            builder.Services.AddScoped<ICustomerAnalyticsService, CustomerAnalyticsService>();
+            builder.Services.AddHttpClient<IAuthAnalyticsClient, AuthAnalyticsClient>(client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(15);
+                var gatewayUrl = builder.Configuration.GetValue<string>("GatewayApi:BaseUrl") ?? "https://localhost:7010";
+                client.BaseAddress = new Uri(gatewayUrl.TrimEnd('/') + "/");
+            })
+            .AddHttpMessageHandler<AuthorizationHeaderHandler>();
+            builder.Services.AddHttpClient<IBookingAnalyticsClient, BookingAnalyticsClient>(client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(15);
+                var gatewayUrl = builder.Configuration.GetValue<string>("GatewayApi:BaseUrl") ?? "https://localhost:7010";
+                client.BaseAddress = new Uri(gatewayUrl.TrimEnd('/') + "/");
+            })
+            .AddHttpMessageHandler<AuthorizationHeaderHandler>();
             builder.Services.AddHttpClient<IReviewService, ReviewService>(client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(10);
@@ -104,7 +120,7 @@ namespace TourAPI
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            // 2. CẤU HÌNH SWAGGER CHUẨN (Tự động thêm Bearer)
+            // Swagger with Bearer JWT security
             builder.Services.AddSwaggerGen(option =>
             {
                 option.SwaggerDoc("v1", new OpenApiInfo { Title = "Tour API", Version = "v1" });
@@ -112,7 +128,7 @@ namespace TourAPI
                 option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     In = ParameterLocation.Header,
-                    Description = "Dán Token vào đây (Không cần gõ chữ Bearer)",
+                    Description = "Paste your JWT token here (do not include the Bearer prefix)",
                     Name = "Authorization",
                     Type = SecuritySchemeType.Http,
                     BearerFormat = "JWT",
@@ -130,11 +146,11 @@ namespace TourAPI
                     }
                 });
             });
-            // 3. CẤU HÌNH AUTHENTICATION TRIỆT ĐỂ
+            // JWT authentication
             var jwtSettings = builder.Configuration.GetSection("Jwt");
             var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
 
-            //Đăng ký JWT Authentication
+            // Register JWT authentication
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -154,7 +170,7 @@ namespace TourAPI
                     ValidAudience = builder.Configuration["Jwt:Audience"],
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
 
-                    ClockSkew = TimeSpan.Zero // Không cho thời gian trễ
+                    ClockSkew = TimeSpan.Zero // No clock skew tolerance
                 };
             });
             builder.Services.AddCors(options =>
@@ -165,8 +181,7 @@ namespace TourAPI
                         .WithOrigins("http://localhost:5173")
                         .AllowAnyHeader()
                         .AllowAnyMethod();
-                    // Nếu request có cookie/session thì mới thêm:
-                    // .AllowCredentials();
+                    // Add .AllowCredentials() only when using cookies/sessions
                 });
             });
             var app = builder.Build();
@@ -179,7 +194,7 @@ namespace TourAPI
             }
 
             app.UseHttpsRedirection();
-            app.UseCors("FrontendDev");   // ← THÊM DÒNG NÀY
+            app.UseCors("FrontendDev");
 
            
             app.UseRouting();

@@ -149,5 +149,39 @@ namespace AuthAPI.Repositories.Implements
 
             return (users, total);
         }
+
+        public async Task<List<User>> GetAllCustomersAsync()
+        {
+            return await _context.Users
+                .Include(u => u.Roles)
+                .Where(u => u.Roles.Any(r => r.Name == "Customer"))
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<(List<User> Users, int Total)> GetCustomersPagedAsync(string? search, int page, int pageSize)
+        {
+            var query = _context.Users
+                .Include(u => u.Roles)
+                .Where(u => u.Roles.Any(r => r.Name == "Customer"))
+                .AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(u =>
+                    u.FullName.Contains(search) ||
+                    u.Email.Contains(search) ||
+                    (u.PhoneNumber != null && u.PhoneNumber.Contains(search)));
+            }
+
+            var total = await query.CountAsync();
+            var users = await query
+                .OrderByDescending(u => u.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (users, total);
+        }
     }
 }

@@ -18,5 +18,9 @@ namespace AuthAPI.Services
         Task<bool> ChangeUserStatusAsync(int id, string newStatus);
         Task<PaginationDTO<ReadUserDTO>> FilterUsersAsync(UserFilterDTO filter);
         Task<UserProfileResponseDto?> GetUserProfileAsync(int userId);
+
+        Task<CustomerDemographicsDTO> GetCustomerDemographicsAsync(DateTime? from, DateTime? to, string granularity);
+
+        Task<CustomerListAnalyticsDTO> GetCustomersForAnalyticsAsync(string? search, int page, int pageSize);
     }
 }
