@@ -39,6 +39,7 @@ namespace BookingAPI
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<IOrderService, OrderService>();
             builder.Services.AddScoped<IOrderAnalyticsService, OrderAnalyticsService>();
+            builder.Services.AddScoped<IPlatformAnalyticsService, PlatformAnalyticsService>();
             builder.Services.AddScoped<ICancellationRepository, CancellationRepository>();
             builder.Services.AddScoped<ICancellationService, CancellationService>();
 

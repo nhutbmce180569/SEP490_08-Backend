@@ -86,6 +86,15 @@ namespace TourAPI
             builder.Services.AddScoped<IReviewReplyRepository, ReviewReplyRepository>();
             builder.Services.AddScoped<ICustomerEngagementRepository, CustomerEngagementRepository>();
             builder.Services.AddScoped<ICustomerAnalyticsService, CustomerAnalyticsService>();
+            builder.Services.AddScoped<IPlatformCatalogRepository, PlatformCatalogRepository>();
+            builder.Services.AddScoped<IPlatformAnalyticsService, PlatformAnalyticsService>();
+            builder.Services.AddHttpClient<IPlatformAnalyticsClients, PlatformAnalyticsClients>(client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(15);
+                var gatewayUrl = builder.Configuration.GetValue<string>("GatewayApi:BaseUrl") ?? "https://localhost:7010";
+                client.BaseAddress = new Uri(gatewayUrl.TrimEnd('/') + "/");
+            })
+            .AddHttpMessageHandler<AuthorizationHeaderHandler>();
             builder.Services.AddHttpClient<IAuthAnalyticsClient, AuthAnalyticsClient>(client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(15);
