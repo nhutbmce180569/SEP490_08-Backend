@@ -6,6 +6,7 @@ namespace PaymentAPI.Repositories
     {
         Task<Transaction?> GetByIdAsync(int id);
         Task<Transaction?> GetByOrderIdAsync(int orderId);
+        Task<Transaction?> GetByOrderIdAndProviderAsync(int orderId, string provider);
         Task<Transaction> CreateAsync(Transaction transaction);
         Task UpdateAsync(Transaction transaction);
     }

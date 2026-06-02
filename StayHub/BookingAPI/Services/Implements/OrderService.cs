@@ -273,12 +273,16 @@ namespace BookingAPI.Services.Implements
             }).ToList();
         }
 
-        public async Task<PaginationDTO<ReadOrderDTO>> GetOrdersByUserIdAsync(int userId, int page, int pageSize)
+        public async Task<PaginationDTO<ReadOrderDTO>> GetOrdersByUserIdAsync(
+            int userId,
+            int page,
+            int pageSize,
+            string? status = null)
         {
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 10;
 
-            var (orders, total) = await _orderRepository.GetByUserIdPagedAsync(userId, page, pageSize);
+            var (orders, total) = await _orderRepository.GetByUserIdPagedAsync(userId, page, pageSize, status);
             var orderDtos = await Task.WhenAll(orders.Select(async order =>
             {
                 var dto = _mapper.Map<ReadOrderDTO>(order);

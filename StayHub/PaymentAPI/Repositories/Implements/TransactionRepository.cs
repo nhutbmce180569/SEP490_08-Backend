@@ -26,6 +26,14 @@ namespace PaymentAPI.Repositories.Implements
                 .FirstOrDefaultAsync();
         }
 
+        public async Task<Transaction?> GetByOrderIdAndProviderAsync(int orderId, string provider)
+        {
+            return await _context.Set<Transaction>()
+                .Where(t => t.OrderId == orderId && t.Provider == provider)
+                .OrderByDescending(t => t.Id)
+                .FirstOrDefaultAsync();
+        }
+
         public async Task<Transaction> CreateAsync(Transaction transaction)
         {
             _context.Set<Transaction>().Add(transaction);

@@ -162,6 +162,11 @@ namespace BookingAPI
             app.UseHangfireDashboard();
             app.MapControllers();
 
+            RecurringJob.AddOrUpdate<IBackgroundJobService>(
+                "cancel-expired-unpaid-orders",
+                service => service.CancelExpiredUnpaidOrdersAsync(),
+                Cron.Minutely);
+
             app.Run();
         }
     }
