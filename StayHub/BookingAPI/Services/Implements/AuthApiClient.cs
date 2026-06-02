@@ -35,7 +35,23 @@ public class AuthApiClient : IAuthApiClient
             return new List<BatchUserProfileDTO>();
         }
     }
+    public async Task<UserProfileResponseDto?> GetUserProfileAsync(int userId)
+    {
+        if (userId <= 0 || _httpClient.BaseAddress == null)
+        {
+            return null;
+        }
 
+        try
+        {
+            var response = await _httpClient.GetFromJsonAsync<BatchResponse<UserProfileResponseDto>>($"api/users/{userId}/profile");
+            return response?.Data;
+        }
+        catch
+        {
+            return null;
+        }
+    }
     private sealed class BatchResponse<T>
     {
         public string? Message { get; set; }
