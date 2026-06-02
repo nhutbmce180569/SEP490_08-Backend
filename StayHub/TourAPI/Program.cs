@@ -69,6 +69,13 @@ namespace TourAPI
                 client.Timeout = TimeSpan.FromSeconds(10);
             })
             .AddHttpMessageHandler<AuthorizationHeaderHandler>();
+            builder.Services.AddHttpClient<ITicketTypeApiClient, TicketTypeApiClient>(client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(10);
+                var gatewayUrl = builder.Configuration.GetValue<string>("GatewayApi:BaseUrl") ?? "https://localhost:7010";
+                client.BaseAddress = new Uri(gatewayUrl.TrimEnd('/') + "/");
+            })
+            .AddHttpMessageHandler<AuthorizationHeaderHandler>();
             builder.Services.AddScoped<ITourItineraryService, TourItineraryService>();
             builder.Services.AddScoped<ITourScheduleService, TourScheduleService>();
             builder.Services.AddScoped<ITourScheduleStaffService, TourScheduleStaffService>();
