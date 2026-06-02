@@ -136,19 +136,38 @@ namespace TourAPI.Services.Implements
             await _repository.Delete(id);
         }
 
-        public async Task<PaginationDTO<ReadTourDTO>> GetAll(int page, int pageSize)
+        public async Task<PaginationDTO<ReadTourDTO>> GetAll(int page, int pageSize, string? searchTerm = null, int? categoryId = null)
         {
-            var list = _mapper.Map<List<ReadTourDTO>>(await _repository.GetAll());
-            int total = list.Count;
+            var tours = await _repository.GetAll();
+            var query = tours.AsEnumerable();
 
-            list = list
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var term = searchTerm.Trim().ToLower();
+                query = query.Where(t =>
+                    (t.Name != null && t.Name.ToLower().Contains(term)) ||
+                    (t.Description != null && t.Description.ToLower().Contains(term)) ||
+                    (t.TourItineraries != null && t.TourItineraries.Any(i =>
+                        (i.Title != null && i.Title.ToLower().Contains(term)) ||
+                        (i.Description != null && i.Description.ToLower().Contains(term)))));
+            }
+
+            if (categoryId.HasValue)
+            {
+                query = query.Where(t => t.CategoryId == categoryId.Value);
+            }
+
+            var filteredTours = query.ToList();
+            int total = filteredTours.Count;
+
+            var list = _mapper.Map<List<ReadTourDTO>>(filteredTours
                     .OrderBy(x => x.Id)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .ToList();
+                    .ToList());
 
 
-            var tours = new PaginationDTO<ReadTourDTO>
+            var result = new PaginationDTO<ReadTourDTO>
             {
                 Data = list,
                 CurrentPage = page,
@@ -156,7 +175,7 @@ namespace TourAPI.Services.Implements
                 Total = total,
                 TotalPages = (int)Math.Ceiling(total / (double)pageSize)
             };
-            return tours;
+            return result;
         }
 
         public async Task<PaginationDTO<ReadTourDTO>> GetActiveTours(int page, int pageSize)
