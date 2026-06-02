@@ -149,6 +149,7 @@ namespace SocialAPI
 
             builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
             builder.Services.AddScoped<IFriendshipService, FriendshipService>();
+            builder.Services.AddScoped<IPlatformAnalyticsService, PlatformAnalyticsService>();
             // 4.3 Đăng ký AutoMapper (Cách dùng Lambda Action an toàn nhất)
             builder.Services.AddAutoMapper(cfg =>
             {
