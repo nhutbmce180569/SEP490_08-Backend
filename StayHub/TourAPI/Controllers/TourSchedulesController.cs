@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using TourAPI.DTOs;
@@ -12,10 +13,12 @@ namespace TourAPI.Controllers
     public class TourSchedulesController : ControllerBase
     {
         private readonly ITourScheduleService _scheduleService;
+        private readonly ITourScheduleStaffService _staffService;
 
-        public TourSchedulesController(ITourScheduleService scheduleService)
+        public TourSchedulesController(ITourScheduleService scheduleService, ITourScheduleStaffService staffService)
         {
             _scheduleService = scheduleService;
+            _staffService = staffService;
         }
 
         // Bất kỳ ai cũng có thể xem danh sách lịch trình
@@ -45,6 +48,41 @@ namespace TourAPI.Controllers
             {
                 return NotFound(new { message = ex.Message });
             }
+        }
+
+        [HttpGet("assigned")]
+        [Authorize(Roles = "Staff")]
+        public async Task<IActionResult> GetAssignedSchedules()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (userId == null)
+                {
+                    return Unauthorized(new { message = "Không xác thực được user." });
+                }
+
+                var assignedSchedules = await _staffService.GetAssignedSchedulesAsync(userId.Value);
+                return Ok(assignedSchedules);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi hệ thống.", details = ex.Message });
+            }
+        }
+
+        private int? GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                               ?? User.FindFirst("id")?.Value
+                               ?? User.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return null;
+            }
+
+            return userId;
         }
 
         // Chỉ Admin/Operator/Manager/Staff được thao tác

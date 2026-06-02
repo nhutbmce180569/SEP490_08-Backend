@@ -42,5 +42,14 @@ namespace TourAPI.Repositories.Implements
                 .Where(x => x.ScheduleId == scheduleId)
                 .ToListAsync();
         }
+
+        public async Task<List<TourScheduleStaff>> GetAssignedSchedulesAsync(int staffId)
+        {
+            return await _context.TourScheduleStaffs
+                .Where(x => x.StaffId == staffId)
+                .Include(x => x.Schedule)
+                    .ThenInclude(s => s.Tour)
+                .ToListAsync();
+        }
     }
 }
