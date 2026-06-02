@@ -38,6 +38,7 @@ namespace BookingAPI
             builder.Services.AddSingleton<IQrCodeService, QrCodeService>();
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<IOrderService, OrderService>();
+            builder.Services.AddScoped<IOrderAnalyticsService, OrderAnalyticsService>();
             builder.Services.AddScoped<ICancellationRepository, CancellationRepository>();
             builder.Services.AddScoped<ICancellationService, CancellationService>();
 
@@ -82,7 +83,7 @@ namespace BookingAPI
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            // 2. CẤU HÌNH SWAGGER CHUẨN (Tự động thêm Bearer)
+            // Swagger with Bearer JWT security
             builder.Services.AddSwaggerGen(option =>
             {
                 option.SwaggerDoc("v1", new OpenApiInfo { Title = "Booking API", Version = "v1" });
@@ -90,7 +91,7 @@ namespace BookingAPI
                 option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     In = ParameterLocation.Header,
-                    Description = "Dán Token vào đây (Không cần gõ chữ Bearer)",
+                    Description = "Paste your JWT token here (do not include the Bearer prefix)",
                     Name = "Authorization",
                     Type = SecuritySchemeType.Http,
                     BearerFormat = "JWT",
@@ -108,11 +109,11 @@ namespace BookingAPI
                     }
                 });
             });
-            // 3. CẤU HÌNH AUTHENTICATION TRIỆT ĐỂ
+            // JWT authentication
             var jwtSettings = builder.Configuration.GetSection("Jwt");
             var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
 
-            //Đăng ký JWT Authentication
+            // Register JWT authentication
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -131,7 +132,7 @@ namespace BookingAPI
                     ValidAudience = builder.Configuration["Jwt:Audience"],
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
 
-                    ClockSkew = TimeSpan.Zero // Không cho thời gian trễ
+                    ClockSkew = TimeSpan.Zero // No clock skew tolerance
                 };
             });
 
