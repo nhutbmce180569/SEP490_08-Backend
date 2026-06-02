@@ -98,6 +98,20 @@ namespace BookingAPI.Controllers
             return Ok(new { message = "Orders retrieved successfully.", data = result });
         }
 
+        [HttpGet("schedule/{scheduleId}/customers")]
+        [Authorize]
+        public async Task<IActionResult> GetCustomersByScheduleId(int scheduleId)
+        {
+            var result = await _orderService.GetScheduleCustomersAsync(scheduleId);
+
+            if (result == null || !result.Any())
+            {
+                return Ok(new { message = $"No customers found for Schedule ID {scheduleId}.", data = new List<ScheduleCustomerDTO>() });
+            }
+
+            return Ok(new { message = "Schedule customers retrieved successfully.", data = result });
+        }
+
         [HttpGet("user/{userId}")]
         [Authorize]
         public async Task<IActionResult> GetOrdersByUserId(int userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
