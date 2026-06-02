@@ -25,7 +25,9 @@ namespace AuthAPI.Mappers
                 .ForMember(dest => dest.Roles, opt => opt.Ignore());
 
             CreateMap<User, UserSearchResultDto>()
-                .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.AvatarUrl));
+                .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.AvatarUrl))
+                .ForMember(dest => dest.RoleIds, opt => opt.MapFrom(src => src.Roles.Select(r => r.Id).ToList()))
+                .ForMember(dest => dest.RoleNames, opt => opt.MapFrom(src => src.Roles.Select(r => r.Name).ToList()));
             CreateMap<User, UserProfileDto>();
             CreateMap<UpdateProfileDTO, User>();;
             CreateMap<User, UserProfileResponseDto>();
