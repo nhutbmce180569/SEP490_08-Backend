@@ -79,16 +79,27 @@ namespace BookingAPI.Repositories.Implements
                 .ToListAsync();
         }
 
-        public async Task<(List<Order> Orders, int Total)> GetByUserIdPagedAsync(int userId, int page, int pageSize)
+        public async Task<(List<Order> Orders, int Total)> GetByUserIdPagedAsync(
+            int userId,
+            int page,
+            int pageSize,
+            string? status = null)
         {
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 10;
 
-            var query = _context.Orders
+            IQueryable<Order> query = _context.Orders
                 .Where(o => o.CustomerId == userId)
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Tickets)
                 .Include(o => o.Tickets);
+
+            if (!string.IsNullOrWhiteSpace(status) &&
+                !string.Equals(status, "All", StringComparison.OrdinalIgnoreCase))
+            {
+                var normalizedStatus = status.Trim().ToLower();
+                query = query.Where(o => (o.Status ?? "").ToLower() == normalizedStatus);
+            }
 
             var total = await query.CountAsync();
             var orders = await query
@@ -98,6 +109,18 @@ namespace BookingAPI.Repositories.Implements
                 .ToListAsync();
 
             return (orders, total);
+        }
+
+        public async Task<List<int>> GetExpiredPendingOrderIdsAsync(DateTime cutoffTime)
+        {
+            return await _context.Orders
+                .AsNoTracking()
+                .Where(o =>
+                    o.Status == "Pending" &&
+                    o.OrderedAt.HasValue &&
+                    o.OrderedAt.Value <= cutoffTime)
+                .Select(o => o.Id)
+                .ToListAsync();
         }
 
         public async Task<List<int>> GetCustomerIdsWithMinTotalSpendAsync(
@@ -422,6 +445,7 @@ namespace BookingAPI.Repositories.Implements
                 .FirstOrDefaultAsync(o => o.Id == orderId);
 
             if (order == null) return false;
+            if (order.Status != "Pending") return false;
 
             order.Status = "Cancelled";
             foreach (var ticket in order.Tickets)

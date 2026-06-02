@@ -30,9 +30,11 @@ namespace PaymentAPI
 
             // Add services to the container.
             builder.Services.Configure<VnPayConfig>(builder.Configuration.GetSection("VnPay"));
+            builder.Services.Configure<MomoConfig>(builder.Configuration.GetSection("MomoAPI"));
 
             builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
             builder.Services.AddScoped<IVnPayService, VnPayService>();
+            builder.Services.AddHttpClient<IMomoService, MomoService>();
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddTransient<AuthorizationHeaderHandler>();

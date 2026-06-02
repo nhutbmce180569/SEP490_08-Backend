@@ -14,7 +14,8 @@ namespace BookingAPI.Repositories
         Task<Order?> GetByIdAndCustomerIdAsync(int id, int customerId);
         Task<IEnumerable<Order>> GetByScheduleIdAsync(int scheduleId);
         Task<IEnumerable<Order>> GetByUserIdAsync(int userId);
-        Task<(List<Order> Orders, int Total)> GetByUserIdPagedAsync(int userId, int page, int pageSize);
+        Task<(List<Order> Orders, int Total)> GetByUserIdPagedAsync(int userId, int page, int pageSize, string? status = null);
+        Task<List<int>> GetExpiredPendingOrderIdsAsync(DateTime cutoffTime);
 
         /// <summary>Orders with status Paid or Completed.</summary>
         Task<List<int>> GetCustomerIdsWithMinTotalSpendAsync(long minAmount, DateTime? periodFrom, DateTime? periodTo);
