@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace AuthAPI.DTOs
@@ -13,5 +14,8 @@ namespace AuthAPI.DTOs
         public string Status { get; set; } = string.Empty;
         
         public string? AvatarUrl { get; set; }
+
+        public List<int> RoleIds { get; set; } = new List<int>();
+        public List<string> RoleNames { get; set; } = new List<string>();
     }
 }
