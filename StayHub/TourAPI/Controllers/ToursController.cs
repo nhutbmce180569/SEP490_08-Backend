@@ -65,9 +65,13 @@ namespace TourAPI.Controllers
 
         // GET: api/Tours
         [HttpGet]
-        public async Task<ActionResult> GetTours(int page = 1, int pageSize = 10)
+        public async Task<ActionResult> GetTours(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] int? categoryId = null)
         {
-            var list = await _tourService.GetAll(page, pageSize);
+            var list = await _tourService.GetAll(page, pageSize, searchTerm, categoryId);
             return Ok(list);
         }
 
