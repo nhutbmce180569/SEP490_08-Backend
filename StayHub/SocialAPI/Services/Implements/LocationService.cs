@@ -57,6 +57,13 @@ namespace SocialAPI.Services.Implements
             var jsonLoc = JsonSerializer.Serialize(locData);
             await db.StringSetAsync(redisKey, jsonLoc, TimeSpan.FromMinutes(30));
 
+            if (dto.ScheduleId.HasValue && dto.ScheduleId.Value > 0)
+            {
+                var scheduleLiveKey = $"schedule_live_{dto.ScheduleId.Value}";
+                await db.SetAddAsync(scheduleLiveKey, currentUserId);
+                await db.KeyExpireAsync(scheduleLiveKey, TimeSpan.FromMinutes(30));
+            }
+
             // 3. Lấy danh sách bạn bè
             var friendIds = await _context.Friendships
                 .Where(f => f.Status == "Accepted" && (f.RequesterId == currentUserId || f.ReceiverId == currentUserId))
@@ -112,6 +119,110 @@ namespace SocialAPI.Services.Implements
                     await _trackingHubContext.Clients.Group(tokenVal.ToString()).SendAsync("ReceivePublicLocation", responseDto);
                 }
             }
+
+            if (dto.ScheduleId.HasValue && dto.ScheduleId.Value > 0)
+            {
+                var tourGroupName = $"tour_{dto.ScheduleId.Value}";
+                await _trackingHubContext.Clients.Group(tourGroupName).SendAsync("ReceiveTourLocationUpdate", responseDto);
+            }
+        }
+
+        public async Task<IEnumerable<FriendLocationResponseDto>> GetLiveScheduleLocationsAsync(int scheduleId)
+        {
+            if (scheduleId <= 0)
+            {
+                return new List<FriendLocationResponseDto>();
+            }
+
+            var db = _redis.GetDatabase();
+            var scheduleLiveKey = $"schedule_live_{scheduleId}";
+            var members = await db.SetMembersAsync(scheduleLiveKey);
+
+            if (members == null || members.Length == 0)
+            {
+                return new List<FriendLocationResponseDto>();
+            }
+
+            var liveLocations = new List<FriendLocationResponseDto>();
+            var onlineUserIds = new List<int>();
+
+            foreach (var member in members)
+            {
+                if (int.TryParse(member.ToString(), out var userId))
+                {
+                    onlineUserIds.Add(userId);
+                }
+            }
+
+            foreach (var userId in onlineUserIds)
+            {
+                var redisKey = $"live_loc_{userId}";
+                var redisValue = await db.StringGetAsync(redisKey);
+                if (!redisValue.HasValue)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    using var doc = JsonDocument.Parse((string)redisValue);
+                    var root = doc.RootElement;
+                    var lat = root.GetProperty("lat").GetDouble();
+                    var lng = root.GetProperty("lng").GetDouble();
+                    var lastUpdated = root.GetProperty("lastUpdated").GetDateTime();
+
+                    liveLocations.Add(new FriendLocationResponseDto
+                    {
+                        UserId = userId,
+                        Lat = lat,
+                        Lng = lng,
+                        LastUpdated = lastUpdated
+                    });
+                }
+                catch
+                {
+                    // Ignore malformed Redis entries
+                }
+            }
+
+            if (!liveLocations.Any())
+            {
+                return new List<FriendLocationResponseDto>();
+            }
+
+            var userProfiles = new Dictionary<int, UserProfileShortDto>();
+            try
+            {
+                using var client = _httpClientFactory.CreateClient();
+                var response = await client.PostAsJsonAsync("https://localhost:7001/api/users/batch", onlineUserIds);
+                if (response.IsSuccessStatusCode)
+                {
+                    var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
+                    if (apiResult?.Data != null)
+                    {
+                        userProfiles = apiResult.Data.ToDictionary(u => u.Id, u => u);
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore if AuthAPI is unavailable
+            }
+
+            foreach (var location in liveLocations)
+            {
+                if (userProfiles.TryGetValue(location.UserId, out var profile))
+                {
+                    location.FullName = profile.FullName ?? "Anonymous";
+                    location.AvatarUrl = profile.AvatarUrl;
+                }
+                else
+                {
+                    location.FullName = "Anonymous";
+                }
+            }
+
+            return liveLocations;
         }
 
         public async Task<IEnumerable<FriendLocationResponseDto>> GetLiveFriendsLocationsAsync(int currentUserId)

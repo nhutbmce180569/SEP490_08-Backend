@@ -9,5 +9,7 @@ namespace TourAPI.Services
         Task RemoveStaffFromScheduleAsync(int scheduleId, int staffId);
 
         Task<List<ScheduleStaffDetailDto>> GetStaffByScheduleIdAsync(int scheduleId);
+
+        Task<List<AssignedTourScheduleDto>> GetAssignedSchedulesAsync(int staffId);
     }
 }

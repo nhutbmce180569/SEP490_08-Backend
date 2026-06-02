@@ -189,6 +189,7 @@ namespace SocialAPI
 
             app.MapControllers();
             app.MapHub<FriendshipHub>("/hubs/friendship");
+            app.MapHub<TrackingHub>("/hubs/tracking");
 
             app.Run();
         }
