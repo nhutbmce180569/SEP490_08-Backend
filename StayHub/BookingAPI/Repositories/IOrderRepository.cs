@@ -1,4 +1,5 @@
-﻿using BookingAPI.Models;
+﻿using BookingAPI.DTOs;
+using BookingAPI.Models;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
@@ -15,10 +16,23 @@ namespace BookingAPI.Repositories
         Task<IEnumerable<Order>> GetByUserIdAsync(int userId);
         Task<(List<Order> Orders, int Total)> GetByUserIdPagedAsync(int userId, int page, int pageSize);
 
-        /// <summary>Đơn có Status Paid hoặc Completed.</summary>
+        /// <summary>Orders with status Paid or Completed.</summary>
         Task<List<int>> GetCustomerIdsWithMinTotalSpendAsync(long minAmount, DateTime? periodFrom, DateTime? periodTo);
 
         Task<List<int>> GetTopCustomerIdsByTotalSpendAsync(int top, DateTime? periodFrom, DateTime? periodTo);
+
+        Task<OrderAnalyticsOverviewDTO> GetOrderOverviewAsync(DateTime? from, DateTime? to);
+
+        Task<CustomerOrderSegmentDTO> GetCustomerOrderSegmentsAsync(DateTime? from, DateTime? to, int totalCustomers);
+
+        Task<List<OrderTrendPointDTO>> GetOrderTrendsAsync(DateTime from, DateTime to, string granularity);
+
+        Task<List<TopCustomerOrderDTO>> GetTopCustomersAsync(int top, DateTime? from, DateTime? to);
+
+        Task<List<CustomerOrderMetricsDTO>> GetCustomerOrderMetricsAsync(List<int> customerIds, DateTime? from, DateTime? to);
+
+        Task<CustomerOrderMetricsDTO?> GetCustomerOrderMetricsByIdAsync(int customerId, DateTime? from, DateTime? to);
+
         Task<bool> UpdateStatusAsync(int orderId, string status);
         Task<int> GetPendingTicketCountByScheduleAsync(int scheduleId, int? excludeOrderId = null);
         Task<bool> CancelOrderWithTicketsAsync(int orderId);
