@@ -325,6 +325,12 @@ namespace BookingAPI.Services.Implements
             {
                 throw new BookingValidationException("This departure has expired and can no longer be booked.");
             }
+
+            var tour = await _tourApiClient.GetTourByIdAsync(schedule.TourId);
+            if (tour == null || !string.Equals(tour.Status, "Active", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new BookingValidationException("This tour is not active and can no longer be booked.");
+            }
         }
 
         private async Task<List<ValidatedOrderDetail>> ValidateOrderDetailsAsync(CreateOrderDTO request)
