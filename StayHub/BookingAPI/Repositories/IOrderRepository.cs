@@ -33,6 +33,8 @@ namespace BookingAPI.Repositories
 
         Task<CustomerOrderMetricsDTO?> GetCustomerOrderMetricsByIdAsync(int customerId, DateTime? from, DateTime? to);
 
+        Task<PlatformOperationsStatsDTO> GetPlatformOperationsStatsAsync(DateTime? from, DateTime? to);
+
         Task<bool> UpdateStatusAsync(int orderId, string status);
         Task<int> GetPendingTicketCountByScheduleAsync(int scheduleId, int? excludeOrderId = null);
         Task<bool> CancelOrderWithTicketsAsync(int orderId);

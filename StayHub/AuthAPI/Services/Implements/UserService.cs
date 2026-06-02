@@ -372,6 +372,76 @@ namespace AuthAPI.Services.Implements
             };
         }
 
+        public async Task<PlatformUserStatsDTO> GetPlatformUserStatsAsync(
+            DateTime? from,
+            DateTime? to,
+            string granularity)
+        {
+            ValidateAnalyticsDateRange(from, to);
+            granularity = NormalizeGranularity(granularity);
+
+            var users = await _userRepository.GetAll();
+            var total = users.Count;
+
+            var periodFrom = from ?? DateTime.UtcNow.AddDays(-30);
+            var periodTo = to ?? DateTime.UtcNow;
+
+            var newInPeriod = users.Count(u =>
+                u.CreatedAt.HasValue &&
+                u.CreatedAt.Value >= periodFrom &&
+                u.CreatedAt.Value <= periodTo);
+
+            var activeThreshold = DateTime.UtcNow.AddDays(-30);
+            var onlineThreshold = DateTime.UtcNow.AddDays(-7);
+
+            var activeCount = users.Count(u =>
+                u.Status == "Active" &&
+                (u.LastOnline >= activeThreshold || u.CreatedAt >= activeThreshold));
+
+            var onlineRecently = users.Count(u =>
+                u.LastOnline.HasValue && u.LastOnline.Value >= onlineThreshold);
+
+            int CountByRole(string role) =>
+                users.Count(u => u.Roles.Any(r => r.Name == role));
+
+            var customers = CountByRole("Customer");
+            var managers = CountByRole("Manager");
+            var staff = CountByRole("Staff");
+            var admins = CountByRole("Admin");
+
+            var byRole = new List<LabelCountDTO>
+            {
+                BuildSingleLabel("Customer", customers, total),
+                BuildSingleLabel("Manager", managers, total),
+                BuildSingleLabel("Staff", staff, total),
+                BuildSingleLabel("Admin", admins, total)
+            }.Where(x => x.Count > 0).OrderByDescending(x => x.Count).ToList();
+
+            return new PlatformUserStatsDTO
+            {
+                TotalUsers = total,
+                ActiveUsers = activeCount,
+                InactiveUsers = users.Count(u => u.Status != "Active"),
+                NewUsersInPeriod = newInPeriod,
+                OnlineRecently = onlineRecently,
+                TotalCustomers = customers,
+                TotalManagers = managers,
+                TotalStaff = staff,
+                TotalAdmins = admins,
+                ByRole = byRole
+            };
+        }
+
+        private static LabelCountDTO BuildSingleLabel(string label, int count, int total)
+        {
+            return new LabelCountDTO
+            {
+                Label = label,
+                Count = count,
+                Percentage = total > 0 ? Math.Round(count * 100m / total, 2) : 0
+            };
+        }
+
         private static void ValidateAnalyticsDateRange(DateTime? from, DateTime? to)
         {
             if (from.HasValue && to.HasValue && from.Value > to.Value)
