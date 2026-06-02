@@ -112,7 +112,7 @@ namespace PaymentAPI.Services.Implements
 
         public async Task<bool> ConfirmOrderPaymentAsync(int orderId)
         {
-            var transaction = await _transactionRepository.GetByOrderIdAsync(orderId);
+            var transaction = await _transactionRepository.GetByOrderIdAndProviderAsync(orderId, "VNPay");
             if (transaction == null || transaction.Status != "Success")
             {
                 return false;
@@ -123,7 +123,7 @@ namespace PaymentAPI.Services.Implements
 
         public async Task<bool> CancelOrderPaymentAsync(int orderId)
         {
-            var transaction = await _transactionRepository.GetByOrderIdAsync(orderId);
+            var transaction = await _transactionRepository.GetByOrderIdAndProviderAsync(orderId, "VNPay");
             if (transaction?.Status == "Success")
             {
                 return false;

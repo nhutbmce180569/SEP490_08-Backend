@@ -9,6 +9,8 @@ namespace BookingAPI.Services.Implements
 {
     public class BackgroundJobService : IBackgroundJobService
     {
+        private static readonly TimeSpan UnpaidOrderTimeout = TimeSpan.FromMinutes(17);
+
         private readonly IOrderRepository _orderRepository;
         private readonly ITourApiClient _tourApiClient;
         private readonly IVoucherApiClient _voucherApiClient;
@@ -39,7 +41,7 @@ namespace BookingAPI.Services.Implements
         {
             BackgroundJob.Schedule<IBackgroundJobService>(
                 x => x.CancelOrderIfUnpaidAsync(orderId),
-                TimeSpan.FromMinutes(17)
+                UnpaidOrderTimeout
             );
         }
 
@@ -52,13 +54,29 @@ namespace BookingAPI.Services.Implements
                 return;
             }
 
-            if (order.Status != "Pending")
+            if (order.Status != "Pending" || !IsExpiredUnpaidOrder(order, DateTime.Now))
             {
                 return;
             }
 
+            await CancelPendingOrderAsync(order);
+        }
+
+        public async Task CancelExpiredUnpaidOrdersAsync()
+        {
+            var cutoffTime = DateTime.Now.Subtract(UnpaidOrderTimeout);
+            var expiredOrderIds = await _orderRepository.GetExpiredPendingOrderIdsAsync(cutoffTime);
+
+            foreach (var orderId in expiredOrderIds)
+            {
+                await CancelOrderIfUnpaidAsync(orderId);
+            }
+        }
+
+        private async Task CancelPendingOrderAsync(Order order)
+        {
             var cancelled = await _orderRepository
-                .CancelOrderWithTicketsAsync(orderId);
+                .CancelOrderWithTicketsAsync(order.Id);
 
             if (cancelled)
             {
@@ -82,10 +100,16 @@ namespace BookingAPI.Services.Implements
                             ex,
                             "Failed to restore voucher {VoucherCode} for auto-cancelled order {OrderId}",
                             order.VoucherCode,
-                            orderId);
+                            order.Id);
                     }
                 }
             }
+        }
+
+        private static bool IsExpiredUnpaidOrder(Order order, DateTime now)
+        {
+            return order.OrderedAt.HasValue &&
+                   order.OrderedAt.Value <= now.Subtract(UnpaidOrderTimeout);
         }
 
         public void EnqueueSendTicketsEmail(int orderId, string customerEmail)

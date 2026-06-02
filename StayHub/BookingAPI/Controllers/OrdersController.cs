@@ -114,7 +114,11 @@ namespace BookingAPI.Controllers
 
         [HttpGet("user/{userId}")]
         [Authorize]
-        public async Task<IActionResult> GetOrdersByUserId(int userId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetOrdersByUserId(
+            int userId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? status = null)
         {
             // Lấy CustomerId từ Token đăng nhập của User
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
@@ -133,7 +137,7 @@ namespace BookingAPI.Controllers
             if (page <= 0) page = 1;
             if (pageSize <= 0) pageSize = 10;
 
-            var result = await _orderService.GetOrdersByUserIdAsync(userId, page, pageSize);
+            var result = await _orderService.GetOrdersByUserIdAsync(userId, page, pageSize, status);
 
             if (result == null || result.Data == null || !result.Data.Any())
             {
