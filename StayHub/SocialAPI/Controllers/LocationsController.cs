@@ -63,6 +63,20 @@ namespace SocialAPI.Controllers
             }
         }
 
+        [HttpGet("schedules/{scheduleId}/live")]
+        public async Task<IActionResult> GetLiveScheduleLocations(int scheduleId)
+        {
+            try
+            {
+                var liveLocations = await _locationService.GetLiveScheduleLocationsAsync(scheduleId);
+                return Ok(new { message = "Live schedule locations retrieved successfully.", data = liveLocations });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while retrieving schedule locations.", details = ex.Message });
+            }
+        }
+
         [HttpPost("share")]
         public async Task<IActionResult> GenerateTrackingToken()
         {

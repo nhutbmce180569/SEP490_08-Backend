@@ -73,6 +73,14 @@ namespace BookingAPI
                     client.BaseAddress = new Uri(systemApiBaseUrl.TrimEnd('/') + "/");
                 }
             });
+            builder.Services.AddHttpClient<IAuthApiClient, AuthApiClient>(client =>
+            {
+                var authApiBaseUrl = builder.Configuration["AuthApi:BaseUrl"] ?? "https://localhost:7001";
+                if (!string.IsNullOrWhiteSpace(authApiBaseUrl))
+                {
+                    client.BaseAddress = new Uri(authApiBaseUrl.TrimEnd('/') + "/");
+                }
+            });
             builder.Services.AddScoped<ITicketRepository, TicketRepository>();
             builder.Services.AddScoped<ITicketService, TicketService>();
             builder.Services.AddAutoMapper(cfg =>
