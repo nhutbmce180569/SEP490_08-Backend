@@ -58,5 +58,13 @@ namespace BookingAPI.DTOs
     }
     public class UpdateTicketDTO : BaseTicketDTO
     {
+
+    }
+
+    public class CheckInRequestDTO
+    {
+        public string QrCode { get; set; } = string.Empty;
+
+        public int ScheduleId { get; set; }
     }
 }
