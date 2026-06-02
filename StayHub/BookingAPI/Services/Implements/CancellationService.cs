@@ -2,6 +2,10 @@
 using BookingAPI.DTOs;
 using BookingAPI.Models;
 using BookingAPI.Repositories;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace BookingAPI.Services.Implements
 {
@@ -9,11 +13,22 @@ namespace BookingAPI.Services.Implements
     {
         private readonly ICancellationRepository _repository;
         private readonly IMapper _mapper;
+        private readonly INotificationInternalService _notificationService;
+        private readonly IAuthApiClient _authApiClient;
+        private readonly ITourApiClient _tourApiClient;
 
-        public CancellationService(ICancellationRepository repository, IMapper mapper)
+        public CancellationService(
+            ICancellationRepository repository,
+            IMapper mapper,
+            INotificationInternalService notificationService,
+            IAuthApiClient authApiClient,
+            ITourApiClient tourApiClient)
         {
             _repository = repository;
             _mapper = mapper;
+            _notificationService = notificationService;
+            _authApiClient = authApiClient;
+            _tourApiClient = tourApiClient;
         }
 
         public async Task<CancellationRequestDetailDTO> CreateCancellationRequestAsync(int customerId, CreateCancellationRequestDTO dto)
@@ -29,7 +44,32 @@ namespace BookingAPI.Services.Implements
             if (order.CancellationRequests.Any(r => r.Status == "Pending"))
                 throw new Exception("There is already a pending cancellation request for this order.");
 
-            int feePercent = 10;
+            DateTime scheduleStartDate = DateTime.UtcNow.AddDays(10); 
+
+            int daysUntilTour = (scheduleStartDate.Date - DateTime.UtcNow.Date).Days;
+
+            if (daysUntilTour <= 1)
+                throw new Exception("Cancellation is not allowed 1 day before or on the departure date.");
+
+            int feePercent = 0;
+
+            if (daysUntilTour >= 15)
+            {
+                feePercent = 5;
+            }
+            else if (daysUntilTour >= 10)
+            {
+                feePercent = 10;
+            }
+            else if (daysUntilTour >= 5)
+            {
+                feePercent = 15;
+            }
+            else if (daysUntilTour >= 2)
+            {
+                feePercent = 20;
+            }
+
             long originalAmount = order.FinalAmount;
             long cancellationFee = (originalAmount * feePercent) / 100;
             long refundAmount = originalAmount - cancellationFee;
@@ -50,17 +90,29 @@ namespace BookingAPI.Services.Implements
                 RequestedAt = DateTime.UtcNow
             };
 
+            order.Status = "Request to Cancelled";
+
             await _repository.CreateCancellationRequestAsync(cancellationRequest);
 
-            // Dùng AutoMapper
             return _mapper.Map<CancellationRequestDetailDTO>(cancellationRequest);
         }
 
-        public async Task<IEnumerable<CancellationRequestListDTO>> GetCancellationRequestsAsync(string? status)
+        public async Task<PaginationDTO<CancellationRequestListDTO>> GetCancellationRequestsAsync(string? status, int page, int pageSize)
         {
-            var requests = await _repository.GetAllCancellationRequestsAsync(status);
+            var (requests, total) = await _repository.GetAllCancellationRequestsAsync(status, page, pageSize);
 
-            return _mapper.Map<IEnumerable<CancellationRequestListDTO>>(requests);
+            var mappedData = _mapper.Map<List<CancellationRequestListDTO>>(requests);
+
+            var totalPages = (int)Math.Ceiling(total / (double)pageSize);
+
+            return new PaginationDTO<CancellationRequestListDTO>
+            {
+                Data = mappedData,
+                Total = total,
+                TotalPages = totalPages,
+                CurrentPage = page,
+                PageSize = pageSize
+            };
         }
 
         public async Task<CancellationRequestDetailDTO> GetCancellationRequestDetailsAsync(int id)
@@ -69,8 +121,27 @@ namespace BookingAPI.Services.Implements
             if (request == null)
                 throw new Exception("Cancellation request not found.");
 
-            // Dùng AutoMapper
-            return _mapper.Map<CancellationRequestDetailDTO>(request);
+            var dto = _mapper.Map<CancellationRequestDetailDTO>(request);
+
+            var users = await _authApiClient.GetUserProfileAsync(request.CustomerId);
+
+            Console.WriteLine("\n========== TEST USER BATCH API ==========");
+            Console.WriteLine($"Requested CustomerId: {request.CustomerId}");
+            Console.WriteLine($"Response Users: {System.Text.Json.JsonSerializer.Serialize(users, new System.Text.Json.JsonSerializerOptions { WriteIndented = true })}");
+            Console.WriteLine("=========================================\n");
+
+            dto.Customer = users;
+
+            if (request.Order != null && request.Order.ScheduleId > 0)
+            {
+                var schedule = await _tourApiClient.GetScheduleByIdAsync(request.Order.ScheduleId);
+                if (schedule != null && schedule.TourId > 0)
+                {
+                    dto.Tour = await _tourApiClient.GetTourByIdAsync(schedule.TourId);
+                }
+            }
+
+            return dto;
         }
 
         public async Task<CancellationRequestDetailDTO> ProcessCancellationRequestAsync(int id, int processedByUserId, ProcessCancellationDTO dto)
@@ -108,6 +179,26 @@ namespace BookingAPI.Services.Implements
             }
 
             await _repository.UpdateCancellationRequestAsync(request);
+
+            try
+            {
+                if (dto.Action == "Approve")
+                {
+                    string title = "Cancellation Request Approved";
+                    string content = $"Your cancellation request for order #{request.OrderId} has been successfully approved. You will receive a refund of {request.RefundAmount:N0} VND shortly.";
+                    await _notificationService.NotifyUserAsync(request.CustomerId, title, content);
+                }
+                else if (dto.Action == "Reject")
+                {
+                    string title = "Cancellation Request Rejected";
+                    string content = $"Your cancellation request for order #{request.OrderId} has been rejected. Reason: {request.RejectReason}";
+                    await _notificationService.NotifyUserAsync(request.CustomerId, title, content);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Warning] Failed to send notification: {ex.Message}");
+            }
 
             return _mapper.Map<CancellationRequestDetailDTO>(request);
         }
