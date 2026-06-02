@@ -1,22 +1,29 @@
 using Microsoft.EntityFrameworkCore;
 using TourAPI.DTOs;
 using TourAPI.Models;
+using TourAPI.Services;
 
 namespace TourAPI.Repositories.Implements
 {
     public class PlatformCatalogRepository : IPlatformCatalogRepository
     {
         private readonly StayHubCatalogDbContext _context;
+        private readonly ICategoryService _categoryService;
 
-        public PlatformCatalogRepository(StayHubCatalogDbContext context)
+        public PlatformCatalogRepository(
+            StayHubCatalogDbContext context,
+            ICategoryService categoryService)
         {
             _context = context;
+            _categoryService = categoryService;
         }
 
         public async Task<PlatformCatalogAnalyticsDTO> GetCatalogStatsAsync(int topBookedTours)
         {
             var now = DateTime.UtcNow;
             var tours = await _context.Tours.AsNoTracking().ToListAsync();
+            var categoryNames = await _categoryService.GetCategoryNamesAsync(
+                tours.Select(t => t.CategoryId));
             var schedules = await _context.TourSchedules.AsNoTracking().Include(s => s.Tour).ToListAsync();
             var tickets = await _context.TourScheduleTickets.AsNoTracking().ToListAsync();
 
@@ -63,7 +70,10 @@ namespace TourAPI.Repositories.Implements
                     .GroupBy(t => t.CategoryId)
                     .Select(g => new AnalyticsLabelCountDTO
                     {
-                        Label = $"Category {g.Key}",
+                        Label = categoryNames.TryGetValue(g.Key, out var categoryName)
+                            && !string.IsNullOrWhiteSpace(categoryName)
+                                ? categoryName
+                                : $"Category {g.Key}",
                         Count = g.Count(),
                         Percentage = totalTours > 0 ? Math.Round(g.Count() * 100m / totalTours, 2) : 0
                     })
