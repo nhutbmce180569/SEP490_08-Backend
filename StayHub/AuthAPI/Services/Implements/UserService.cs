@@ -307,5 +307,151 @@ namespace AuthAPI.Services.Implements
             if (user == null) return null;
             return _mapper.Map<UserProfileResponseDto>(user);
         }
+
+        public async Task<CustomerDemographicsDTO> GetCustomerDemographicsAsync(
+            DateTime? from,
+            DateTime? to,
+            string granularity)
+        {
+            ValidateAnalyticsDateRange(from, to);
+            granularity = NormalizeGranularity(granularity);
+
+            var customers = await _userRepository.GetAllCustomersAsync();
+            var total = customers.Count;
+
+            var periodFrom = from ?? DateTime.UtcNow.AddDays(-30);
+            var periodTo = to ?? DateTime.UtcNow;
+
+            var newInPeriod = customers.Count(c =>
+                c.CreatedAt.HasValue &&
+                c.CreatedAt.Value >= periodFrom &&
+                c.CreatedAt.Value <= periodTo);
+
+            var activeThreshold = DateTime.UtcNow.AddDays(-30);
+            var activeCount = customers.Count(c =>
+                c.Status == "Active" &&
+                (c.LastOnline >= activeThreshold || c.CreatedAt >= activeThreshold));
+
+            return new CustomerDemographicsDTO
+            {
+                TotalCustomers = total,
+                ActiveCustomers = activeCount,
+                InactiveCustomers = customers.Count(c => c.Status != "Active"),
+                NewCustomersInPeriod = newInPeriod,
+                ByGender = BuildLabelCounts(customers, total, c => string.IsNullOrWhiteSpace(c.Gender) ? "Unknown" : c.Gender!),
+                ByProvider = BuildLabelCounts(customers, total, c => string.IsNullOrWhiteSpace(c.Provider) ? "Unknown" : c.Provider!),
+                ByStatus = BuildLabelCounts(customers, total, c => string.IsNullOrWhiteSpace(c.Status) ? "Unknown" : c.Status!),
+                ByAgeGroup = BuildLabelCounts(customers, total, c => GetAgeGroup(c.DateOfBirth)),
+                RegistrationTrend = BuildRegistrationTrend(customers, periodFrom, periodTo, granularity)
+            };
+        }
+
+        public async Task<CustomerListAnalyticsDTO> GetCustomersForAnalyticsAsync(string? search, int page, int pageSize)
+        {
+            if (page <= 0) page = 1;
+            if (pageSize <= 0 || pageSize > 100) pageSize = 20;
+
+            var (users, total) = await _userRepository.GetCustomersPagedAsync(search, page, pageSize);
+
+            return new CustomerListAnalyticsDTO
+            {
+                Total = total,
+                Customers = users.Select(u => new CustomerSummaryDTO
+                {
+                    Id = u.Id,
+                    Email = u.Email,
+                    FullName = u.FullName,
+                    AvatarUrl = u.AvatarUrl,
+                    Provider = u.Provider,
+                    Gender = u.Gender,
+                    DateOfBirth = u.DateOfBirth,
+                    Status = u.Status,
+                    LastOnline = u.LastOnline,
+                    CreatedAt = u.CreatedAt
+                }).ToList()
+            };
+        }
+
+        private static void ValidateAnalyticsDateRange(DateTime? from, DateTime? to)
+        {
+            if (from.HasValue && to.HasValue && from.Value > to.Value)
+            {
+                throw new ArgumentException("Start date must be before or equal to end date.");
+            }
+
+            if (from.HasValue && to.HasValue && (to.Value - from.Value).TotalDays > 366)
+            {
+                throw new ArgumentException("Date range cannot exceed 366 days.");
+            }
+        }
+
+        private static string NormalizeGranularity(string granularity)
+        {
+            var normalized = (granularity ?? "day").Trim().ToLowerInvariant();
+            return normalized is "day" or "week" or "month" ? normalized : "day";
+        }
+
+        private static string GetAgeGroup(DateOnly? dateOfBirth)
+        {
+            if (!dateOfBirth.HasValue) return "Unknown";
+
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var age = today.Year - dateOfBirth.Value.Year;
+            if (dateOfBirth.Value > today.AddYears(-age)) age--;
+
+            return age switch
+            {
+                < 18 => "Under 18",
+                <= 24 => "18-24",
+                <= 34 => "25-34",
+                <= 44 => "35-44",
+                <= 54 => "45-54",
+                _ => "55+"
+            };
+        }
+
+        private static List<LabelCountDTO> BuildLabelCounts<T>(
+            List<T> items,
+            int total,
+            Func<T, string> labelSelector)
+        {
+            return items
+                .GroupBy(labelSelector)
+                .Select(g => new LabelCountDTO
+                {
+                    Label = g.Key,
+                    Count = g.Count(),
+                    Percentage = total > 0 ? Math.Round(g.Count() * 100m / total, 2) : 0
+                })
+                .OrderByDescending(x => x.Count)
+                .ToList();
+        }
+
+        private static List<TimeSeriesPointDTO> BuildRegistrationTrend(
+            List<User> customers,
+            DateTime from,
+            DateTime to,
+            string granularity)
+        {
+            var filtered = customers
+                .Where(c => c.CreatedAt.HasValue && c.CreatedAt.Value >= from && c.CreatedAt.Value <= to)
+                .ToList();
+
+            return filtered
+                .GroupBy(c => FormatPeriod(c.CreatedAt!.Value, granularity))
+                .Select(g => new TimeSeriesPointDTO { Period = g.Key, Count = g.Count() })
+                .OrderBy(x => x.Period)
+                .ToList();
+        }
+
+        private static string FormatPeriod(DateTime date, string granularity)
+        {
+            return granularity switch
+            {
+                "week" => $"{date.Year}-W{System.Globalization.ISOWeek.GetWeekOfYear(date):D2}",
+                "month" => date.ToString("yyyy-MM"),
+                _ => date.ToString("yyyy-MM-dd")
+            };
+        }
     }
 }
