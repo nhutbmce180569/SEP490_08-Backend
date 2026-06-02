@@ -47,6 +47,7 @@ public class Program
         builder.Services.AddScoped<IUserVoucherRepository, UserVoucherRepository>();
         builder.Services.AddScoped<IVoucherService, VoucherService>();
         builder.Services.AddScoped<ICustomerVoucherService, CustomerVoucherService>();
+        builder.Services.AddScoped<IPlatformAnalyticsService, PlatformAnalyticsService>();
 
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();

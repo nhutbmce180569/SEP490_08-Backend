@@ -441,6 +441,33 @@ namespace BookingAPI.Repositories.Implements
                 .Distinct() 
                 .ToListAsync();
         }
+
+        public async Task<PlatformOperationsStatsDTO> GetPlatformOperationsStatsAsync(DateTime? from, DateTime? to)
+        {
+            var periodOrders = await FilterOrdersQuery(from, to).ToListAsync();
+            var periodOrderIds = periodOrders.Select(o => o.Id).ToHashSet();
+
+            var cancellations = await _context.CancellationRequests.AsNoTracking().ToListAsync();
+            var periodCancellations = cancellations.Where(c =>
+                (!from.HasValue || c.RequestedAt >= from.Value) &&
+                (!to.HasValue || c.RequestedAt <= to.Value)).ToList();
+
+            var periodTickets = await _context.Tickets.AsNoTracking()
+                .Where(t => periodOrderIds.Contains(t.OrderId))
+                .ToListAsync();
+
+            var totalTickets = periodTickets.Count;
+            var checkedIn = periodTickets.Count(t =>
+                t.CheckInStatus is "CheckedIn" or "Checked");
+
+            return new PlatformOperationsStatsDTO
+            {
+                CheckInRate = totalTickets > 0
+                    ? Math.Round(checkedIn * 100m / totalTickets, 2)
+                    : 0,
+                PendingCancellationRequests = periodCancellations.Count(c => c.Status == "Pending")
+            };
+        }
     }
     
 }
