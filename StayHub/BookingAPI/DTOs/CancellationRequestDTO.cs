@@ -41,8 +41,8 @@ namespace BookingAPI.DTOs
     public class CancellationRequestDetailDTO
     {
         public int Id { get; set; }
-        public int OrderId { get; set; }
-        public int CustomerId { get; set; }
+        public ReadOrderTourDTO? Tour { get; set; }
+        public UserProfileResponseDto? Customer { get; set; }
         public string BankName { get; set; } = null!;
         public string AccountNumber { get; set; } = null!;
         public string AccountHolderName { get; set; } = null!;
