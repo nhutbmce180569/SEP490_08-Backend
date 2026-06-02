@@ -117,6 +117,26 @@ namespace TourAPI.Services.Implements
             return result;
         }
 
+        public async Task<List<AssignedTourScheduleDto>> GetAssignedSchedulesAsync(int staffId)
+        {
+            var assignedSchedules = await _staffRepository.GetAssignedSchedulesAsync(staffId);
+            if (assignedSchedules == null || !assignedSchedules.Any())
+            {
+                return new List<AssignedTourScheduleDto>();
+            }
+
+            return assignedSchedules.Select(assignment => new AssignedTourScheduleDto
+            {
+                ScheduleId = assignment.ScheduleId,
+                TourId = assignment.Schedule?.TourId ?? 0,
+                DepartureDate = assignment.Schedule?.DepartureDate ?? default,
+                ReturnDate = assignment.Schedule?.ReturnDate ?? default,
+                TourName = assignment.Schedule?.Tour?.Name ?? string.Empty,
+                TourImageUrl = assignment.Schedule?.Tour?.ImageUrl ?? string.Empty,
+                AssignedRole = assignment.AssignedRole ?? string.Empty
+            }).ToList();
+        }
+
         private class BatchUserResponseDto
         {
             public int Id { get; set; }

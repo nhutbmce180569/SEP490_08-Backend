@@ -6,6 +6,8 @@ namespace BookingAPI.Repositories
     {
         Task<Ticket?> GetByQrCodeAsync(string qrCode);
         Task<Ticket?> GetReadOnlyByQrCodeAsync(string qrCode);
+        Task<List<Ticket>> GetByUserIdAsync(int userId);
+        Task<List<Ticket>> GetByScheduleIdAsync(int scheduleId);
         Task UpdateAsync(Ticket ticket);
     }
 }
