@@ -25,7 +25,7 @@ namespace BookingAPI.Repositories.Implements
             await _context.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<CancellationRequest>> GetAllCancellationRequestsAsync(string? status)
+        public async Task<(IEnumerable<CancellationRequest> Data, int Total)> GetAllCancellationRequestsAsync(string? status, int page, int pageSize)
         {
             var query = _context.CancellationRequests.AsQueryable();
 
@@ -34,10 +34,19 @@ namespace BookingAPI.Repositories.Implements
                 query = query.Where(r => r.Status == status);
             }
 
-            return await query
+            int total = await query.CountAsync();
+
+            var data = await query
                 .Include(r => r.Order)
-                .OrderByDescending(r => r.RequestedAt)
+                // 1. Ưu tiên "Pending" lên đầu (Pending = 0, Khác = 1) -> Sắp xếp tăng dần
+                .OrderBy(r => r.Status == "Pending" ? 0 : 1)
+                // 2. Sau đó mới sắp xếp theo ngày yêu cầu mới nhất
+                .ThenByDescending(r => r.RequestedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+
+            return (data, total);
         }
 
         public async Task<CancellationRequest?> GetCancellationRequestByIdAsync(int id)

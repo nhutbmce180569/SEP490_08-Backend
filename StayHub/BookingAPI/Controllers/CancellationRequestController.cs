@@ -49,11 +49,18 @@ namespace BookingAPI.Controllers
 
         [HttpGet]
         [Authorize(Roles = "Admin, Manager")]
-        public async Task<IActionResult> GetAllRequests([FromQuery] string? status)
+        public async Task<IActionResult> GetAllRequests(
+            [FromQuery] string? status,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 5)
         {
             try
             {
-                var result = await _cancellationService.GetCancellationRequestsAsync(status);
+                if (page <= 0) page = 1;
+                if (pageSize <= 0) pageSize = 5;
+
+                var result = await _cancellationService.GetCancellationRequestsAsync(status, page, pageSize);
+
                 return Ok(new
                 {
                     message = "Retrieved cancellation requests successfully.",
