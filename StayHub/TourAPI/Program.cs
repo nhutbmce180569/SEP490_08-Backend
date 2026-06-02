@@ -71,14 +71,14 @@ namespace TourAPI
             .AddHttpMessageHandler<AuthorizationHeaderHandler>();
             builder.Services.AddScoped<ITourItineraryService, TourItineraryService>();
             builder.Services.AddScoped<ITourScheduleService, TourScheduleService>();
-            //builder.Services.AddScoped<ITourScheduleStaffService, TourScheduleStaffService>();
+            builder.Services.AddScoped<ITourScheduleStaffService, TourScheduleStaffService>();
             builder.Services.AddScoped<ITourScheduleTicketService, TourScheduleTicketService>();
             builder.Services.AddScoped<ITourScheduleItineraryService, TourScheduleItineraryService>();
             builder.Services.AddScoped<IWishlistService, WishlistService>();
             builder.Services.AddScoped<ITourRepository, TourRepository>();
             builder.Services.AddScoped<ITourItineraryRepository, TourItineraryRepository>();
             builder.Services.AddScoped<ITourScheduleRepository, TourScheduleRepository>();
-            // builder.Services.AddScoped<ITourScheduleStaffRepository, TourScheduleStaffRepository>();
+            builder.Services.AddScoped<ITourScheduleStaffRepository, TourScheduleStaffRepository>();
             builder.Services.AddScoped<ITourScheduleTicketRepository, TourScheduleTicketRepository>();
             builder.Services.AddScoped<ITourScheduleItineraryRepository, TourScheduleItineraryRepository>();
             builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
