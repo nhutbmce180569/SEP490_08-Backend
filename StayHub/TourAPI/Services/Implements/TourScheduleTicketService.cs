@@ -9,15 +9,18 @@ namespace TourAPI.Services.Implements
     {
         private readonly ITourScheduleTicketRepository _repository;
         private readonly ITourScheduleRepository _tourScheduleRepository;
+        private readonly ITicketTypeApiClient _ticketTypeApiClient;
         private readonly IMapper _mapper;
 
         public TourScheduleTicketService(
             ITourScheduleTicketRepository repository,
             ITourScheduleRepository tourScheduleRepository,
+            ITicketTypeApiClient ticketTypeApiClient,
             IMapper mapper)
         {
             _repository = repository;
             _tourScheduleRepository = tourScheduleRepository;
+            _ticketTypeApiClient = ticketTypeApiClient;
             _mapper = mapper;
         }
 
@@ -64,6 +67,7 @@ namespace TourAPI.Services.Implements
         public async Task<ReadTourScheduleTicketDTO> Create(CreateTourScheduleTicketDTO dto)
         {
             await ValidateSchedule(dto.ScheduleId);
+            await ValidateTicketTypeActive(dto.TicketTypeId);
             ValidateTicketValues(dto.Price, dto.Quantity, dto.SoldQuantity ?? 0);
             await ValidateTicketTypeUniqueness(dto.ScheduleId, dto.TicketTypeId);
 
@@ -149,6 +153,20 @@ namespace TourAPI.Services.Implements
             if (exists)
             {
                 throw new Exception($"TicketTypeId {ticketTypeId} already exists for schedule {scheduleId}");
+            }
+        }
+
+        private async Task ValidateTicketTypeActive(int ticketTypeId)
+        {
+            var ticketType = await _ticketTypeApiClient.GetTicketTypeByIdAsync(ticketTypeId);
+            if (ticketType == null)
+            {
+                throw new Exception($"TicketTypeId {ticketTypeId} not found");
+            }
+
+            if (!(ticketType.IsActive ?? true))
+            {
+                throw new Exception($"TicketTypeId {ticketTypeId} is inactive and cannot be added to a tour schedule");
             }
         }
 
