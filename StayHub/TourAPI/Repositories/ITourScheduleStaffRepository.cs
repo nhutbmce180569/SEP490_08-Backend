@@ -13,5 +13,7 @@ namespace TourAPI.Repositories
         Task RemoveStaffAsync(TourScheduleStaff entity);
 
         Task<List<TourScheduleStaff>> GetStaffByScheduleIdAsync(int scheduleId);
+
+        Task<List<TourScheduleStaff>> GetAssignedSchedulesAsync(int staffId);
     }
 }
