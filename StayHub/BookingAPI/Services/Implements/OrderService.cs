@@ -4,6 +4,7 @@ using BookingAPI.Exceptions;
 using BookingAPI.Models;
 using BookingAPI.Repositories;
 using BookingAPI.Services;
+using BookingAPI.Services.Implements;
 using System;
 using System.Linq;
 using System.Net.Http;
@@ -13,25 +14,31 @@ namespace BookingAPI.Services.Implements
     public class OrderService : IOrderService
     {
         private readonly IOrderRepository _orderRepository;
+        private readonly ITicketRepository _ticketRepository;
         private readonly IMapper _mapper;
         private readonly ITourApiClient _tourApiClient;
         private readonly IVoucherApiClient _voucherApiClient;
+        private readonly IAuthApiClient _authApiClient;
         private readonly IBackgroundJobService _backgroundJobService;
         private readonly INotificationInternalService _notificationInternalService;
         private readonly ILogger<OrderService> _logger;
         public OrderService(
          IOrderRepository orderRepository,
+         ITicketRepository ticketRepository,
          IMapper mapper,
          ITourApiClient tourApiClient,
          IVoucherApiClient voucherApiClient,
+         IAuthApiClient authApiClient,
          IBackgroundJobService backgroundJobService,
          INotificationInternalService notificationInternalService,
          ILogger<OrderService> logger)
         {
             _orderRepository = orderRepository;
+            _ticketRepository = ticketRepository;
             _mapper = mapper;
             _tourApiClient = tourApiClient;
             _voucherApiClient = voucherApiClient;
+            _authApiClient = authApiClient;
             _backgroundJobService = backgroundJobService;
             _notificationInternalService = notificationInternalService;
             _logger = logger;
@@ -216,6 +223,54 @@ namespace BookingAPI.Services.Implements
             });
 
             return await Task.WhenAll(orderDtos);
+        }
+
+        public async Task<IEnumerable<ScheduleCustomerDTO>> GetScheduleCustomersAsync(int scheduleId)
+        {
+            if (scheduleId <= 0)
+            {
+                return Array.Empty<ScheduleCustomerDTO>();
+            }
+
+            var tickets = await _ticketRepository.GetByScheduleIdAsync(scheduleId);
+            if (tickets == null || !tickets.Any())
+            {
+                return Array.Empty<ScheduleCustomerDTO>();
+            }
+
+            var userIds = tickets
+                .Where(t => t.UserId.HasValue)
+                .Select(t => t.UserId!.Value)
+                .Distinct()
+                .ToList();
+
+            var userProfiles = userIds.Any()
+                ? await _authApiClient.GetUsersBatchAsync(userIds)
+                : new List<BatchUserProfileDTO>();
+
+            var userProfileMap = userProfiles
+                .Where(u => u != null)
+                .ToDictionary(u => u.Id, u => u);
+
+            return tickets.Select(ticket =>
+            {
+                userProfileMap.TryGetValue(ticket.UserId ?? 0, out var profile);
+
+                return new ScheduleCustomerDTO
+                {
+                    TicketId = ticket.Id,
+                    OrderId = ticket.OrderId,
+                    UserId = ticket.UserId,
+                    AttendeeName = ticket.AttendeeName,
+                    IdCard = ticket.IdCard,
+                    DateOfBirth = ticket.DateOfBirth,
+                    Gender = ticket.Gender,
+                    Nationality = ticket.Nationality,
+                    CheckInStatus = ticket.CheckInStatus,
+                    PhoneNumber = profile?.PhoneNumber,
+                    AvatarUrl = profile?.AvatarUrl,
+                };
+            }).ToList();
         }
 
         public async Task<PaginationDTO<ReadOrderDTO>> GetOrdersByUserIdAsync(int userId, int page, int pageSize)
