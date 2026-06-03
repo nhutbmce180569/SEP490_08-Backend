@@ -3,12 +3,15 @@ using AIAPI.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 
 namespace AIAPI.Controllers;
 
 [Route("api/ai/evaluation")]
 [ApiController]
-public class EvaluationController : ControllerBase
+public class EvaluationController : LocalizedControllerBase
 {
     private readonly IRecommenderEvaluationService _evaluationService;
     private readonly IGroundTruthLabelService _groundTruthService;
@@ -25,7 +28,9 @@ public class EvaluationController : ControllerBase
         IValidator<SubmitUserStudyResponseDTO> userStudyValidator,
         IPaperExportService paperExport,
         IUserStudyPilotSeeder pilotSeeder,
-        IInterRaterAgreementService interRater)
+        IInterRaterAgreementService interRater,
+        IStringLocalizer<Messages> localizer)
+        : base(localizer)
     {
         _evaluationService = evaluationService;
         _groundTruthService = groundTruthService;

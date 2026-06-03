@@ -2,6 +2,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 using TourAPI.DTOs;
 using TourAPI.Services;
 using TourAPI.Services.Implements;
@@ -10,12 +13,16 @@ namespace TourAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class TourSchedulesController : ControllerBase
+    public class TourSchedulesController : LocalizedControllerBase
     {
         private readonly ITourScheduleService _scheduleService;
         private readonly ITourScheduleStaffService _staffService;
 
-        public TourSchedulesController(ITourScheduleService scheduleService, ITourScheduleStaffService staffService)
+        public TourSchedulesController(
+            ITourScheduleService scheduleService,
+            ITourScheduleStaffService staffService,
+            IStringLocalizer<Messages> localizer)
+            : base(localizer)
         {
             _scheduleService = scheduleService;
             _staffService = staffService;
@@ -59,7 +66,7 @@ namespace TourAPI.Controllers
                 var userId = GetCurrentUserId();
                 if (userId == null)
                 {
-                    return Unauthorized(new { message = "Không xác thực được user." });
+                    return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
                 }
 
                 var assignedSchedules = await _staffService.GetAssignedSchedulesAsync(userId.Value);
@@ -67,7 +74,7 @@ namespace TourAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Lỗi hệ thống.", details = ex.Message });
+                return StatusCode(500, new { message = M("SystemError"), details = ex.Message });
             }
         }
 
@@ -139,7 +146,7 @@ namespace TourAPI.Controllers
             try
             {
                 var result = await _scheduleService.GetItinerariesByScheduleIdAsync(scheduleId);
-                return Ok(new { message = "Itineraries retrieved successfully.", data = result });
+                return Ok(new { message = M("ItinerariesRetrievedSuccessfully"), data = result });
             }
             catch (Exception ex)
             {

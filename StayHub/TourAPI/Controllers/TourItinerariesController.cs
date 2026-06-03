@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 using System.Security.Claims;
 using System;
 using System.Threading.Tasks;
@@ -11,13 +14,13 @@ namespace TourAPI.Controllers
     [Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    public class TourItinerariesController : ControllerBase
+    public class TourItinerariesController : LocalizedControllerBase
     {
         private readonly ITourItineraryService _tourItineraryService;
 
-        public TourItinerariesController(ITourItineraryService tourItineraryService)
-        {
-            _tourItineraryService = tourItineraryService;
+        public TourItinerariesController(ITourItineraryService tourItineraryService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_tourItineraryService = tourItineraryService;
         }
 
         // GET: api/TourItineraries
@@ -36,7 +39,7 @@ namespace TourAPI.Controllers
 
             if (itinerary == null)
             {
-                return NotFound(new { message = "TourItinerary not found" });
+                return NotFound(new { message = M("TourItineraryNotFound") });
             }
 
             return itinerary;
@@ -49,7 +52,7 @@ namespace TourAPI.Controllers
             var existing = await _tourItineraryService.GetById(id);
             if (existing == null)
             {
-                return NotFound(new { message = "TourItinerary not found" });
+                return NotFound(new { message = M("TourItineraryNotFound") });
             }
 
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -57,7 +60,7 @@ namespace TourAPI.Controllers
 
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
             {
-                return Unauthorized(new { message = "Cannot extract user ID from token" });
+                return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
             }
 
             try
@@ -83,7 +86,7 @@ namespace TourAPI.Controllers
 
                 if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
                 {
-                    return Unauthorized(new { message = "Cannot extract user ID from token" });
+                    return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
                 }
 
                 await _tourItineraryService.Add(dto, userId);
@@ -107,7 +110,7 @@ namespace TourAPI.Controllers
 
                 if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
                 {
-                    return Unauthorized(new { message = "Cannot extract user ID from token" });
+                    return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
                 }
 
                 await _tourItineraryService.AddBatch(batch, userId);
@@ -127,7 +130,7 @@ namespace TourAPI.Controllers
             var existing = await _tourItineraryService.GetById(id);
             if (existing == null)
             {
-                return NotFound(new { message = "TourItinerary not found" });
+                return NotFound(new { message = M("TourItineraryNotFound") });
             }
 
             try

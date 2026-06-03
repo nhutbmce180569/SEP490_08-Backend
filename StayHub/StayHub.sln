@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TourAPI", "TourAPI\TourAPI.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoucherAPI", "VoucherAPI\VoucherAPI.csproj", "{5C88FFE6-7D90-42B7-85FD-7E4C6F9A736F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StayHub.Common", "StayHub.Common\StayHub.Common.csproj", "{11CECBC1-75BE-4ECA-B6FD-55DDF7D6D71C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -153,6 +155,18 @@ Global
 		{5C88FFE6-7D90-42B7-85FD-7E4C6F9A736F}.Release|x64.Build.0 = Release|Any CPU
 		{5C88FFE6-7D90-42B7-85FD-7E4C6F9A736F}.Release|x86.ActiveCfg = Release|Any CPU
 		{5C88FFE6-7D90-42B7-85FD-7E4C6F9A736F}.Release|x86.Build.0 = Release|Any CPU
+		{11CECBC1-75BE-4ECA-B6FD-55DDF7D6D71C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11CECBC1-75BE-4ECA-B6FD-55DDF7D6D71C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11CECBC1-75BE-4ECA-B6FD-55DDF7D6D71C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{11CECBC1-75BE-4ECA-B6FD-55DDF7D6D71C}.Debug|x64.Build.0 = Debug|Any CPU
+		{11CECBC1-75BE-4ECA-B6FD-55DDF7D6D71C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{11CECBC1-75BE-4ECA-B6FD-55DDF7D6D71C}.Debug|x86.Build.0 = Debug|Any CPU
+		{11CECBC1-75BE-4ECA-B6FD-55DDF7D6D71C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{11CECBC1-75BE-4ECA-B6FD-55DDF7D6D71C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{11CECBC1-75BE-4ECA-B6FD-55DDF7D6D71C}.Release|x64.ActiveCfg = Release|Any CPU
+		{11CECBC1-75BE-4ECA-B6FD-55DDF7D6D71C}.Release|x64.Build.0 = Release|Any CPU
+		{11CECBC1-75BE-4ECA-B6FD-55DDF7D6D71C}.Release|x86.ActiveCfg = Release|Any CPU
+		{11CECBC1-75BE-4ECA-B6FD-55DDF7D6D71C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -11,13 +14,13 @@ namespace BookingAPI.Controllers
     [Route("api/orders")]
     [ApiController]
     // ĐIỂM QUAN TRỌNG 2: Đổi tên Controller để không đụng hàng với AuthAPI
-    public class EligibleSchedulesController : ControllerBase 
+    public class EligibleSchedulesController : LocalizedControllerBase 
     {
         private readonly IEligibleScheduleService _eligibleScheduleService;
 
-        public EligibleSchedulesController(IEligibleScheduleService eligibleScheduleService)
-        {
-            _eligibleScheduleService = eligibleScheduleService;
+        public EligibleSchedulesController(IEligibleScheduleService eligibleScheduleService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_eligibleScheduleService = eligibleScheduleService;
         }
 
         [Authorize]
@@ -33,14 +36,14 @@ namespace BookingAPI.Controllers
 
                 if (!int.TryParse(userIdString, out int userId))
                 {
-                    return Unauthorized(new { message = "Invalid token: Missing or invalid User ID." });
+                    return Unauthorized(new { message = M("InvalidTokenMissingOrInvalidUserID") });
                 }
 
                 var schedules = await _eligibleScheduleService.GetEligibleSchedulesAsync(userId);
 
                 return Ok(new
                 {
-                    message = "Eligible schedules retrieved successfully.",
+                    message = M("EligibleSchedulesRetrievedSuccessfully"),
                     data = schedules
                 });
             }

@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 using SocialAPI.DTOs;
 using SocialAPI.Services;
 using System;
@@ -11,13 +14,13 @@ namespace SocialAPI.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class ChatController : ControllerBase
+    public class ChatController : LocalizedControllerBase
     {
         private readonly IChatService _chatService;
 
-        public ChatController(IChatService chatService)
-        {
-            _chatService = chatService;
+        public ChatController(IChatService chatService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_chatService = chatService;
         }
 
         private int GetUserId()
@@ -49,7 +52,7 @@ namespace SocialAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while retrieving chat rooms.", error = ex.Message });
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileRetrievingChatRooms"), error = ex.Message });
             }
         }
 
@@ -68,7 +71,7 @@ namespace SocialAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while retrieving chat history.", error = ex.Message });
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileRetrievingChatHistory"), error = ex.Message });
             }
         }
 
@@ -84,7 +87,7 @@ namespace SocialAPI.Controllers
 
                 if (!int.TryParse(userIdString, out int userId))
                 {
-                    return Unauthorized(new { message = "User ID not found in token." });
+                    return Unauthorized(new { message = M("UserIDNotFoundInToken") });
                 }
 
                 var room = await _chatService.CreateOrGetChatRoomAsync(userId, request.FriendId);
@@ -92,7 +95,7 @@ namespace SocialAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while creating the chat room.", error = ex.Message });
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileCreatingTheChatRoom"), error = ex.Message });
             }
         }
 
@@ -107,7 +110,7 @@ namespace SocialAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while pinning the chat room.", error = ex.Message });
+                return StatusCode(500, new { message = M("AnErrorOccurredWhilePinningTheChatRoom"), error = ex.Message });
             }
         }
 
@@ -122,7 +125,7 @@ namespace SocialAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while muting the chat room.", error = ex.Message });
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileMutingTheChatRoom"), error = ex.Message });
             }
         }
 
@@ -145,7 +148,7 @@ namespace SocialAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while adding members.", error = ex.Message });
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileAddingMembers"), error = ex.Message });
             }
         }
 
@@ -161,11 +164,11 @@ namespace SocialAPI.Controllers
                 if (!int.TryParse(userIdString, out int userId)) return Unauthorized();
 
                 await _chatService.LeaveRoomAsync(roomId, userId);
-                return Ok(new { message = "Left the chat room successfully." });
+                return Ok(new { message = M("LeftTheChatRoomSuccessfully") });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Error leaving room", details = ex.Message });
+                return StatusCode(500, new { message = M("ErrorLeavingRoom"), details = ex.Message });
             }
         }
     }

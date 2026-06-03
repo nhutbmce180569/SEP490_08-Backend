@@ -10,10 +10,13 @@ using AuthAPI.Services;
 using AuthAPI.Services.Implements;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
+using StayHub.Common.Localization;
+using StayHub.Common.Resources;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -31,8 +34,9 @@ namespace AuthAPI
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             // Add services to the container.
-            builder.Services.AddControllers();
+            builder.Services.AddControllers().AddStayHubDataAnnotationsLocalization();
             builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddStayHubLocalization();
 
             // 2. SWAGGER CONFIGURATION (Automatically handles Bearer token)
             builder.Services.AddSwaggerGen(option =>
@@ -110,7 +114,7 @@ namespace AuthAPI
 
                         if (userIdClaim == null || string.IsNullOrEmpty(tokenSecurityStamp))
                         {
-                            context.Fail("Invalid token payload or missing security credentials.");
+                            context.Fail("InvalidTokenPayload");
                             return;
                         }
 
@@ -126,7 +130,7 @@ namespace AuthAPI
                             currentUserInfo.Status != "Active" ||
                             currentUserInfo.SecurityStamp != tokenSecurityStamp)
                         {
-                            context.Fail("Session expired due to security changes or account deactivation. Please log in again.");
+                            context.Fail("SessionExpiredSecurity");
                         }
                     },
 
@@ -136,17 +140,17 @@ namespace AuthAPI
                         // Suppress the default plain browser challenge response
                         context.HandleResponse();
 
-                        // Extract the failure message set during OnTokenValidated (if any)
-                        var errorMessage = context.AuthenticateFailure?.Message
-                                           ?? "Invalid or expired login session.";
+                        var localizer = context.HttpContext.RequestServices.GetRequiredService<IStringLocalizer<Messages>>();
+                        var errorKey = context.AuthenticateFailure?.Message ?? "InvalidOrExpiredSession";
+                        var errorMessage = localizer[errorKey];
 
                         context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                         context.Response.ContentType = "application/json";
 
                         var jsonResponse = System.Text.Json.JsonSerializer.Serialize(new
                         {
-                            error = "Unauthorized",
-                            message = errorMessage
+                            error = localizer["Unauthorized"].Value,
+                            message = errorMessage.Value
                         });
 
                         await context.Response.WriteAsync(jsonResponse);
@@ -202,6 +206,7 @@ namespace AuthAPI
             app.UseHttpsRedirection();
 
             app.UseCors("AllowReactApp");
+            app.UseStayHubLocalization();
 
             app.UseAuthentication();
             app.UseAuthorization();

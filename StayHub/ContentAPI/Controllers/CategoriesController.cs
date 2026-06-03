@@ -2,18 +2,21 @@
 using ContentAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 
 namespace ContentAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CategoriesController : ControllerBase
+    public class CategoriesController : LocalizedControllerBase
     {
         private readonly ICategoryService _categoryService;
 
-        public CategoriesController(ICategoryService categoryService)
-        {
-            _categoryService = categoryService;
+        public CategoriesController(ICategoryService categoryService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_categoryService = categoryService;
         }
 
         // GET: api/Categories?page=1&pageSize=10
@@ -49,7 +52,7 @@ namespace ContentAPI.Controllers
             if (category == null)
             {
                 // FE hiển thị: "Category not found."
-                return NotFound(new { message = "Category not found." });
+                return NotFound(new { message = M("CategoryNotFound") });
             }
             return Ok(category);
         }
@@ -83,10 +86,10 @@ namespace ContentAPI.Controllers
             var result = await _categoryService.UpdateCategory(id, dto);
             if (!result)
             {
-                return NotFound(new { message = "Category not found or has been deleted." });
+                return NotFound(new { message = M("CategoryNotFoundOrHasBeenDeleted") });
             }
 
-            return Ok(new { message = "Category updated successfully." });
+            return Ok(new { message = M("CategoryUpdatedSuccessfully") });
         }
 
         // DELETE: api/Categories/5
@@ -100,7 +103,7 @@ namespace ContentAPI.Controllers
 
                 if (!result)
                 {
-                    return NotFound(new { message = "Category not found." });
+                    return NotFound(new { message = M("CategoryNotFound") });
                 }
 
                 // Delete thành công thường trả về 204 NoContent, không cần body
@@ -114,7 +117,7 @@ namespace ContentAPI.Controllers
             catch (Exception)
             {
                 // Lỗi 500 nên ẩn chi tiết kỹ thuật (ex.Message) với người dùng cuối, trả về câu báo lỗi chung chung
-                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An unexpected error occurred while processing your request. Please try again later." });
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = M("AnUnexpectedErrorOccurredWhileProcessingYourRequestPleaseT") });
             }
         }
 
@@ -126,10 +129,10 @@ namespace ContentAPI.Controllers
             var result = await _categoryService.ChangeCategoryStatus(id, true);
             if (!result)
             {
-                return NotFound(new { message = "Category not found." });
+                return NotFound(new { message = M("CategoryNotFound") });
             }
 
-            return Ok(new { message = "Category activated successfully." });
+            return Ok(new { message = M("CategoryActivatedSuccessfully") });
         }
 
         // PATCH: api/Categories/5/deactivate
@@ -140,10 +143,10 @@ namespace ContentAPI.Controllers
             var result = await _categoryService.ChangeCategoryStatus(id, false);
             if (!result)
             {
-                return NotFound(new { message = "Category not found." });
+                return NotFound(new { message = M("CategoryNotFound") });
             }
 
-            return Ok(new { message = "Category deactivated successfully." });
+            return Ok(new { message = M("CategoryDeactivatedSuccessfully") });
         }
 
         // GET: api/Categories/search?q=hotel&page=1&pageSize=10
@@ -163,7 +166,7 @@ namespace ContentAPI.Controllers
                 {
                     return BadRequest(new
                     {
-                        message = "Search keyword cannot be empty.",
+                        message = M("SearchKeywordCannotBeEmpty"),
                         data = new PaginationDTO<ReadCategoryDTO>
                         {
                             Data = new List<ReadCategoryDTO>(),
@@ -196,7 +199,7 @@ namespace ContentAPI.Controllers
             {
                 return StatusCode(500, new
                 {
-                    message = "An error occurred while searching for categories.",
+                    message = M("AnErrorOccurredWhileSearchingForCategories"),
                     details = ex.Message
                 });
             }

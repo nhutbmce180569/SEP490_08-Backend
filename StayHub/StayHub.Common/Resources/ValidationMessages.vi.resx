@@ -1,0 +1,515 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="Action must be either 'Approve' or 'Reject'." xml:space="preserve">
+    <value>Hành động phải là 'Approve' hoặc 'Reject'.</value>
+  </data>
+  <data name="Address cannot exceed 255 characters." xml:space="preserve">
+    <value>Địa chỉ không được vượt quá 255 ký tự.</value>
+  </data>
+  <data name="Address is required" xml:space="preserve">
+    <value>Địa chỉ là bắt buộc</value>
+  </data>
+  <data name="AgeGroup cannot exceed 20 characters." xml:space="preserve">
+    <value>AgeGroup không được vượt quá 20 ký tự.</value>
+  </data>
+  <data name="Amount is required" xml:space="preserve">
+    <value>Số tiền là bắt buộc</value>
+  </data>
+  <data name="Amount must be greater than 0" xml:space="preserve">
+    <value>Số tiền phải lớn hơn 0</value>
+  </data>
+  <data name="AssignedRole cannot exceed 255 characters" xml:space="preserve">
+    <value>Vai trò phân công không được vượt quá 255 ký tự</value>
+  </data>
+  <data name="AssignmentId must be greater than 0." xml:space="preserve">
+    <value>AssignmentId phải lớn hơn 0.</value>
+  </data>
+  <data name="AvailableCount must be at least 1" xml:space="preserve">
+    <value>Số lượng khả dụng phải ít nhất là 1</value>
+  </data>
+  <data name="Avatar must be an image file (.jpg, .jpeg, .png, .gif)." xml:space="preserve">
+    <value>Ảnh đại diện phải là file ảnh (.jpg, .jpeg, .png, .gif).</value>
+  </data>
+  <data name="Banner image is required." xml:space="preserve">
+    <value>Ảnh banner là bắt buộc.</value>
+  </data>
+  <data name="BillAmount must be greater than 0" xml:space="preserve">
+    <value>Số tiền hóa đơn phải lớn hơn 0</value>
+  </data>
+  <data name="Caption cannot exceed 500 characters." xml:space="preserve">
+    <value>Chú thích không được vượt quá 500 ký tự.</value>
+  </data>
+  <data name="Category name is required." xml:space="preserve">
+    <value>Tên danh mục là bắt buộc.</value>
+  </data>
+  <data name="CategoryId is required" xml:space="preserve">
+    <value>CategoryId là bắt buộc</value>
+  </data>
+  <data name="CategoryId must be greater than 0" xml:space="preserve">
+    <value>CategoryId phải lớn hơn 0</value>
+  </data>
+  <data name="ChildrenCount is required when HasChildren is true." xml:space="preserve">
+    <value>ChildrenCount là bắt buộc khi HasChildren là true.</value>
+  </data>
+  <data name="City cannot exceed 100 characters." xml:space="preserve">
+    <value>Thành phố không được vượt quá 100 ký tự.</value>
+  </data>
+  <data name="City is required" xml:space="preserve">
+    <value>Thành phố là bắt buộc</value>
+  </data>
+  <data name="Code is required" xml:space="preserve">
+    <value>Mã là bắt buộc</value>
+  </data>
+  <data name="Code must be between 3 and 50 characters" xml:space="preserve">
+    <value>Mã phải từ 3 đến 50 ký tự</value>
+  </data>
+  <data name="Code must contain only letters, numbers, hyphens, and underscores" xml:space="preserve">
+    <value>Mã chỉ được chứa chữ, số, gạch ngang và gạch dưới</value>
+  </data>
+  <data name="Comment cannot be empty." xml:space="preserve">
+    <value>Bình luận không được để trống.</value>
+  </data>
+  <data name="Comment cannot contain only whitespace." xml:space="preserve">
+    <value>Bình luận không được chỉ chứa khoảng trắng.</value>
+  </data>
+  <data name="Comment cannot exceed 1000 characters." xml:space="preserve">
+    <value>Bình luận không được vượt quá 1000 ký tự.</value>
+  </data>
+  <data name="Comment cannot exceed 500 characters." xml:space="preserve">
+    <value>Bình luận không được vượt quá 500 ký tự.</value>
+  </data>
+  <data name="Comment is required." xml:space="preserve">
+    <value>Bình luận là bắt buộc.</value>
+  </data>
+  <data name="CompanionType is required." xml:space="preserve">
+    <value>CompanionType là bắt buộc.</value>
+  </data>
+  <data name="CompanionType must be solo, family, couple, or group." xml:space="preserve">
+    <value>CompanionType phải là solo, family, couple hoặc group.</value>
+  </data>
+  <data name="Country cannot exceed 100 characters." xml:space="preserve">
+    <value>Quốc gia không được vượt quá 100 ký tự.</value>
+  </data>
+  <data name="Country is required" xml:space="preserve">
+    <value>Quốc gia là bắt buộc</value>
+  </data>
+  <data name="CustomerId is required." xml:space="preserve">
+    <value>CustomerId là bắt buộc.</value>
+  </data>
+  <data name="CustomerId must be greater than 0" xml:space="preserve">
+    <value>CustomerId phải lớn hơn 0</value>
+  </data>
+  <data name="Date of Birth is required." xml:space="preserve">
+    <value>Ngày sinh là bắt buộc.</value>
+  </data>
+  <data name="Date of birth cannot be in the future." xml:space="preserve">
+    <value>Ngày sinh không được ở tương lai.</value>
+  </data>
+  <data name="DayNumber is required" xml:space="preserve">
+    <value>DayNumber là bắt buộc</value>
+  </data>
+  <data name="DayNumber must be greater than 0" xml:space="preserve">
+    <value>DayNumber phải lớn hơn 0</value>
+  </data>
+  <data name="Departure date is required" xml:space="preserve">
+    <value>Ngày khởi hành là bắt buộc</value>
+  </data>
+  <data name="Description cannot exceed 1000 characters" xml:space="preserve">
+    <value>Mô tả không được vượt quá 1000 ký tự</value>
+  </data>
+  <data name="Description cannot exceed 2000 characters" xml:space="preserve">
+    <value>Mô tả không được vượt quá 2000 ký tự</value>
+  </data>
+  <data name="Description is required" xml:space="preserve">
+    <value>Mô tả là bắt buộc</value>
+  </data>
+  <data name="DiscountType is required" xml:space="preserve">
+    <value>DiscountType là bắt buộc</value>
+  </data>
+  <data name="DiscountType must be 'Percent' or 'Amount'" xml:space="preserve">
+    <value>DiscountType phải là 'Percent' hoặc 'Amount'</value>
+  </data>
+  <data name="DiscountValue must be greater than 0" xml:space="preserve">
+    <value>DiscountValue phải lớn hơn 0</value>
+  </data>
+  <data name="DurationDays must be between 1 and 365." xml:space="preserve">
+    <value>DurationDays phải từ 1 đến 365.</value>
+  </data>
+  <data name="ElderlyCount is required when HasElderly is true." xml:space="preserve">
+    <value>ElderlyCount là bắt buộc khi HasElderly là true.</value>
+  </data>
+  <data name="Email is required." xml:space="preserve">
+    <value>Email là bắt buộc.</value>
+  </data>
+  <data name="EndDate is required" xml:space="preserve">
+    <value>EndDate là bắt buộc</value>
+  </data>
+  <data name="EndDuration is required" xml:space="preserve">
+    <value>EndDuration là bắt buộc</value>
+  </data>
+  <data name="Facebook AccessToken is required." xml:space="preserve">
+    <value>Facebook AccessToken là bắt buộc.</value>
+  </data>
+  <data name="Full Name is required." xml:space="preserve">
+    <value>Họ tên là bắt buộc.</value>
+  </data>
+  <data name="Full name must be between 2 and 100 characters." xml:space="preserve">
+    <value>Họ tên phải từ 2 đến 100 ký tự.</value>
+  </data>
+  <data name="Gender is required." xml:space="preserve">
+    <value>Giới tính là bắt buộc.</value>
+  </data>
+  <data name="Google IdToken is required." xml:space="preserve">
+    <value>Google IdToken là bắt buộc.</value>
+  </data>
+  <data name="Granularity must be day, week, or month." xml:space="preserve">
+    <value>Granularity phải là day, week hoặc month.</value>
+  </data>
+  <data name="GroupSize must be between 1 and 500." xml:space="preserve">
+    <value>GroupSize phải từ 1 đến 500.</value>
+  </data>
+  <data name="HTML tags are not allowed." xml:space="preserve">
+    <value>Không cho phép thẻ HTML.</value>
+  </data>
+  <data name="Image is required." xml:space="preserve">
+    <value>Ảnh là bắt buộc.</value>
+  </data>
+  <data name="Image size cannot exceed 5MB." xml:space="preserve">
+    <value>Kích thước ảnh không được vượt quá 5MB.</value>
+  </data>
+  <data name="InteractionType must be view, click, wishlist, booking, or chat_recommend." xml:space="preserve">
+    <value>InteractionType phải là view, click, wishlist, booking hoặc chat_recommend.</value>
+  </data>
+  <data name="Invalid companion type." xml:space="preserve">
+    <value>Loại đồng hành không hợp lệ.</value>
+  </data>
+  <data name="Invalid email format." xml:space="preserve">
+    <value>Định dạng email không hợp lệ.</value>
+  </data>
+  <data name="Invalid file format. Only image files are allowed." xml:space="preserve">
+    <value>Định dạng file không hợp lệ. Chỉ cho phép file ảnh.</value>
+  </data>
+  <data name="Invalid interaction type." xml:space="preserve">
+    <value>Loại tương tác không hợp lệ.</value>
+  </data>
+  <data name="Invalid nationality type." xml:space="preserve">
+    <value>Loại quốc tịch không hợp lệ.</value>
+  </data>
+  <data name="Invalid phone number format." xml:space="preserve">
+    <value>Định dạng số điện thoại không hợp lệ.</value>
+  </data>
+  <data name="IsLike cannot be null." xml:space="preserve">
+    <value>IsLike không được null.</value>
+  </data>
+  <data name="ItineraryDate is required" xml:space="preserve">
+    <value>ItineraryDate là bắt buộc</value>
+  </data>
+  <data name="Latitude must be between -90 and 90." xml:space="preserve">
+    <value>Vĩ độ phải từ -90 đến 90.</value>
+  </data>
+  <data name="LocationName cannot exceed 255 characters" xml:space="preserve">
+    <value>Tên địa điểm không được vượt quá 255 ký tự</value>
+  </data>
+  <data name="Longitude must be between -180 and 180." xml:space="preserve">
+    <value>Kinh độ phải từ -180 đến 180.</value>
+  </data>
+  <data name="MaxDiscountAmount must be greater than 0" xml:space="preserve">
+    <value>MaxDiscountAmount phải lớn hơn 0</value>
+  </data>
+  <data name="MaxPrice must be non-negative." xml:space="preserve">
+    <value>MaxPrice không được âm.</value>
+  </data>
+  <data name="Message cannot exceed 2000 characters." xml:space="preserve">
+    <value>Tin nhắn không được vượt quá 2000 ký tự.</value>
+  </data>
+  <data name="Message is required." xml:space="preserve">
+    <value>Tin nhắn là bắt buộc.</value>
+  </data>
+  <data name="Message must be at least 2 characters." xml:space="preserve">
+    <value>Tin nhắn phải có ít nhất 2 ký tự.</value>
+  </data>
+  <data name="Message must be between 2 and 2000 characters." xml:space="preserve">
+    <value>Tin nhắn phải từ 2 đến 2000 ký tự.</value>
+  </data>
+  <data name="MinPrice cannot be greater than MaxPrice." xml:space="preserve">
+    <value>MinPrice không được lớn hơn MaxPrice.</value>
+  </data>
+  <data name="MinPrice must be non-negative." xml:space="preserve">
+    <value>MinPrice không được âm.</value>
+  </data>
+  <data name="MomentId must be greater than 0." xml:space="preserve">
+    <value>MomentId phải lớn hơn 0.</value>
+  </data>
+  <data name="Name cannot exceed 200 characters" xml:space="preserve">
+    <value>Tên không được vượt quá 200 ký tự</value>
+  </data>
+  <data name="Name cannot exceed 255 characters." xml:space="preserve">
+    <value>Tên không được vượt quá 255 ký tự.</value>
+  </data>
+  <data name="Name is required" xml:space="preserve">
+    <value>Tên là bắt buộc</value>
+  </data>
+  <data name="Name is required." xml:space="preserve">
+    <value>Tên là bắt buộc.</value>
+  </data>
+  <data name="NationalityType must be vietnamese or foreigner." xml:space="preserve">
+    <value>NationalityType phải là vietnamese hoặc foreigner.</value>
+  </data>
+  <data name="New password is required." xml:space="preserve">
+    <value>Mật khẩu mới là bắt buộc.</value>
+  </data>
+  <data name="New password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character." xml:space="preserve">
+    <value>Mật khẩu mới phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.</value>
+  </data>
+  <data name="Old password is required." xml:space="preserve">
+    <value>Mật khẩu cũ là bắt buộc.</value>
+  </data>
+  <data name="Only .jpg, .jpeg, .png, .gif, and .webp extensions are allowed." xml:space="preserve">
+    <value>Chỉ cho phép đuôi .jpg, .jpeg, .png, .gif và .webp.</value>
+  </data>
+  <data name="Only the following file extensions are allowed: {0}" xml:space="preserve">
+    <value>Chỉ cho phép các đuôi file sau: {0}</value>
+  </data>
+  <data name="OrderId is required" xml:space="preserve">
+    <value>OrderId là bắt buộc</value>
+  </data>
+  <data name="OrderId must be greater than 0" xml:space="preserve">
+    <value>OrderId phải lớn hơn 0</value>
+  </data>
+  <data name="Page must be greater than 0." xml:space="preserve">
+    <value>Trang phải lớn hơn 0.</value>
+  </data>
+  <data name="PageSize must be between 1 and 100." xml:space="preserve">
+    <value>PageSize phải từ 1 đến 100.</value>
+  </data>
+  <data name="Password is required." xml:space="preserve">
+    <value>Mật khẩu là bắt buộc.</value>
+  </data>
+  <data name="Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character." xml:space="preserve">
+    <value>Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.</value>
+  </data>
+  <data name="Phone Number is required." xml:space="preserve">
+    <value>Số điện thoại là bắt buộc.</value>
+  </data>
+  <data name="PreferredEndDate cannot be before PreferredStartDate." xml:space="preserve">
+    <value>PreferredEndDate không được trước PreferredStartDate.</value>
+  </data>
+  <data name="PreferredList is required." xml:space="preserve">
+    <value>PreferredList là bắt buộc.</value>
+  </data>
+  <data name="PreferredStartDate cannot be after PreferredEndDate." xml:space="preserve">
+    <value>PreferredStartDate không được sau PreferredEndDate.</value>
+  </data>
+  <data name="PreferredStartDate cannot be too far in the past." xml:space="preserve">
+    <value>PreferredStartDate không được quá xa trong quá khứ.</value>
+  </data>
+  <data name="PreferredStartDate is required." xml:space="preserve">
+    <value>PreferredStartDate là bắt buộc.</value>
+  </data>
+  <data name="Price is required" xml:space="preserve">
+    <value>Giá là bắt buộc</value>
+  </data>
+  <data name="Price must be greater than or equal to 0" xml:space="preserve">
+    <value>Giá phải lớn hơn hoặc bằng 0</value>
+  </data>
+  <data name="Privacy is required." xml:space="preserve">
+    <value>Quyền riêng tư là bắt buộc.</value>
+  </data>
+  <data name="Privacy must be 'Public', 'Private', or 'Friend'." xml:space="preserve">
+    <value>Quyền riêng tư phải là 'Public', 'Private' hoặc 'Friend'.</value>
+  </data>
+  <data name="Provide at least one consultation criterion (city, country, budget, duration, category, or travel style)." xml:space="preserve">
+    <value>Cung cấp ít nhất một tiêu chí tư vấn (thành phố, quốc gia, ngân sách, thời lượng, danh mục hoặc phong cách du lịch).</value>
+  </data>
+  <data name="Quantity is required" xml:space="preserve">
+    <value>Số lượng là bắt buộc</value>
+  </data>
+  <data name="Quantity must be at least 1" xml:space="preserve">
+    <value>Số lượng phải ít nhất là 1</value>
+  </data>
+  <data name="Quantity must be greater than 0" xml:space="preserve">
+    <value>Số lượng phải lớn hơn 0</value>
+  </data>
+  <data name="Quantity must be greater than or equal to 0" xml:space="preserve">
+    <value>Số lượng phải lớn hơn hoặc bằng 0</value>
+  </data>
+  <data name="Query is required." xml:space="preserve">
+    <value>Truy vấn là bắt buộc.</value>
+  </data>
+  <data name="Query must be between 2 and 1000 characters." xml:space="preserve">
+    <value>Truy vấn phải từ 2 đến 1000 ký tự.</value>
+  </data>
+  <data name="Rating is required." xml:space="preserve">
+    <value>Đánh giá là bắt buộc.</value>
+  </data>
+  <data name="Rating must be between 1 and 5 stars." xml:space="preserve">
+    <value>Điểm đánh giá phải từ 1 đến 5 sao.</value>
+  </data>
+  <data name="Rating must be between 1 and 5." xml:space="preserve">
+    <value>Điểm đánh giá phải từ 1 đến 5.</value>
+  </data>
+  <data name="Rating must be between 1 and 7." xml:space="preserve">
+    <value>Điểm phải từ 1 đến 7.</value>
+  </data>
+  <data name="Receiver ID is required." xml:space="preserve">
+    <value>Receiver ID là bắt buộc.</value>
+  </data>
+  <data name="ReceiverId must be greater than 0." xml:space="preserve">
+    <value>ReceiverId phải lớn hơn 0.</value>
+  </data>
+  <data name="Refresh token is required." xml:space="preserve">
+    <value>Refresh token là bắt buộc.</value>
+  </data>
+  <data name="Request ID is required." xml:space="preserve">
+    <value>Request ID là bắt buộc.</value>
+  </data>
+  <data name="RequestId must be greater than 0." xml:space="preserve">
+    <value>RequestId phải lớn hơn 0.</value>
+  </data>
+  <data name="Return date is required" xml:space="preserve">
+    <value>Ngày về là bắt buộc</value>
+  </data>
+  <data name="ScheduleId is required" xml:space="preserve">
+    <value>ScheduleId là bắt buộc</value>
+  </data>
+  <data name="ScheduleId must be greater than 0" xml:space="preserve">
+    <value>ScheduleId phải lớn hơn 0</value>
+  </data>
+  <data name="ScheduleId must be greater than 0." xml:space="preserve">
+    <value>ScheduleId phải lớn hơn 0.</value>
+  </data>
+  <data name="Select at least one travel interest." xml:space="preserve">
+    <value>Chọn ít nhất một sở thích du lịch.</value>
+  </data>
+  <data name="SessionId cannot exceed 64 characters." xml:space="preserve">
+    <value>SessionId không được vượt quá 64 ký tự.</value>
+  </data>
+  <data name="SessionId is required." xml:space="preserve">
+    <value>SessionId là bắt buộc.</value>
+  </data>
+  <data name="SessionId must be between 8 and 64 characters." xml:space="preserve">
+    <value>SessionId phải từ 8 đến 64 ký tự.</value>
+  </data>
+  <data name="Slug is required." xml:space="preserve">
+    <value>Slug là bắt buộc.</value>
+  </data>
+  <data name="SoldQuantity must be greater than or equal to 0" xml:space="preserve">
+    <value>SoldQuantity phải lớn hơn hoặc bằng 0</value>
+  </data>
+  <data name="SortBy must be one of: totalSpend, orderCount, reviewCount, wishlistCount, createdAt, lastOrderAt." xml:space="preserve">
+    <value>SortBy phải là một trong: totalSpend, orderCount, reviewCount, wishlistCount, createdAt, lastOrderAt.</value>
+  </data>
+  <data name="SortOrder must be asc or desc." xml:space="preserve">
+    <value>SortOrder phải là asc hoặc desc.</value>
+  </data>
+  <data name="Source name cannot exceed 255 characters." xml:space="preserve">
+    <value>Tên nguồn không được vượt quá 255 ký tự.</value>
+  </data>
+  <data name="StaffId is required" xml:space="preserve">
+    <value>StaffId là bắt buộc</value>
+  </data>
+  <data name="StartDate cannot be after EndDate." xml:space="preserve">
+    <value>StartDate không được sau EndDate.</value>
+  </data>
+  <data name="StartDate is required" xml:space="preserve">
+    <value>StartDate là bắt buộc</value>
+  </data>
+  <data name="StartDuration is required" xml:space="preserve">
+    <value>StartDuration là bắt buộc</value>
+  </data>
+  <data name="Status cannot exceed 50 characters." xml:space="preserve">
+    <value>Trạng thái không được vượt quá 50 ký tự.</value>
+  </data>
+  <data name="Status is required." xml:space="preserve">
+    <value>Trạng thái là bắt buộc.</value>
+  </data>
+  <data name="Status must be either 'Accepted' or 'Declined'." xml:space="preserve">
+    <value>Trạng thái phải là 'Accepted' hoặc 'Declined'.</value>
+  </data>
+  <data name="Status must be either 'Active' or 'Blocked'." xml:space="preserve">
+    <value>Trạng thái phải là 'Active' hoặc 'Blocked'.</value>
+  </data>
+  <data name="Ticket type name cannot exceed 100 characters." xml:space="preserve">
+    <value>Tên loại vé không được vượt quá 100 ký tự.</value>
+  </data>
+  <data name="Ticket type name is required." xml:space="preserve">
+    <value>Tên loại vé là bắt buộc.</value>
+  </data>
+  <data name="TicketTypeId is required" xml:space="preserve">
+    <value>TicketTypeId là bắt buộc</value>
+  </data>
+  <data name="TicketTypeId must be greater than 0" xml:space="preserve">
+    <value>TicketTypeId phải lớn hơn 0</value>
+  </data>
+  <data name="Title cannot exceed 255 characters" xml:space="preserve">
+    <value>Tiêu đề không được vượt quá 255 ký tự</value>
+  </data>
+  <data name="Title cannot exceed 255 characters." xml:space="preserve">
+    <value>Tiêu đề không được vượt quá 255 ký tự.</value>
+  </data>
+  <data name="Title is required" xml:space="preserve">
+    <value>Tiêu đề là bắt buộc</value>
+  </data>
+  <data name="Title is required." xml:space="preserve">
+    <value>Tiêu đề là bắt buộc.</value>
+  </data>
+  <data name="Top must be between 1 and 20." xml:space="preserve">
+    <value>Top phải từ 1 đến 20.</value>
+  </data>
+  <data name="Top must be between 1 and 30." xml:space="preserve">
+    <value>Top phải từ 1 đến 30.</value>
+  </data>
+  <data name="Top must be between 1 and 50." xml:space="preserve">
+    <value>Top phải từ 1 đến 50.</value>
+  </data>
+  <data name="TourId is required" xml:space="preserve">
+    <value>TourId là bắt buộc</value>
+  </data>
+  <data name="TourId is required." xml:space="preserve">
+    <value>TourId là bắt buộc.</value>
+  </data>
+  <data name="TourId must be greater than 0" xml:space="preserve">
+    <value>TourId phải lớn hơn 0</value>
+  </data>
+  <data name="TourId must be greater than 0 when provided" xml:space="preserve">
+    <value>TourId phải lớn hơn 0 khi được cung cấp</value>
+  </data>
+  <data name="TourScheduleTicketId must be greater than 0" xml:space="preserve">
+    <value>TourScheduleTicketId phải lớn hơn 0</value>
+  </data>
+  <data name="TravelExperience cannot exceed 30 characters." xml:space="preserve">
+    <value>TravelExperience không được vượt quá 30 ký tự.</value>
+  </data>
+  <data name="TravelInterests contains invalid value." xml:space="preserve">
+    <value>TravelInterests chứa giá trị không hợp lệ.</value>
+  </data>
+  <data name="TravelStyle cannot exceed 500 characters." xml:space="preserve">
+    <value>TravelStyle không được vượt quá 500 ký tự.</value>
+  </data>
+  <data name="Type cannot exceed 50 characters." xml:space="preserve">
+    <value>Loại không được vượt quá 50 ký tự.</value>
+  </data>
+  <data name="Type is required." xml:space="preserve">
+    <value>Loại là bắt buộc.</value>
+  </data>
+  <data name="UnitPrice must be greater than or equal to 0" xml:space="preserve">
+    <value>UnitPrice phải lớn hơn hoặc bằng 0</value>
+  </data>
+  <data name="UserId must be greater than 0" xml:space="preserve">
+    <value>UserId phải lớn hơn 0</value>
+  </data>
+  <data name="UserId must be greater than 0." xml:space="preserve">
+    <value>UserId phải lớn hơn 0.</value>
+  </data>
+  <data name="Verification code is required." xml:space="preserve">
+    <value>Mã xác minh là bắt buộc.</value>
+  </data>
+  <data name="VoucherCode must be between 3 and 50 characters" xml:space="preserve">
+    <value>VoucherCode phải từ 3 đến 50 ký tự</value>
+  </data>
+</root>

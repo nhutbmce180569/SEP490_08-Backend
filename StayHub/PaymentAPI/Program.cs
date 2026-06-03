@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using StayHub.Common.Localization;
 using PaymentAPI.Helpers;
 using PaymentAPI.Mappers;
 using PaymentAPI.Models;
@@ -46,7 +47,8 @@ namespace PaymentAPI
             })
             .AddHttpMessageHandler<AuthorizationHeaderHandler>();
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers().AddStayHubDataAnnotationsLocalization();
+            builder.Services.AddStayHubLocalization();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             // 2. CẤU HÌNH SWAGGER CHUẨN (Tự động thêm Bearer)
@@ -125,6 +127,7 @@ namespace PaymentAPI
             app.UseHttpsRedirection();
 
             app.UseCors("AllowFrontend");
+            app.UseStayHubLocalization();
 
             app.UseAuthentication();
             app.UseAuthorization();

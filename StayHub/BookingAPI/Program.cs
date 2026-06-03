@@ -3,6 +3,7 @@ using BookingAPI.Helpers;
 using BookingAPI.Mappers;
 using BookingAPI.Mappings;
 using BookingAPI.Models;
+using StayHub.Common.Localization;
 using BookingAPI.Repositories;
 using BookingAPI.Repositories.Implements;
 using BookingAPI.Services;
@@ -23,7 +24,8 @@ namespace BookingAPI
 
             // Add services to the container.
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers().AddStayHubDataAnnotationsLocalization();
+            builder.Services.AddStayHubLocalization();
             builder.Services.AddDbContext<StayHubBookingDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -155,6 +157,7 @@ namespace BookingAPI
             }
 
             app.UseHttpsRedirection();
+            app.UseStayHubLocalization();
 
             app.UseAuthentication();
             app.UseAuthorization();

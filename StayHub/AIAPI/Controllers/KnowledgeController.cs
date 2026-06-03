@@ -4,17 +4,24 @@ using AIAPI.Recommender;
 using AIAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 
 namespace AIAPI.Controllers;
 
 [Route("api/ai/knowledge")]
 [ApiController]
-public class KnowledgeController : ControllerBase
+public class KnowledgeController : LocalizedControllerBase
 {
     private readonly ICulturalKnowledgeService _knowledgeService;
     private readonly ICatalogStore _catalogStore;
 
-    public KnowledgeController(ICulturalKnowledgeService knowledgeService, ICatalogStore catalogStore)
+    public KnowledgeController(
+        ICulturalKnowledgeService knowledgeService,
+        ICatalogStore catalogStore,
+        IStringLocalizer<Messages> localizer)
+        : base(localizer)
     {
         _knowledgeService = knowledgeService;
         _catalogStore = catalogStore;

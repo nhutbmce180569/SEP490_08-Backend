@@ -1,5 +1,8 @@
 ﻿﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 using SocialAPI.DTOs;
 using SocialAPI.Services;
 using System;
@@ -11,13 +14,13 @@ namespace SocialAPI.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class LocationsController : ControllerBase
+    public class LocationsController : LocalizedControllerBase
     {
         private readonly ILocationService _locationService;
 
-        public LocationsController(ILocationService locationService)
-        {
-            _locationService = locationService;
+        public LocationsController(ILocationService locationService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_locationService = locationService;
         }
 
         private int GetCurrentUserId()
@@ -40,11 +43,11 @@ namespace SocialAPI.Controllers
             {
                 var userId = GetCurrentUserId();
                 await _locationService.PingLocationAsync(userId, dto);
-                return Ok(new { message = "Location pinged successfully." });
+                return Ok(new { message = M("LocationPingedSuccessfully") });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while pinging location.", details = ex.Message });
+                return StatusCode(500, new { message = M("AnErrorOccurredWhilePingingLocation"), details = ex.Message });
             }
         }
 
@@ -55,11 +58,11 @@ namespace SocialAPI.Controllers
             {
                 var userId = GetCurrentUserId();
                 var liveFriends = await _locationService.GetLiveFriendsLocationsAsync(userId);
-                return Ok(new { message = "Live friends locations retrieved successfully.", data = liveFriends });
+                return Ok(new { message = M("LiveFriendsLocationsRetrievedSuccessfully"), data = liveFriends });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while retrieving friends locations.", details = ex.Message });
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileRetrievingFriendsLocations"), details = ex.Message });
             }
         }
 
@@ -69,11 +72,11 @@ namespace SocialAPI.Controllers
             try
             {
                 var liveLocations = await _locationService.GetLiveScheduleLocationsAsync(scheduleId);
-                return Ok(new { message = "Live schedule locations retrieved successfully.", data = liveLocations });
+                return Ok(new { message = M("LiveScheduleLocationsRetrievedSuccessfully"), data = liveLocations });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while retrieving schedule locations.", details = ex.Message });
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileRetrievingScheduleLocations"), details = ex.Message });
             }
         }
 
@@ -84,11 +87,11 @@ namespace SocialAPI.Controllers
             {
                 var userId = GetCurrentUserId();
                 var token = await _locationService.GenerateTrackingTokenAsync(userId);
-                return Ok(new { message = "Token generated successfully.", data = token });
+                return Ok(new { message = M("TokenGeneratedSuccessfully"), data = token });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while generating tracking token.", details = ex.Message });
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileGeneratingTrackingToken"), details = ex.Message });
             }
         }
 
@@ -99,7 +102,7 @@ namespace SocialAPI.Controllers
             try
             {
                 var location = await _locationService.GetLocationByTrackingTokenAsync(token);
-                return Ok(new { message = "Location retrieved successfully.", data = location });
+                return Ok(new { message = M("LocationRetrievedSuccessfully"), data = location });
             }
             catch (KeyNotFoundException ex)
             {
@@ -107,7 +110,7 @@ namespace SocialAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while retrieving location.", details = ex.Message });
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileRetrievingLocation"), details = ex.Message });
             }
         }
     }
