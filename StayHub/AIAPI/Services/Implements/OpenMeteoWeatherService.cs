@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using AIAPI.DTOs;
 using AIAPI.Helpers;
+using AIAPI.Localization;
 using AIAPI.Settings;
 using Microsoft.Extensions.Options;
 
@@ -11,11 +12,16 @@ public class OpenMeteoWeatherService : IWeatherService
 {
     private readonly HttpClient _httpClient;
     private readonly WeatherSettings _settings;
+    private readonly IAiLocalizedCopy _text;
 
-    public OpenMeteoWeatherService(HttpClient httpClient, IOptions<WeatherSettings> settings)
+    public OpenMeteoWeatherService(
+        HttpClient httpClient,
+        IOptions<WeatherSettings> settings,
+        IAiLocalizedCopy text)
     {
         _httpClient = httpClient;
         _settings = settings.Value;
+        _text = text;
     }
 
     public async Task<WeatherAdviceDTO?> GetTravelWeatherAdviceAsync(
@@ -80,8 +86,8 @@ public class OpenMeteoWeatherService : IWeatherService
         var rainyDays = payload.Daily.PrecipitationSum.Count(p => p >= 5);
 
         var summary = dataSource == "forecast"
-            ? $"Dự báo thời tiết {geo.DisplayName}: nhiệt độ {avgMin:0.#}–{avgMax:0.#}°C, mưa tích lũy ~{totalRain:0.#}mm trong {payload.Daily.Time.Count} ngày."
-            : $"Thống kê thời tiết lịch sử (cùng kỳ năm trước) tại {geo.DisplayName}: {avgMin:0.#}–{avgMax:0.#}°C, mưa ~{totalRain:0.#}mm.";
+            ? _text.WeatherForecastSummary(geo.DisplayName, avgMin, avgMax, totalRain, payload.Daily.Time.Count)
+            : _text.WeatherHistoricalSummary(geo.DisplayName, avgMin, avgMax, totalRain);
 
         var impact = BuildImpact(totalRain, rainyDays, avgMax, payload.Daily.Time.Count);
 
@@ -123,24 +129,24 @@ public class OpenMeteoWeatherService : IWeatherService
         return await response.Content.ReadFromJsonAsync<OpenMeteoDailyResponse>(cancellationToken);
     }
 
-    private static string BuildImpact(double totalRain, int rainyDays, double avgMax, int dayCount)
+    private string BuildImpact(double totalRain, int rainyDays, double avgMax, int dayCount)
     {
         if (rainyDays >= Math.Max(2, dayCount / 2) || totalRain >= 40)
         {
-            return "Thời điểm này thường mưa nhiều — ưu tiên tour trong nhà, chợ nổi buổi sáng sớm, mang áo mưa và ưu tiên lịch trình linh hoạt.";
+            return _text.WeatherImpactRainy;
         }
 
         if (avgMax >= 34)
         {
-            return "Nhiệt độ cao — chọn tour có giờ khởi hành sớm, nghỉ trưa hợp lý, bổ sung nước và ưu tiên biển/đêm.";
+            return _text.WeatherImpactHot;
         }
 
         if (avgMax <= 22)
         {
-            return "Thời tiết mát — phù hợp trekking nhẹ, tham quan văn hóa; nên mang thêm áo khoác mỏng.";
+            return _text.WeatherImpactCool;
         }
 
-        return "Thời tiết ổn định — phù hợp hầu hết tour ngoài trời, tắm biển và tham quan điểm văn hóa.";
+        return _text.WeatherImpactMild;
     }
 
     private sealed class OpenMeteoDailyResponse

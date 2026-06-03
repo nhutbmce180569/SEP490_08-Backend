@@ -172,6 +172,8 @@ public class GatewayCatalogClient : IGatewayCatalogClient
                 tour.Country,
                 tour.City,
                 tour.Address,
+                tour.SourceName,
+                tour.SourceUrl,
                 string.Join(" ", itineraryTitles)
             }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
@@ -185,6 +187,8 @@ public class GatewayCatalogClient : IGatewayCatalogClient
             City = tour.City,
             Address = tour.Address,
             ImageUrl = tour.ImageUrl,
+            SourceName = tour.SourceName,
+            SourceUrl = tour.SourceUrl,
             Status = tour.Status ?? "Active",
             AverageStar = tour.AverageStar,
             ReviewCount = tour.Reviews?.Count ?? 0,
@@ -208,7 +212,15 @@ public class GatewayCatalogClient : IGatewayCatalogClient
         Country = item.Country,
         SourceName = item.SourceName,
         SourceUrl = item.SourceUrl,
-        SearchDocument = string.Join(" ", new[] { item.Name, item.Type, item.Description, item.City, item.Country }
-            .Where(s => !string.IsNullOrWhiteSpace(s))).Trim()
+        SearchDocument = string.Join(" ", new[]
+            {
+                item.Name,
+                item.Type,
+                item.Description,
+                item.City,
+                item.Country,
+                item.SourceName,
+                item.SourceUrl
+            }.Where(s => !string.IsNullOrWhiteSpace(s))).Trim()
     };
 }

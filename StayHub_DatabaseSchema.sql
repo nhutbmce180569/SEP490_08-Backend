@@ -1,3 +1,11 @@
+/* =========================================================
+   STAYHUB DATABASE SCHEMA — single setup script (Part 1 of 2)
+   Run BEFORE StayHub_SampleData_Insert.sql.
+
+   Creates 9 microservice databases including StayHub_AiDb with:
+   UserTourInteractions, TourRelevanceJudgments, UserStudyAssignments/Responses.
+   All former patch/seed SQL files are merged into the sample data script.
+   ========================================================= */
 
 USE master;
 GO
@@ -177,6 +185,8 @@ CREATE TABLE Tours (
     Address NVARCHAR(255),
 
     ImageUrl NVARCHAR(500),
+    SourceName NVARCHAR(255) NOT NULL DEFAULT N'Vietnam National Administration of Tourism',
+    SourceUrl NVARCHAR(500) NULL,
 	CreatedBy INT NOT NULL,
 	UpdatedBy INT NULL,
 	CreatedAt DATETIME DEFAULT GETDATE(),

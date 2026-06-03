@@ -93,11 +93,21 @@ Content-Type: application/json
   "profileCount": 100,
   "topK": 8,
   "randomSeed": 42,
+  "profileSplit": "test",
+  "calibrateWeightsOnValidationFirst": true,
   "includeAlphaSweep": true,
   "labelingMode": "hybrid",
   "includeSignificanceTests": true,
   "exportFormat": "json"
 }
+
+### Evaluation — calibrate dimension weights on validation partition (indices 0-29)
+POST {{Gateway_HostAddress}}/api/ai/evaluation/calibrate-weights
+Authorization: Bearer {{admin_token}}
+
+### Evaluation — RAG corpus size ablation {0,25,50,75,100}
+GET {{Gateway_HostAddress}}/api/ai/evaluation/rag-corpus-ablation
+Authorization: Bearer {{admin_token}}
 
 ### Evaluation — import expert judgments (Admin)
 POST {{Gateway_HostAddress}}/api/ai/evaluation/judgments

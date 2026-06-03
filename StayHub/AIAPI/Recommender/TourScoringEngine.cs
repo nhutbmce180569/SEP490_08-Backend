@@ -1,5 +1,6 @@
 using AIAPI.DTOs;
 using AIAPI.Helpers;
+using AIAPI.Localization;
 using AIAPI.ML;
 using AIAPI.Models.Catalog;
 using AIAPI.Recommender;
@@ -25,7 +26,9 @@ public class TourScoringResult
 public class TourScoringEngine
 {
     private readonly RecommenderSettings _settings;
+    private readonly IDimensionWeightProvider _weights;
     private readonly IRagKnowledgeIndex _ragIndex;
+    private readonly IAiLocalizedCopy _text;
 
     private static readonly Dictionary<string, string[]> InterestKeywords = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -40,10 +43,16 @@ public class TourScoringEngine
         ["river"] = ["river", "mekong", "floating market", "sông", "chợ nổi", "delta"]
     };
 
-    public TourScoringEngine(IOptions<RecommenderSettings> settings, IRagKnowledgeIndex ragIndex)
+    public TourScoringEngine(
+        IOptions<RecommenderSettings> settings,
+        IDimensionWeightProvider weights,
+        IRagKnowledgeIndex ragIndex,
+        IAiLocalizedCopy text)
     {
         _settings = settings.Value;
+        _weights = weights;
         _ragIndex = ragIndex;
+        _text = text;
     }
 
     public TourScoringResult ScoreTour(
@@ -65,7 +74,7 @@ public class TourScoringEngine
 
         foreach (var persona in personas)
         {
-            var personaScore = ScoreForPersona(tour, profile, persona, dimensionScores, result.MatchReasons, includeKnowledgeDimensions);
+            var personaScore = ScoreForPersona(tour, profile, persona, dimensionScores, result.MatchReasons, includeKnowledgeDimensions, _weights, _text);
             result.PersonaScores[persona.PersonaType] = Clamp01(personaScore);
         }
 
@@ -121,17 +130,19 @@ public class TourScoringEngine
         TravelPersona persona,
         Dictionary<string, float> dimensions,
         List<string> reasons,
-        bool includeKnowledge)
+        bool includeKnowledge,
+        IDimensionWeightProvider weights,
+        IAiLocalizedCopy text)
     {
         var doc = tour.SearchDocument.ToLowerInvariant();
         float interestMatch = ScoreInterestMatch(doc, persona.Interests);
         float score =
-            interestMatch * ScoringModelSpec.DimensionWeights.InterestSemantic +
-            dimensions["location"] * ScoringModelSpec.DimensionWeights.Location +
-            dimensions["budget"] * ScoringModelSpec.DimensionWeights.Budget +
-            dimensions["schedule"] * ScoringModelSpec.DimensionWeights.Schedule +
-            dimensions["weather"] * ScoringModelSpec.DimensionWeights.Weather +
-            dimensions["cultural_fit"] * ScoringModelSpec.DimensionWeights.CulturalFit;
+            interestMatch * weights.InterestSemantic +
+            dimensions["location"] * weights.Location +
+            dimensions["budget"] * weights.Budget +
+            dimensions["schedule"] * weights.Schedule +
+            dimensions["weather"] * weights.Weather +
+            dimensions["cultural_fit"] * weights.CulturalFit;
 
         var accessibility = dimensions["accessibility"];
 
@@ -141,11 +152,11 @@ public class TourScoringEngine
             accessibility = Math.Min(accessibility, elderlyFit);
             if (elderlyFit >= 0.6f)
             {
-                reasons.Add($"[{persona.Label}] Lịch trình phù hợp người cao tuổi (điểm accessibility {elderlyFit:P0}).");
+                reasons.Add(text.ReasonElderlyGood(persona.Label, elderlyFit));
             }
             else if (elderlyFit < 0.4f)
             {
-                reasons.Add($"[{persona.Label}] Không tối ưu cho người cao tuổi (trekking/leo núi/xe máy).");
+                reasons.Add(text.ReasonElderlyPoor(persona.Label));
             }
         }
 
@@ -155,21 +166,21 @@ public class TourScoringEngine
             accessibility = Math.Min(accessibility, childFit);
             if (childFit >= 0.6f)
             {
-                reasons.Add($"[{persona.Label}] Thân thiện trẻ em (điểm family-fit {childFit:P0}).");
+                reasons.Add(text.ReasonChildGood(persona.Label, childFit));
             }
             else if (childFit < 0.4f)
             {
-                reasons.Add($"[{persona.Label}] Cân nhắc với trẻ em (hoạt động mạo hiểm/dài).");
+                reasons.Add(text.ReasonChildPoor(persona.Label));
             }
         }
 
         if (persona.RequiresInternationalGuidance && includeKnowledge)
         {
             var intl = ScoreInternationalFit(doc, tour);
-            score += intl * ScoringModelSpec.DimensionWeights.CulturalFit;
+            score += intl * weights.CulturalFit;
             if (intl >= 0.5f)
             {
-                reasons.Add($"[{persona.Label}] Phù hợp khách quốc tế — văn hóa/ trải nghiệm dễ tiếp cận.");
+                reasons.Add(text.ReasonInternationalGood(persona.Label));
             }
         }
 
@@ -178,11 +189,11 @@ public class TourScoringEngine
             score += ScoreGroupDynamics(doc, profile.CompanionType) * 0.08f;
         }
 
-        score += accessibility * ScoringModelSpec.DimensionWeights.Accessibility;
+        score += accessibility * weights.Accessibility;
 
         if (interestMatch >= 0.5f)
         {
-            reasons.Add($"[{persona.Label}] Khớp sở thích ({string.Join(", ", persona.Interests)}).");
+            reasons.Add(text.ReasonInterestMatch(persona.Label, persona.Interests));
         }
 
         return Clamp01(score) * persona.Weight;

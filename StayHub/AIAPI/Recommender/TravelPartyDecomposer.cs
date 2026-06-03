@@ -1,4 +1,5 @@
 using AIAPI.DTOs;
+using AIAPI.Localization;
 
 namespace AIAPI.Recommender;
 
@@ -15,14 +16,16 @@ public class TravelPersona
 
 public static class TravelPartyDecomposer
 {
-    public static IReadOnlyList<TravelPersona> Decompose(TourPreferenceQuestionnaireDTO profile)
+    public static IReadOnlyList<TravelPersona> Decompose(
+        TourPreferenceQuestionnaireDTO profile,
+        IAiLocalizedCopy text)
     {
         var personas = new List<TravelPersona>
         {
             new()
             {
                 PersonaType = ScoringModelSpec.PersonaTypes.Primary,
-                Label = "Du khách chính",
+                Label = text.PersonaPrimary,
                 Interests = profile.TravelInterests.ToList(),
                 Weight = 1f
             }
@@ -33,7 +36,7 @@ public static class TravelPartyDecomposer
             personas.Add(new TravelPersona
             {
                 PersonaType = ScoringModelSpec.PersonaTypes.ElderlyCompanion,
-                Label = "Người cao tuổi đi cùng",
+                Label = text.PersonaElderly,
                 Interests = ["relax", "culture", "food"],
                 RequiresAccessibility = true,
                 Weight = 1f
@@ -45,7 +48,7 @@ public static class TravelPartyDecomposer
             personas.Add(new TravelPersona
             {
                 PersonaType = ScoringModelSpec.PersonaTypes.ChildCompanion,
-                Label = "Trẻ em đi cùng",
+                Label = text.PersonaChild,
                 Interests = ["beach", "city", "food", "river"],
                 RequiresFamilyFriendly = true,
                 Weight = 1f
@@ -57,7 +60,7 @@ public static class TravelPartyDecomposer
             personas.Add(new TravelPersona
             {
                 PersonaType = ScoringModelSpec.PersonaTypes.InternationalGuest,
-                Label = "Khách quốc tế",
+                Label = text.PersonaInternational,
                 Interests = profile.TravelInterests.Concat(["culture", "food"]).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
                 RequiresInternationalGuidance = true,
                 Weight = 1f
@@ -71,9 +74,9 @@ public static class TravelPartyDecomposer
                 PersonaType = ScoringModelSpec.PersonaTypes.GroupDynamics,
                 Label = profile.CompanionType switch
                 {
-                    TravelCompanionTypes.Couple => "Không khí couple",
-                    TravelCompanionTypes.Family => "Không khí gia đình",
-                    _ => "Không khí nhóm"
+                    TravelCompanionTypes.Couple => text.PersonaCouple,
+                    TravelCompanionTypes.Family => text.PersonaFamily,
+                    _ => text.PersonaGroup
                 },
                 Interests = InferGroupInterests(profile.CompanionType),
                 Weight = 0.85f

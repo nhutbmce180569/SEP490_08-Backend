@@ -5,7 +5,9 @@ namespace AIAPI.Recommender;
 public static class SyntheticProfileGenerator
 {
     private static readonly string[] Cities =
-        ["Can Tho", "Da Lat", "Hoi An", "Phu Quoc", "Ha Noi", "Da Nang", "Nha Trang", "Sapa", "Ninh Binh", "Ho Chi Minh City"];
+    [
+        "Can Tho", "Da Lat", "Hoi An", "Phu Quoc", "Ha Noi", "Da Nang", "Nha Trang", "Sapa", "Ninh Binh", "Ho Chi Minh City"
+    ];
 
     private static readonly string[][] InterestSets =
     [
@@ -19,18 +21,21 @@ public static class SyntheticProfileGenerator
         ["relax", "photography"]
     ];
 
+    /// <summary>
+    /// Generates stratified profiles. Default count is 130: indices 0–29 validation, 30–129 test (seed=42).
+    /// </summary>
     public static IReadOnlyList<TourPreferenceQuestionnaireDTO> Generate(int count, int? seed = null)
     {
         var rng = seed.HasValue ? new Random(seed.Value) : Random.Shared;
         var profiles = new List<TourPreferenceQuestionnaireDTO>(count);
-        var companions = new[] { TravelCompanionTypes.Solo, TravelCompanionTypes.Couple, TravelCompanionTypes.Family, TravelCompanionTypes.Group };
-        var nationalities = new[] { TravelerNationalityTypes.Vietnamese, TravelerNationalityTypes.Foreigner };
 
         for (var i = 0; i < count; i++)
         {
-            var companion = companions[i % companions.Length];
-            var hasElderly = companion is TravelCompanionTypes.Family or TravelCompanionTypes.Group && i % 3 == 0;
-            var hasChildren = companion is TravelCompanionTypes.Family or TravelCompanionTypes.Group && i % 2 == 0;
+            var companion = PickCompanion(i, count);
+            var hasElderly = companion is TravelCompanionTypes.Family or TravelCompanionTypes.Group &&
+                             (i % 4 == 0 || i % 7 == 2);
+            var hasChildren = companion is TravelCompanionTypes.Family or TravelCompanionTypes.Group &&
+                              (i % 3 == 0 || i % 5 == 1);
             var start = DateTime.UtcNow.Date.AddDays(14 + (i % 60));
 
             profiles.Add(new TourPreferenceQuestionnaireDTO
@@ -44,7 +49,9 @@ public static class SyntheticProfileGenerator
                 ElderlyCount = hasElderly ? 1 + (i % 2) : null,
                 ChildrenCount = hasChildren ? 1 + (i % 2) : null,
                 TravelInterests = InterestSets[i % InterestSets.Length].ToList(),
-                NationalityType = nationalities[i % nationalities.Length],
+                NationalityType = i % 5 == 0
+                    ? TravelerNationalityTypes.Foreigner
+                    : TravelerNationalityTypes.Vietnamese,
                 PreferredCity = Cities[i % Cities.Length],
                 Top = 8,
                 SessionId = $"eval-{i:0000}"
@@ -52,5 +59,37 @@ public static class SyntheticProfileGenerator
         }
 
         return profiles;
+    }
+
+    private static string PickCompanion(int index, int total)
+    {
+        if (total <= 0)
+        {
+            return TravelCompanionTypes.Solo;
+        }
+
+        var soloQuota = Math.Max(1, total / 13);
+        var familyQuota = (int)Math.Round(total * 0.28);
+        var friendQuota = (int)Math.Round(total * 0.32);
+        var coupleQuota = total - soloQuota - familyQuota - friendQuota;
+
+        if (index < soloQuota)
+        {
+            return TravelCompanionTypes.Solo;
+        }
+
+        index -= soloQuota;
+        if (index < familyQuota)
+        {
+            return TravelCompanionTypes.Family;
+        }
+
+        index -= familyQuota;
+        if (index < friendQuota)
+        {
+            return TravelCompanionTypes.Group;
+        }
+
+        return TravelCompanionTypes.Couple;
     }
 }

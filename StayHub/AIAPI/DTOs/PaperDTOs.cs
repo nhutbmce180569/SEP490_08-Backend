@@ -23,6 +23,8 @@ public class PaperBundleDTO
     public EvaluationRunResponseDTO OfflineEvaluationHybrid { get; set; } = new();
     public EvaluationRunResponseDTO OfflineEvaluationProxy { get; set; } = new();
     public RagAblationResultDTO RagAblation { get; set; } = new();
+    public RagCorpusAblationResultDTO? RagCorpusSizeAblation { get; set; }
+    public WeightCalibrationResultDTO? WeightCalibration { get; set; }
     public UserStudySummaryDTO UserStudy { get; set; } = new();
     public InterRaterAgreementDTO ExpertAgreement { get; set; } = new();
     public PaperResultsSummaryDTO ResultsSummary { get; set; } = new();

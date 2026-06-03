@@ -16,32 +16,80 @@ public class RagKnowledgeIndex : IRagKnowledgeIndex
     private RagCorpusBundle _corpus = new();
 
     public bool IsReady { get; private set; }
+    public int ActiveChunkCount { get; private set; }
     public RagCorpusBundle Corpus => _corpus;
 
-    public void Initialize()
+    public void Initialize(int? maxChunks = null) => Reinitialize(maxChunks);
+
+    public void Reinitialize(int? maxChunks = null)
     {
         lock (_lock)
         {
-            if (IsReady)
-            {
-                return;
-            }
+            IsReady = false;
+            _searchModel = null;
+            _indexed = new List<(RagCorpusChunk Chunk, float[] Vector)>();
 
             _corpus = LoadCorpus();
-            if (_corpus.Chunks.Count == 0)
+            var chunks = SelectChunks(_corpus.Chunks, maxChunks);
+            if (chunks.Count == 0)
             {
+                ActiveChunkCount = 0;
                 return;
             }
 
             _searchModel = _trainer.TrainTextSearchModel(
-                _corpus.Chunks.Select(c => new TourDocument { Text = c.BuildSearchDocument() }));
+                chunks.Select(c => new TourDocument { Text = c.BuildSearchDocument() }));
 
-            _indexed = _corpus.Chunks
+            _indexed = chunks
                 .Select(c => (c, _trainer.GetFeatureVector(_searchModel, c.BuildSearchDocument())))
                 .ToList();
 
+            ActiveChunkCount = chunks.Count;
             IsReady = true;
         }
+    }
+
+    private static List<RagCorpusChunk> SelectChunks(IReadOnlyList<RagCorpusChunk> all, int? maxChunks)
+    {
+        if (maxChunks is null or <= 0 || maxChunks >= all.Count)
+        {
+            return all.ToList();
+        }
+
+        var perCity = all
+            .GroupBy(c => c.CityKeys.FirstOrDefault() ?? c.Id)
+            .OrderBy(g => g.Key, StringComparer.Ordinal)
+            .ToList();
+
+        var selected = new List<RagCorpusChunk>();
+        var target = maxChunks.Value;
+
+        while (selected.Count < target)
+        {
+            var added = false;
+            foreach (var group in perCity)
+            {
+                var remaining = group.Where(c => !selected.Contains(c)).ToList();
+                if (remaining.Count == 0)
+                {
+                    continue;
+                }
+
+                selected.Add(remaining[0]);
+                added = true;
+                if (selected.Count >= target)
+                {
+                    break;
+                }
+            }
+
+            if (!added)
+            {
+                break;
+            }
+        }
+
+        return selected;
     }
 
     public IReadOnlyList<RagRetrievalResult> Retrieve(

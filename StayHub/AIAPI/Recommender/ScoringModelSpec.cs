@@ -6,7 +6,7 @@ namespace AIAPI.Recommender;
 /// </summary>
 public static class ScoringModelSpec
 {
-    public const string ModelVersion = "2.1-fair-hybrid-eval";
+    public const string ModelVersion = EvaluationDataSpec.ProtocolVersion;
     public const string ModelFamily = "Fair Constraint-Aware Hybrid Recommender (FCAHR)";
     public const string PaperTitleSuggestion =
         "A Fair Constraint-Aware Hybrid Recommender for Group Tour Planning with Multi-Source Knowledge Augmentation";
@@ -72,7 +72,12 @@ public static class ScoringModelSpec
         public const string ProfileGeneration = "Stratified synthetic profiles: companion × nationality × elderly × children × city × interests";
         public const string RelevanceProxy = "Proxy labels 0-3 from city match, interest overlap, budget, accessibility penalties";
         public const string HybridGroundTruth = "Hybrid: expert judgments (TourRelevanceJudgments) override proxy; interaction boost from UserTourInteractions";
-        public const string UserStudyProtocol = "Within-subjects blind A/B: 8 vignettes, Likert 1-7 fairness/satisfaction/group-fairness/would-book; FCAHR vs mean_utility or content_only";
+        public const string UserStudyProtocol =
+            "Within-subjects blind A/B: 18 stratified vignettes (1 solo, 6 family, 6 friend, 5 couple); 52 participants x 18 scenarios; Likert 1-7; G*Power n>=34 for d=0.5";
+        public const string ProfilePartition =
+            "130 profiles seed=42: indices 0-29 validation (weight/tau tuning), 30-129 held-out test (reported metrics)";
+        public const string CatalogAugmentation =
+            "Base tours from CatalogDB + in-memory synthesis to ~936 (Jaccard<=0.85, price/date variants)";
         public const string GroundTruthNote = "Import expert labels via POST /api/ai/evaluation/judgments; user study via /api/ai/evaluation/user-study/*";
     }
 }

@@ -1,5 +1,7 @@
 using AIAPI.Clients;
 using AIAPI.DTOs;
+using AIAPI.Helpers;
+using AIAPI.Localization;
 using AIAPI.ML;
 using AIAPI.Models;
 using AIAPI.Models.Catalog;
@@ -12,12 +14,18 @@ public class TourSemanticSearchService : ITourSemanticSearchService
     private readonly ICatalogStore _catalogStore;
     private readonly IMlModelRegistry _modelRegistry;
     private readonly QueryEntityExtractor _entityExtractor;
+    private readonly IAiLocalizedCopy _text;
 
-    public TourSemanticSearchService(ICatalogStore catalogStore, IMlModelRegistry modelRegistry, QueryEntityExtractor entityExtractor)
+    public TourSemanticSearchService(
+        ICatalogStore catalogStore,
+        IMlModelRegistry modelRegistry,
+        QueryEntityExtractor entityExtractor,
+        IAiLocalizedCopy text)
     {
         _catalogStore = catalogStore;
         _modelRegistry = modelRegistry;
         _entityExtractor = entityExtractor;
+        _text = text;
     }
 
     public Task<List<TourSearchResultItemDTO>> SearchAsync(NaturalLanguageSearchRequestDTO request, CancellationToken cancellationToken = default)
@@ -30,6 +38,8 @@ public class TourSemanticSearchService : ITourSemanticSearchService
 
         var keywordMatches = KeywordFallback(request.Query, parsed, request.Top * 3);
         var merged = MergeScores(semanticMatches, keywordMatches)
+            .GroupBy(x => CatalogTourIds.ResolveBaseTourId(x.TourId))
+            .Select(g => g.OrderByDescending(x => x.Score).First())
             .OrderByDescending(x => x.Score)
             .Take(request.Top)
             .ToList();
@@ -144,20 +154,24 @@ public class TourSemanticSearchService : ITourSemanticSearchService
     private TourSearchResultItemDTO MapSearchResult(int tourId, float score, string query)
     {
         var tour = _catalogStore.Tours.First(t => t.Id == tourId);
+        var publicId = CatalogTourIds.ResolveBaseTourId(tour.Id);
+        var display = _catalogStore.Tours.FirstOrDefault(t => t.Id == publicId) ?? tour;
         return new TourSearchResultItemDTO
         {
-            TourId = tour.Id,
-            Name = tour.Name,
-            City = tour.City,
-            Country = tour.Country,
-            ImageUrl = tour.ImageUrl,
-            AverageStar = tour.AverageStar,
-            MinPrice = tour.MinPrice,
-            DurationDays = tour.DurationDays,
+            TourId = publicId,
+            Name = display.Name,
+            City = display.City,
+            Country = display.Country,
+            ImageUrl = display.ImageUrl,
+            AverageStar = display.AverageStar,
+            MinPrice = display.MinPrice,
+            DurationDays = display.DurationDays,
             SemanticScore = score,
             Score = score,
-            Snippet = BuildSnippet(tour, query),
-            Reason = "Khớp ngữ nghĩa với truy vấn của bạn (ML.NET text featurization)."
+            Snippet = BuildSnippet(display, query),
+            Reason = _text.IsVietnamese
+                ? "Khớp ngữ nghĩa với truy vấn của bạn (ML.NET text featurization)."
+                : "Semantically matches your query (ML.NET text featurization)."
         };
     }
 
@@ -193,17 +207,20 @@ public class TourRecommendationService : ITourRecommendationService
     private readonly IMlModelRegistry _modelRegistry;
     private readonly IGatewayCatalogClient _gatewayClient;
     private readonly StayHubAiDbContext _dbContext;
+    private readonly IAiLocalizedCopy _text;
 
     public TourRecommendationService(
         ICatalogStore catalogStore,
         IMlModelRegistry modelRegistry,
         IGatewayCatalogClient gatewayClient,
-        StayHubAiDbContext dbContext)
+        StayHubAiDbContext dbContext,
+        IAiLocalizedCopy text)
     {
         _catalogStore = catalogStore;
         _modelRegistry = modelRegistry;
         _gatewayClient = gatewayClient;
         _dbContext = dbContext;
+        _text = text;
     }
 
     public async Task<List<TourRecommendationItemDTO>> RecommendAsync(
@@ -230,7 +247,7 @@ public class TourRecommendationService : ITourRecommendationService
         {
             foreach (var match in _modelRegistry.SearchTours(profileText, tours.Count))
             {
-                scored[match.TourId] = (match.Score * 0.55f + PopularityScore(match.TourId) * 0.25f, "Dựa trên lịch sử wishlist/đặt tour và sở thích cá nhân.");
+                scored[match.TourId] = (match.Score * 0.55f + PopularityScore(match.TourId) * 0.25f, _text.ReasonWishlistHistory);
             }
         }
 
@@ -252,12 +269,14 @@ public class TourRecommendationService : ITourRecommendationService
         {
             if (!scored.ContainsKey(tour.Id))
             {
-                scored[tour.Id] = (PopularityScore(tour.Id), "Tour phổ biến, đánh giá cao trong catalog hiện tại.");
+                scored[tour.Id] = (PopularityScore(tour.Id), _text.ReasonPopularTour);
             }
         }
 
         return scored
             .Where(kv => tours.Any(t => t.Id == kv.Key))
+            .GroupBy(kv => CatalogTourIds.ResolveBaseTourId(kv.Key))
+            .Select(g => g.OrderByDescending(kv => kv.Value.Score).First())
             .OrderByDescending(kv => kv.Value.Score)
             .Take(top)
             .Select(kv => MapRecommendation(kv.Key, kv.Value.Score, kv.Value.Reason))
@@ -266,16 +285,20 @@ public class TourRecommendationService : ITourRecommendationService
 
     public Task<List<TourRecommendationItemDTO>> RecommendSimilarAsync(int tourId, int top, CancellationToken cancellationToken = default)
     {
-        var source = _catalogStore.Tours.FirstOrDefault(t => t.Id == tourId);
+        var resolvedId = CatalogTourIds.ResolveBaseTourId(tourId);
+        var source = _catalogStore.Tours.FirstOrDefault(t => t.Id == resolvedId || t.Id == tourId);
         if (source == null)
         {
             throw new InvalidOperationException("Tour not found in AI catalog.");
         }
 
+        var sourcePublicId = CatalogTourIds.ResolveBaseTourId(source.Id);
         var matches = _modelRegistry.SearchTours(source.SearchDocument, top + 1)
-            .Where(m => m.TourId != tourId)
+            .Where(m => CatalogTourIds.ResolveBaseTourId(m.TourId) != sourcePublicId)
+            .GroupBy(m => CatalogTourIds.ResolveBaseTourId(m.TourId))
+            .Select(g => g.OrderByDescending(m => m.Score).First())
             .Take(top)
-            .Select(m => MapRecommendation(m.TourId, m.Score, $"Tương tự tour \"{source.Name}\" (content-based ML)."))
+            .Select(m => MapRecommendation(m.TourId, m.Score, _text.ReasonSimilarTour(source.Name)))
             .ToList();
 
         return Task.FromResult(matches);
@@ -351,16 +374,18 @@ public class TourRecommendationService : ITourRecommendationService
     private TourRecommendationItemDTO MapRecommendation(int tourId, float score, string reason)
     {
         var tour = _catalogStore.Tours.First(t => t.Id == tourId);
+        var publicId = CatalogTourIds.ResolveBaseTourId(tour.Id);
+        var display = _catalogStore.Tours.FirstOrDefault(t => t.Id == publicId) ?? tour;
         return new TourRecommendationItemDTO
         {
-            TourId = tour.Id,
-            Name = tour.Name,
-            City = tour.City,
-            Country = tour.Country,
-            ImageUrl = tour.ImageUrl,
-            AverageStar = tour.AverageStar,
-            MinPrice = tour.MinPrice,
-            DurationDays = tour.DurationDays,
+            TourId = publicId,
+            Name = display.Name,
+            City = display.City,
+            Country = display.Country,
+            ImageUrl = display.ImageUrl,
+            AverageStar = display.AverageStar,
+            MinPrice = display.MinPrice,
+            DurationDays = display.DurationDays,
             Score = score,
             Reason = reason
         };

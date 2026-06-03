@@ -1,4 +1,5 @@
 using AIAPI.DTOs;
+using AIAPI.Localization;
 using AIAPI.Models.Catalog;
 using AIAPI.Settings;
 using Microsoft.Extensions.Options;
@@ -9,11 +10,16 @@ public class TourRanker
 {
     private readonly TourScoringEngine _scoringEngine;
     private readonly RecommenderSettings _settings;
+    private readonly IAiLocalizedCopy _text;
 
-    public TourRanker(TourScoringEngine scoringEngine, IOptions<RecommenderSettings> settings)
+    public TourRanker(
+        TourScoringEngine scoringEngine,
+        IOptions<RecommenderSettings> settings,
+        IAiLocalizedCopy text)
     {
         _scoringEngine = scoringEngine;
         _settings = settings.Value;
+        _text = text;
     }
 
     public IReadOnlyList<(TourCatalogItem Tour, TourScoringResult Scoring)> RankTours(
@@ -40,7 +46,7 @@ public class TourRanker
                 .ToList();
         }
 
-        var personas = TravelPartyDecomposer.Decompose(profile);
+        var personas = TravelPartyDecomposer.Decompose(profile, _text);
         var includeKnowledge = aggregationStrategy != AggregationStrategies.CafhrNoKnowledge;
         var alpha = fairnessAlphaOverride ?? _settings.FairnessAlpha;
 

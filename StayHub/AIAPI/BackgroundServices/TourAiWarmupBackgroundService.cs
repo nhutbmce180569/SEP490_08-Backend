@@ -1,4 +1,5 @@
 using AIAPI.ML;
+using AIAPI.Recommender;
 using AIAPI.Services;
 using AIAPI.Settings;
 using Microsoft.Extensions.Options;
@@ -9,15 +10,18 @@ public class TourAiWarmupBackgroundService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly MlSettings _settings;
+    private readonly RecommenderSettings _recommenderSettings;
     private readonly ILogger<TourAiWarmupBackgroundService> _logger;
 
     public TourAiWarmupBackgroundService(
         IServiceScopeFactory scopeFactory,
         IOptions<MlSettings> settings,
+        IOptions<RecommenderSettings> recommenderSettings,
         ILogger<TourAiWarmupBackgroundService> logger)
     {
         _scopeFactory = scopeFactory;
         _settings = settings.Value;
+        _recommenderSettings = recommenderSettings.Value;
         _logger = logger;
     }
 
@@ -33,7 +37,7 @@ public class TourAiWarmupBackgroundService : BackgroundService
         registry.LoadFromDiskIfExists();
 
         var ragIndex = scope.ServiceProvider.GetRequiredService<IRagKnowledgeIndex>();
-        ragIndex.Initialize();
+        ragIndex.Initialize(_recommenderSettings.RagCorpusMaxChunks);
 
         try
         {

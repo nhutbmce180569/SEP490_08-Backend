@@ -5,13 +5,29 @@ public class UserStudyProtocolDTO
     public string ProtocolVersion { get; set; } = "1.0";
     public string Title { get; set; } = "";
     public string Objective { get; set; } = "";
-    public int TargetParticipants { get; set; } = 40;
-    public int ScenarioCount { get; set; } = 8;
+    public int TargetParticipants { get; set; } = 52;
+    public int TargetGroups { get; set; } = 18;
+    public int ScenarioCount { get; set; } = 18;
     public int ToursPerList { get; set; } = 5;
     public int EstimatedMinutes { get; set; } = 15;
     public List<LikertScaleDefinitionDTO> Scales { get; set; } = new();
     public List<string> ComparisonPairs { get; set; } = new();
     public List<string> Instructions { get; set; } = new();
+    public UserStudyPowerAnalysisDTO? PowerAnalysis { get; set; }
+}
+
+public class UserStudyPowerAnalysisDTO
+{
+    public string Design { get; set; } = "";
+    public int TargetParticipants { get; set; }
+    public int ScenarioCount { get; set; }
+    public int TotalPreferenceObservations { get; set; }
+    public double AssumedCohensD { get; set; }
+    public double Alpha { get; set; }
+    public double TargetPower { get; set; }
+    public int GPowerMinimumPairs { get; set; }
+    public bool MeetsPowerTarget { get; set; }
+    public string Justification { get; set; } = "";
 }
 
 public class LikertScaleDefinitionDTO
@@ -31,6 +47,8 @@ public class UserStudyScenarioDTO
     public string Vignette { get; set; } = "";
     public string ComparisonPair { get; set; } = "";
     public string ProfileQueryKey { get; set; } = "";
+    /// <summary>solo | family | friend | couple</summary>
+    public string GroupType { get; set; } = "";
 }
 
 public class UserStudyComparisonDTO
@@ -89,11 +107,22 @@ public class UserStudySummaryDTO
     public string ProtocolVersion { get; set; } = "";
     public int TotalResponses { get; set; }
     public int UniqueParticipants { get; set; }
-    public int TargetParticipants { get; set; } = 40;
+    public int TargetParticipants { get; set; } = 52;
+    public int TargetScenariosPerParticipant { get; set; } = 18;
     public float CompletionRate { get; set; }
     public List<UserStudyComparisonStatsDTO> ComparisonStats { get; set; } = new();
+    public List<UserStudyGroupTypeStatsDTO> GroupTypeStats { get; set; } = new();
     public UserStudyFcahrAggregateDTO FcahrAggregate { get; set; } = new();
+    public UserStudyPowerAnalysisDTO PowerAnalysis { get; set; } = new();
     public DateTime GeneratedAt { get; set; }
+}
+
+public class UserStudyGroupTypeStatsDTO
+{
+    public string GroupType { get; set; } = "";
+    public int ResponseCount { get; set; }
+    public float FcahrPreferenceRate { get; set; }
+    public float MeanGroupFairnessAdvantage { get; set; }
 }
 
 public class UserStudyComparisonStatsDTO

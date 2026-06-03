@@ -5,8 +5,10 @@ namespace AIAPI.Services;
 public interface IRagKnowledgeIndex
 {
     bool IsReady { get; }
+    int ActiveChunkCount { get; }
     RagCorpusBundle Corpus { get; }
-    void Initialize();
+    void Initialize(int? maxChunks = null);
+    void Reinitialize(int? maxChunks = null);
     IReadOnlyList<RagRetrievalResult> Retrieve(
         string query,
         string? city,
