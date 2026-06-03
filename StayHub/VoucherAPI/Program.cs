@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using StayHub.Common.Localization;
 using System.Text;
 using VoucherAPI.Helpers;
 using VoucherAPI.Mappers;
@@ -49,7 +50,8 @@ public class Program
         builder.Services.AddScoped<ICustomerVoucherService, CustomerVoucherService>();
         builder.Services.AddScoped<IPlatformAnalyticsService, PlatformAnalyticsService>();
 
-        builder.Services.AddControllers();
+        builder.Services.AddControllers().AddStayHubDataAnnotationsLocalization();
+        builder.Services.AddStayHubLocalization();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(option =>
         {
@@ -119,6 +121,7 @@ public class Program
 
         app.UseHttpsRedirection();
         app.UseCors("FrontendDev");
+        app.UseStayHubLocalization();
         app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();

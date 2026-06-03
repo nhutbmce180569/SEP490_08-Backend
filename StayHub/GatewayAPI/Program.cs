@@ -1,5 +1,8 @@
 using StackExchange.Redis;
 using System.IdentityModel.Tokens.Jwt;
+using StayHub.Common.Localization;
+using StayHub.Common.Resources;
+using Microsoft.Extensions.Localization;
 
 namespace GatewayAPI
 {
@@ -9,8 +12,9 @@ namespace GatewayAPI
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers().AddStayHubDataAnnotationsLocalization();
             builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddStayHubLocalization();
 
             // 1. SỬA LẠI CẤU HÌNH CORS CHO SIGNALR
             builder.Services.AddCors(options =>
@@ -39,6 +43,7 @@ namespace GatewayAPI
 
             // Áp dụng CORS vừa sửa
             app.UseCors("AllowFrontend");
+            app.UseStayHubLocalization();
 
             // 2. MIDDLEWARE CHECK REVOKE TOKEN (CẬP NHẬT CHO SIGNALR)
             app.Use(async (context, next) =>
@@ -85,7 +90,8 @@ namespace GatewayAPI
                                     {
                                         context.Response.StatusCode = 401;
                                         context.Response.ContentType = "application/json";
-                                        await context.Response.WriteAsJsonAsync(new { message = "Token has been invalidated due to a password change. Please log in again." });
+                                        var localizer = context.RequestServices.GetRequiredService<IStringLocalizer<Messages>>();
+                                        await context.Response.WriteAsJsonAsync(new { message = localizer["TokenInvalidatedPasswordChange"].Value });
                                         return;
                                     }
                                 }

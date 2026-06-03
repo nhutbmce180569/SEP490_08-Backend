@@ -2,18 +2,21 @@ using ContentAPI.DTOs;
 using ContentAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 
 namespace ContentAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class TicketTypesController : ControllerBase
+    public class TicketTypesController : LocalizedControllerBase
     {
         private readonly ITicketTypeService _ticketTypeService;
 
-        public TicketTypesController(ITicketTypeService ticketTypeService)
-        {
-            _ticketTypeService = ticketTypeService;
+        public TicketTypesController(ITicketTypeService ticketTypeService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_ticketTypeService = ticketTypeService;
         }
 
         // GET: api/TicketTypes?page=1&pageSize=10&searchTerm=vip
@@ -45,7 +48,7 @@ namespace ContentAPI.Controllers
             var ticketType = await _ticketTypeService.GetTicketTypeById(id);
             if (ticketType == null)
             {
-                return NotFound(new { message = "Ticket type not found." });
+                return NotFound(new { message = M("TicketTypeNotFound") });
             }
 
             return Ok(ticketType);
@@ -78,10 +81,10 @@ namespace ContentAPI.Controllers
             var result = await _ticketTypeService.UpdateTicketType(id, dto);
             if (!result)
             {
-                return NotFound(new { message = "Ticket type not found." });
+                return NotFound(new { message = M("TicketTypeNotFound") });
             }
 
-            return Ok(new { message = "Ticket type updated successfully." });
+            return Ok(new { message = M("TicketTypeUpdatedSuccessfully") });
         }
 
         // PATCH: api/TicketTypes/5/activate
@@ -92,10 +95,10 @@ namespace ContentAPI.Controllers
             var result = await _ticketTypeService.ChangeTicketTypeStatus(id, true);
             if (!result)
             {
-                return NotFound(new { message = "Ticket type not found." });
+                return NotFound(new { message = M("TicketTypeNotFound") });
             }
 
-            return Ok(new { message = "Ticket type activated successfully." });
+            return Ok(new { message = M("TicketTypeActivatedSuccessfully") });
         }
 
         // PATCH: api/TicketTypes/5/deactivate
@@ -106,10 +109,10 @@ namespace ContentAPI.Controllers
             var result = await _ticketTypeService.ChangeTicketTypeStatus(id, false);
             if (!result)
             {
-                return NotFound(new { message = "Ticket type not found." });
+                return NotFound(new { message = M("TicketTypeNotFound") });
             }
 
-            return Ok(new { message = "Ticket type deactivated successfully." });
+            return Ok(new { message = M("TicketTypeDeactivatedSuccessfully") });
         }
     }
 }

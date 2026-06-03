@@ -2,19 +2,22 @@
 using AuthAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 
 namespace AuthAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     // [Authorize(Roles = "Admin")]
-    public class UsersController : ControllerBase
+    public class UsersController : LocalizedControllerBase
     {
         private readonly IUserService _userService;
 
-        public UsersController(IUserService userService)
-        {
-            _userService = userService;
+        public UsersController(IUserService userService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_userService = userService;
         }
 
         // GET: api/users?page=1&pageSize=10
@@ -26,7 +29,7 @@ namespace AuthAPI.Controllers
             if (pageSize <= 0) pageSize = 10;
 
             var paginationResult = await _userService.GetAllUsers(page, pageSize);
-            return Ok(new { message = "Users retrieved successfully.", data = paginationResult });
+            return Ok(new { message = M("UsersRetrievedSuccessfully"), data = paginationResult });
         }
 
         // GET: api/users/{id}
@@ -39,10 +42,10 @@ namespace AuthAPI.Controllers
             if (user == null)
             {
                 // Trả về 404 nhất quán với hệ thống
-                return NotFound(new { message = "User not found." });
+                return NotFound(new { message = M("UserNotFound") });
             }
 
-            return Ok(new { message = "User retrieved successfully.", data = user });
+            return Ok(new { message = M("UserRetrievedSuccessfully"), data = user });
         }
 
         // GET: api/users/email/{email}
@@ -54,10 +57,10 @@ namespace AuthAPI.Controllers
 
             if (user == null)
             {
-                return NotFound(new { message = "User not found." });
+                return NotFound(new { message = M("UserNotFound") });
             }
 
-            return Ok(new { message = "User retrieved successfully.", data = user });
+            return Ok(new { message = M("UserRetrievedSuccessfully"), data = user });
         }
 
         // POST: api/users
@@ -68,13 +71,13 @@ namespace AuthAPI.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(new { message = "Invalid input data." });
+                return BadRequest(new { message = M("InvalidInputData") });
             }
 
             try
             {
                 var newUser = await _userService.CreateUserByAdmin(createUserDTO);
-                return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, new { message = "User created successfully by Admin.", data = newUser });
+                return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, new { message = M("UserCreatedSuccessfullyByAdmin"), data = newUser });
             }
             catch (Exception ex)
             {
@@ -90,17 +93,17 @@ namespace AuthAPI.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(new { message = "Invalid input data." });
+                return BadRequest(new { message = M("InvalidInputData") });
             }
 
             var isSuccess = await _userService.UpdateUserProfile(id, updateUserDTO);
 
             if (!isSuccess)
             {
-                return NotFound(new { message = "User not found." });
+                return NotFound(new { message = M("UserNotFound") });
             }
 
-            return Ok(new { message = "User updated successfully. Existing sessions for this user have been revoked." });
+            return Ok(new { message = M("UserUpdatedSuccessfullyExistingSessionsForThisUserHaveBeen") });
         }
 
         // DELETE: api/users/{id}
@@ -112,10 +115,10 @@ namespace AuthAPI.Controllers
 
             if (!isSuccess)
             {
-                return NotFound(new { message = "User not found." });
+                return NotFound(new { message = M("UserNotFound") });
             }
 
-            return Ok(new { message = "User deleted successfully." });
+            return Ok(new { message = M("UserDeletedSuccessfully") });
         }
 
         // POST: api/users/batch
@@ -124,17 +127,17 @@ namespace AuthAPI.Controllers
         {
             if (userIds == null || !userIds.Any())
             {
-                return BadRequest(new { message = "User IDs list cannot be empty." });
+                return BadRequest(new { message = M("UserIDsListCannotBeEmpty") });
             }
 
             try
             {
                 var users = await _userService.GetUsersBatchAsync(userIds);
-                return Ok(new { message = "Users retrieved successfully.", data = users });
+                return Ok(new { message = M("UsersRetrievedSuccessfully"), data = users });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while fetching users batch.", details = ex.Message });
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileFetchingUsersBatch"), details = ex.Message });
             }
         }
 
@@ -156,7 +159,7 @@ namespace AuthAPI.Controllers
                 {
                     return BadRequest(new
                     {
-                        message = "Search query cannot be empty.",
+                        message = M("SearchQueryCannotBeEmpty"),
                         data = new { Data = new List<object>(), Total = 0, TotalPages = 0, CurrentPage = page, PageSize = pageSize }
                     });
                 }
@@ -167,20 +170,20 @@ namespace AuthAPI.Controllers
                 {
                     return Ok(new
                     {
-                        message = $"No users found matching '{query}'.",
+                        message = string.Format(M("NoUsersFoundMatchingQuery"), query),
                         data = paginationResult
                     });
                 }
 
                 return Ok(new
                 {
-                    message = $"Found {paginationResult.Total} user(s) matching '{query}'.",
+                    message = string.Format(M("FoundUsersMatchingQuery"), paginationResult.Total, query),
                     data = paginationResult
                 });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while searching for users.", details = ex.Message });
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileSearchingForUsers"), details = ex.Message });
             }
         }
 
@@ -191,7 +194,7 @@ namespace AuthAPI.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(new { message = "Invalid input data." });
+                return BadRequest(new { message = M("InvalidInputData") });
             }
 
             try
@@ -200,14 +203,14 @@ namespace AuthAPI.Controllers
 
                 if (!isSuccess)
                 {
-                    return NotFound(new { message = "User not found." });
+                    return NotFound(new { message = M("UserNotFound") });
                 }
 
-                string action = dto.Status == "Blocked"
-                    ? "blocked. All active sessions have been instantly revoked."
-                    : "unblocked and activated.";
+                var statusMessage = dto.Status == "Blocked"
+                    ? M("UserAccountBlockedSuccess")
+                    : M("UserAccountUnblockedSuccess");
 
-                return Ok(new { message = $"User account has been successfully {action}" });
+                return Ok(new { message = statusMessage });
             }
             catch (InvalidOperationException ex)
             {
@@ -216,7 +219,7 @@ namespace AuthAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while changing user status.", details = ex.Message });
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileChangingUserStatus"), details = ex.Message });
             }
         }
 
@@ -229,7 +232,7 @@ namespace AuthAPI.Controllers
             {
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(new { message = "Invalid filter parameters.", errors = ModelState });
+                    return BadRequest(new { message = M("InvalidFilterParameters"), errors = ModelState });
                 }
 
                 var paginationResult = await _userService.FilterUsersAsync(filter);
@@ -238,7 +241,7 @@ namespace AuthAPI.Controllers
                 {
                     return Ok(new
                     {
-                        message = "No users found matching the filter criteria.",
+                        message = M("NoUsersFoundMatchingTheFilterCriteria"),
                         data = paginationResult
                     });
                 }
@@ -253,7 +256,7 @@ namespace AuthAPI.Controllers
             {
                 return StatusCode(500, new
                 {
-                    message = "An error occurred while filtering users.",
+                    message = M("AnErrorOccurredWhileFilteringUsers"),
                     details = ex.Message
                 });
             }
@@ -267,10 +270,10 @@ namespace AuthAPI.Controllers
 
             if (profile == null)
             {
-                return NotFound(new { message = "User profile not found." });
+                return NotFound(new { message = M("UserProfileNotFound") });
             }
 
-            return Ok(new { message = "User profile retrieved successfully.", data = profile });
+            return Ok(new { message = M("UserProfileRetrievedSuccessfully"), data = profile });
         }
     }
 }

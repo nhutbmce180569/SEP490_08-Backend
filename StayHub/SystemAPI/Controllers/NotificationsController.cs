@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 using System.Security.Claims;
 using SystemAPI.DTOs;
 using SystemAPI.Services;
@@ -9,13 +12,13 @@ namespace SystemAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class NotificationsController : ControllerBase
+    public class NotificationsController : LocalizedControllerBase
     {
         private readonly INotificationService _notificationService;
 
-        public NotificationsController(INotificationService notificationService)
-        {
-            _notificationService = notificationService;
+        public NotificationsController(INotificationService notificationService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_notificationService = notificationService;
         }
 
         // ==========================================
@@ -46,7 +49,7 @@ namespace SystemAPI.Controllers
 
             if (!int.TryParse(userIdString, out int userId))
             {
-                return Unauthorized(new { message = "Invalid user token." });
+                return Unauthorized(new { message = M("InvalidUserToken") });
             }
 
             var notifications = await _notificationService.GetUserNotificationsAsync(userId);
@@ -66,7 +69,7 @@ namespace SystemAPI.Controllers
 
             if (!int.TryParse(userIdString, out int userId))
             {
-                return Unauthorized(new { message = "Invalid user token." });
+                return Unauthorized(new { message = M("InvalidUserToken") });
             }
 
             try
@@ -90,7 +93,7 @@ namespace SystemAPI.Controllers
 
             if (!int.TryParse(userIdString, out int userId))
             {
-                return Unauthorized(new { message = "Invalid user token." });
+                return Unauthorized(new { message = M("InvalidUserToken") });
             }
 
             try

@@ -1,0 +1,628 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AccessTokenRequired" xml:space="preserve">
+    <value>Access token is required.</value>
+  </data>
+  <data name="AdminStaffIdentityCouldNotBeVerified" xml:space="preserve">
+    <value>Admin/Staff identity could not be verified.</value>
+  </data>
+  <data name="AnErrorOccurredWhileAddingMembers" xml:space="preserve">
+    <value>An error occurred while adding members.</value>
+  </data>
+  <data name="AnErrorOccurredWhileAddingTheComment" xml:space="preserve">
+    <value>An error occurred while adding the comment.</value>
+  </data>
+  <data name="AnErrorOccurredWhileChangingUserStatus" xml:space="preserve">
+    <value>An error occurred while changing user status.</value>
+  </data>
+  <data name="AnErrorOccurredWhileCreatingTheChatRoom" xml:space="preserve">
+    <value>An error occurred while creating the chat room.</value>
+  </data>
+  <data name="AnErrorOccurredWhileCreatingTheMoment" xml:space="preserve">
+    <value>An error occurred while creating the moment.</value>
+  </data>
+  <data name="AnErrorOccurredWhileDeletingTheComment" xml:space="preserve">
+    <value>An error occurred while deleting the comment.</value>
+  </data>
+  <data name="AnErrorOccurredWhileDeletingTheMoment" xml:space="preserve">
+    <value>An error occurred while deleting the moment.</value>
+  </data>
+  <data name="AnErrorOccurredWhileFetchingMoments" xml:space="preserve">
+    <value>An error occurred while fetching moments.</value>
+  </data>
+  <data name="AnErrorOccurredWhileFetchingUserMoments" xml:space="preserve">
+    <value>An error occurred while fetching user moments.</value>
+  </data>
+  <data name="AnErrorOccurredWhileFetchingUsersBatch" xml:space="preserve">
+    <value>An error occurred while fetching users batch.</value>
+  </data>
+  <data name="AnErrorOccurredWhileFilteringUsers" xml:space="preserve">
+    <value>An error occurred while filtering users.</value>
+  </data>
+  <data name="AnErrorOccurredWhileGeneratingTrackingToken" xml:space="preserve">
+    <value>An error occurred while generating tracking token.</value>
+  </data>
+  <data name="AnErrorOccurredWhileMutingTheChatRoom" xml:space="preserve">
+    <value>An error occurred while muting the chat room.</value>
+  </data>
+  <data name="AnErrorOccurredWhilePingingLocation" xml:space="preserve">
+    <value>An error occurred while pinging location.</value>
+  </data>
+  <data name="AnErrorOccurredWhilePinningTheChatRoom" xml:space="preserve">
+    <value>An error occurred while pinning the chat room.</value>
+  </data>
+  <data name="AnErrorOccurredWhileRetrievingChatHistory" xml:space="preserve">
+    <value>An error occurred while retrieving chat history.</value>
+  </data>
+  <data name="AnErrorOccurredWhileRetrievingChatRooms" xml:space="preserve">
+    <value>An error occurred while retrieving chat rooms.</value>
+  </data>
+  <data name="AnErrorOccurredWhileRetrievingFootprints" xml:space="preserve">
+    <value>An error occurred while retrieving footprints.</value>
+  </data>
+  <data name="AnErrorOccurredWhileRetrievingFriendList" xml:space="preserve">
+    <value>An error occurred while retrieving friend list.</value>
+  </data>
+  <data name="AnErrorOccurredWhileRetrievingFriendsLocations" xml:space="preserve">
+    <value>An error occurred while retrieving friends locations.</value>
+  </data>
+  <data name="AnErrorOccurredWhileRetrievingLocation" xml:space="preserve">
+    <value>An error occurred while retrieving location.</value>
+  </data>
+  <data name="AnErrorOccurredWhileRetrievingScheduleLocations" xml:space="preserve">
+    <value>An error occurred while retrieving schedule locations.</value>
+  </data>
+  <data name="AnErrorOccurredWhileSearchingForBanners" xml:space="preserve">
+    <value>An error occurred while searching for banners.</value>
+  </data>
+  <data name="AnErrorOccurredWhileSearchingForCategories" xml:space="preserve">
+    <value>An error occurred while searching for categories.</value>
+  </data>
+  <data name="AnErrorOccurredWhileSearchingForUsers" xml:space="preserve">
+    <value>An error occurred while searching for users.</value>
+  </data>
+  <data name="AnErrorOccurredWhileTogglingTheReaction" xml:space="preserve">
+    <value>An error occurred while toggling the reaction.</value>
+  </data>
+  <data name="AnErrorOccurredWhileUpdatingTheComment" xml:space="preserve">
+    <value>An error occurred while updating the comment.</value>
+  </data>
+  <data name="AnUnexpectedErrorOccurredWhileProcessingYourRequestPleaseT" xml:space="preserve">
+    <value>An unexpected error occurred while processing your request. Please try again later.</value>
+  </data>
+  <data name="BadRequest" xml:space="preserve">
+    <value>Bad request.</value>
+  </data>
+  <data name="BannerActivatedSuccessfully" xml:space="preserve">
+    <value>Banner activated successfully.</value>
+  </data>
+  <data name="BannerDeactivatedSuccessfully" xml:space="preserve">
+    <value>Banner deactivated successfully.</value>
+  </data>
+  <data name="BannerDeletedSuccessfully" xml:space="preserve">
+    <value>Banner deleted successfully.</value>
+  </data>
+  <data name="BannerUpdatedSuccessfully" xml:space="preserve">
+    <value>Banner updated successfully.</value>
+  </data>
+  <data name="CancellationRequestSubmittedSuccessfullyPleaseWaitForAdmin" xml:space="preserve">
+    <value>Cancellation request submitted successfully. Please wait for admin approval.</value>
+  </data>
+  <data name="CannotExtractUserIDFromToken" xml:space="preserve">
+    <value>Cannot extract user ID from token</value>
+  </data>
+  <data name="CannotRequestMetricsForMoreThan100CustomersAtOnce" xml:space="preserve">
+    <value>Cannot request metrics for more than 100 customers at once.</value>
+  </data>
+  <data name="CategoryActivatedSuccessfully" xml:space="preserve">
+    <value>Category activated successfully.</value>
+  </data>
+  <data name="CategoryDeactivatedSuccessfully" xml:space="preserve">
+    <value>Category deactivated successfully.</value>
+  </data>
+  <data name="CategoryNotFound" xml:space="preserve">
+    <value>Category not found.</value>
+  </data>
+  <data name="CategoryNotFoundOrHasBeenDeleted" xml:space="preserve">
+    <value>Category not found or has been deleted.</value>
+  </data>
+  <data name="CategoryUpdatedSuccessfully" xml:space="preserve">
+    <value>Category updated successfully.</value>
+  </data>
+  <data name="CommentDeletedSuccessfully" xml:space="preserve">
+    <value>Comment deleted successfully.</value>
+  </data>
+  <data name="CouldNotReleaseTicketsForThisTicketType" xml:space="preserve">
+    <value>Could not release tickets for this ticket type.</value>
+  </data>
+  <data name="CustomerAnalyticsListRetrievedSuccessfully" xml:space="preserve">
+    <value>Customer analytics list retrieved successfully.</value>
+  </data>
+  <data name="CustomerAnalyticsOverviewRetrievedSuccessfully" xml:space="preserve">
+    <value>Customer analytics overview retrieved successfully.</value>
+  </data>
+  <data name="CustomerDemographicsRetrievedSuccessfully" xml:space="preserve">
+    <value>Customer demographics retrieved successfully.</value>
+  </data>
+  <data name="CustomerDetailAnalyticsRetrievedSuccessfully" xml:space="preserve">
+    <value>Customer detail analytics retrieved successfully.</value>
+  </data>
+  <data name="CustomerEngagementAnalyticsRetrievedSuccessfully" xml:space="preserve">
+    <value>Customer engagement analytics retrieved successfully.</value>
+  </data>
+  <data name="CustomerIDsListCannotBeEmpty" xml:space="preserve">
+    <value>Customer IDs list cannot be empty.</value>
+  </data>
+  <data name="CustomerListRetrievedSuccessfully" xml:space="preserve">
+    <value>Customer list retrieved successfully.</value>
+  </data>
+  <data name="CustomerNotFound" xml:space="preserve">
+    <value>Customer not found.</value>
+  </data>
+  <data name="CustomerOrderMetricsRetrievedSuccessfully" xml:space="preserve">
+    <value>Customer order metrics retrieved successfully.</value>
+  </data>
+  <data name="CustomerOrderSegmentsRetrievedSuccessfully" xml:space="preserve">
+    <value>Customer order segments retrieved successfully.</value>
+  </data>
+  <data name="CustomerSegmentsRetrievedSuccessfully" xml:space="preserve">
+    <value>Customer segments retrieved successfully.</value>
+  </data>
+  <data name="CustomerSummaryRetrievedSuccessfully" xml:space="preserve">
+    <value>Customer summary retrieved successfully.</value>
+  </data>
+  <data name="CustomerTrendsRetrievedSuccessfully" xml:space="preserve">
+    <value>Customer trends retrieved successfully.</value>
+  </data>
+  <data name="EligibleSchedulesRetrievedSuccessfully" xml:space="preserve">
+    <value>Eligible schedules retrieved successfully.</value>
+  </data>
+  <data name="EmailAlreadyInUse" xml:space="preserve">
+    <value>Email is already in use.</value>
+  </data>
+  <data name="ErrorLeavingRoom" xml:space="preserve">
+    <value>Error leaving room</value>
+  </data>
+  <data name="FacebookLoginSuccessful" xml:space="preserve">
+    <value>Facebook login successful.</value>
+  </data>
+  <data name="FailedToRetrieveCustomerDemographics" xml:space="preserve">
+    <value>Failed to retrieve customer demographics.</value>
+  </data>
+  <data name="FailedToRetrieveCustomerList" xml:space="preserve">
+    <value>Failed to retrieve customer list.</value>
+  </data>
+  <data name="FailedToRetrievePlatformSocialStats" xml:space="preserve">
+    <value>Failed to retrieve platform social stats.</value>
+  </data>
+  <data name="FailedToRetrievePlatformUserStats" xml:space="preserve">
+    <value>Failed to retrieve platform user stats.</value>
+  </data>
+  <data name="FailedToRetrievePlatformVoucherStats" xml:space="preserve">
+    <value>Failed to retrieve platform voucher stats.</value>
+  </data>
+  <data name="FailedToUpdateProfile" xml:space="preserve">
+    <value>Failed to update profile. User not found or inactive.</value>
+  </data>
+  <data name="FootprintsRetrievedSuccessfully" xml:space="preserve">
+    <value>Footprints retrieved successfully.</value>
+  </data>
+  <data name="ForgotPasswordSuccess" xml:space="preserve">
+    <value>If the email is registered, a password reset code has been sent.</value>
+  </data>
+  <data name="GoogleLoginSuccessful" xml:space="preserve">
+    <value>Google login successful.</value>
+  </data>
+  <data name="IMDanhCheckInThNhCNg" xml:space="preserve">
+    <value>Điểm danh (Check-in) thành công!</value>
+  </data>
+  <data name="InteractionLoggedForMLRetrainingSignals" xml:space="preserve">
+    <value>Interaction logged for ML retraining signals.</value>
+  </data>
+  <data name="InternalServerError" xml:space="preserve">
+    <value>An unexpected error occurred. Please try again later.</value>
+  </data>
+  <data name="InvalidEmailOrPassword" xml:space="preserve">
+    <value>Invalid email or password, or account is not active.</value>
+  </data>
+  <data name="InvalidFacebookToken" xml:space="preserve">
+    <value>Invalid Facebook token or account is locked.</value>
+  </data>
+  <data name="InvalidFilterParameters" xml:space="preserve">
+    <value>Invalid filter parameters.</value>
+  </data>
+  <data name="InvalidGoogleToken" xml:space="preserve">
+    <value>Invalid Google token or account is locked.</value>
+  </data>
+  <data name="InvalidInputData" xml:space="preserve">
+    <value>Invalid input data.</value>
+  </data>
+  <data name="InvalidOrExpiredSession" xml:space="preserve">
+    <value>Invalid or expired login session.</value>
+  </data>
+  <data name="InvalidQueryParameters" xml:space="preserve">
+    <value>Invalid query parameters.</value>
+  </data>
+  <data name="InvalidRefreshToken" xml:space="preserve">
+    <value>Invalid or expired refresh token. Please login again.</value>
+  </data>
+  <data name="InvalidRegistrationData" xml:space="preserve">
+    <value>Invalid registration data.</value>
+  </data>
+  <data name="InvalidServiceKey" xml:space="preserve">
+    <value>Invalid service key</value>
+  </data>
+  <data name="InvalidTokenClaims" xml:space="preserve">
+    <value>Invalid token claims.</value>
+  </data>
+  <data name="InvalidTokenClaimsEmailNotFound" xml:space="preserve">
+    <value>Invalid token claims. Email not found.</value>
+  </data>
+  <data name="InvalidTokenClaimsUserNotIdentified" xml:space="preserve">
+    <value>Invalid token claims. User not identified.</value>
+  </data>
+  <data name="InvalidTokenMissingOrInvalidUserID" xml:space="preserve">
+    <value>Invalid token: Missing or invalid User ID.</value>
+  </data>
+  <data name="InvalidTokenPayload" xml:space="preserve">
+    <value>Invalid token payload or missing security credentials.</value>
+  </data>
+  <data name="InvalidUserToken" xml:space="preserve">
+    <value>Invalid user token.</value>
+  </data>
+  <data name="ItinerariesRetrievedSuccessfully" xml:space="preserve">
+    <value>Itineraries retrieved successfully.</value>
+  </data>
+  <data name="KhNgXCNhCDanhTNhNhNViN" xml:space="preserve">
+    <value>Không xác định được danh tính nhân viên.</value>
+  </data>
+  <data name="KhNgXCThCCUser" xml:space="preserve">
+    <value>Không xác thực được user.</value>
+  </data>
+  <data name="LIHThNg" xml:space="preserve">
+    <value>Lỗi hệ thống.</value>
+  </data>
+  <data name="LIHThNgTrongQuTrNhIMDanh" xml:space="preserve">
+    <value>Lỗi hệ thống trong quá trình điểm danh.</value>
+  </data>
+  <data name="LYDanhSChNhNViNThNhCNg" xml:space="preserve">
+    <value>Lấy danh sách nhân viên thành công.</value>
+  </data>
+  <data name="LeftTheChatRoomSuccessfully" xml:space="preserve">
+    <value>Left the chat room successfully.</value>
+  </data>
+  <data name="LiveFriendsLocationsRetrievedSuccessfully" xml:space="preserve">
+    <value>Live friends locations retrieved successfully.</value>
+  </data>
+  <data name="LiveScheduleLocationsRetrievedSuccessfully" xml:space="preserve">
+    <value>Live schedule locations retrieved successfully.</value>
+  </data>
+  <data name="LocationPingedSuccessfully" xml:space="preserve">
+    <value>Location pinged successfully.</value>
+  </data>
+  <data name="LocationRetrievedSuccessfully" xml:space="preserve">
+    <value>Location retrieved successfully.</value>
+  </data>
+  <data name="LoggedOutSuccessfully" xml:space="preserve">
+    <value>Logged out successfully.</value>
+  </data>
+  <data name="LoginRequiredForPersonalizedRecommendations" xml:space="preserve">
+    <value>Login required for personalized recommendations.</value>
+  </data>
+  <data name="LoginSuccessful" xml:space="preserve">
+    <value>Login successful.</value>
+  </data>
+  <data name="MLNETModelsRetrainedSuccessfully" xml:space="preserve">
+    <value>ML.NET models retrained successfully.</value>
+  </data>
+  <data name="MomentDeletedSuccessfully" xml:space="preserve">
+    <value>Moment deleted successfully.</value>
+  </data>
+  <data name="NoOrderDataFoundForThisCustomer" xml:space="preserve">
+    <value>No order data found for this customer.</value>
+  </data>
+  <data name="NoReviewFoundForThisTour" xml:space="preserve">
+    <value>No review found for this tour.</value>
+  </data>
+  <data name="NoUsersFoundMatchingTheFilterCriteria" xml:space="preserve">
+    <value>No users found matching the filter criteria.</value>
+  </data>
+  <data name="NotEnoughAvailableTicketsOrTicketTypeIsInactive" xml:space="preserve">
+    <value>Not enough available tickets or ticket type is inactive.</value>
+  </data>
+  <data name="NotFound" xml:space="preserve">
+    <value>Resource not found.</value>
+  </data>
+  <data name="OperationSuccessful" xml:space="preserve">
+    <value>Operation completed successfully.</value>
+  </data>
+  <data name="OrderAndTicketsCreatedSuccessfully" xml:space="preserve">
+    <value>Order and tickets created successfully.</value>
+  </data>
+  <data name="OrderCancelled" xml:space="preserve">
+    <value>Order cancelled.</value>
+  </data>
+  <data name="OrderCancelledDueToPaymentCancellation" xml:space="preserve">
+    <value>Order cancelled due to payment cancellation.</value>
+  </data>
+  <data name="OrderCannotBeCancelledItMayNotExistOrIsNoLongerPending" xml:space="preserve">
+    <value>Order cannot be cancelled. It may not exist or is no longer pending.</value>
+  </data>
+  <data name="OrderMarkedAsPaid" xml:space="preserve">
+    <value>Order marked as paid.</value>
+  </data>
+  <data name="OrderOverviewRetrievedSuccessfully" xml:space="preserve">
+    <value>Order overview retrieved successfully.</value>
+  </data>
+  <data name="OrderPaymentConfirmed" xml:space="preserve">
+    <value>Order payment confirmed.</value>
+  </data>
+  <data name="OrderRetrievedSuccessfully" xml:space="preserve">
+    <value>Order retrieved successfully.</value>
+  </data>
+  <data name="OrderTrendsRetrievedSuccessfully" xml:space="preserve">
+    <value>Order trends retrieved successfully.</value>
+  </data>
+  <data name="OrdersRetrievedSuccessfully" xml:space="preserve">
+    <value>Orders retrieved successfully.</value>
+  </data>
+  <data name="PasswordChangeFailed" xml:space="preserve">
+    <value>Password change failed. Incorrect old password or invalid account.</value>
+  </data>
+  <data name="PasswordChangedSuccessfully" xml:space="preserve">
+    <value>Password changed successfully. All other devices have been logged out.</value>
+  </data>
+  <data name="PasswordResetSuccessfully" xml:space="preserve">
+    <value>Password has been reset successfully. All other devices have been logged out. You can now login.</value>
+  </data>
+  <data name="PaymentNotCompletedOrOrderCouldNotBeUpdated" xml:space="preserve">
+    <value>Payment not completed or order could not be updated.</value>
+  </data>
+  <data name="PaymentWasAlreadyCompletedOrOrderCouldNotBeCancelled" xml:space="preserve">
+    <value>Payment was already completed or order could not be cancelled.</value>
+  </data>
+  <data name="PhNCNgNhNViNThNhCNg" xml:space="preserve">
+    <value>Phân công nhân viên thành công.</value>
+  </data>
+  <data name="PlatformAnalyticsOverviewRetrievedSuccessfully" xml:space="preserve">
+    <value>Platform analytics overview retrieved successfully.</value>
+  </data>
+  <data name="PlatformCatalogAnalyticsRetrievedSuccessfully" xml:space="preserve">
+    <value>Platform catalog analytics retrieved successfully.</value>
+  </data>
+  <data name="PlatformHealthAnalyticsRetrievedSuccessfully" xml:space="preserve">
+    <value>Platform health analytics retrieved successfully.</value>
+  </data>
+  <data name="PlatformOperationsStatsRetrievedSuccessfully" xml:space="preserve">
+    <value>Platform operations stats retrieved successfully.</value>
+  </data>
+  <data name="PlatformSocialAnalyticsRetrievedSuccessfully" xml:space="preserve">
+    <value>Platform social analytics retrieved successfully.</value>
+  </data>
+  <data name="PlatformSocialStatsRetrievedSuccessfully" xml:space="preserve">
+    <value>Platform social stats retrieved successfully.</value>
+  </data>
+  <data name="PlatformUserAnalyticsRetrievedSuccessfully" xml:space="preserve">
+    <value>Platform user analytics retrieved successfully.</value>
+  </data>
+  <data name="PlatformUserStatsRetrievedSuccessfully" xml:space="preserve">
+    <value>Platform user stats retrieved successfully.</value>
+  </data>
+  <data name="PlatformVoucherAnalyticsRetrievedSuccessfully" xml:space="preserve">
+    <value>Platform voucher analytics retrieved successfully.</value>
+  </data>
+  <data name="PlatformVoucherStatsRetrievedSuccessfully" xml:space="preserve">
+    <value>Platform voucher stats retrieved successfully.</value>
+  </data>
+  <data name="ProfileRetrievedSuccessfully" xml:space="preserve">
+    <value>Profile retrieved successfully.</value>
+  </data>
+  <data name="ProfileUpdatedSuccessfully" xml:space="preserve">
+    <value>Profile updated successfully. Fresh tokens issued to update client claims.</value>
+  </data>
+  <data name="QueryMustBeAtLeast2Characters" xml:space="preserve">
+    <value>Query must be at least 2 characters.</value>
+  </data>
+  <data name="ReactionToggledSuccessfully" xml:space="preserve">
+    <value>Reaction toggled successfully.</value>
+  </data>
+  <data name="RefreshTokenRequired" xml:space="preserve">
+    <value>Refresh token is required.</value>
+  </data>
+  <data name="RegistrationSuccessful" xml:space="preserve">
+    <value>Registration successful.</value>
+  </data>
+  <data name="ResetPasswordFailed" xml:space="preserve">
+    <value>Invalid or expired verification code, or account is not eligible.</value>
+  </data>
+  <data name="RetrievedCancellationRequestDetailsSuccessfully" xml:space="preserve">
+    <value>Retrieved cancellation request details successfully.</value>
+  </data>
+  <data name="RetrievedCancellationRequestsSuccessfully" xml:space="preserve">
+    <value>Retrieved cancellation requests successfully.</value>
+  </data>
+  <data name="RoleNameCannotBeEmpty" xml:space="preserve">
+    <value>Role name cannot be empty.</value>
+  </data>
+  <data name="RoleRetrievedSuccessfully" xml:space="preserve">
+    <value>Role retrieved successfully.</value>
+  </data>
+  <data name="RolesRetrievedSuccessfully" xml:space="preserve">
+    <value>Roles retrieved successfully.</value>
+  </data>
+  <data name="ScheduleCustomersRetrievedSuccessfully" xml:space="preserve">
+    <value>Schedule customers retrieved successfully.</value>
+  </data>
+  <data name="ScheduleIdKhNgHPL" xml:space="preserve">
+    <value>ScheduleId không hợp lệ.</value>
+  </data>
+  <data name="ScheduleIdVStaffIdPhILNHN0" xml:space="preserve">
+    <value>ScheduleId và StaffId phải lớn hơn 0.</value>
+  </data>
+  <data name="SearchKeywordCannotBeEmpty" xml:space="preserve">
+    <value>Search keyword cannot be empty.</value>
+  </data>
+  <data name="SearchQueryCannotBeEmpty" xml:space="preserve">
+    <value>Search query cannot be empty.</value>
+  </data>
+  <data name="SessionExpiredSecurity" xml:space="preserve">
+    <value>Session expired due to security changes or account deactivation. Please log in again.</value>
+  </data>
+  <data name="TicketTypeActivatedSuccessfully" xml:space="preserve">
+    <value>Ticket type activated successfully.</value>
+  </data>
+  <data name="TicketTypeDeactivatedSuccessfully" xml:space="preserve">
+    <value>Ticket type deactivated successfully.</value>
+  </data>
+  <data name="TicketTypeNotFound" xml:space="preserve">
+    <value>Ticket type not found.</value>
+  </data>
+  <data name="TicketTypeUpdatedSuccessfully" xml:space="preserve">
+    <value>Ticket type updated successfully.</value>
+  </data>
+  <data name="TicketsReleased" xml:space="preserve">
+    <value>Tickets released.</value>
+  </data>
+  <data name="TicketsReserved" xml:space="preserve">
+    <value>Tickets reserved.</value>
+  </data>
+  <data name="TokenGeneratedSuccessfully" xml:space="preserve">
+    <value>Token generated successfully.</value>
+  </data>
+  <data name="TokenInvalidatedPasswordChange" xml:space="preserve">
+    <value>Token has been invalidated due to a password change. Please log in again.</value>
+  </data>
+  <data name="TokenRefreshedSuccessfully" xml:space="preserve">
+    <value>Token refreshed successfully.</value>
+  </data>
+  <data name="TopCustomersRetrievedSuccessfully" xml:space="preserve">
+    <value>Top customers retrieved successfully.</value>
+  </data>
+  <data name="TopMustBeBetween1And20" xml:space="preserve">
+    <value>Top must be between 1 and 20.</value>
+  </data>
+  <data name="TopMustBeBetween1And30" xml:space="preserve">
+    <value>Top must be between 1 and 30.</value>
+  </data>
+  <data name="TourItineraryNotFound" xml:space="preserve">
+    <value>TourItinerary not found</value>
+  </data>
+  <data name="TourNotFound" xml:space="preserve">
+    <value>Tour not found</value>
+  </data>
+  <data name="TourScheduleItineraryNotFound" xml:space="preserve">
+    <value>TourScheduleItinerary not found</value>
+  </data>
+  <data name="TourScheduleTicketNotFound" xml:space="preserve">
+    <value>TourScheduleTicket not found</value>
+  </data>
+  <data name="TourismInformationActivatedSuccessfully" xml:space="preserve">
+    <value>Tourism information activated successfully.</value>
+  </data>
+  <data name="TourismInformationDeactivatedSuccessfully" xml:space="preserve">
+    <value>Tourism information deactivated successfully.</value>
+  </data>
+  <data name="TourismInformationNotFound" xml:space="preserve">
+    <value>Tourism information not found.</value>
+  </data>
+  <data name="TourismInformationUpdatedSuccessfully" xml:space="preserve">
+    <value>Tourism information updated successfully.</value>
+  </data>
+  <data name="UnableToDetermineCurrentUser" xml:space="preserve">
+    <value>Unable to determine current user.</value>
+  </data>
+  <data name="Unauthorized" xml:space="preserve">
+    <value>Unauthorized</value>
+  </data>
+  <data name="UserCreatedSuccessfullyByAdmin" xml:space="preserve">
+    <value>User created successfully by Admin.</value>
+  </data>
+  <data name="UserDeletedSuccessfully" xml:space="preserve">
+    <value>User deleted successfully.</value>
+  </data>
+  <data name="UserIDNotFoundInToken" xml:space="preserve">
+    <value>User ID not found in token.</value>
+  </data>
+  <data name="UserIDsListCannotBeEmpty" xml:space="preserve">
+    <value>User IDs list cannot be empty.</value>
+  </data>
+  <data name="UserIdentityCouldNotBeVerified" xml:space="preserve">
+    <value>User identity could not be verified.</value>
+  </data>
+  <data name="UserMomentsRetrievedSuccessfully" xml:space="preserve">
+    <value>User moments retrieved successfully.</value>
+  </data>
+  <data name="UserNotFound" xml:space="preserve">
+    <value>User not found.</value>
+  </data>
+  <data name="UserNotFoundOrInactive" xml:space="preserve">
+    <value>User not found or account is inactive.</value>
+  </data>
+  <data name="UserProfileNotFound" xml:space="preserve">
+    <value>User profile not found.</value>
+  </data>
+  <data name="UserProfileRetrievedSuccessfully" xml:space="preserve">
+    <value>User profile retrieved successfully.</value>
+  </data>
+  <data name="UserRetrievedSuccessfully" xml:space="preserve">
+    <value>User retrieved successfully.</value>
+  </data>
+  <data name="UserUpdatedSuccessfullyExistingSessionsForThisUserHaveBeen" xml:space="preserve">
+    <value>User updated successfully. Existing sessions for this user have been revoked.</value>
+  </data>
+  <data name="UsersRetrievedSuccessfully" xml:space="preserve">
+    <value>Users retrieved successfully.</value>
+  </data>
+  <data name="VoucherNotFound" xml:space="preserve">
+    <value>Voucher not found</value>
+  </data>
+  <data name="VoucherRestoredSuccessfully" xml:space="preserve">
+    <value>Voucher restored successfully</value>
+  </data>
+  <data name="YouDonTHaveAnyFriendsInYourListYet" xml:space="preserve">
+    <value>You don't have any friends in your list yet.</value>
+  </data>
+  <data name="StaffIdentityNotDetermined" xml:space="preserve">
+    <value>Unable to determine staff identity.</value>
+  </data>
+  <data name="CheckInSuccessful" xml:space="preserve">
+    <value>Check-in completed successfully!</value>
+  </data>
+  <data name="CheckInSystemError" xml:space="preserve">
+    <value>A system error occurred during check-in.</value>
+  </data>
+  <data name="ScheduleAndStaffIdMustBePositive" xml:space="preserve">
+    <value>ScheduleId and StaffId must be greater than 0.</value>
+  </data>
+  <data name="StaffAssignedSuccessfully" xml:space="preserve">
+    <value>Staff assigned successfully.</value>
+  </data>
+  <data name="InvalidScheduleId" xml:space="preserve">
+    <value>Invalid ScheduleId.</value>
+  </data>
+  <data name="StaffListRetrievedSuccessfully" xml:space="preserve">
+    <value>Staff list retrieved successfully.</value>
+  </data>
+  <data name="SystemError" xml:space="preserve">
+    <value>System error.</value>
+  </data>
+  <data name="UserAuthenticationFailed" xml:space="preserve">
+    <value>User authentication failed.</value>
+  </data>
+  <data name="NoUsersFoundMatchingQuery" xml:space="preserve">
+    <value>No users found matching '{0}'.</value>
+  </data>
+  <data name="FoundUsersMatchingQuery" xml:space="preserve">
+    <value>Found {0} user(s) matching '{1}'.</value>
+  </data>
+  <data name="UserAccountBlockedSuccess" xml:space="preserve">
+    <value>User account has been successfully blocked. All active sessions have been instantly revoked.</value>
+  </data>
+  <data name="UserAccountUnblockedSuccess" xml:space="preserve">
+    <value>User account has been successfully unblocked and activated.</value>
+  </data>
+</root>

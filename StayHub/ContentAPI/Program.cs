@@ -3,6 +3,7 @@ using ContentAPI.DTOs;
 using ContentAPI.Helpers;
 using ContentAPI.Helpers.Implements;
 using ContentAPI.Mappers;
+using StayHub.Common.Localization;
 using ContentAPI.Models;
 using ContentAPI.Repositories;
 using ContentAPI.Repositories.Implements;
@@ -25,7 +26,8 @@ namespace ContentAPI
 
             // Add services to the container.
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers().AddStayHubDataAnnotationsLocalization();
+            builder.Services.AddStayHubLocalization();
 
 
             builder.Services.AddDbContext<StayHubContentDbContext>(options =>
@@ -125,6 +127,7 @@ namespace ContentAPI
             }
 
             app.UseHttpsRedirection();
+            app.UseStayHubLocalization();
 
             app.UseAuthentication();
             app.UseAuthorization();

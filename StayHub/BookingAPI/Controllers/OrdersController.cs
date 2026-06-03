@@ -6,18 +6,21 @@ using BookingAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 
 namespace BookingAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class OrdersController : ControllerBase
+    public class OrdersController : LocalizedControllerBase
     {
         private readonly IOrderService _orderService;
 
-        public OrdersController(IOrderService orderService)
-        {
-            _orderService = orderService;
+        public OrdersController(IOrderService orderService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_orderService = orderService;
         }
 
         // POST: api/orders/check-completed-booking
@@ -48,13 +51,13 @@ namespace BookingAPI.Controllers
 
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int customerId))
             {
-                return Unauthorized(new { message = "Invalid token claims. User not identified." });
+                return Unauthorized(new { message = M("InvalidTokenClaimsUserNotIdentified") });
             }
 
             try
             {
                 var result = await _orderService.CreateOrderAsync(customerId, request);
-                return StatusCode(201, new { message = "Order and tickets created successfully.", data = result });
+                return StatusCode(201, new { message = M("OrderAndTicketsCreatedSuccessfully"), data = result });
             }
             catch (BookingValidationException ex)
             {
@@ -71,7 +74,7 @@ namespace BookingAPI.Controllers
 
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int customerId))
             {
-                return Unauthorized(new { message = "Invalid token claims. User not identified." });
+                return Unauthorized(new { message = M("InvalidTokenClaimsUserNotIdentified") });
             }
 
             var result = await _orderService.GetOrderByIdAsync(id, customerId);
@@ -81,7 +84,7 @@ namespace BookingAPI.Controllers
                 return NotFound(new { message = $"Order with ID {id} not found." });
             }
             
-            return Ok(new { message = "Order retrieved successfully.", data = result });
+            return Ok(new { message = M("OrderRetrievedSuccessfully"), data = result });
         }
 
         [HttpGet("schedule/{scheduleId}")]
@@ -95,7 +98,7 @@ namespace BookingAPI.Controllers
                 return Ok(new { message = $"No orders found for Schedule ID {scheduleId}.", data = new List<ReadOrderDTO>() });
             }
 
-            return Ok(new { message = "Orders retrieved successfully.", data = result });
+            return Ok(new { message = M("OrdersRetrievedSuccessfully"), data = result });
         }
 
         [HttpGet("schedule/{scheduleId}/customers")]
@@ -109,7 +112,7 @@ namespace BookingAPI.Controllers
                 return Ok(new { message = $"No customers found for Schedule ID {scheduleId}.", data = new List<ScheduleCustomerDTO>() });
             }
 
-            return Ok(new { message = "Schedule customers retrieved successfully.", data = result });
+            return Ok(new { message = M("ScheduleCustomersRetrievedSuccessfully"), data = result });
         }
 
         [HttpGet("user/{userId}")]
@@ -126,7 +129,7 @@ namespace BookingAPI.Controllers
 
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int customerId))
             {
-                return Unauthorized(new { message = "Invalid token claims. User not identified." });
+                return Unauthorized(new { message = M("InvalidTokenClaimsUserNotIdentified") });
             }
 
             if (customerId != userId)
@@ -144,7 +147,7 @@ namespace BookingAPI.Controllers
                 return Ok(new { message = $"No orders found for User ID {userId}.", data = new PaginationDTO<ReadOrderDTO> { Data = new List<ReadOrderDTO>(), Total = 0, TotalPages = 0, CurrentPage = page, PageSize = pageSize } });
             }
 
-            return Ok(new { message = "Orders retrieved successfully.", data = result });
+            return Ok(new { message = M("OrdersRetrievedSuccessfully"), data = result });
         }
 
         [HttpPatch("{id}/mark-paid")]
@@ -157,7 +160,7 @@ namespace BookingAPI.Controllers
 
             if (string.IsNullOrWhiteSpace(customerEmail))
             {
-                return Unauthorized(new { message = "Invalid token claims. Email not found." });
+                return Unauthorized(new { message = M("InvalidTokenClaimsEmailNotFound") });
             }
 
             var updated = await _orderService.MarkOrderPaidAsync(id, customerEmail);
@@ -166,7 +169,7 @@ namespace BookingAPI.Controllers
                 return NotFound(new { message = $"Order with ID {id} not found." });
             }
 
-            return Ok(new { message = "Order marked as paid.", orderId = id });
+            return Ok(new { message = M("OrderMarkedAsPaid"), orderId = id });
         }
 
         [HttpPatch("{id}/cancel")]
@@ -176,10 +179,10 @@ namespace BookingAPI.Controllers
             var cancelled = await _orderService.CancelOrderAsync(id);
             if (!cancelled)
             {
-                return BadRequest(new { message = "Order cannot be cancelled. It may not exist or is no longer pending." });
+                return BadRequest(new { message = M("OrderCannotBeCancelledItMayNotExistOrIsNoLongerPending") });
             }
 
-            return Ok(new { message = "Order cancelled.", orderId = id });
+            return Ok(new { message = M("OrderCancelled"), orderId = id });
         }
     }
 }

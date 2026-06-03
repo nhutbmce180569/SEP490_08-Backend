@@ -1,6 +1,9 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 using VoucherAPI.DTOs;
 using VoucherAPI.Services;
 
@@ -9,13 +12,13 @@ namespace VoucherAPI.Controllers;
 [Route("api/vouchers")]
 [ApiController]
 [Authorize(Roles = "Manager")]
-public class VouchersController : ControllerBase
+public class VouchersController : LocalizedControllerBase
 {
     private readonly IVoucherService _voucherService;
 
-    public VouchersController(IVoucherService voucherService)
-    {
-        _voucherService = voucherService;
+    public VouchersController(IVoucherService voucherService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_voucherService = voucherService;
     }
 
     [HttpGet]
@@ -38,7 +41,7 @@ public class VouchersController : ControllerBase
         var result = await _voucherService.GetById(id);
         if (result == null)
         {
-            return NotFound(new { message = "Voucher not found" });
+            return NotFound(new { message = M("VoucherNotFound") });
         }
 
         return Ok(result);
@@ -57,7 +60,7 @@ public class VouchersController : ControllerBase
         var creatorId = GetCurrentUserId();
         if (creatorId == null)
         {
-            return Unauthorized(new { message = "Cannot extract user ID from token" });
+            return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
         }
 
         try

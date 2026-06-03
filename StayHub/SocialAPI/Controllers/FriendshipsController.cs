@@ -4,6 +4,9 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 using SocialAPI.DTOs;
 using SocialAPI.Services;
 
@@ -12,13 +15,13 @@ namespace SocialAPI.Controllers;
 [Route("api/friends")]
 [ApiController]
 [Authorize]
-public class FriendshipsController : ControllerBase
+public class FriendshipsController : LocalizedControllerBase
 {
     private readonly IFriendshipService _friendshipService;
 
-    public FriendshipsController(IFriendshipService friendshipService)
-    {
-        _friendshipService = friendshipService;
+    public FriendshipsController(IFriendshipService friendshipService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_friendshipService = friendshipService;
     }
 
     private int GetCurrentUserId()
@@ -108,7 +111,7 @@ public class FriendshipsController : ControllerBase
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!int.TryParse(userIdClaim, out int userId))
             {
-                return Unauthorized(new { message = "User ID not found in token." });
+                return Unauthorized(new { message = M("UserIDNotFoundInToken") });
             }
 
             if (page <= 0) page = 1;
@@ -120,7 +123,7 @@ public class FriendshipsController : ControllerBase
             {
                 return Ok(new 
                 { 
-                    message = "You don't have any friends in your list yet.", 
+                    message = M("YouDonTHaveAnyFriendsInYourListYet"), 
                     data = result 
                 });
             }
@@ -133,7 +136,7 @@ public class FriendshipsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while retrieving friend list.", details = ex.Message });
+            return StatusCode(500, new { message = M("AnErrorOccurredWhileRetrievingFriendList"), details = ex.Message });
         }
     }
 }

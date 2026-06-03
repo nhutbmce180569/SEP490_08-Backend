@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 using TourAPI.DTOs;
 using TourAPI.Services;
 
@@ -7,13 +10,13 @@ namespace TourAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class TourScheduleTicketsController : ControllerBase
+    public class TourScheduleTicketsController : LocalizedControllerBase
     {
         private readonly ITourScheduleTicketService _service;
 
-        public TourScheduleTicketsController(ITourScheduleTicketService service)
-        {
-            _service = service;
+        public TourScheduleTicketsController(ITourScheduleTicketService service, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_service = service;
         }
 
         [HttpGet]
@@ -45,7 +48,7 @@ namespace TourAPI.Controllers
             var result = await _service.GetById(id);
             if (result == null)
             {
-                return NotFound(new { message = "TourScheduleTicket not found" });
+                return NotFound(new { message = M("TourScheduleTicketNotFound") });
             }
 
             return Ok(result);
@@ -131,10 +134,10 @@ namespace TourAPI.Controllers
                 var reserved = await _service.Reserve(id, dto.Quantity);
                 if (!reserved)
                 {
-                    return BadRequest(new { message = "Not enough available tickets or ticket type is inactive." });
+                    return BadRequest(new { message = M("NotEnoughAvailableTicketsOrTicketTypeIsInactive") });
                 }
 
-                return Ok(new { message = "Tickets reserved.", id, dto.Quantity });
+                return Ok(new { message = M("TicketsReserved"), id, dto.Quantity });
             }
             catch (Exception ex)
             {
@@ -150,10 +153,10 @@ namespace TourAPI.Controllers
                 var released = await _service.Release(id, dto.Quantity);
                 if (!released)
                 {
-                    return BadRequest(new { message = "Could not release tickets for this ticket type." });
+                    return BadRequest(new { message = M("CouldNotReleaseTicketsForThisTicketType") });
                 }
 
-                return Ok(new { message = "Tickets released.", id, dto.Quantity });
+                return Ok(new { message = M("TicketsReleased"), id, dto.Quantity });
             }
             catch (Exception ex)
             {

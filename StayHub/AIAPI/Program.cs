@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using StayHub.Common.Localization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,7 +76,8 @@ builder.Services.AddHostedService<TourAiWarmupBackgroundService>();
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<ChatRequestValidator>();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddStayHubDataAnnotationsLocalization();
+builder.Services.AddStayHubLocalization();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(option =>
 {
@@ -142,6 +144,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("FrontendDev");
+app.UseStayHubLocalization();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

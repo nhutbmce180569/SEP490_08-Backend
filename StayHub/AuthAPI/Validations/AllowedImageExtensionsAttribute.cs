@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using StayHub.Common.Localization;
 
 namespace AuthAPI.Validations
 {
@@ -25,7 +26,10 @@ namespace AuthAPI.Validations
 
                 if (!_extensions.Contains(extension))
                 {
-                    return new ValidationResult(ErrorMessage);
+                    var key = string.IsNullOrWhiteSpace(ErrorMessage)
+                        ? "Invalid file format. Only image files are allowed."
+                        : ErrorMessage;
+                    return new ValidationResult(ValidationAttributeHelper.Localize(validationContext, key));
                 }
             }
 

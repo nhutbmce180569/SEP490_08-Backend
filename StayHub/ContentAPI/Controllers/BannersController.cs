@@ -3,18 +3,21 @@ using ContentAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 
 namespace ContentAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class BannersController : ControllerBase
+    public class BannersController : LocalizedControllerBase
     {
         private readonly IBannerService _bannerService;
 
-        public BannersController(IBannerService bannerService)
-        {
-            _bannerService = bannerService;
+        public BannersController(IBannerService bannerService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_bannerService = bannerService;
         }
 
         // GET: api/Banners?page=1&pageSize=10
@@ -46,7 +49,7 @@ namespace ContentAPI.Controllers
                 {
                     return BadRequest(new
                     {
-                        message = "Search keyword cannot be empty.",
+                        message = M("SearchKeywordCannotBeEmpty"),
                         data = new PaginationDTO<ReadBannerDTO>
                         {
                             Data = new List<ReadBannerDTO>(),
@@ -77,7 +80,7 @@ namespace ContentAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while searching for banners.", details = ex.Message });
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileSearchingForBanners"), details = ex.Message });
             }
         }
 
@@ -138,7 +141,7 @@ namespace ContentAPI.Controllers
                 return NotFound(new { message = $"Cannot update. Banner with ID {id} not found." });
             }
 
-            return Ok(new { message = "Banner updated successfully." });
+            return Ok(new { message = M("BannerUpdatedSuccessfully") });
         }
 
         // DELETE: api/Banners/5
@@ -152,7 +155,7 @@ namespace ContentAPI.Controllers
                 return NotFound(new { message = $"Cannot delete. Banner with ID {id} not found." });
             }
 
-            return Ok(new { message = "Banner deleted successfully." });
+            return Ok(new { message = M("BannerDeletedSuccessfully") });
         }
 
         // PATCH: api/Banners/5/activate
@@ -166,7 +169,7 @@ namespace ContentAPI.Controllers
                 return NotFound(new { message = $"Cannot activate. Banner with ID {id} not found." });
             }
 
-            return Ok(new { message = "Banner activated successfully." });
+            return Ok(new { message = M("BannerActivatedSuccessfully") });
         }
 
         // PATCH: api/Banners/5/deactivate
@@ -180,7 +183,7 @@ namespace ContentAPI.Controllers
                 return NotFound(new { message = $"Cannot deactivate. Banner with ID {id} not found." });
             }
 
-            return Ok(new { message = "Banner deactivated successfully." });
+            return Ok(new { message = M("BannerDeactivatedSuccessfully") });
         }
     }
 }

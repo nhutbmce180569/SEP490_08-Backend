@@ -1,6 +1,9 @@
 using BookingAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 
 namespace BookingAPI.Controllers
 {
@@ -8,13 +11,13 @@ namespace BookingAPI.Controllers
     [Route("api/internal/analytics/platform")]
     [ApiController]
     [Authorize(Roles = "Admin")]
-    public class InternalPlatformAnalyticsController : ControllerBase
+    public class InternalPlatformAnalyticsController : LocalizedControllerBase
     {
         private readonly IPlatformAnalyticsService _platformAnalyticsService;
 
-        public InternalPlatformAnalyticsController(IPlatformAnalyticsService platformAnalyticsService)
-        {
-            _platformAnalyticsService = platformAnalyticsService;
+        public InternalPlatformAnalyticsController(IPlatformAnalyticsService platformAnalyticsService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_platformAnalyticsService = platformAnalyticsService;
         }
 
         [HttpGet("operations")]
@@ -25,7 +28,7 @@ namespace BookingAPI.Controllers
             try
             {
                 var result = await _platformAnalyticsService.GetOperationsStatsAsync(from, to);
-                return Ok(new { message = "Platform operations stats retrieved successfully.", data = result });
+                return Ok(new { message = M("PlatformOperationsStatsRetrievedSuccessfully"), data = result });
             }
             catch (ArgumentException ex)
             {
