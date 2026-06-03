@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 using VoucherAPI.DTOs;
 using VoucherAPI.Services;
 
@@ -8,16 +11,16 @@ namespace VoucherAPI.Controllers;
 [AllowAnonymous]
 [Route("api/internal/vouchers")]
 [ApiController]
-public class InternalVouchersController : ControllerBase
+public class InternalVouchersController : LocalizedControllerBase
 {
     private readonly ICustomerVoucherService _customerVoucherService;
     private readonly IConfiguration _configuration;
 
     public InternalVouchersController(
         ICustomerVoucherService customerVoucherService,
-        IConfiguration configuration)
-    {
-        _customerVoucherService = customerVoucherService;
+        IConfiguration configuration, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_customerVoucherService = customerVoucherService;
         _configuration = configuration;
     }
 
@@ -26,7 +29,7 @@ public class InternalVouchersController : ControllerBase
     {
         if (!IsValidServiceKey())
         {
-            return Unauthorized(new { message = "Invalid service key" });
+            return Unauthorized(new { message = M("InvalidServiceKey") });
         }
 
         if (!ModelState.IsValid)
@@ -37,7 +40,7 @@ public class InternalVouchersController : ControllerBase
         try
         {
             await _customerVoucherService.RestoreVoucherAsync(dto.CustomerId, dto.Code);
-            return Ok(new { message = "Voucher restored successfully" });
+            return Ok(new { message = M("VoucherRestoredSuccessfully") });
         }
         catch (Exception ex)
         {

@@ -2,6 +2,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -17,14 +20,14 @@ namespace TourAPI.Controllers
     [Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    public class ToursController : ControllerBase
+    public class ToursController : LocalizedControllerBase
     {
         private readonly ITourService _tourService;
         private readonly IMapper _mapper;
 
-        public ToursController(ITourService tourService, IMapper mapper)
-        {
-            _tourService = tourService;
+        public ToursController(ITourService tourService, IMapper mapper, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_tourService = tourService;
             _mapper = mapper;
         }
 
@@ -160,13 +163,13 @@ namespace TourAPI.Controllers
 
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
             {
-                return Unauthorized(new { message = "Cannot extract user ID from token" });
+                return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
             }
 
             var existingTour = await _tourService.GetById(id);
             if (existingTour == null)
             {
-                return NotFound(new { message = "Tour not found" });
+                return NotFound(new { message = M("TourNotFound") });
             }
 
             try
@@ -192,7 +195,7 @@ namespace TourAPI.Controllers
 
                 if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
                 {
-                    return Unauthorized(new { message = "Cannot extract user ID from token" });
+                    return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
                 }
 
                 await _tourService.Add(tourDto, userId);
@@ -214,13 +217,13 @@ namespace TourAPI.Controllers
 
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
             {
-                return Unauthorized(new { message = "Cannot extract user ID from token" });
+                return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
             }
 
             var tour = await _tourService.GetById(id);
             if (tour == null)
             {
-                return NotFound(new { message = "Tour not found" });
+                return NotFound(new { message = M("TourNotFound") });
             }
 
             try
@@ -251,7 +254,7 @@ namespace TourAPI.Controllers
             try
             {
                 var result = await _tourService.GetItinerariesByTourIdAsync(tourId);
-                return Ok(new { message = "Itineraries retrieved successfully.", data = result });
+                return Ok(new { message = M("ItinerariesRetrievedSuccessfully"), data = result });
             }
             catch (Exception ex)
             {

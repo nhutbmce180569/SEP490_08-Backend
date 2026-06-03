@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 using TourAPI.DTOs;
 using TourAPI.Services;
 
@@ -9,13 +12,13 @@ namespace TourAPI.Controllers
     [Authorize(Roles = "Manager,Admin")]
     [Route("api/customer-analytics")]
     [ApiController]
-    public class CustomerAnalyticsController : ControllerBase
+    public class CustomerAnalyticsController : LocalizedControllerBase
     {
         private readonly ICustomerAnalyticsService _customerAnalyticsService;
 
-        public CustomerAnalyticsController(ICustomerAnalyticsService customerAnalyticsService)
-        {
-            _customerAnalyticsService = customerAnalyticsService;
+        public CustomerAnalyticsController(ICustomerAnalyticsService customerAnalyticsService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_customerAnalyticsService = customerAnalyticsService;
         }
 
         /// <summary>Returns KPI summary for the selected date range (defaults to last 30 days).</summary>
@@ -25,7 +28,7 @@ namespace TourAPI.Controllers
             try
             {
                 var result = await _customerAnalyticsService.GetOverviewAsync(query.From, query.To);
-                return Ok(new { message = "Customer analytics overview retrieved successfully.", data = result });
+                return Ok(new { message = M("CustomerAnalyticsOverviewRetrievedSuccessfully"), data = result });
             }
             catch (ArgumentException ex)
             {
@@ -44,7 +47,7 @@ namespace TourAPI.Controllers
             try
             {
                 var result = await _customerAnalyticsService.GetDemographicsAsync(query.From, query.To);
-                return Ok(new { message = "Customer demographics retrieved successfully.", data = result });
+                return Ok(new { message = M("CustomerDemographicsRetrievedSuccessfully"), data = result });
             }
             catch (ArgumentException ex)
             {
@@ -63,7 +66,7 @@ namespace TourAPI.Controllers
             try
             {
                 var result = await _customerAnalyticsService.GetSegmentsAsync(query.From, query.To);
-                return Ok(new { message = "Customer segments retrieved successfully.", data = result });
+                return Ok(new { message = M("CustomerSegmentsRetrievedSuccessfully"), data = result });
             }
             catch (ArgumentException ex)
             {
@@ -83,13 +86,13 @@ namespace TourAPI.Controllers
             {
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(new { message = "Invalid query parameters.", errors = ModelState });
+                    return BadRequest(new { message = M("InvalidQueryParameters"), errors = ModelState });
                 }
 
                 var result = await _customerAnalyticsService.GetTrendsAsync(
                     query.From, query.To, query.Granularity);
 
-                return Ok(new { message = "Customer trends retrieved successfully.", data = result });
+                return Ok(new { message = M("CustomerTrendsRetrievedSuccessfully"), data = result });
             }
             catch (ArgumentException ex)
             {
@@ -109,13 +112,13 @@ namespace TourAPI.Controllers
             {
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(new { message = "Invalid query parameters.", errors = ModelState });
+                    return BadRequest(new { message = M("InvalidQueryParameters"), errors = ModelState });
                 }
 
                 var result = await _customerAnalyticsService.GetTopCustomersAsync(
                     query.Top, query.From, query.To);
 
-                return Ok(new { message = "Top customers retrieved successfully.", data = result });
+                return Ok(new { message = M("TopCustomersRetrievedSuccessfully"), data = result });
             }
             catch (ArgumentException ex)
             {
@@ -134,7 +137,7 @@ namespace TourAPI.Controllers
             try
             {
                 var result = await _customerAnalyticsService.GetEngagementAsync();
-                return Ok(new { message = "Customer engagement analytics retrieved successfully.", data = result });
+                return Ok(new { message = M("CustomerEngagementAnalyticsRetrievedSuccessfully"), data = result });
             }
             catch (Exception ex)
             {
@@ -150,11 +153,11 @@ namespace TourAPI.Controllers
             {
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(new { message = "Invalid query parameters.", errors = ModelState });
+                    return BadRequest(new { message = M("InvalidQueryParameters"), errors = ModelState });
                 }
 
                 var result = await _customerAnalyticsService.GetCustomerListAsync(query);
-                return Ok(new { message = "Customer analytics list retrieved successfully.", data = result });
+                return Ok(new { message = M("CustomerAnalyticsListRetrievedSuccessfully"), data = result });
             }
             catch (ArgumentException ex)
             {
@@ -178,10 +181,10 @@ namespace TourAPI.Controllers
                 var result = await _customerAnalyticsService.GetCustomerDetailAsync(customerId, from, to);
                 if (result == null)
                 {
-                    return NotFound(new { message = "Customer not found." });
+                    return NotFound(new { message = M("CustomerNotFound") });
                 }
 
-                return Ok(new { message = "Customer detail analytics retrieved successfully.", data = result });
+                return Ok(new { message = M("CustomerDetailAnalyticsRetrievedSuccessfully"), data = result });
             }
             catch (ArgumentException ex)
             {

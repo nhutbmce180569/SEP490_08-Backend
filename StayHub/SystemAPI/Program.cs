@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using StayHub.Common.Localization;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
 using System.Text;
@@ -38,7 +39,8 @@ namespace SystemAPI
             builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
             builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
             builder.Services.AddScoped<INotificationService, NotificationService>();
-            builder.Services.AddControllers();
+            builder.Services.AddControllers().AddStayHubDataAnnotationsLocalization();
+            builder.Services.AddStayHubLocalization();
             builder.Services.AddEndpointsApiExplorer();
             // 2. CẤU HÌNH SWAGGER CHUẨN (Tự động thêm Bearer)
             builder.Services.AddSwaggerGen(option =>
@@ -116,7 +118,8 @@ namespace SystemAPI
             }
 
             app.UseHttpsRedirection();
-            app.UseCors("FrontendDev");  
+            app.UseCors("FrontendDev");
+            app.UseStayHubLocalization();
 
             app.UseRouting();
             app.UseAuthentication();

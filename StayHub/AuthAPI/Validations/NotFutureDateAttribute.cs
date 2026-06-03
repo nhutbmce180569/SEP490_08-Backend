@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using StayHub.Common.Localization;
 
 namespace AuthAPI.Validations
 {
@@ -21,14 +22,14 @@ namespace AuthAPI.Validations
                 var today = DateOnly.FromDateTime(DateTime.Now);
                 if (dateValue > today)
                 {
-                    return new ValidationResult(ErrorMessage);
+                    return new ValidationResult(ValidationAttributeHelper.Localize(validationContext, ErrorMessage));
                 }
             }
             else if (value is DateTime dateTimeValue)
             {
                 if (dateTimeValue.Date > DateTime.Now.Date)
                 {
-                    return new ValidationResult(ErrorMessage);
+                    return new ValidationResult(ValidationAttributeHelper.Localize(validationContext, ErrorMessage));
                 }
             }
 

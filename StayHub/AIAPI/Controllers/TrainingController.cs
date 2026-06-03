@@ -2,19 +2,22 @@ using AIAPI.DTOs;
 using AIAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 
 namespace AIAPI.Controllers;
 
 [Route("api/ai/training")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class TrainingController : ControllerBase
+public class TrainingController : LocalizedControllerBase
 {
     private readonly IModelTrainingService _trainingService;
 
-    public TrainingController(IModelTrainingService trainingService)
-    {
-        _trainingService = trainingService;
+    public TrainingController(IModelTrainingService trainingService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_trainingService = trainingService;
     }
 
     [HttpGet("status")]
@@ -32,7 +35,7 @@ public class TrainingController : ControllerBase
             var bundle = await _trainingService.RetrainAsync(cancellationToken);
             return Ok(new
             {
-                message = "ML.NET models retrained successfully.",
+                message = M("MLNETModelsRetrainedSuccessfully"),
                 bundle.IsReady,
                 bundle.TrainedAt,
                 bundle.IntentAccuracy,

@@ -1,8 +1,9 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Security.Claims;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 using TourAPI.Services;
 
 namespace TourAPI.Controllers
@@ -10,35 +11,28 @@ namespace TourAPI.Controllers
     [Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    public class WishlistsController : ControllerBase
+    public class WishlistsController : LocalizedControllerBase
     {
         private readonly IWishlistService _wishlistService;
 
-        public WishlistsController(IWishlistService wishlistService)
+        public WishlistsController(IWishlistService wishlistService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
         {
             _wishlistService = wishlistService;
-        }
-
-        private int GetCurrentUserId()
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                               ?? User.FindFirst("id")?.Value;
-
-            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
-            {
-                throw new Exception("Cannot extract user ID from token.");
-            }
-
-            return userId;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetMyWishlist()
         {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == null)
+            {
+                return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
+            }
+
             try
             {
-                var currentUserId = GetCurrentUserId();
-                var result = await _wishlistService.GetMyWishlistAsync(currentUserId);
+                var result = await _wishlistService.GetMyWishlistAsync(currentUserId.Value);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -50,10 +44,15 @@ namespace TourAPI.Controllers
         [HttpPost("tours/{tourId}")]
         public async Task<IActionResult> AddTourToWishlist(int tourId)
         {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == null)
+            {
+                return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
+            }
+
             try
             {
-                var currentUserId = GetCurrentUserId();
-                var result = await _wishlistService.AddToWishlistAsync(tourId, currentUserId);
+                var result = await _wishlistService.AddToWishlistAsync(tourId, currentUserId.Value);
                 return CreatedAtAction(nameof(GetMyWishlist), result);
             }
             catch (Exception ex)
@@ -65,16 +64,34 @@ namespace TourAPI.Controllers
         [HttpDelete("tours/{tourId}")]
         public async Task<IActionResult> RemoveTourFromWishlist(int tourId)
         {
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId == null)
+            {
+                return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
+            }
+
             try
             {
-                var currentUserId = GetCurrentUserId();
-                await _wishlistService.RemoveFromWishlistAsync(tourId, currentUserId);
+                await _wishlistService.RemoveFromWishlistAsync(tourId, currentUserId.Value);
                 return NoContent();
             }
             catch (Exception ex)
             {
                 return BadRequest(new { message = ex.Message });
             }
+        }
+
+        private int? GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                               ?? User.FindFirst("id")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return null;
+            }
+
+            return userId;
         }
     }
 }

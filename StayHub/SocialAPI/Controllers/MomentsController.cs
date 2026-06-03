@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 using SocialAPI.DTOs;
 using SocialAPI.Services;
 using System;
@@ -11,13 +14,13 @@ namespace SocialAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class MomentsController : ControllerBase
+public class MomentsController : LocalizedControllerBase
 {
     private readonly IMomentService _momentService;
 
-    public MomentsController(IMomentService momentService)
-    {
-        _momentService = momentService;
+    public MomentsController(IMomentService momentService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_momentService = momentService;
     }
 
     [HttpPost]
@@ -34,7 +37,7 @@ public class MomentsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while creating the moment.", details = ex.Message });
+            return StatusCode(500, new { message = M("AnErrorOccurredWhileCreatingTheMoment"), details = ex.Message });
         }
     }
 
@@ -51,7 +54,7 @@ public class MomentsController : ControllerBase
 
             if (!int.TryParse(userIdClaim, out int userId))
             {
-                return Unauthorized(new { message = "User ID not found in token." });
+                return Unauthorized(new { message = M("UserIDNotFoundInToken") });
             }
 
             // Truyền scheduleId (nullable) xuống Service
@@ -64,7 +67,7 @@ public class MomentsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while fetching moments.", details = ex.Message });
+            return StatusCode(500, new { message = M("AnErrorOccurredWhileFetchingMoments"), details = ex.Message });
         }
     }
 
@@ -77,15 +80,15 @@ public class MomentsController : ControllerBase
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!int.TryParse(userIdClaim, out int userId))
             {
-                return Unauthorized(new { message = "User ID not found in token." });
+                return Unauthorized(new { message = M("UserIDNotFoundInToken") });
             }
 
             var result = await _momentService.GetMyFootprintsAsync(userId);
-            return Ok(new { message = "Footprints retrieved successfully.", data = result });
+            return Ok(new { message = M("FootprintsRetrievedSuccessfully"), data = result });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while retrieving footprints.", details = ex.Message });
+            return StatusCode(500, new { message = M("AnErrorOccurredWhileRetrievingFootprints"), details = ex.Message });
         }
     }
 
@@ -95,7 +98,7 @@ public class MomentsController : ControllerBase
         try
         {
             await _momentService.ToggleReactionAsync(id, dto);
-            return Ok(new { message = "Reaction toggled successfully." });
+            return Ok(new { message = M("ReactionToggledSuccessfully") });
         }
         catch (KeyNotFoundException ex)
         {
@@ -103,7 +106,7 @@ public class MomentsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while toggling the reaction.", details = ex.Message });
+            return StatusCode(500, new { message = M("AnErrorOccurredWhileTogglingTheReaction"), details = ex.Message });
         }
     }
 
@@ -121,7 +124,7 @@ public class MomentsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while adding the comment.", details = ex.Message });
+            return StatusCode(500, new { message = M("AnErrorOccurredWhileAddingTheComment"), details = ex.Message });
         }
     }
 
@@ -143,7 +146,7 @@ public class MomentsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while updating the comment.", details = ex.Message });
+            return StatusCode(500, new { message = M("AnErrorOccurredWhileUpdatingTheComment"), details = ex.Message });
         }
     }
 
@@ -153,7 +156,7 @@ public class MomentsController : ControllerBase
         try
         {
             await _momentService.DeleteCommentAsync(cId, userId);
-            return Ok(new { message = "Comment deleted successfully." });
+            return Ok(new { message = M("CommentDeletedSuccessfully") });
         }
         catch (KeyNotFoundException ex)
         {
@@ -165,7 +168,7 @@ public class MomentsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while deleting the comment.", details = ex.Message });
+            return StatusCode(500, new { message = M("AnErrorOccurredWhileDeletingTheComment"), details = ex.Message });
         }
     }
 
@@ -175,7 +178,7 @@ public class MomentsController : ControllerBase
         try
         {
             await _momentService.DeleteMomentAsync(id, userId);
-            return Ok(new { message = "Moment deleted successfully." });
+            return Ok(new { message = M("MomentDeletedSuccessfully") });
         }
         catch (KeyNotFoundException ex)
         {
@@ -187,7 +190,7 @@ public class MomentsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while deleting the moment.", details = ex.Message });
+            return StatusCode(500, new { message = M("AnErrorOccurredWhileDeletingTheMoment"), details = ex.Message });
         }
     }
 
@@ -203,16 +206,16 @@ public class MomentsController : ControllerBase
 
             if (!int.TryParse(userIdClaim, out int currentUserId))
             {
-                return Unauthorized(new { message = "User ID not found in token." });
+                return Unauthorized(new { message = M("UserIDNotFoundInToken") });
             }
 
             var result = await _momentService.GetUserMomentsAsync(targetUserId, currentUserId);
 
-            return Ok(new { message = "User moments retrieved successfully.", data = result });
+            return Ok(new { message = M("UserMomentsRetrievedSuccessfully"), data = result });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred while fetching user moments.", details = ex.Message });
+            return StatusCode(500, new { message = M("AnErrorOccurredWhileFetchingUserMoments"), details = ex.Message });
         }
     }
 }

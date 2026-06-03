@@ -1,18 +1,19 @@
 using FluentValidation;
+using StayHub.Common.Localization;
 
 namespace SocialAPI.DTOs;
 
 public class ReactionRequestDtoValidator : AbstractValidator<ReactionRequestDto>
 {
-    public ReactionRequestDtoValidator()
+    public ReactionRequestDtoValidator(ValidationLocalizer v)
     {
         RuleFor(x => x.UserId)
-            .GreaterThan(0).WithMessage("UserId must be greater than 0.");
+            .GreaterThan(0).WithMessage(v.Get("UserId must be greater than 0."));
 
         RuleFor(x => x.MomentId)
-            .GreaterThan(0).WithMessage("MomentId must be greater than 0.");
+            .GreaterThan(0).WithMessage(v.Get("MomentId must be greater than 0."));
 
         RuleFor(x => x.IsLike)
-            .NotNull().WithMessage("IsLike cannot be null.");
+            .NotNull().WithMessage(v.Get("IsLike cannot be null."));
     }
 }
