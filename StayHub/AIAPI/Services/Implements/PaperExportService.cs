@@ -9,6 +9,7 @@ public class PaperExportService : IPaperExportService
     private readonly IRecommenderEvaluationService _evaluation;
     private readonly ICulturalKnowledgeService _knowledge;
     private readonly ICatalogStore _catalogStore;
+    private readonly IDimensionWeightProvider _weights;
     private readonly IUserStudyService _userStudy;
     private readonly IInterRaterAgreementService _interRater;
 
@@ -16,12 +17,14 @@ public class PaperExportService : IPaperExportService
         IRecommenderEvaluationService evaluation,
         ICulturalKnowledgeService knowledge,
         ICatalogStore catalogStore,
+        IDimensionWeightProvider weights,
         IUserStudyService userStudy,
         IInterRaterAgreementService interRater)
     {
         _evaluation = evaluation;
         _knowledge = knowledge;
         _catalogStore = catalogStore;
+        _weights = weights;
         _userStudy = userStudy;
         _interRater = interRater;
     }
@@ -44,16 +47,7 @@ public class PaperExportService : IPaperExportService
                 ["rag_retrieval"] = "ML.NET TF-IDF cosine retrieval over StayHub-VN-RAG-Corpus-v2 (75 chunks, UNESCO-cited)",
                 ["multi_source"] = "Embedded corpus + RAG + ContentAPI + Wikidata CC0 + Open-Meteo"
             },
-            DimensionWeights = new Dictionary<string, float>
-            {
-                ["interest_semantic"] = ScoringModelSpec.DimensionWeights.InterestSemantic,
-                ["location"] = ScoringModelSpec.DimensionWeights.Location,
-                ["budget"] = ScoringModelSpec.DimensionWeights.Budget,
-                ["schedule"] = ScoringModelSpec.DimensionWeights.Schedule,
-                ["weather"] = ScoringModelSpec.DimensionWeights.Weather,
-                ["accessibility"] = ScoringModelSpec.DimensionWeights.Accessibility,
-                ["cultural_fit"] = ScoringModelSpec.DimensionWeights.CulturalFit
-            },
+            DimensionWeights = _weights.AsDictionary().ToDictionary(kv => kv.Key, kv => kv.Value),
             KnowledgeCorpus = corpus,
             Baselines = AggregationStrategies.GetAll()
                 .Select(b => new BaselineInfoDTO
@@ -66,34 +60,60 @@ public class PaperExportService : IPaperExportService
                 ScoringModelSpec.EvaluationProtocol.ProfileGeneration,
                 ScoringModelSpec.EvaluationProtocol.HybridGroundTruth,
                 ScoringModelSpec.EvaluationProtocol.UserStudyProtocol,
-                "RAG ablation: cafhr_fair vs cafhr_no_knowledge",
-                "Alpha sweep α ∈ {0, 0.25, 0.45, 0.75, 1.0}"
+                ScoringModelSpec.EvaluationProtocol.ProfilePartition,
+                ScoringModelSpec.EvaluationProtocol.CatalogAugmentation,
+                "RAG ablation: strategy cafhr_no_knowledge + corpus size sweep {0,25,50,75,100}",
+                "Alpha sweep α ∈ {0, 0.25, 0.45, 0.75, 1.0}",
+                "POST /api/ai/evaluation/calibrate-weights — grid search on validation partition only"
             ],
-            Limitations =
-            [
-                "Catalog size: 12 active tours (domain-specific pilot platform).",
-                "Expert labels include scripted batch generation; secondary judge overlap for κ estimation.",
-                "Pilot user study (system_consistent_pilot) simulates Likert from min-persona scores — replace with human subjects for final submission.",
-                "Proxy and hybrid relevance labels complement expert judgments; not a large-scale click log."
-            ]
+            Limitations = BuildDynamicLimitations()
         };
+    }
+
+    private List<string> BuildDynamicLimitations()
+    {
+        var stats = _catalogStore.Stats;
+        var catalogNote = stats == null
+            ? "Catalog augmentation stats unavailable until gateway sync completes."
+            : $"Catalog: {stats.BaseTourCount} base → {stats.TotalTourCount} augmented tours (Jaccard rejections: {stats.RejectedByJaccard}).";
+
+        return
+        [
+            catalogNote,
+            "Synthetic variants inflate offline NDCG stability — report base-only metrics in appendix when required.",
+            "Expert labels may include scripted batches; human κ estimated on overlapping judgments.",
+            "User study summary uses ResponseSource=human only (excludes system_consistent_pilot).",
+            "Proxy/hybrid labels complement expert judgments; not large-scale production click logs."
+        ];
     }
 
     public async Task<PaperBundleDTO> GeneratePaperBundleAsync(CancellationToken cancellationToken = default)
     {
+        var weightCalibration = await _evaluation.CalibrateDimensionWeightsAsync(cancellationToken);
+
         var hybrid = await _evaluation.RunOfflineEvaluationAsync(new EvaluationRunRequestDTO
         {
-            ProfileCount = 100, TopK = 8, RandomSeed = 42,
+            ProfileCount = EvaluationDataSpec.TestProfileCount,
+            TopK = 8,
+            RandomSeed = EvaluationDataSpec.DefaultRandomSeed,
+            ProfileSplit = "test",
             LabelingMode = GroundTruthModes.Hybrid,
-            IncludeAlphaSweep = true, IncludeSignificanceTests = true
+            IncludeAlphaSweep = true,
+            IncludeSignificanceTests = true
         }, cancellationToken);
 
         var proxy = await _evaluation.RunOfflineEvaluationAsync(new EvaluationRunRequestDTO
         {
-            ProfileCount = 100, TopK = 8, RandomSeed = 42,
+            ProfileCount = EvaluationDataSpec.TestProfileCount,
+            TopK = 8,
+            RandomSeed = EvaluationDataSpec.DefaultRandomSeed,
+            ProfileSplit = "test",
             LabelingMode = GroundTruthModes.Proxy,
-            IncludeAlphaSweep = false, IncludeSignificanceTests = false
+            IncludeAlphaSweep = false,
+            IncludeSignificanceTests = false
         }, cancellationToken);
+
+        var ragCorpusAblation = await _evaluation.RunRagCorpusAblationAsync(cancellationToken);
 
         var userStudy = await _userStudy.GetSummaryAsync(cancellationToken);
         var agreement = _interRater.ComputeAgreement();
@@ -108,6 +128,8 @@ public class PaperExportService : IPaperExportService
             OfflineEvaluationHybrid = hybrid,
             OfflineEvaluationProxy = proxy,
             RagAblation = ragAblation,
+            RagCorpusSizeAblation = ragCorpusAblation,
+            WeightCalibration = weightCalibration,
             UserStudy = userStudy,
             ExpertAgreement = agreement,
             ResultsSummary = resultsSummary

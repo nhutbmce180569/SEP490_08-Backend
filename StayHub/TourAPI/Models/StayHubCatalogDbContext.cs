@@ -71,6 +71,8 @@ public partial class StayHubCatalogDbContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.ImageUrl).HasMaxLength(500);
             entity.Property(e => e.Name).HasMaxLength(255);
+            entity.Property(e => e.SourceName).HasMaxLength(255);
+            entity.Property(e => e.SourceUrl).HasMaxLength(500);
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .IsUnicode(false)

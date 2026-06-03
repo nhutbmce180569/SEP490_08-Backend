@@ -4,22 +4,43 @@ namespace AIAPI.Recommender;
 
 public static class UserStudyScenarioCatalog
 {
-    public const int ScenarioCount = 8;
+    public const int ScenarioCount = EvaluationDataSpec.UserStudyScenarioCount;
     public const int ToursPerList = 5;
 
-    /// <summary>Profile indices from SyntheticProfileGenerator (seed=42) for diverse vignettes.</summary>
-    public static readonly int[] ProfileIndices = [0, 1, 5, 9, 13, 22, 35, 49];
+    /// <summary>Stratified profile indices (seed=42) covering solo, family, friend, couple.</summary>
+    public static readonly int[] ProfileIndices =
+    [
+        0, 4, 8, 12, 16, 20, 24, 28,
+        32, 36, 40, 44, 48, 52, 56, 60, 64, 68
+    ];
+
+    public static readonly string[] GroupTypes =
+    [
+        "solo", "family", "family", "family", "family", "family", "family",
+        "friend", "friend", "friend", "friend", "friend", "friend",
+        "couple", "couple", "couple", "couple", "couple"
+    ];
 
     private static readonly string[] Titles =
     [
-        "Solo du lịch Cần Thơ — biển & thư giãn",
-        "Couple nước ngoài — văn hóa Đà Lạt",
-        "Couple nước ngoài — biển Đà Nẵng",
-        "Couple nước ngoài — ẩm thực Sài Gòn",
-        "Couple nước ngoài — biển Phú Quốc",
-        "Gia đình Việt — văn hóa Hội An",
-        "Nhóm nước ngoài — thiên nhiên Đà Nẵng",
-        "Couple nước ngoài — văn hóa Sài Gòn"
+        "Solo — Cần Thơ biển & thư giãn",
+        "Gia đình Việt — Hội An văn hóa (có người cao tuổi)",
+        "Gia đình — Đà Lạt thiên nhiên (có trẻ em)",
+        "Gia đình — Phú Quốc biển đảo",
+        "Gia đình — Ninh Bình di sản",
+        "Gia đình — Cần Thơ sông nước",
+        "Gia đình — Huế văn hóa (có cao tuổi + trẻ em)",
+        "Nhóm bạn — Sapa mạo hiểm",
+        "Nhóm bạn — Đà Nẵng thiên nhiên",
+        "Nhóm bạn — Sài Gòn ẩm thực",
+        "Nhóm bạn — Nha Trang biển",
+        "Nhóm bạn — Hà Nội city & food",
+        "Nhóm bạn — Đà Lạt chill",
+        "Couple VN — Đà Lạt lãng mạn",
+        "Couple nước ngoài — Hội An văn hóa",
+        "Couple nước ngoài — Đà Nẵng biển",
+        "Couple nước ngoài — Phú Quốc resort",
+        "Couple nước ngoài — Sài Gòn ẩm thực"
     ];
 
     public static string GetComparisonPair(int scenarioId) =>
@@ -33,10 +54,34 @@ public static class UserStudyScenarioCatalog
     public static TourPreferenceQuestionnaireDTO BuildProfile(int scenarioId)
     {
         var index = ProfileIndices[scenarioId];
-        var profile = SyntheticProfileGenerator.Generate(index + 1, 42)[index];
+        var profile = SyntheticProfileGenerator.Generate(index + 1, EvaluationDataSpec.DefaultRandomSeed)[index];
         profile.Top = ToursPerList;
         profile.SessionId = $"user-study-{scenarioId:00}";
+        ApplyGroupTypeOverrides(profile, GroupTypes[scenarioId]);
         return profile;
+    }
+
+    private static void ApplyGroupTypeOverrides(TourPreferenceQuestionnaireDTO profile, string groupType)
+    {
+        switch (groupType)
+        {
+            case "solo":
+                profile.CompanionType = TravelCompanionTypes.Solo;
+                profile.HasElderly = false;
+                profile.HasChildren = false;
+                break;
+            case "family":
+                profile.CompanionType = TravelCompanionTypes.Family;
+                break;
+            case "friend":
+                profile.CompanionType = TravelCompanionTypes.Group;
+                break;
+            case "couple":
+                profile.CompanionType = TravelCompanionTypes.Couple;
+                profile.HasElderly = false;
+                profile.HasChildren = false;
+                break;
+        }
     }
 
     public static UserStudyScenarioDTO Describe(int scenarioId)
@@ -46,20 +91,21 @@ public static class UserStudyScenarioCatalog
         {
             ScenarioId = scenarioId,
             Title = Titles[scenarioId],
-            Vignette = BuildVignette(profile),
+            Vignette = BuildVignette(profile, GroupTypes[scenarioId]),
             ComparisonPair = GetComparisonPair(scenarioId),
-            ProfileQueryKey = ProfileSignatureHelper.BuildQueryKey(profile)
+            ProfileQueryKey = ProfileSignatureHelper.BuildQueryKey(profile),
+            GroupType = GroupTypes[scenarioId]
         };
     }
 
-    private static string BuildVignette(TourPreferenceQuestionnaireDTO p)
+    private static string BuildVignette(TourPreferenceQuestionnaireDTO p, string groupType)
     {
-        var companion = p.CompanionType switch
+        var companion = groupType switch
         {
-            TravelCompanionTypes.Solo => "một mình",
-            TravelCompanionTypes.Couple => "couple (2 người)",
-            TravelCompanionTypes.Family => "gia đình",
-            _ => "nhóm bạn"
+            "solo" => "du khách đi một mình",
+            "family" => "gia đình",
+            "friend" => "nhóm bạn",
+            _ => "couple (2 người)"
         };
 
         var nationality = p.NationalityType == TravelerNationalityTypes.Foreigner
@@ -83,7 +129,7 @@ public static class UserStudyScenarioCatalog
             : "";
 
         return
-            $"Bạn đóng vai {nationality} đi {companion}{extraText}, " +
+            $"Bạn đóng vai {nationality} ({companion}){extraText}, " +
             $"quan tâm: {string.Join(", ", p.TravelInterests)}." +
             (string.IsNullOrWhiteSpace(p.PreferredCity) ? "" : $" Ưu tiên khu vực {p.PreferredCity}.") +
             budget +

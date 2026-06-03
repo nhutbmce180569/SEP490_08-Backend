@@ -1,4 +1,6 @@
 using AIAPI.DTOs;
+using AIAPI.Helpers;
+using AIAPI.Localization;
 using AIAPI.ML;
 using AIAPI.Models;
 using AIAPI.Services;
@@ -13,6 +15,7 @@ public class TourAssistantService : ITourAssistantService
     private readonly ITourRecommendationService _recommendationService;
     private readonly QueryEntityExtractor _entityExtractor;
     private readonly StayHubAiDbContext _dbContext;
+    private readonly IAiLocalizedCopy _text;
 
     public TourAssistantService(
         IMlModelRegistry modelRegistry,
@@ -20,7 +23,8 @@ public class TourAssistantService : ITourAssistantService
         ITourSemanticSearchService searchService,
         ITourRecommendationService recommendationService,
         QueryEntityExtractor entityExtractor,
-        StayHubAiDbContext dbContext)
+        StayHubAiDbContext dbContext,
+        IAiLocalizedCopy text)
     {
         _modelRegistry = modelRegistry;
         _catalogStore = catalogStore;
@@ -28,6 +32,7 @@ public class TourAssistantService : ITourAssistantService
         _recommendationService = recommendationService;
         _entityExtractor = entityExtractor;
         _dbContext = dbContext;
+        _text = text;
     }
 
     public async Task<ChatResponseDTO> ChatAsync(string message, string? sessionId, int? customerId, CancellationToken cancellationToken = default)
@@ -53,8 +58,8 @@ public class TourAssistantService : ITourAssistantService
         switch (intent)
         {
             case TourIntents.Greeting:
-                response.Reply = "Xin chào! Tôi là trợ lý AI của StayHub, được huấn luyện bằng ML.NET trên dữ liệu tour thật. Bạn có thể hỏi về tour, ngân sách, điểm đến hoặc văn hóa địa phương.";
-                response.SuggestedQuestions = DefaultSuggestions();
+                response.Reply = _text.ChatGreeting;
+                response.SuggestedQuestions = _text.ChatDefaultSuggestions.ToList();
                 break;
 
             case TourIntents.AskCulture:
@@ -76,12 +81,12 @@ public class TourAssistantService : ITourAssistantService
                 }, cancellationToken)).Select(MapToSearchItem).ToList();
 
                 response.Reply = BuildCultureReply(response.TourismInsights, parsed.City);
-                response.SuggestedQuestions = new List<string>
-                {
-                    "Gợi ý tour phù hợp tại đây",
-                    "Tour giá rẻ cho điểm đến này",
-                    "Lịch trình mẫu 3 ngày"
-                };
+                response.SuggestedQuestions =
+                [
+                    _text.ChatCultureSuggest1,
+                    _text.ChatCultureSuggest2,
+                    _text.ChatCultureSuggest3
+                ];
                 break;
 
             case TourIntents.AskBudget:
@@ -101,9 +106,9 @@ public class TourAssistantService : ITourAssistantService
                 }, cancellationToken)).Select(MapToSearchItem).ToList();
 
                 response.Reply = response.RecommendedTours.Count > 0
-                    ? $"Tôi tìm thấy {response.RecommendedTours.Count} tour phù hợp với yêu cầu của bạn (semantic search ML.NET)."
-                    : "Chưa có tour khớp hoàn toàn. Bạn thử nới ngân sách hoặc đổi thành phố/ thời gian khác nhé.";
-                response.SuggestedQuestions = DefaultSuggestions();
+                    ? _text.ChatToursFound(response.RecommendedTours.Count)
+                    : _text.ChatNoTours;
+                response.SuggestedQuestions = _text.ChatDefaultSuggestions.ToList();
                 break;
 
             case TourIntents.RecommendTour:
@@ -111,9 +116,9 @@ public class TourAssistantService : ITourAssistantService
                 var recommended = await _recommendationService.RecommendAsync(customerId, 6, parsed, cancellationToken);
                 response.RecommendedTours = recommended.Select(MapRecommendationToSearch).ToList();
                 response.Reply = customerId.HasValue
-                    ? "Đây là các tour được gợi ý cá nhân hóa dựa trên wishlist, lịch sử đặt tour và mô hình ML nội bộ."
-                    : "Đăng nhập để nhận gợi ý cá nhân hóa tốt hơn. Hiện tại tôi gợi ý theo độ phổ biến và mức độ liên quan.";
-                response.SuggestedQuestions = DefaultSuggestions();
+                    ? _text.ChatPersonalizedLoggedIn
+                    : _text.ChatPersonalizedAnonymous;
+                response.SuggestedQuestions = _text.ChatDefaultSuggestions.ToList();
                 break;
         }
 
@@ -151,7 +156,8 @@ public class TourAssistantService : ITourAssistantService
 
     public async Task LogInteractionAsync(int? customerId, LogInteractionRequestDTO request, CancellationToken cancellationToken = default)
     {
-        if (!_catalogStore.Tours.Any(t => t.Id == request.TourId))
+        var catalogTourId = CatalogTourIds.ResolveBaseTourId(request.TourId);
+        if (!_catalogStore.Tours.Any(t => t.Id == catalogTourId || t.Id == request.TourId))
         {
             throw new InvalidOperationException("TourId does not exist in active catalog.");
         }
@@ -168,7 +174,7 @@ public class TourAssistantService : ITourAssistantService
         _dbContext.UserTourInteractions.Add(new UserTourInteraction
         {
             CustomerId = customerId,
-            TourId = request.TourId,
+            TourId = catalogTourId,
             InteractionType = request.InteractionType,
             Weight = weight,
             SessionId = request.SessionId,
@@ -178,25 +184,20 @@ public class TourAssistantService : ITourAssistantService
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    private static List<string> DefaultSuggestions() => new()
-    {
-        "Gợi ý tour biển giá dưới 5 triệu",
-        "Tour Đà Lạt 3 ngày tháng 7",
-        "Đặc sản và văn hóa Hội An"
-    };
-
-    private static string BuildCultureReply(IReadOnlyList<TourismInsightDTO> insights, string? city)
+    private string BuildCultureReply(IReadOnlyList<TourismInsightDTO> insights, string? city)
     {
         if (insights.Count == 0)
         {
             return string.IsNullOrWhiteSpace(city)
-                ? "Tôi chưa có dữ liệu tham khảo chính thống khớp câu hỏi. Bạn thử hỏi theo tên thành phố cụ thể."
-                : $"Chưa có bài viết tham khảo active cho {city}. Bạn có thể xem các tour liên quan bên dưới.";
+                ? _text.ChatCultureNoData
+                : _text.ChatCultureNoDataForCity(city);
         }
 
         var top = insights[0];
-        var source = string.IsNullOrWhiteSpace(top.SourceName) ? "nguồn tham khảo hệ thống" : top.SourceName;
-        return $"Theo {source}, {top.Name} ({top.Type}): {Trim(top.Description, 220)}";
+        var source = string.IsNullOrWhiteSpace(top.SourceName)
+            ? (_text.IsVietnamese ? "nguồn tham khảo hệ thống" : "system reference")
+            : top.SourceName;
+        return _text.ChatCultureReply(source, top.Name, top.Type, Trim(top.Description, 220));
     }
 
     private static string Trim(string? text, int max) =>
@@ -206,7 +207,7 @@ public class TourAssistantService : ITourAssistantService
 
     private static TourSearchResultItemDTO MapRecommendationToSearch(TourRecommendationItemDTO item) => new()
     {
-        TourId = item.TourId,
+        TourId = CatalogTourIds.ResolveBaseTourId(item.TourId),
         Name = item.Name,
         City = item.City,
         Country = item.Country,

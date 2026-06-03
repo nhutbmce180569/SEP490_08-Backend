@@ -18,15 +18,20 @@ public class CatalogStore : ICatalogStore
         get { lock (_lock) { return _tourism; } }
     }
 
+    public CatalogStoreStats? Stats { get; private set; }
     public DateTime? LastSyncedAt { get; private set; }
     public bool IsReady { get; private set; }
 
-    public void Update(IReadOnlyList<TourCatalogItem> tours, IReadOnlyList<TourismKnowledgeItem> tourismItems)
+    public void Update(
+        IReadOnlyList<TourCatalogItem> tours,
+        IReadOnlyList<TourismKnowledgeItem> tourismItems,
+        CatalogStoreStats? stats = null)
     {
         lock (_lock)
         {
             _tours = tours.ToList();
             _tourism = tourismItems.ToList();
+            Stats = stats;
             LastSyncedAt = DateTime.UtcNow;
             IsReady = _tours.Count > 0;
         }

@@ -1,5 +1,6 @@
 using AIAPI.DTOs;
 using AIAPI.Helpers;
+using AIAPI.Localization;
 using AIAPI.ML;
 using AIAPI.Models.Catalog;
 using AIAPI.Models.Knowledge;
@@ -18,6 +19,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
     private readonly ICulturalKnowledgeService _culturalKnowledge;
     private readonly TourRanker _tourRanker;
     private readonly RecommenderSettings _settings;
+    private readonly IAiLocalizedCopy _text;
 
     public PersonalizedTourRecommendationService(
         ICatalogStore catalogStore,
@@ -25,7 +27,8 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         IWeatherService weatherService,
         ICulturalKnowledgeService culturalKnowledge,
         TourRanker tourRanker,
-        IOptions<RecommenderSettings> settings)
+        IOptions<RecommenderSettings> settings,
+        IAiLocalizedCopy text)
     {
         _catalogStore = catalogStore;
         _modelRegistry = modelRegistry;
@@ -33,6 +36,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         _culturalKnowledge = culturalKnowledge;
         _tourRanker = tourRanker;
         _settings = settings.Value;
+        _text = text;
     }
 
     public StandardQuestionnaireDTO GetStandardQuestionnaire() => new()
@@ -43,92 +47,92 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             new QuestionnaireFieldDTO
             {
                 FieldKey = "companionType",
-                Label = "Bạn đi tour cùng ai?",
+                Label = _text.QuestionCompanionType,
                 InputType = "single_select",
                 Required = true,
-                Hint = "Hệ thống tạo persona riêng cho từng thành viên (người già, trẻ em, khách quốc tế) và gộp điểm công bằng.",
+                Hint = _text.QuestionCompanionHint,
                 Options =
                 [
-                    new() { Value = TravelCompanionTypes.Solo, Label = "Một mình" },
-                    new() { Value = TravelCompanionTypes.Couple, Label = "Couple / đôi" },
-                    new() { Value = TravelCompanionTypes.Family, Label = "Gia đình" },
-                    new() { Value = TravelCompanionTypes.Group, Label = "Nhóm bạn" }
+                    new() { Value = TravelCompanionTypes.Solo, Label = _text.OptionSolo },
+                    new() { Value = TravelCompanionTypes.Couple, Label = _text.OptionCouple },
+                    new() { Value = TravelCompanionTypes.Family, Label = _text.OptionFamily },
+                    new() { Value = TravelCompanionTypes.Group, Label = _text.OptionGroup }
                 ]
             },
             new QuestionnaireFieldDTO
             {
                 FieldKey = "preferredStartDate",
-                Label = "Dự kiến đi từ ngày nào?",
+                Label = _text.QuestionStartDate,
                 InputType = "date",
                 Required = true,
-                Hint = "≤14 ngày: Open-Meteo forecast. Xa hơn: dữ liệu lịch sử cùng kỳ."
+                Hint = _text.QuestionStartDateHint
             },
             new QuestionnaireFieldDTO
             {
                 FieldKey = "preferredEndDate",
-                Label = "Dự kiến đến ngày nào?",
+                Label = _text.QuestionEndDate,
                 InputType = "date",
                 Required = false
             },
             new QuestionnaireFieldDTO
             {
                 FieldKey = "maxBudgetPerPerson",
-                Label = "Ngân sách tối đa mỗi người (VND)?",
+                Label = _text.QuestionBudget,
                 InputType = "number",
                 Required = false
             },
             new QuestionnaireFieldDTO
             {
                 FieldKey = "hasElderly",
-                Label = "Có người cao tuổi đi cùng không?",
+                Label = _text.QuestionHasElderly,
                 InputType = "boolean",
                 Required = true
             },
             new QuestionnaireFieldDTO
             {
                 FieldKey = "hasChildren",
-                Label = "Có trẻ em đi cùng không?",
+                Label = _text.QuestionHasChildren,
                 InputType = "boolean",
                 Required = true
             },
             new QuestionnaireFieldDTO
             {
                 FieldKey = "travelInterests",
-                Label = "Bạn thích loại hình du lịch nào?",
+                Label = _text.QuestionInterests,
                 InputType = "multi_select",
                 Required = true,
                 Options =
                 [
-                    new() { Value = "beach", Label = "Biển / đảo" },
-                    new() { Value = "culture", Label = "Văn hóa / di sản" },
-                    new() { Value = "nature", Label = "Thiên nhiên" },
-                    new() { Value = "food", Label = "Ẩm thực" },
-                    new() { Value = "adventure", Label = "Mạo hiểm" },
-                    new() { Value = "relax", Label = "Nghỉ dưỡng" },
-                    new() { Value = "photography", Label = "Chụp ảnh" },
-                    new() { Value = "city", Label = "Khám phá thành phố" },
-                    new() { Value = "river", Label = "Sông nước / miền Tây" }
+                    new() { Value = "beach", Label = _text.OptionBeach },
+                    new() { Value = "culture", Label = _text.OptionCulture },
+                    new() { Value = "nature", Label = _text.OptionNature },
+                    new() { Value = "food", Label = _text.OptionFood },
+                    new() { Value = "adventure", Label = _text.OptionAdventure },
+                    new() { Value = "relax", Label = _text.OptionRelax },
+                    new() { Value = "photography", Label = _text.OptionPhotography },
+                    new() { Value = "city", Label = _text.OptionCity },
+                    new() { Value = "river", Label = _text.OptionRiver }
                 ]
             },
             new QuestionnaireFieldDTO
             {
                 FieldKey = "nationalityType",
-                Label = "Bạn là khách Việt Nam hay quốc tế?",
+                Label = _text.QuestionNationality,
                 InputType = "single_select",
                 Required = true,
                 Options =
                 [
-                    new() { Value = TravelerNationalityTypes.Vietnamese, Label = "Người Việt Nam" },
-                    new() { Value = TravelerNationalityTypes.Foreigner, Label = "Khách quốc tế" }
+                    new() { Value = TravelerNationalityTypes.Vietnamese, Label = _text.OptionVietnamese },
+                    new() { Value = TravelerNationalityTypes.Foreigner, Label = _text.OptionForeigner }
                 ]
             },
             new QuestionnaireFieldDTO
             {
                 FieldKey = "preferredCity",
-                Label = "Muốn đi đâu? (tùy chọn)",
+                Label = _text.QuestionPreferredCity,
                 InputType = "text",
                 Required = false,
-                Hint = "Ví dụ: Can Tho, Hoi An..."
+                Hint = _text.QuestionPreferredCityHint
             }
         ]
     };
@@ -181,7 +185,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             ? Guid.NewGuid().ToString("N")
             : profile.SessionId;
 
-        var personas = TravelPartyDecomposer.Decompose(profile);
+        var personas = TravelPartyDecomposer.Decompose(profile, _text);
         var weatherCity = profile.PreferredCity ?? InferCityFromInterests(profile.TravelInterests);
 
         WeatherAdviceDTO? weather = null;
@@ -202,7 +206,11 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             weather,
             AggregationStrategies.CafhrFair);
 
-        var scoredTours = ranked.Select(x => MapTour(x.Tour, x.Scoring)).ToList();
+        var scoredTours = ranked
+            .GroupBy(x => CatalogTourIds.ResolveBaseTourId(x.Tour.Id))
+            .Select(g => g.OrderByDescending(x => x.Scoring.FairnessScore).First())
+            .Select(x => MapTour(x.Tour, x.Scoring))
+            .ToList();
 
         var culturalFacts = await _culturalKnowledge.GetFactsAsync(
             profile.PreferredCity ?? weatherCity,
@@ -223,7 +231,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             RelatedInsights = MapCulturalInsights(culturalFacts),
             CulturalFacts = culturalFacts.Select(MapFactDto).ToList(),
             RecommenderMeta = BuildTransparencyMeta(personaTypes),
-            GeneralTips = BuildGeneralTips(profile, weather),
+            GeneralTips = BuildGeneralTips(weather),
             ForeignVisitorTips = profile.NationalityType == TravelerNationalityTypes.Foreigner
                 ? culturalFacts.Where(f => f.Provider != ScoringModelSpec.KnowledgeSources.ContentApi)
                     .Select(f => f.Fact).Distinct().Take(6).ToList()
@@ -232,9 +240,9 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
                 ? culturalFacts.Select(f => f.Fact).Where(f => f.Contains("elderly", StringComparison.OrdinalIgnoreCase) || f.Contains("cao tuổi", StringComparison.OrdinalIgnoreCase) || f.Contains("morning", StringComparison.OrdinalIgnoreCase)).Take(4).ToList()
                 : new List<string>(),
             ChildrenCompanionTips = profile.HasChildren
-                ? new List<string> { "Ưu tiên tour có hoạt động tương tác, thời gian nghỉ hợp lý cho trẻ em.", "Kiểm tra giá vé trẻ em trước khi đặt." }
+                ? new List<string> { _text.TipChildren1, _text.TipChildren2 }
                 : new List<string>(),
-            Summary = BuildSummary(profile, scoredTours, weather, personas.Count)
+            Summary = BuildSummary(scoredTours, weather, personas.Count)
         };
     }
 
@@ -271,19 +279,21 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         }
     }
 
-    private static TourRecommendationItemDTO MapTour(TourCatalogItem tour, TourScoringResult scoring)
+    private TourRecommendationItemDTO MapTour(TourCatalogItem tour, TourScoringResult scoring)
     {
+        var publicId = CatalogTourIds.ResolveBaseTourId(tour.Id);
+        var display = _catalogStore.Tours.FirstOrDefault(t => t.Id == publicId) ?? tour;
         var reasons = scoring.MatchReasons.Distinct().Take(8).ToList();
         return new TourRecommendationItemDTO
         {
-            TourId = tour.Id,
-            Name = tour.Name,
-            City = tour.City,
-            Country = tour.Country,
-            ImageUrl = tour.ImageUrl,
-            AverageStar = tour.AverageStar,
-            MinPrice = tour.MinPrice,
-            DurationDays = tour.DurationDays,
+            TourId = publicId,
+            Name = display.Name,
+            City = display.City,
+            Country = display.Country,
+            ImageUrl = display.ImageUrl,
+            AverageStar = display.AverageStar,
+            MinPrice = display.MinPrice,
+            DurationDays = display.DurationDays,
             Score = scoring.FairnessScore,
             MatchReasons = reasons,
             Reason = string.Join(" ", reasons),
@@ -326,7 +336,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         City = f.City
     };
 
-    private static List<string> BuildGeneralTips(TourPreferenceQuestionnaireDTO profile, WeatherAdviceDTO? weather)
+    private List<string> BuildGeneralTips(WeatherAdviceDTO? weather)
     {
         var tips = new List<string>();
         if (weather != null)
@@ -335,23 +345,24 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             tips.Add(weather.ImpactOnTours);
         }
 
-        tips.Add($"Mô hình công bằng: không ưu tiên một thành viên hy sinh sở thích người khác (α={ScoringModelSpec.DefaultFairnessAlpha}).");
+        tips.Add(_text.TipFairnessModel);
         return tips;
     }
 
-    private static string BuildSummary(
-        TourPreferenceQuestionnaireDTO profile,
+    private string BuildSummary(
         List<TourRecommendationItemDTO> tours,
         WeatherAdviceDTO? weather,
         int personaCount)
     {
         if (tours.Count == 0)
         {
-            return "Không có tour thỏa ràng buộc cứng. Thử nới ngân sách hoặc đổi điểm đến.";
+            return _text.SummaryNoTours;
         }
 
-        var weatherNote = weather != null ? $" Thời tiết ({weather.DataSource})." : "";
-        return $"FCAHR đánh giá {personaCount} persona, trả về {tours.Count} tour — điểm công bằng cao nhất {tours[0].Score:P0}.{weatherNote}";
+        var weatherNote = weather != null
+            ? (_text.IsVietnamese ? $" Thời tiết ({weather.DataSource})." : $" Weather ({weather.DataSource}).")
+            : null;
+        return _text.SummaryFound(personaCount, tours.Count, tours[0].Score.ToString("P0"), weatherNote);
     }
 
     private static string? InferCityFromInterests(List<string> interests) =>

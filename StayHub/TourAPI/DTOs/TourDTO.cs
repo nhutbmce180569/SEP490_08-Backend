@@ -21,6 +21,10 @@ namespace TourAPI.DTOs
 
         public string? ImageUrl { get; set; }
 
+        public string? SourceName { get; set; }
+
+        public string? SourceUrl { get; set; }
+
         public int CreatedBy { get; set; }
         public string? CreatedByName { get; set; }
 

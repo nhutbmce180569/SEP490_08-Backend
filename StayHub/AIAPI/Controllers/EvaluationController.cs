@@ -49,6 +49,34 @@ public class EvaluationController : LocalizedControllerBase
     }
 
     [Authorize(Roles = "Admin")]
+    [HttpPost("calibrate-weights")]
+    public async Task<ActionResult<WeightCalibrationResultDTO>> CalibrateWeights(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _evaluationService.CalibrateDimensionWeightsAsync(cancellationToken));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("rag-corpus-ablation")]
+    public async Task<ActionResult<RagCorpusAblationResultDTO>> RagCorpusAblation(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _evaluationService.RunRagCorpusAblationAsync(cancellationToken));
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [Authorize(Roles = "Admin")]
     [HttpPost("run")]
     public async Task<ActionResult<EvaluationRunResponseDTO>> RunEvaluation(
         [FromBody] EvaluationRunRequestDTO request,

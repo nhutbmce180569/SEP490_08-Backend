@@ -2,7 +2,10 @@ using AIAPI.Clients;
 using AIAPI.DTOs;
 using AIAPI.ML;
 using AIAPI.Models;
+using AIAPI.Recommender;
+using AIAPI.Settings;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace AIAPI.Services.Implements;
 
@@ -11,32 +14,69 @@ public class CatalogSyncService : ICatalogSyncService
     private readonly IGatewayCatalogClient _gatewayClient;
     private readonly ICatalogStore _catalogStore;
     private readonly IMlModelRegistry _modelRegistry;
+    private readonly RecommenderSettings _recommenderSettings;
     private readonly ILogger<CatalogSyncService> _logger;
 
     public CatalogSyncService(
         IGatewayCatalogClient gatewayClient,
         ICatalogStore catalogStore,
         IMlModelRegistry modelRegistry,
+        IOptions<RecommenderSettings> recommenderSettings,
         ILogger<CatalogSyncService> logger)
     {
         _gatewayClient = gatewayClient;
         _catalogStore = catalogStore;
         _modelRegistry = modelRegistry;
+        _recommenderSettings = recommenderSettings.Value;
         _logger = logger;
     }
 
     public async Task SyncCatalogAsync(CancellationToken cancellationToken = default)
     {
-        var tours = await _gatewayClient.FetchActiveToursAsync(cancellationToken);
+        var baseTours = (await _gatewayClient.FetchActiveToursAsync(cancellationToken)).ToList();
         var tourism = await _gatewayClient.FetchActiveTourismAsync(cancellationToken);
-        _catalogStore.Update(tours, tourism);
+
+        CatalogAugmentationResult? augmentation = null;
+        var catalogTours = baseTours;
+
+        var aug = _recommenderSettings.CatalogAugmentation;
+        if (aug.Enabled && baseTours.Count > 0)
+        {
+            augmentation = TourCatalogAugmentor.Augment(
+                baseTours,
+                targetSize: aug.TargetCatalogSize,
+                maxVariantsPerBase: aug.MaxVariantsPerBase,
+                jaccardThreshold: aug.JaccardThreshold,
+                priceNoiseSigmaRatio: aug.PriceNoiseSigmaRatio,
+                departureShiftDaysMax: aug.DepartureShiftDaysMax);
+
+            catalogTours = augmentation.Catalog.ToList();
+        }
+
+        var stats = new CatalogStoreStats
+        {
+            BaseTourCount = augmentation?.BaseTourCount ?? baseTours.Count,
+            AugmentedTourCount = augmentation?.VariantCount ?? 0,
+            TotalTourCount = catalogTours.Count,
+            RejectedByJaccard = augmentation?.RejectedByJaccard ?? 0,
+            AvgPairwiseJaccardSample = augmentation?.AvgPairwiseJaccard ?? 0,
+            AugmentationEnabled = aug.Enabled
+        };
+
+        _catalogStore.Update(catalogTours, tourism, stats);
 
         if (_modelRegistry.Status.IsReady)
         {
-            _modelRegistry.AttachCatalogVectors(tours, tourism);
+            _modelRegistry.AttachCatalogVectors(catalogTours, tourism);
         }
 
-        _logger.LogInformation("Synced {TourCount} tours and {TourismCount} tourism records.", tours.Count, tourism.Count);
+        _logger.LogInformation(
+            "Synced catalog: {BaseCount} base tours → {TotalCount} total ({VariantCount} variants, {Rejected} Jaccard rejects), {TourismCount} tourism.",
+            stats.BaseTourCount,
+            stats.TotalTourCount,
+            stats.AugmentedTourCount,
+            stats.RejectedByJaccard,
+            tourism.Count);
     }
 }
 

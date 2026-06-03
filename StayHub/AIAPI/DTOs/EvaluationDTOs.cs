@@ -15,13 +15,56 @@ public class EvaluationRunRequestDTO
 
     /// <summary>json | csv | null (no file export)</summary>
     public string? ExportFormat { get; set; }
+
+    /// <summary>all | validation | test — test uses profiles 30–129 when ProfileCount=130.</summary>
+    public string ProfileSplit { get; set; } = "test";
+
+    public bool CalibrateWeightsOnValidationFirst { get; set; }
+}
+
+public class CatalogStatsDTO
+{
+    public int BaseTourCount { get; set; }
+    public int AugmentedTourCount { get; set; }
+    public int TotalTourCount { get; set; }
+    public int RejectedByJaccard { get; set; }
+    public double AvgPairwiseJaccardSample { get; set; }
+    public bool AugmentationEnabled { get; set; }
+}
+
+public class RagCorpusAblationPointDTO
+{
+    public int CorpusSize { get; set; }
+    public float RecallAt5 { get; set; }
+    public float NdcgAt8Fcahr { get; set; }
+    public float CityCoverageRate { get; set; }
+}
+
+public class RagCorpusAblationResultDTO
+{
+    public IReadOnlyList<RagCorpusAblationPointDTO> Points { get; set; } = Array.Empty<RagCorpusAblationPointDTO>();
+    public string Note { get; set; } = "";
+}
+
+public class WeightCalibrationResultDTO
+{
+    public IReadOnlyDictionary<string, float> CalibratedWeights { get; set; } = new Dictionary<string, float>();
+    public float ValidationHarmonicMean { get; set; }
+    public float ValidationNdcgAt8 { get; set; }
+    public float ValidationAvgMinPersona { get; set; }
+    public int ValidationProfileCount { get; set; }
+    public int CandidateGridSize { get; set; }
+    public string Note { get; set; } = "";
 }
 
 public class EvaluationRunResponseDTO
 {
     public string ProtocolVersion { get; set; } = "";
     public int ProfileCount { get; set; }
+    public string ProfileSplit { get; set; } = "";
+    public int ValidationProfileCount { get; set; }
     public int CatalogTourCount { get; set; }
+    public CatalogStatsDTO? CatalogStats { get; set; }
     public string RelevanceLabelingMethod { get; set; } = "";
     public GroundTruthStatsDTO GroundTruthStats { get; set; } = new();
     public List<BaselineMetricsDTO> BaselineResults { get; set; } = new();

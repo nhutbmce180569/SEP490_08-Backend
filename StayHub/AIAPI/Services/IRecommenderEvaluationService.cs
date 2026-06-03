@@ -8,4 +8,8 @@ public interface IRecommenderEvaluationService
     Task<EvaluationRunResponseDTO> RunOfflineEvaluationAsync(
         EvaluationRunRequestDTO request,
         CancellationToken cancellationToken = default);
+    Task<WeightCalibrationResultDTO> CalibrateDimensionWeightsAsync(
+        CancellationToken cancellationToken = default);
+    Task<RagCorpusAblationResultDTO> RunRagCorpusAblationAsync(
+        CancellationToken cancellationToken = default);
 }

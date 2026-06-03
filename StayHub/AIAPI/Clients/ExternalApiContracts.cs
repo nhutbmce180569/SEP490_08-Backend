@@ -19,6 +19,8 @@ public class ExternalTourDTO
     public string? City { get; set; }
     public string? Address { get; set; }
     public string? ImageUrl { get; set; }
+    public string? SourceName { get; set; }
+    public string? SourceUrl { get; set; }
     public string? Status { get; set; }
     public double? AverageStar { get; set; }
     public List<ExternalTourItineraryDTO>? TourItineraries { get; set; }

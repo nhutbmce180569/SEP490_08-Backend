@@ -2,6 +2,7 @@ using System.Text;
 using AIAPI.BackgroundServices;
 using AIAPI.Clients;
 using AIAPI.Helpers;
+using AIAPI.Localization;
 using AIAPI.ML;
 using AIAPI.Models;
 using AIAPI.Recommender;
@@ -51,7 +52,11 @@ builder.Services.AddHttpClient("Wikidata", client =>
 
 builder.Services.AddSingleton<ICatalogStore, CatalogStore>();
 builder.Services.AddSingleton<IRagKnowledgeIndex, RagKnowledgeIndex>();
-builder.Services.AddSingleton<TourScoringEngine>();
+builder.Services.AddSingleton<IDimensionWeightProvider, DimensionWeightProvider>();
+builder.Services.AddScoped<IAiCultureAccessor, AiCultureAccessor>();
+builder.Services.AddScoped<IAiLocalizedCopy, AiLocalizedCopy>();
+builder.Services.AddScoped<TourScoringEngine>();
+builder.Services.AddScoped<DimensionWeightCalibrator>();
 builder.Services.AddScoped<TourRanker>();
 builder.Services.AddSingleton<IMlModelRegistry, MlModelRegistry>();
 builder.Services.AddSingleton<QueryEntityExtractor>();
