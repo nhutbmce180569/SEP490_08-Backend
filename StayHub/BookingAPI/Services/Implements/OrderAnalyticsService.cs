@@ -42,6 +42,19 @@ namespace BookingAPI.Services.Implements
             return await _orderRepository.GetOrderTrendsAsync(range.From, range.To, granularity);
         }
 
+        public async Task<BookingStatisticsResponseDTO> GetBookingStatisticsAsync(BookingStatisticsRequestDTO request)
+        {
+            if (request == null)
+            {
+                throw new ArgumentException("Request body is required.");
+            }
+
+            ValidateDateRange(request.StartDate, request.EndDate);
+            request.GroupBy = NormalizeBookingStatisticsGroupBy(request.GroupBy);
+
+            return await _orderRepository.GetBookingStatisticsAsync(request);
+        }
+
         public async Task<List<TopCustomerOrderDTO>> GetTopCustomersAsync(
             int top,
             DateTime? from,
@@ -104,6 +117,18 @@ namespace BookingAPI.Services.Implements
         {
             var normalized = (granularity ?? "day").Trim().ToLowerInvariant();
             return normalized is "day" or "week" or "month" ? normalized : "day";
+        }
+
+        private static string NormalizeBookingStatisticsGroupBy(string groupBy)
+        {
+            var normalized = (groupBy ?? "Day").Trim();
+            return normalized.ToLowerInvariant() switch
+            {
+                "day" => "Day",
+                "month" => "Month",
+                "year" => "Year",
+                _ => throw new ArgumentException("GroupBy must be Day, Month, or Year.")
+            };
         }
     }
 }
