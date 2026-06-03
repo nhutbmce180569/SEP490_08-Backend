@@ -266,9 +266,6 @@ namespace BookingAPI.Services.Implements
                     DateOfBirth = ticket.DateOfBirth,
                     Gender = ticket.Gender,
                     Nationality = ticket.Nationality,
-                    CheckInStatus = ticket.CheckInStatus,
-                    PhoneNumber = profile?.PhoneNumber,
-                    AvatarUrl = profile?.AvatarUrl,
                 };
             }).ToList();
         }
