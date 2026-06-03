@@ -3,18 +3,21 @@ using BookingAPI.DTOs;
 using BookingAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 
 namespace BookingAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class TicketsController : ControllerBase
+    public class TicketsController : LocalizedControllerBase
     {
         private readonly ITicketService _ticketService;
 
-        public TicketsController(ITicketService ticketService)
-        {
-            _ticketService = ticketService;
+        public TicketsController(ITicketService ticketService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_ticketService = ticketService;
         }
 
         [HttpGet("my-tickets")]
@@ -24,7 +27,7 @@ namespace BookingAPI.Controllers
             var userId = GetCurrentUserId();
             if (userId == null)
             {
-                return Unauthorized(new { message = "Unable to determine current user." });
+                return Unauthorized(new { message = M("UnableToDetermineCurrentUser") });
             }
 
             var tickets = await _ticketService.GetTicketsByUserIdAsync(userId.Value);
@@ -49,14 +52,14 @@ namespace BookingAPI.Controllers
                 var staffId = GetCurrentUserId();
                 if (staffId == null)
                 {
-                    return Unauthorized(new { message = "Không xác định được danh tính nhân viên." });
+                    return Unauthorized(new { message = M("StaffIdentityNotDetermined") });
                 }
 
                 var result = await _ticketService.CheckInTicketAsync(request);
 
                 return Ok(new
                 {
-                    message = "Điểm danh (Check-in) thành công!",
+                    message = M("CheckInSuccessful"),
                     data = result
                 });
             }
@@ -70,7 +73,7 @@ namespace BookingAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Lỗi hệ thống trong quá trình điểm danh.", error = ex.Message });
+                return StatusCode(500, new { message = M("CheckInSystemError"), error = ex.Message });
             }
         }
         private int? GetCurrentUserId()

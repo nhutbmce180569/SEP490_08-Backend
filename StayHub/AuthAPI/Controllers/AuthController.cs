@@ -1,19 +1,22 @@
 ﻿using AuthAPI.DTOs;
 using AuthAPI.Services;
-using AuthAPI.Services.Implements;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 using System.Security.Claims;
 
 namespace AuthAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthController : ControllerBase
+    public class AuthController : LocalizedControllerBase
     {
         private readonly IAuthService _authService;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IAuthService authService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
         {
             _authService = authService;
         }
@@ -22,103 +25,75 @@ namespace AuthAPI.Controllers
         public async Task<IActionResult> Login([FromBody] LoginDTO loginDTO)
         {
             if (!ModelState.IsValid)
-            {
-                return BadRequest(new { message = "Invalid input data." });
-            }
+                return BadRequest(new { message = M("InvalidInputData") });
 
             var response = await _authService.Login(loginDTO);
-
             if (response == null)
-            {
-                return Unauthorized(new { message = "Invalid email or password, or account is not active." });
-            }
+                return Unauthorized(new { message = M("InvalidEmailOrPassword") });
 
-            return Ok(new { message = "Login successful.", data = response });
+            return Ok(new { message = M("LoginSuccessful"), data = response });
         }
 
         [HttpPost("google-login")]
         public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginDTO googleLoginDTO)
         {
             if (!ModelState.IsValid)
-            {
-                return BadRequest(new { message = "Invalid input data." });
-            }
+                return BadRequest(new { message = M("InvalidInputData") });
 
             var response = await _authService.GoogleLogin(googleLoginDTO);
-
             if (response == null)
-            {
-                return Unauthorized(new { message = "Invalid Google token or account is locked." });
-            }
+                return Unauthorized(new { message = M("InvalidGoogleToken") });
 
-            return Ok(new { message = "Google login successful.", data = response });
+            return Ok(new { message = M("GoogleLoginSuccessful"), data = response });
         }
 
         [HttpPost("facebook-login")]
         public async Task<IActionResult> FacebookLogin([FromBody] FacebookLoginDTO request)
         {
             if (string.IsNullOrEmpty(request.AccessToken))
-            {
-                return BadRequest(new { message = "Access token is required." });
-            }
+                return BadRequest(new { message = M("AccessTokenRequired") });
 
             var response = await _authService.FacebookLogin(request.AccessToken);
-
             if (response == null)
-            {
-                return Unauthorized(new { message = "Invalid Facebook token or account is locked." });
-            }
+                return Unauthorized(new { message = M("InvalidFacebookToken") });
 
-            return Ok(new { message = "Facebook login successful.", data = response });
+            return Ok(new { message = M("FacebookLoginSuccessful"), data = response });
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDTO registerDTO)
         {
             if (!ModelState.IsValid)
-            {
-                return BadRequest(new { message = "Invalid registration data." });
-            }
+                return BadRequest(new { message = M("InvalidRegistrationData") });
 
             var response = await _authService.Register(registerDTO);
-
             if (response == null)
-            {
-                return Conflict(new { message = "Email is already in use." });
-            }
+                return Conflict(new { message = M("EmailAlreadyInUse") });
 
-            return Ok(new { message = "Registration successful.", data = response });
+            return Ok(new { message = M("RegistrationSuccessful"), data = response });
         }
 
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDTO request)
         {
             if (string.IsNullOrEmpty(request.RefreshToken))
-            {
-                return BadRequest(new { message = "Refresh token is required." });
-            }
+                return BadRequest(new { message = M("RefreshTokenRequired") });
 
             var response = await _authService.RefreshToken(request.RefreshToken);
-
             if (response == null)
-            {
-                return Unauthorized(new { message = "Invalid or expired refresh token. Please login again." });
-            }
+                return Unauthorized(new { message = M("InvalidRefreshToken") });
 
-            return Ok(new { message = "Token refreshed successfully.", data = response });
+            return Ok(new { message = M("TokenRefreshedSuccessfully"), data = response });
         }
 
         [HttpPost("logout")]
         public async Task<IActionResult> Logout([FromBody] RefreshTokenRequestDTO request)
         {
             if (string.IsNullOrEmpty(request.RefreshToken))
-            {
-                return BadRequest(new { message = "Refresh token is required." });
-            }
+                return BadRequest(new { message = M("RefreshTokenRequired") });
 
             await _authService.Logout(request.RefreshToken);
-
-            return Ok(new { message = "Logged out successfully." });
+            return Ok(new { message = M("LoggedOutSuccessfully") });
         }
 
         [HttpGet("profile")]
@@ -129,48 +104,34 @@ namespace AuthAPI.Controllers
                               ?? User.FindFirst("id")?.Value;
 
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
-            {
-                return Unauthorized(new { message = "Invalid token claims." });
-            }
+                return Unauthorized(new { message = M("InvalidTokenClaims") });
 
             var profile = await _authService.GetProfileAsync(userId);
             if (profile == null)
-            {
-                return NotFound(new { message = "User not found or account is inactive." });
-            }
+                return NotFound(new { message = M("UserNotFoundOrInactive") });
 
-            return Ok(new { message = "Profile retrieved successfully.", data = profile });
+            return Ok(new { message = M("ProfileRetrievedSuccessfully"), data = profile });
         }
 
         [HttpPut("profile")]
         [Authorize]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UpdateProfile([FromForm] UpdateProfileDTO dto) // ĐÃ SỬA: Dùng FromForm thay vì FromBody
+        public async Task<IActionResult> UpdateProfile([FromForm] UpdateProfileDTO dto)
         {
             if (!ModelState.IsValid)
-            {
-                return BadRequest(new { message = "Invalid input data." });
-            }
+                return BadRequest(new { message = M("InvalidInputData") });
 
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                               ?? User.FindFirst("id")?.Value;
 
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
-            {
-                return Unauthorized(new { message = "Invalid token claims." });
-            }
+                return Unauthorized(new { message = M("InvalidTokenClaims") });
 
             var response = await _authService.UpdateProfileAsync(userId, dto);
             if (response == null)
-            {
-                return BadRequest(new { message = "Failed to update profile. User not found or inactive." });
-            }
+                return BadRequest(new { message = M("FailedToUpdateProfile") });
 
-            return Ok(new
-            {
-                message = "Profile updated successfully. Fresh tokens issued to update client claims.",
-                data = response
-            });
+            return Ok(new { message = M("ProfileUpdatedSuccessfully"), data = response });
         }
 
         [HttpPost("change-password")]
@@ -181,53 +142,36 @@ namespace AuthAPI.Controllers
                               ?? User.FindFirst("id")?.Value;
 
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
-            {
-                return Unauthorized(new { message = "Invalid token claims." });
-            }
+                return Unauthorized(new { message = M("InvalidTokenClaims") });
 
             var response = await _authService.ChangePassword(userId, dto);
-
             if (response == null)
-            {
-                return BadRequest(new { message = "Password change failed. Incorrect old password or invalid account." });
-            }
+                return BadRequest(new { message = M("PasswordChangeFailed") });
 
-            return Ok(new
-            {
-                message = "Password changed successfully. All other devices have been logged out.",
-                data = response
-            });
+            return Ok(new { message = M("PasswordChangedSuccessfully"), data = response });
         }
 
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO dto)
         {
             if (!ModelState.IsValid)
-            {
-                return BadRequest(new { message = "Invalid input data." });
-            }
+                return BadRequest(new { message = M("InvalidInputData") });
 
             await _authService.ForgotPassword(dto);
-
-            return Ok(new { message = "If the email is registered, a password reset code has been sent." });
+            return Ok(new { message = M("ForgotPasswordSuccess") });
         }
 
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO dto)
         {
             if (!ModelState.IsValid)
-            {
-                return BadRequest(new { message = "Invalid input data." });
-            }
+                return BadRequest(new { message = M("InvalidInputData") });
 
             var isSuccess = await _authService.ResetPassword(dto);
-
             if (!isSuccess)
-            {
-                return BadRequest(new { message = "Invalid or expired verification code, or account is not eligible." });
-            }
+                return BadRequest(new { message = M("ResetPasswordFailed") });
 
-            return Ok(new { message = "Password has been reset successfully. All other devices have been logged out. You can now login." });
+            return Ok(new { message = M("PasswordResetSuccessfully") });
         }
     }
 }

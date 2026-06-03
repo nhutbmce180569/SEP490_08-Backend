@@ -2,18 +2,21 @@ using ContentAPI.DTOs;
 using ContentAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 
 namespace ContentAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class TourismInformationController : ControllerBase
+    public class TourismInformationController : LocalizedControllerBase
     {
         private readonly ITourismInformationService _tourismInformationService;
 
-        public TourismInformationController(ITourismInformationService tourismInformationService)
-        {
-            _tourismInformationService = tourismInformationService;
+        public TourismInformationController(ITourismInformationService tourismInformationService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_tourismInformationService = tourismInformationService;
         }
 
         // GET: api/TourismInformation?page=1&pageSize=10&searchTerm=beach&type=Destination&status=Active&city=Da Lat
@@ -58,7 +61,7 @@ namespace ContentAPI.Controllers
             var tourismInfo = await _tourismInformationService.GetByIdAsync(id);
             if (tourismInfo == null)
             {
-                return NotFound(new { message = "Tourism information not found." });
+                return NotFound(new { message = M("TourismInformationNotFound") });
             }
 
             return Ok(tourismInfo);
@@ -102,10 +105,10 @@ namespace ContentAPI.Controllers
                 var result = await _tourismInformationService.UpdateAsync(id, dto);
                 if (!result)
                 {
-                    return NotFound(new { message = "Tourism information not found." });
+                    return NotFound(new { message = M("TourismInformationNotFound") });
                 }
 
-                return Ok(new { message = "Tourism information updated successfully." });
+                return Ok(new { message = M("TourismInformationUpdatedSuccessfully") });
             }
             catch (InvalidOperationException ex)
             {
@@ -123,10 +126,10 @@ namespace ContentAPI.Controllers
                 var result = await _tourismInformationService.ChangeStatusAsync(id, true);
                 if (!result)
                 {
-                    return NotFound(new { message = "Tourism information not found." });
+                    return NotFound(new { message = M("TourismInformationNotFound") });
                 }
 
-                return Ok(new { message = "Tourism information activated successfully." });
+                return Ok(new { message = M("TourismInformationActivatedSuccessfully") });
             }
             catch (InvalidOperationException ex)
             {
@@ -144,10 +147,10 @@ namespace ContentAPI.Controllers
                 var result = await _tourismInformationService.ChangeStatusAsync(id, false);
                 if (!result)
                 {
-                    return NotFound(new { message = "Tourism information not found." });
+                    return NotFound(new { message = M("TourismInformationNotFound") });
                 }
 
-                return Ok(new { message = "Tourism information deactivated successfully." });
+                return Ok(new { message = M("TourismInformationDeactivatedSuccessfully") });
             }
             catch (InvalidOperationException ex)
             {

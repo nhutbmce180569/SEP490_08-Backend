@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using StayHub.Common.Localization;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
 using System.Text;
@@ -133,7 +134,8 @@ namespace TourAPI
            .AddHttpMessageHandler<AuthorizationHeaderHandler>();
             // Add services to the container.
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers().AddStayHubDataAnnotationsLocalization();
+            builder.Services.AddStayHubLocalization();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             // Swagger with Bearer JWT security
@@ -211,6 +213,7 @@ namespace TourAPI
 
             app.UseHttpsRedirection();
             app.UseCors("FrontendDev");
+            app.UseStayHubLocalization();
 
            
             app.UseRouting();

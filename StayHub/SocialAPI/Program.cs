@@ -20,6 +20,7 @@ using SocialAPI.Repositories;
 using SocialAPI.Repositories.Implements;
 using SocialAPI.Services;
 using SocialAPI.Services.Implements;
+using StayHub.Common.Localization;
 using StackExchange.Redis;
 using System.Text;
 
@@ -39,7 +40,8 @@ namespace SocialAPI
             builder.Services.AddControllers().AddOData(options =>
                 options.Select().Filter().OrderBy().Expand().Count().SetMaxTop(100)
                        .AddRouteComponents("api", GetEdmModel())
-            );
+            ).AddStayHubDataAnnotationsLocalization();
+            builder.Services.AddStayHubLocalization();
             builder.Services.AddScoped<IChatRepository, ChatRepository>();
             builder.Services.AddScoped<IChatService, ChatService>();
             builder.Services.AddFluentValidationAutoValidation();
@@ -183,6 +185,7 @@ namespace SocialAPI
             app.UseHttpsRedirection();
 
             app.UseCors("AllowSignalR");
+            app.UseStayHubLocalization();
 
             app.UseAuthentication();
             app.UseAuthorization();

@@ -1,6 +1,9 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 using VoucherAPI.DTOs;
 using VoucherAPI.Services;
 
@@ -9,11 +12,14 @@ namespace VoucherAPI.Controllers;
 [Authorize]
 [Route("api/customer/vouchers")]
 [ApiController]
-public class CustomerVouchersController : ControllerBase
+public class CustomerVouchersController : LocalizedControllerBase
 {
     private readonly ICustomerVoucherService _customerVoucherService;
 
-    public CustomerVouchersController(ICustomerVoucherService customerVoucherService)
+    public CustomerVouchersController(
+        ICustomerVoucherService customerVoucherService,
+        IStringLocalizer<Messages> localizer)
+        : base(localizer)
     {
         _customerVoucherService = customerVoucherService;
     }
@@ -26,10 +32,15 @@ public class CustomerVouchersController : ControllerBase
             return BadRequest(ModelState);
         }
 
+        var userId = GetCurrentUserId();
+        if (userId == null)
+        {
+            return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
+        }
+
         try
         {
-            var userId = GetCurrentUserId();
-            var result = await _customerVoucherService.SaveVoucherAsync(userId, dto.Code);
+            var result = await _customerVoucherService.SaveVoucherAsync(userId.Value, dto.Code);
             return CreatedAtAction(nameof(GetMySavedVouchers), result);
         }
         catch (Exception ex)
@@ -44,10 +55,15 @@ public class CustomerVouchersController : ControllerBase
         [FromQuery] int pageSize = 10,
         [FromQuery] string? status = null)
     {
+        var userId = GetCurrentUserId();
+        if (userId == null)
+        {
+            return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
+        }
+
         try
         {
-            var userId = GetCurrentUserId();
-            var result = await _customerVoucherService.GetMySavedVouchersAsync(userId, page, pageSize, status);
+            var result = await _customerVoucherService.GetMySavedVouchersAsync(userId.Value, page, pageSize, status);
             return Ok(result);
         }
         catch (Exception ex)
@@ -64,10 +80,15 @@ public class CustomerVouchersController : ControllerBase
             return BadRequest(ModelState);
         }
 
+        var userId = GetCurrentUserId();
+        if (userId == null)
+        {
+            return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
+        }
+
         try
         {
-            var userId = GetCurrentUserId();
-            var result = await _customerVoucherService.ApplyVoucherAsync(userId, dto);
+            var result = await _customerVoucherService.ApplyVoucherAsync(userId.Value, dto);
             return Ok(result);
         }
         catch (Exception ex)
@@ -84,10 +105,15 @@ public class CustomerVouchersController : ControllerBase
             return BadRequest(ModelState);
         }
 
+        var userId = GetCurrentUserId();
+        if (userId == null)
+        {
+            return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
+        }
+
         try
         {
-            var userId = GetCurrentUserId();
-            var result = await _customerVoucherService.RedeemVoucherAsync(userId, dto);
+            var result = await _customerVoucherService.RedeemVoucherAsync(userId.Value, dto);
             return Ok(result);
         }
         catch (Exception ex)
@@ -96,14 +122,14 @@ public class CustomerVouchersController : ControllerBase
         }
     }
 
-    private int GetCurrentUserId()
+    private int? GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
             ?? User.FindFirst("id")?.Value;
 
         if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
         {
-            throw new Exception("Cannot extract user ID from token.");
+            return null;
         }
 
         return userId;

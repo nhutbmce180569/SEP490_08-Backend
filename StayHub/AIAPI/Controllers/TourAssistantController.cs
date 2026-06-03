@@ -4,12 +4,15 @@ using AIAPI.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 
 namespace AIAPI.Controllers;
 
 [Route("api/ai/tour-assistant")]
 [ApiController]
-public class TourAssistantController : ControllerBase
+public class TourAssistantController : LocalizedControllerBase
 {
     private readonly ITourAssistantService _assistantService;
     private readonly ITourSemanticSearchService _searchService;
@@ -31,9 +34,9 @@ public class TourAssistantController : ControllerBase
         IValidator<NaturalLanguageSearchRequestDTO> searchValidator,
         IValidator<TourConsultationRequestDTO> consultValidator,
         IValidator<LogInteractionRequestDTO> interactionValidator,
-        IValidator<TourPreferenceQuestionnaireDTO> profileValidator)
-    {
-        _assistantService = assistantService;
+        IValidator<TourPreferenceQuestionnaireDTO> profileValidator, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_assistantService = assistantService;
         _searchService = searchService;
         _recommendationService = recommendationService;
         _personalizedService = personalizedService;
@@ -133,7 +136,7 @@ public class TourAssistantController : ControllerBase
     {
         if (top <= 0 || top > 30)
         {
-            return BadRequest(new { message = "Top must be between 1 and 30." });
+            return BadRequest(new { message = M("TopMustBeBetween1And30") });
         }
 
         try
@@ -144,7 +147,7 @@ public class TourAssistantController : ControllerBase
         }
         catch (UnauthorizedAccessException)
         {
-            return Unauthorized(new { message = "Login required for personalized recommendations." });
+            return Unauthorized(new { message = M("LoginRequiredForPersonalizedRecommendations") });
         }
         catch (Exception ex)
         {
@@ -161,7 +164,7 @@ public class TourAssistantController : ControllerBase
     {
         if (top <= 0 || top > 20)
         {
-            return BadRequest(new { message = "Top must be between 1 and 20." });
+            return BadRequest(new { message = M("TopMustBeBetween1And20") });
         }
 
         try
@@ -208,7 +211,7 @@ public class TourAssistantController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
         {
-            return BadRequest(new { message = "Query must be at least 2 characters." });
+            return BadRequest(new { message = M("QueryMustBeAtLeast2Characters") });
         }
 
         try
@@ -235,7 +238,7 @@ public class TourAssistantController : ControllerBase
         try
         {
             await _assistantService.LogInteractionAsync(GetRequiredCustomerId(), request, cancellationToken);
-            return Ok(new { message = "Interaction logged for ML retraining signals." });
+            return Ok(new { message = M("InteractionLoggedForMLRetrainingSignals") });
         }
         catch (Exception ex)
         {

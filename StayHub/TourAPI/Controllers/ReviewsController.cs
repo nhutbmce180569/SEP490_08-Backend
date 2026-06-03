@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 using System;
 using System.Linq;
 using System.Security.Claims;
@@ -12,13 +15,13 @@ namespace TourAPI.Controllers
     [Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    public class ReviewsController : ControllerBase
+    public class ReviewsController : LocalizedControllerBase
     {
         private readonly IReviewService _reviewService;
 
-        public ReviewsController(IReviewService reviewService)
-        {
-            _reviewService = reviewService;
+        public ReviewsController(IReviewService reviewService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_reviewService = reviewService;
         }
 
         private int GetCurrentUserId()
@@ -87,7 +90,7 @@ namespace TourAPI.Controllers
                 var currentUserId = GetCurrentUserId();
                 var review = await _reviewService.GetMyReviewByTourAsync(tourId, currentUserId);
                 if (review == null)
-                    return NotFound(new { message = "No review found for this tour." });
+                    return NotFound(new { message = M("NoReviewFoundForThisTour") });
 
                 return Ok(review);
             }

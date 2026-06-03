@@ -3,6 +3,9 @@ using BookingAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -12,13 +15,13 @@ namespace BookingAPI.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class CancellationRequestController : ControllerBase
+    public class CancellationRequestController : LocalizedControllerBase
     {
         private readonly ICancellationService _cancellationService;
 
-        public CancellationRequestController(ICancellationService cancellationService)
-        {
-            _cancellationService = cancellationService;
+        public CancellationRequestController(ICancellationService cancellationService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_cancellationService = cancellationService;
         }
 
         [HttpPost]
@@ -30,14 +33,14 @@ namespace BookingAPI.Controllers
 
                 if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int customerId))
                 {
-                    return Unauthorized(new { message = "User identity could not be verified." });
+                    return Unauthorized(new { message = M("UserIdentityCouldNotBeVerified") });
                 }
 
                 var result = await _cancellationService.CreateCancellationRequestAsync(customerId, dto);
 
                 return Ok(new
                 {
-                    message = "Cancellation request submitted successfully. Please wait for admin approval.",
+                    message = M("CancellationRequestSubmittedSuccessfullyPleaseWaitForAdmin"),
                     data = result
                 });
             }
@@ -63,7 +66,7 @@ namespace BookingAPI.Controllers
 
                 return Ok(new
                 {
-                    message = "Retrieved cancellation requests successfully.",
+                    message = M("RetrievedCancellationRequestsSuccessfully"),
                     data = result
                 });
             }
@@ -82,7 +85,7 @@ namespace BookingAPI.Controllers
                 var result = await _cancellationService.GetCancellationRequestDetailsAsync(id);
                 return Ok(new
                 {
-                    message = "Retrieved cancellation request details successfully.",
+                    message = M("RetrievedCancellationRequestDetailsSuccessfully"),
                     data = result
                 });
             }
@@ -102,7 +105,7 @@ namespace BookingAPI.Controllers
 
                 if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int processedByUserId))
                 {
-                    return Unauthorized(new { message = "Admin/Staff identity could not be verified." });
+                    return Unauthorized(new { message = M("AdminStaffIdentityCouldNotBeVerified") });
                 }
 
                 var result = await _cancellationService.ProcessCancellationRequestAsync(id, processedByUserId, dto);

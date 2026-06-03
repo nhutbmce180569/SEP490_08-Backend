@@ -2,18 +2,21 @@
 using AuthAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 
 namespace AuthAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class RolesController : ControllerBase
+    public class RolesController : LocalizedControllerBase
     {
         private readonly IRoleService _roleService;
 
-        public RolesController(IRoleService roleService)
-        {
-            _roleService = roleService;
+        public RolesController(IRoleService roleService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_roleService = roleService;
         }
 
         // GET: api/roles
@@ -21,7 +24,7 @@ namespace AuthAPI.Controllers
         public async Task<IActionResult> GetAllRoles()
         {
             var roles = await _roleService.GetAllRoles();
-            return Ok(new { message = "Roles retrieved successfully.", data = roles });
+            return Ok(new { message = M("RolesRetrievedSuccessfully"), data = roles });
         }
 
         // GET: api/roles/{id}
@@ -35,7 +38,7 @@ namespace AuthAPI.Controllers
                 return NotFound(new { message = $"Role with ID {id} not found." });
             }
 
-            return Ok(new { message = "Role retrieved successfully.", data = role });
+            return Ok(new { message = M("RoleRetrievedSuccessfully"), data = role });
         }
 
         // GET: api/roles/name/{name}
@@ -44,7 +47,7 @@ namespace AuthAPI.Controllers
         {
             if (string.IsNullOrWhiteSpace(name))
             {
-                return BadRequest(new { message = "Role name cannot be empty." });
+                return BadRequest(new { message = M("RoleNameCannotBeEmpty") });
             }
 
             var role = await _roleService.GetRoleByName(name);
@@ -54,7 +57,7 @@ namespace AuthAPI.Controllers
                 return NotFound(new { message = $"Role with name '{name}' not found." });
             }
 
-            return Ok(new { message = "Role retrieved successfully.", data = role });
+            return Ok(new { message = M("RoleRetrievedSuccessfully"), data = role });
         }
     }
 }

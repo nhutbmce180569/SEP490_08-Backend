@@ -1,6 +1,9 @@
 using AuthAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 
 namespace AuthAPI.Controllers
 {
@@ -8,13 +11,13 @@ namespace AuthAPI.Controllers
     [Route("api/internal/analytics/platform")]
     [ApiController]
     [Authorize(Roles = "Admin")]
-    public class InternalPlatformAnalyticsController : ControllerBase
+    public class InternalPlatformAnalyticsController : LocalizedControllerBase
     {
         private readonly IUserService _userService;
 
-        public InternalPlatformAnalyticsController(IUserService userService)
-        {
-            _userService = userService;
+        public InternalPlatformAnalyticsController(IUserService userService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_userService = userService;
         }
 
         [HttpGet("users")]
@@ -26,7 +29,7 @@ namespace AuthAPI.Controllers
             try
             {
                 var result = await _userService.GetPlatformUserStatsAsync(from, to, granularity);
-                return Ok(new { message = "Platform user stats retrieved successfully.", data = result });
+                return Ok(new { message = M("PlatformUserStatsRetrievedSuccessfully"), data = result });
             }
             catch (ArgumentException ex)
             {
@@ -34,7 +37,7 @@ namespace AuthAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Failed to retrieve platform user stats.", details = ex.Message });
+                return StatusCode(500, new { message = M("FailedToRetrievePlatformUserStats"), details = ex.Message });
             }
         }
     }

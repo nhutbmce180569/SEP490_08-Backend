@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 using SocialAPI.Services;
 
 namespace SocialAPI.Controllers;
@@ -8,13 +11,13 @@ namespace SocialAPI.Controllers;
 [Route("api/internal/analytics/platform")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class InternalPlatformAnalyticsController : ControllerBase
+public class InternalPlatformAnalyticsController : LocalizedControllerBase
 {
     private readonly IPlatformAnalyticsService _platformAnalyticsService;
 
-    public InternalPlatformAnalyticsController(IPlatformAnalyticsService platformAnalyticsService)
-    {
-        _platformAnalyticsService = platformAnalyticsService;
+    public InternalPlatformAnalyticsController(IPlatformAnalyticsService platformAnalyticsService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_platformAnalyticsService = platformAnalyticsService;
     }
 
     [HttpGet("social")]
@@ -23,11 +26,11 @@ public class InternalPlatformAnalyticsController : ControllerBase
         try
         {
             var result = await _platformAnalyticsService.GetSocialStatsAsync();
-            return Ok(new { message = "Platform social stats retrieved successfully.", data = result });
+            return Ok(new { message = M("PlatformSocialStatsRetrievedSuccessfully"), data = result });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "Failed to retrieve platform social stats.", details = ex.Message });
+            return StatusCode(500, new { message = M("FailedToRetrievePlatformSocialStats"), details = ex.Message });
         }
     }
 }

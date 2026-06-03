@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 using PaymentAPI.DTOs;
 using PaymentAPI.Services;
 
@@ -7,14 +10,14 @@ namespace PaymentAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class VNPayController : ControllerBase
+    public class VNPayController : LocalizedControllerBase
     {
         private readonly IVnPayService _vnPayService;
         private readonly IConfiguration _configuration;
 
-        public VNPayController(IVnPayService vnPayService, IConfiguration configuration)
-        {
-            _vnPayService = vnPayService;
+        public VNPayController(IVnPayService vnPayService, IConfiguration configuration, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_vnPayService = vnPayService;
             _configuration = configuration;
         }
 
@@ -64,10 +67,10 @@ namespace PaymentAPI.Controllers
             var confirmed = await _vnPayService.ConfirmOrderPaymentAsync(orderId);
             if (!confirmed)
             {
-                return BadRequest(new { message = "Payment not completed or order could not be updated." });
+                return BadRequest(new { message = M("PaymentNotCompletedOrOrderCouldNotBeUpdated") });
             }
 
-            return Ok(new { message = "Order payment confirmed.", orderId });
+            return Ok(new { message = M("OrderPaymentConfirmed"), orderId });
         }
 
         [HttpPost("cancel/{orderId}")]
@@ -77,10 +80,10 @@ namespace PaymentAPI.Controllers
             var cancelled = await _vnPayService.CancelOrderPaymentAsync(orderId);
             if (!cancelled)
             {
-                return BadRequest(new { message = "Payment was already completed or order could not be cancelled." });
+                return BadRequest(new { message = M("PaymentWasAlreadyCompletedOrOrderCouldNotBeCancelled") });
             }
 
-            return Ok(new { message = "Order cancelled due to payment cancellation.", orderId });
+            return Ok(new { message = M("OrderCancelledDueToPaymentCancellation"), orderId });
         }
     }
 }

@@ -1,6 +1,9 @@
 using BookingAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Controllers;
+using StayHub.Common.Resources;
 
 namespace BookingAPI.Controllers
 {
@@ -8,13 +11,13 @@ namespace BookingAPI.Controllers
     [Route("api/internal/analytics/orders")]
     [ApiController]
     [Authorize(Roles = "Manager,Admin")]
-    public class InternalOrderAnalyticsController : ControllerBase
+    public class InternalOrderAnalyticsController : LocalizedControllerBase
     {
         private readonly IOrderAnalyticsService _orderAnalyticsService;
 
-        public InternalOrderAnalyticsController(IOrderAnalyticsService orderAnalyticsService)
-        {
-            _orderAnalyticsService = orderAnalyticsService;
+        public InternalOrderAnalyticsController(IOrderAnalyticsService orderAnalyticsService, IStringLocalizer<Messages> localizer)
+            : base(localizer)
+        {_orderAnalyticsService = orderAnalyticsService;
         }
 
         [HttpGet("overview")]
@@ -23,7 +26,7 @@ namespace BookingAPI.Controllers
             try
             {
                 var result = await _orderAnalyticsService.GetOverviewAsync(from, to);
-                return Ok(new { message = "Order overview retrieved successfully.", data = result });
+                return Ok(new { message = M("OrderOverviewRetrievedSuccessfully"), data = result });
             }
             catch (ArgumentException ex)
             {
@@ -40,7 +43,7 @@ namespace BookingAPI.Controllers
             try
             {
                 var result = await _orderAnalyticsService.GetSegmentsAsync(from, to, totalCustomers);
-                return Ok(new { message = "Customer order segments retrieved successfully.", data = result });
+                return Ok(new { message = M("CustomerOrderSegmentsRetrievedSuccessfully"), data = result });
             }
             catch (ArgumentException ex)
             {
@@ -57,7 +60,7 @@ namespace BookingAPI.Controllers
             try
             {
                 var result = await _orderAnalyticsService.GetTrendsAsync(from, to, granularity);
-                return Ok(new { message = "Order trends retrieved successfully.", data = result });
+                return Ok(new { message = M("OrderTrendsRetrievedSuccessfully"), data = result });
             }
             catch (ArgumentException ex)
             {
@@ -74,7 +77,7 @@ namespace BookingAPI.Controllers
             try
             {
                 var result = await _orderAnalyticsService.GetTopCustomersAsync(top, from, to);
-                return Ok(new { message = "Top customers retrieved successfully.", data = result });
+                return Ok(new { message = M("TopCustomersRetrievedSuccessfully"), data = result });
             }
             catch (ArgumentException ex)
             {
@@ -92,16 +95,16 @@ namespace BookingAPI.Controllers
             {
                 if (request?.CustomerIds == null || request.CustomerIds.Count == 0)
                 {
-                    return BadRequest(new { message = "Customer IDs list cannot be empty." });
+                    return BadRequest(new { message = M("CustomerIDsListCannotBeEmpty") });
                 }
 
                 if (request.CustomerIds.Count > 100)
                 {
-                    return BadRequest(new { message = "Cannot request metrics for more than 100 customers at once." });
+                    return BadRequest(new { message = M("CannotRequestMetricsForMoreThan100CustomersAtOnce") });
                 }
 
                 var result = await _orderAnalyticsService.GetCustomerMetricsAsync(request.CustomerIds, from, to);
-                return Ok(new { message = "Customer order metrics retrieved successfully.", data = result });
+                return Ok(new { message = M("CustomerOrderMetricsRetrievedSuccessfully"), data = result });
             }
             catch (ArgumentException ex)
             {
@@ -120,10 +123,10 @@ namespace BookingAPI.Controllers
                 var result = await _orderAnalyticsService.GetCustomerMetricsByIdAsync(customerId, from, to);
                 if (result == null)
                 {
-                    return Ok(new { message = "No order data found for this customer.", data = (object?)null });
+                    return Ok(new { message = M("NoOrderDataFoundForThisCustomer"), data = (object?)null });
                 }
 
-                return Ok(new { message = "Customer order metrics retrieved successfully.", data = result });
+                return Ok(new { message = M("CustomerOrderMetricsRetrievedSuccessfully"), data = result });
             }
             catch (ArgumentException ex)
             {
