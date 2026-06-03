@@ -1,5 +1,64 @@
 namespace BookingAPI.DTOs
 {
+    public class BookingStatisticsRequestDTO
+    {
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public string GroupBy { get; set; } = "Day";
+    }
+
+    public class BookingStatisticsMetricsDTO
+    {
+        public long TotalRevenue { get; set; }
+        public long TotalDiscount { get; set; }
+        public long TotalRefundAmount { get; set; }
+        public int TotalOrders { get; set; }
+        public int TotalTicketsSold { get; set; }
+    }
+
+    public class RevenueTrendPointDTO
+    {
+        public string Period { get; set; } = null!;
+        public long Revenue { get; set; }
+        public int OrderCount { get; set; }
+    }
+
+    public class TicketTypeSalesDTO
+    {
+        public int TicketTypeId { get; set; }
+        public int QuantitySold { get; set; }
+        public long Revenue { get; set; }
+    }
+
+    public class OrdersByHourDTO
+    {
+        public int Hour { get; set; }
+        public int OrderCount { get; set; }
+    }
+
+    public class CheckInStatusRatioDTO
+    {
+        public string Status { get; set; } = null!;
+        public int TicketCount { get; set; }
+        public decimal Percentage { get; set; }
+    }
+
+    public class CancellationReasonStatsDTO
+    {
+        public string Reason { get; set; } = null!;
+        public int Count { get; set; }
+    }
+
+    public class BookingStatisticsResponseDTO
+    {
+        public BookingStatisticsMetricsDTO Metrics { get; set; } = new();
+        public List<RevenueTrendPointDTO> RevenueTrend { get; set; } = [];
+        public List<TicketTypeSalesDTO> SalesByTicketType { get; set; } = [];
+        public List<OrdersByHourDTO> OrdersByHour { get; set; } = [];
+        public List<CheckInStatusRatioDTO> CheckInRatio { get; set; } = [];
+        public List<CancellationReasonStatsDTO> TopCancellationReasons { get; set; } = [];
+    }
+
     public class OrderAnalyticsOverviewDTO
     {
         public int TotalOrders { get; set; }

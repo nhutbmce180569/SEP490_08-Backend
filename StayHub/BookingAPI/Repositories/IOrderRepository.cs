@@ -28,6 +28,8 @@ namespace BookingAPI.Repositories
 
         Task<List<OrderTrendPointDTO>> GetOrderTrendsAsync(DateTime from, DateTime to, string granularity);
 
+        Task<BookingStatisticsResponseDTO> GetBookingStatisticsAsync(BookingStatisticsRequestDTO request);
+
         Task<List<TopCustomerOrderDTO>> GetTopCustomersAsync(int top, DateTime? from, DateTime? to);
 
         Task<List<CustomerOrderMetricsDTO>> GetCustomerOrderMetricsAsync(List<int> customerIds, DateTime? from, DateTime? to);
