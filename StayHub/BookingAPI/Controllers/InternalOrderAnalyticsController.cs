@@ -1,3 +1,4 @@
+using BookingAPI.DTOs;
 using BookingAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -61,6 +62,20 @@ namespace BookingAPI.Controllers
             {
                 var result = await _orderAnalyticsService.GetTrendsAsync(from, to, granularity);
                 return Ok(new { message = M("OrderTrendsRetrievedSuccessfully"), data = result });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("booking-statistics")]
+        public async Task<IActionResult> GetBookingStatistics([FromBody] BookingStatisticsRequestDTO request)
+        {
+            try
+            {
+                var result = await _orderAnalyticsService.GetBookingStatisticsAsync(request);
+                return Ok(new { message = "Booking statistics retrieved successfully.", data = result });
             }
             catch (ArgumentException ex)
             {

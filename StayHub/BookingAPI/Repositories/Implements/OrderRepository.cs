@@ -321,6 +321,198 @@ namespace BookingAPI.Repositories.Implements
                 .ToList();
         }
 
+        public async Task<BookingStatisticsResponseDTO> GetBookingStatisticsAsync(BookingStatisticsRequestDTO request)
+        {
+            var from = request.StartDate;
+            var to = request.EndDate;
+
+            var paidOrders = FilterOrdersQuery(from, to)
+                .Where(o => PaidStatuses.Contains(o.Status ?? "") && o.OrderedAt.HasValue);
+
+            var periodOrderIdsQuery = paidOrders.Select(o => o.Id);
+
+            var metricsData = await paidOrders
+                .GroupBy(_ => 1)
+                .Select(g => new BookingStatisticsMetricsDTO
+                {
+                    TotalRevenue = g.Sum(o => o.FinalAmount),
+                    TotalDiscount = g.Sum(o => o.DiscountValue ?? 0),
+                    TotalOrders = g.Count(),
+                    TotalTicketsSold = g.Sum(o => o.TotalQuantity)
+                })
+                .FirstOrDefaultAsync() ?? new BookingStatisticsMetricsDTO();
+
+            metricsData.TotalRefundAmount = await _context.CancellationRequests
+                .AsNoTracking()
+                .Where(c =>
+                    (c.Status == "Approved" || c.Status == "Refunded") &&
+                    (
+                        (c.ProcessedAt.HasValue && c.ProcessedAt >= from && c.ProcessedAt <= to) ||
+                        (!c.ProcessedAt.HasValue && c.RequestedAt.HasValue && c.RequestedAt >= from && c.RequestedAt <= to)
+                    ))
+                .SumAsync(c => (long?)c.RefundAmount) ?? 0;
+
+            var revenueTrend = await GetRevenueTrendAsync(paidOrders, request.GroupBy);
+
+            var salesByTicketType = await _context.OrderDetails
+                .AsNoTracking()
+                .Where(od => periodOrderIdsQuery.Contains(od.OrderId))
+                .GroupBy(od => od.TicketTypeId)
+                .Select(g => new TicketTypeSalesDTO
+                {
+                    TicketTypeId = g.Key,
+                    QuantitySold = g.Sum(od => od.Quantity),
+                    Revenue = g.Sum(od => od.TotalPrice)
+                })
+                .OrderByDescending(x => x.Revenue)
+                .ToListAsync();
+
+            var ordersByHour = await paidOrders
+                .GroupBy(o => o.OrderedAt!.Value.Hour)
+                .Select(g => new OrdersByHourDTO
+                {
+                    Hour = g.Key,
+                    OrderCount = g.Count()
+                })
+                .OrderBy(x => x.Hour)
+                .ToListAsync();
+
+            var checkInCounts = await _context.Tickets
+                .AsNoTracking()
+                .Where(t => periodOrderIdsQuery.Contains(t.OrderId))
+                .GroupBy(t => t.CheckInStatus == "CheckedIn" || t.CheckInStatus == "Checked"
+                    ? "CheckedIn"
+                    : "NotCheckedIn")
+                .Select(g => new
+                {
+                    Status = g.Key,
+                    TicketCount = g.Count()
+                })
+                .ToListAsync();
+
+            var totalCheckInTickets = checkInCounts.Sum(x => x.TicketCount);
+            var checkInRatio = checkInCounts
+                .Select(x => new CheckInStatusRatioDTO
+                {
+                    Status = x.Status,
+                    TicketCount = x.TicketCount,
+                    Percentage = totalCheckInTickets > 0
+                        ? Math.Round(x.TicketCount * 100m / totalCheckInTickets, 2)
+                        : 0
+                })
+                .OrderByDescending(x => x.TicketCount)
+                .ToList();
+
+            var topCancellationReasons = await _context.CancellationRequests
+                .AsNoTracking()
+                .Where(c =>
+                    c.RequestedAt.HasValue &&
+                    c.RequestedAt >= from &&
+                    c.RequestedAt <= to &&
+                    c.Reason != "")
+                .GroupBy(c => c.Reason)
+                .Select(g => new CancellationReasonStatsDTO
+                {
+                    Reason = g.Key,
+                    Count = g.Count()
+                })
+                .OrderByDescending(x => x.Count)
+                .Take(10)
+                .ToListAsync();
+
+            return new BookingStatisticsResponseDTO
+            {
+                Metrics = metricsData,
+                RevenueTrend = revenueTrend,
+                SalesByTicketType = salesByTicketType,
+                OrdersByHour = ordersByHour,
+                CheckInRatio = checkInRatio,
+                TopCancellationReasons = topCancellationReasons
+            };
+        }
+
+        private static async Task<List<RevenueTrendPointDTO>> GetRevenueTrendAsync(
+            IQueryable<Order> paidOrders,
+            string groupBy)
+        {
+            var normalized = (groupBy ?? "Day").Trim().ToLowerInvariant();
+
+            if (normalized == "year")
+            {
+                var data = await paidOrders
+                    .GroupBy(o => o.OrderedAt!.Value.Year)
+                    .Select(g => new
+                    {
+                        Year = g.Key,
+                        Revenue = g.Sum(o => o.FinalAmount),
+                        OrderCount = g.Count()
+                    })
+                    .OrderBy(x => x.Year)
+                    .ToListAsync();
+
+                return data.Select(x => new RevenueTrendPointDTO
+                {
+                    Period = x.Year.ToString(),
+                    Revenue = x.Revenue,
+                    OrderCount = x.OrderCount
+                }).ToList();
+            }
+
+            if (normalized == "month")
+            {
+                var data = await paidOrders
+                    .GroupBy(o => new
+                    {
+                        o.OrderedAt!.Value.Year,
+                        o.OrderedAt.Value.Month
+                    })
+                    .Select(g => new
+                    {
+                        g.Key.Year,
+                        g.Key.Month,
+                        Revenue = g.Sum(o => o.FinalAmount),
+                        OrderCount = g.Count()
+                    })
+                    .OrderBy(x => x.Year)
+                    .ThenBy(x => x.Month)
+                    .ToListAsync();
+
+                return data.Select(x => new RevenueTrendPointDTO
+                {
+                    Period = $"{x.Year:D4}-{x.Month:D2}",
+                    Revenue = x.Revenue,
+                    OrderCount = x.OrderCount
+                }).ToList();
+            }
+
+            var dayData = await paidOrders
+                .GroupBy(o => new
+                {
+                    o.OrderedAt!.Value.Year,
+                    o.OrderedAt.Value.Month,
+                    o.OrderedAt.Value.Day
+                })
+                .Select(g => new
+                {
+                    g.Key.Year,
+                    g.Key.Month,
+                    g.Key.Day,
+                    Revenue = g.Sum(o => o.FinalAmount),
+                    OrderCount = g.Count()
+                })
+                .OrderBy(x => x.Year)
+                .ThenBy(x => x.Month)
+                .ThenBy(x => x.Day)
+                .ToListAsync();
+
+            return dayData.Select(x => new RevenueTrendPointDTO
+            {
+                Period = $"{x.Year:D4}-{x.Month:D2}-{x.Day:D2}",
+                Revenue = x.Revenue,
+                OrderCount = x.OrderCount
+            }).ToList();
+        }
+
         public async Task<List<TopCustomerOrderDTO>> GetTopCustomersAsync(
             int top,
             DateTime? from,
