@@ -1,6 +1,8 @@
 using AutoMapper;
-using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.OData.Query;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -153,9 +155,6 @@ namespace TourAPI.Services.Implements
             );
 
             var dto = _mapper.Map<ReadReviewReplyDTO>(reply);
-            var userInfo = await GetUserInfoAsync(staffId);
-            dto.UserName = userInfo.Name;
-            dto.UserAvatar = userInfo.Avatar;
             return dto;
         }
 
@@ -175,9 +174,6 @@ namespace TourAPI.Services.Implements
             await _reviewReplyRepository.SaveChangesAsync();
 
             var dto = _mapper.Map<ReadReviewReplyDTO>(reply);
-            var userInfo = await GetUserInfoAsync(staffId);
-            dto.UserName = userInfo.Name;
-            dto.UserAvatar = userInfo.Avatar;
             return dto;
         }
 
@@ -233,39 +229,77 @@ namespace TourAPI.Services.Implements
             await _reviewRepository.SaveChangesAsync();
         }
 
+        public async Task<PagedResult<ReadReviewDTO>> GetReviewsByTourODataAsync(int tourId, ODataQueryOptions<Review> options, bool includeHidden = false)
+        {
+            // Lấy câu query gốc (mới chỉ WHERE theo tourId)
+            var query = _reviewRepository.GetBaseQueryByTour(tourId, includeHidden);
+
+            // BƯỚC A: Áp dụng Lọc ($filter) và Sắp xếp ($orderby) từ OData
+            if (options.Filter != null)
+                query = options.Filter.ApplyTo(query, new ODataQuerySettings()) as IQueryable<Review>;
+
+            if (options.OrderBy != null)
+                query = options.OrderBy.ApplyTo(query, new ODataQuerySettings());
+
+            // BƯỚC B: Đếm tổng số lượng thỏa mãn điều kiện (Trước khi cắt trang)
+            var totalCount = await query.CountAsync();
+
+            // BƯỚC C: Áp dụng Phân trang ($skip, $top)
+            if (options.Skip != null)
+                query = options.Skip.ApplyTo(query, new ODataQuerySettings());
+
+            if (options.Top != null)
+                query = options.Top.ApplyTo(query, new ODataQuerySettings());
+
+            // BƯỚC D: Bây giờ mới thực sự Query xuống DB (Chỉ kéo lên đúng 10 dòng)
+            var reviews = await query.ToListAsync();
+
+            // BƯỚC E: Map sang DTO và đi gọi API UserBatch (như đã tối ưu)
+            var dtos = _mapper.Map<List<ReadReviewDTO>>(reviews);
+            await PopulateReviewerNamesAsync(dtos);
+
+            return new PagedResult<ReadReviewDTO>
+            {
+                TotalCount = totalCount,
+                Items = dtos
+            };
+        }
+
         private async Task PopulateReviewerNamesAsync(IEnumerable<ReadReviewDTO> reviews)
         {
-            if (reviews == null)
-                return;
+            if (reviews == null || !reviews.Any()) return;
 
             var reviewList = reviews.ToList();
-            if (!reviewList.Any())
-                return;
 
-            var uniqueCustomerIds = reviewList.Select(x => x.CustomerId).Distinct().ToList();
-            var uniqueReplyUserIds = reviewList
-                .SelectMany(r => r.Replies?.Select(rep => rep.UserId) ?? Enumerable.Empty<int>())
+            // 1. Gom tất cả ID lại (Customer + Staff repy)
+            var allUserIds = reviewList.Select(x => x.CustomerId)
+                .Concat(reviewList.SelectMany(r => r.Replies?.Select(rep => rep.UserId) ?? Enumerable.Empty<int>()))
                 .Distinct()
                 .ToList();
 
-            var userNames = new ConcurrentDictionary<int, (string Name, string? Avatar)>();
+            if (!allUserIds.Any()) return;
 
-            var customerTasks = uniqueCustomerIds.Select(async id =>
-            {
-                var userInfo = await GetUserInfoAsync(id);
-                userNames.TryAdd(id, userInfo);
-            });
+            var userNames = new Dictionary<int, (string Name, string? Avatar)>();
 
-            var replyTasks = uniqueReplyUserIds.Select(async id =>
+            try
             {
-                if (!userNames.ContainsKey(id))
+                var response = await _httpClient.PostAsJsonAsync("/api/users/batch/public", allUserIds);
+
+                if (response.IsSuccessStatusCode)
                 {
-                    var userInfo = await GetUserInfoAsync(id);
-                    userNames.TryAdd(id, userInfo);
+                    var apiResult = await response.Content.ReadFromJsonAsync<UserBatchApiResponse>();
+                    if (apiResult?.Data != null)
+                    {
+                        foreach (var user in apiResult.Data)
+                        {
+                            userNames[user.Id] = (user.FullName ?? "Unknown User", user.AvatarUrl);
+                        }
+                    }
                 }
-            });
-
-            await Task.WhenAll(customerTasks.Concat(replyTasks));
+            }
+            catch
+            {
+            }
 
             foreach (var review in reviewList)
             {
@@ -289,39 +323,6 @@ namespace TourAPI.Services.Implements
             }
         }
 
-        private async Task<(string Name, string? Avatar)> GetUserInfoAsync(int userId)
-        {
-            try
-            {
-                var request = new HttpRequestMessage(HttpMethod.Get, $"/api/users/{userId}");
-
-                // Forward incoming Authorization header if present so Gateway can authenticate
-                try
-                {
-                    var ctx = _httpContextAccessor?.HttpContext;
-                    if (ctx != null && ctx.Request.Headers.TryGetValue("Authorization", out var auth))
-                    {
-                        request.Headers.Add("Authorization", (string)auth);
-                    }
-                }
-                catch
-                {
-                    // ignore if no context
-                }
-
-                var response = await _httpClient.SendAsync(request);
-                if (!response.IsSuccessStatusCode)
-                    return ("Unknown User", null);
-
-                var apiResponse = await response.Content.ReadFromJsonAsync<UserApiResponse>();
-                var fullName = apiResponse?.Data?.FullName ?? "Unknown User";
-                var avatar = apiResponse?.Data?.AvatarUrl;
-                return (fullName, avatar);
-            }
-            catch
-            {
-                return ("Unknown User", null);
-            }
-        }
+      
     }
 }
