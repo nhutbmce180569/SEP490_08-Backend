@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using StayHub.Common.Extensions;
 using StayHub.Common.Localization;
 using System.Text;
 using VoucherAPI.Helpers;
@@ -100,16 +101,7 @@ public class Program
             };
         });
 
-        builder.Services.AddCors(options =>
-        {
-            options.AddPolicy("FrontendDev", policy =>
-            {
-                policy
-                    .WithOrigins("http://localhost:5173")
-                    .AllowAnyHeader()
-                    .AllowAnyMethod();
-            });
-        });
+        builder.Services.AddStayHubCors(builder.Configuration, "FrontendDev");
 
         var app = builder.Build();
 
@@ -119,7 +111,7 @@ public class Program
             app.UseSwaggerUI();
         }
 
-        app.UseHttpsRedirection();
+        app.UseStayHubHttpScheme();
         app.UseCors("FrontendDev");
         app.UseStayHubLocalization();
         app.UseRouting();

@@ -12,6 +12,8 @@ using Microsoft.OData.ModelBuilder;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
 // Thêm các thư viện cần thiết để nhận diện được Services và Repositories
+using StayHub.Common.Extensions;
+using StayHub.Common.Localization;
 using SocialAPI.DTOs;
 using SocialAPI.Helper;
 using SocialAPI.Hubs;
@@ -20,7 +22,6 @@ using SocialAPI.Repositories;
 using SocialAPI.Repositories.Implements;
 using SocialAPI.Services;
 using SocialAPI.Services.Implements;
-using StayHub.Common.Localization;
 using StackExchange.Redis;
 using System.Text;
 
@@ -161,16 +162,7 @@ namespace SocialAPI
             builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
             builder.Services.AddSignalR();
 
-            builder.Services.AddCors(options =>
-            {
-                options.AddPolicy("AllowSignalR", policy =>
-                {
-                    policy.WithOrigins("http://localhost:5173")
-                          .AllowAnyHeader()
-                          .AllowAnyMethod()
-                          .AllowCredentials();
-                });
-            });
+            builder.Services.AddStayHubCors(builder.Configuration, "AllowSignalR");
             // ============================================================
 
             var app = builder.Build();
@@ -182,7 +174,7 @@ namespace SocialAPI
                 app.UseSwaggerUI();
             }
             app.MapHub<ChatHub>("/hubs/chat");
-            app.UseHttpsRedirection();
+            app.UseStayHubHttpScheme();
 
             app.UseCors("AllowSignalR");
             app.UseStayHubLocalization();

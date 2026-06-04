@@ -1,0 +1,21 @@
+# Free demo sharing — one port for web + API + SignalR
+# Usage: see docker/scripts/share-free.sh
+
+services:
+  share-proxy:
+    image: nginx:1.27-alpine
+    container_name: stayhub-share-proxy
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./docker/nginx-share.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - gateway-api
+    restart: unless-stopped
+
+  frontend:
+    build:
+      args:
+        VITE_API_BASE_URL: SAME_ORIGIN
+        VITE_API_PREFIX: /api

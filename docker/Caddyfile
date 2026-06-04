@@ -1,0 +1,22 @@
+# Production — HTTPS via Let's Encrypt (Caddy)
+# Requires in .env: DOMAIN, API_DOMAIN, ACME_EMAIL
+# DNS A records must point to this VPS before first boot.
+
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode gzip zstd
+	reverse_proxy frontend:80
+}
+
+{$API_DOMAIN} {
+	encode gzip zstd
+	reverse_proxy gateway-api:8080 {
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+	}
+}

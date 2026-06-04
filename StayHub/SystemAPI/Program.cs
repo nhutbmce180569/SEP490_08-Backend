@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using StayHub.Common.Extensions;
 using StayHub.Common.Localization;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
@@ -96,18 +97,7 @@ namespace SystemAPI
                 };
             });
 
-            builder.Services.AddCors(options =>
-            {
-                options.AddPolicy("FrontendDev", policy =>
-                {
-                    policy
-                        .WithOrigins("http://localhost:5173")
-                        .AllowAnyHeader()
-                        .AllowAnyMethod();
-                    // Nếu request có cookie/session thì mới thêm:
-                    // .AllowCredentials();
-                });
-            });
+            builder.Services.AddStayHubCors(builder.Configuration, "FrontendDev");
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -117,7 +107,7 @@ namespace SystemAPI
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+            app.UseStayHubHttpScheme();
             app.UseCors("FrontendDev");
             app.UseStayHubLocalization();
 

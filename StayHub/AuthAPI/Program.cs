@@ -12,10 +12,11 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using Microsoft.IdentityModel.Tokens;
+using StayHub.Common.Extensions;
+using StayHub.Common.Localization;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
-using StayHub.Common.Localization;
 using StayHub.Common.Resources;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -65,17 +66,7 @@ namespace AuthAPI
                 });
             });
 
-            // === 1. CORS CONFIGURATION FOR FRONTEND APP ===
-            builder.Services.AddCors(options =>
-            {
-                options.AddPolicy("AllowReactApp", policy =>
-                {
-                    policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
-                          .AllowAnyHeader()
-                          .AllowAnyMethod()
-                          .AllowCredentials();
-                });
-            });
+            builder.Services.AddStayHubCors(builder.Configuration, "AllowReactApp");
 
             // 3. STRICT AUTHENTICATION CONFIGURATION
             var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -203,7 +194,7 @@ namespace AuthAPI
                 });
             }
 
-            app.UseHttpsRedirection();
+            app.UseStayHubHttpScheme();
 
             app.UseCors("AllowReactApp");
             app.UseStayHubLocalization();

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using StayHub.Common.Extensions;
 using StayHub.Common.Localization;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
@@ -191,17 +192,7 @@ namespace TourAPI
                     ClockSkew = TimeSpan.Zero // No clock skew tolerance
                 };
             });
-            builder.Services.AddCors(options =>
-            {
-                options.AddPolicy("FrontendDev", policy =>
-                {
-                    policy
-                        .WithOrigins("http://localhost:5173")
-                        .AllowAnyHeader()
-                        .AllowAnyMethod();
-                    // Add .AllowCredentials() only when using cookies/sessions
-                });
-            });
+            builder.Services.AddStayHubCors(builder.Configuration, "FrontendDev");
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -211,7 +202,7 @@ namespace TourAPI
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+            app.UseStayHubHttpScheme();
             app.UseCors("FrontendDev");
             app.UseStayHubLocalization();
 

@@ -3,6 +3,7 @@ using BookingAPI.Helpers;
 using BookingAPI.Mappers;
 using BookingAPI.Mappings;
 using BookingAPI.Models;
+using StayHub.Common.Extensions;
 using StayHub.Common.Localization;
 using BookingAPI.Repositories;
 using BookingAPI.Repositories.Implements;
@@ -156,7 +157,7 @@ namespace BookingAPI
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+            app.UseStayHubHttpScheme();
             app.UseStayHubLocalization();
 
             app.UseAuthentication();

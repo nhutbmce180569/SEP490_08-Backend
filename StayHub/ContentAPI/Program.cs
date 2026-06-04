@@ -3,6 +3,7 @@ using ContentAPI.DTOs;
 using ContentAPI.Helpers;
 using ContentAPI.Helpers.Implements;
 using ContentAPI.Mappers;
+using StayHub.Common.Extensions;
 using StayHub.Common.Localization;
 using ContentAPI.Models;
 using ContentAPI.Repositories;
@@ -126,7 +127,7 @@ namespace ContentAPI
                 });
             }
 
-            app.UseHttpsRedirection();
+            app.UseStayHubHttpScheme();
             app.UseStayHubLocalization();
 
             app.UseAuthentication();

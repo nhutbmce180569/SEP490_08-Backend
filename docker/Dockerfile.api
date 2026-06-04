@@ -1,0 +1,32 @@
+# Build any StayHub microservice:
+#   docker build -f docker/Dockerfile.api \
+#     --build-arg PROJECT_PATH=StayHub/AuthAPI \
+#     --build-arg PROJECT_NAME=AuthAPI \
+#     -t stayhub-auth .
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+COPY StayHub/ ./StayHub/
+
+ARG PROJECT_PATH=StayHub/AuthAPI
+ARG PROJECT_NAME=AuthAPI
+
+RUN dotnet restore "${PROJECT_PATH}/${PROJECT_NAME}.csproj"
+RUN dotnet publish "${PROJECT_PATH}/${PROJECT_NAME}.csproj" \
+    -c Release \
+    -o /app/publish \
+    /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+WORKDIR /app
+
+ARG PROJECT_NAME=AuthAPI
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_ENVIRONMENT=Docker
+ENV PROJECT_NAME=${PROJECT_NAME}
+
+COPY --from=build /app/publish .
+
+EXPOSE 8080
+
+ENTRYPOINT ["sh", "-c", "exec dotnet \"${PROJECT_NAME}.dll\""]

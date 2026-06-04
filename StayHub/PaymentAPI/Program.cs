@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using StayHub.Common.Extensions;
 using StayHub.Common.Localization;
 using PaymentAPI.Helpers;
 using PaymentAPI.Mappers;
@@ -106,16 +107,7 @@ namespace PaymentAPI
                 };
             });
 
-            builder.Services.AddCors(options =>
-            {
-                options.AddPolicy("AllowFrontend", policy =>
-                {
-                    policy.WithOrigins("http://localhost:5173") // URL của Frontend React
-                          .AllowAnyHeader()
-                          .AllowAnyMethod()
-                          .AllowCredentials();
-                });
-            });
+            builder.Services.AddStayHubCors(builder.Configuration);
 
             var app = builder.Build();
 
@@ -126,7 +118,7 @@ namespace PaymentAPI
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+            app.UseStayHubHttpScheme();
 
             app.UseCors("AllowFrontend");
             app.UseStayHubLocalization();

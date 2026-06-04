@@ -1,0 +1,19 @@
+# Production overrides — use with:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile prod up -d --build
+
+services:
+  sqlserver:
+    ports:
+      - "127.0.0.1:${SQL_HOST_PORT:-14333}:1433"
+
+  gateway-api:
+    ports: []
+
+  frontend:
+    ports: []
+
+  caddy:
+    environment:
+      DOMAIN: ${DOMAIN}
+      API_DOMAIN: ${API_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:-}

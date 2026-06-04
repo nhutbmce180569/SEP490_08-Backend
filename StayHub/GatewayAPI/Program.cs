@@ -1,5 +1,6 @@
 using StackExchange.Redis;
 using System.IdentityModel.Tokens.Jwt;
+using StayHub.Common.Extensions;
 using StayHub.Common.Localization;
 using StayHub.Common.Resources;
 using Microsoft.Extensions.Localization;
@@ -16,17 +17,7 @@ namespace GatewayAPI
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddStayHubLocalization();
 
-            // 1. SỬA LẠI CẤU HÌNH CORS CHO SIGNALR
-            builder.Services.AddCors(options =>
-            {
-                options.AddPolicy("AllowFrontend", policy =>
-                {
-                    policy.WithOrigins("http://localhost:5173") 
-                          .AllowAnyMethod()
-                          .AllowAnyHeader()
-                          .AllowCredentials();
-                });
-            });
+            builder.Services.AddStayHubCors(builder.Configuration);
 
             var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
             if (!string.IsNullOrEmpty(redisConnectionString))
@@ -39,7 +30,7 @@ namespace GatewayAPI
 
             var app = builder.Build();
 
-            app.UseHttpsRedirection();
+            app.UseStayHubHttpScheme();
 
             // Áp dụng CORS vừa sửa
             app.UseCors("AllowFrontend");
