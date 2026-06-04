@@ -1,0 +1,43 @@
+# CI: build .NET solution on every push / PR
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  build-backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: StayHub
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Restore
+        run: dotnet restore StayHub.sln
+
+      - name: Build
+        run: dotnet build StayHub.sln -c Release --no-restore
+
+  build-gateway-image:
+    runs-on: ubuntu-latest
+    needs: build-backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Gateway Docker image (smoke test)
+        run: |
+          docker build -f docker/Dockerfile.api \
+            --build-arg PROJECT_PATH=StayHub/GatewayAPI \
+            --build-arg PROJECT_NAME=GatewayAPI \
+            -t stayhub-gateway:ci .

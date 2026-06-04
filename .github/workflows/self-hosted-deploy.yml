@@ -1,0 +1,43 @@
+# CD: deploy lên máy Ubuntu của bạn (self-hosted runner)
+#
+# Thiết lập một lần trên máy host:
+#   1. GitHub → Repo Backend → Settings → Actions → Runners → New self-hosted runner
+#   2. Chạy lệnh Linux mà GitHub hiển thị (labels: self-hosted)
+#   3. Đảm bảo Docker đã cài và user runner trong group docker
+#
+# Sau đó: Actions → Self-hosted deploy → Run workflow
+name: Self-hosted deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-local:
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout Frontend
+        uses: actions/checkout@v4
+        with:
+          repository: nhutbmce180569/SEP490_08-Frontend
+          path: _frontend
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync Frontend into expected path
+        run: |
+          mkdir -p ../../Frontend
+          rsync -a --delete _frontend/ ../../Frontend/SEP490_08-Frontend/
+
+      - name: Deploy Docker stack
+        run: |
+          chmod +x docker/scripts/*.sh
+          docker compose -f docker-compose.yml -f docker-compose.share.yml up -d --build
+
+      - name: Show URLs
+        run: |
+          IP="$(hostname -I | awk '{print $1}')"
+          echo "Local:  http://localhost:8888"
+          echo "LAN:    http://${IP}:8888"
+          echo "Tunnel: bash docker/scripts/host-local.sh tunnel"

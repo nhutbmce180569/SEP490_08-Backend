@@ -1,0 +1,82 @@
+# CD: deploy to VPS (manual — cần cấu hình GitHub Secrets trước)
+#
+# Secrets (Settings → Secrets and variables → Actions):
+#   VPS_HOST          — IP VPS, ví dụ 123.45.67.89
+#   VPS_USER          — root hoặc ubuntu
+#   VPS_SSH_KEY       — private key SSH (toàn bộ nội dung)
+#   DOMAIN            — stayhub.example.com (tùy chọn)
+#   API_DOMAIN        — api.stayhub.example.com (tùy chọn, mặc định api.{DOMAIN})
+#
+# File .env production phải có sẵn trên VPS tại:
+#   /opt/stayhub/Backend/SEP490_08-Backend/.env
+name: Deploy VPS
+
+on:
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: "Domain chính (vd: stayhub.vn)"
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VPS_DEPLOY_PATH: /opt/stayhub
+      FRONTEND_REPO: nhutbmce180569/SEP490_08-Frontend
+
+    steps:
+      - name: Checkout Backend
+        uses: actions/checkout@v4
+        with:
+          path: deploy/Backend/SEP490_08-Backend
+
+      - name: Checkout Frontend
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.FRONTEND_REPO }}
+          path: deploy/Frontend/SEP490_08-Frontend
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Rsync Backend + Frontend
+        run: |
+          RSYNC_SSH="ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          rsync -avz -e "$RSYNC_SSH" \
+            --exclude bin --exclude obj --exclude .vs --exclude .git \
+            deploy/Backend/ "$VPS:${{ env.VPS_DEPLOY_PATH }}/Backend/"
+          rsync -avz -e "$RSYNC_SSH" \
+            --exclude node_modules --exclude dist --exclude .git \
+            deploy/Frontend/ "$VPS:${{ env.VPS_DEPLOY_PATH }}/Frontend/"
+
+      - name: Deploy on VPS
+        env:
+          DOMAIN: ${{ inputs.domain }}
+          API_DOMAIN: ${{ secrets.API_DOMAIN }}
+        run: |
+          API="${API_DOMAIN:-api.${DOMAIN}}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no "$VPS" <<EOF
+          set -e
+          cd ${{ env.VPS_DEPLOY_PATH }}/Backend/SEP490_08-Backend
+          if [ -f .env ]; then
+            sed -i "s|^DOMAIN=.*|DOMAIN=${DOMAIN}|" .env || echo "DOMAIN=${DOMAIN}" >> .env
+            sed -i "s|^API_DOMAIN=.*|API_DOMAIN=${API}|" .env || echo "API_DOMAIN=${API}" >> .env
+            sed -i "s|^PUBLIC_API_URL=.*|PUBLIC_API_URL=https://${API}|" .env
+            sed -i "s|^PUBLIC_FRONTEND_URL=.*|PUBLIC_FRONTEND_URL=https://${DOMAIN}|" .env
+            sed -i "s|^VITE_API_BASE_URL=.*|VITE_API_BASE_URL=https://${API}|" .env
+          else
+            echo "ERROR: Missing .env on VPS. Create it once before first deploy." >&2
+            exit 1
+          fi
+          chmod +x docker/scripts/*.sh
+          bash docker/scripts/vps-deploy.sh
+          EOF
