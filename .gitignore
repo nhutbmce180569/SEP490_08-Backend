@@ -39,6 +39,10 @@ ScaffoldingReadMe.txt
 # dotenv environment variables file
 .env
 
+# Local CI/CD (paths on your machine)
+.github/local-ci.env
+actions-runner/
+
 # Others
 ~$*
 *~
