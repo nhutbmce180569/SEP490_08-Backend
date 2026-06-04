@@ -48,4 +48,23 @@ namespace TourAPI.DTOs
         [MaxLength(1000, ErrorMessage = "Comment cannot exceed 1000 characters.")]
         public string Comment { get; set; } = null!;
     }
+
+    public class UserBatchApiResponse
+    {
+        public string? Message { get; set; }
+        public List<UserShortDto>? Data { get; set; }
+    }
+
+    public class UserShortDto
+    {
+        public int Id { get; set; }
+        public string? FullName { get; set; }
+        public string? AvatarUrl { get; set; }
+    }
+
+    public class PagedResult<T>
+    {
+        public int TotalCount { get; set; }
+        public IEnumerable<T> Items { get; set; } = new List<T>();
+    }
 }
