@@ -11,6 +11,7 @@ namespace TourAPI.Repositories
         Task<Review?> GetByTourAndCustomerAsync(int tourId, int customerId);
         Task<List<Review>> GetByCustomerAsync(int customerId, bool includeHidden = true);
         Task<List<Review>> GetByTourAsync(int tourId, bool includeHidden = false);
+        IQueryable<Review> GetBaseQueryByTour(int tourId, bool includeHidden = false);
         void Update(Review review);
         Task SaveChangesAsync();
     }

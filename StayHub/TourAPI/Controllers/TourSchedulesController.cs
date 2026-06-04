@@ -28,7 +28,6 @@ namespace TourAPI.Controllers
             _staffService = staffService;
         }
 
-        // Bất kỳ ai cũng có thể xem danh sách lịch trình
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ReadTourScheduleDTO>>> GetAll()
         {
@@ -92,7 +91,6 @@ namespace TourAPI.Controllers
             return userId;
         }
 
-        // Chỉ Admin/Operator/Manager/Staff được thao tác
         [HttpPost]
         [Authorize(Roles = "Manager,Admin")]
         public async Task<ActionResult<ReadTourScheduleDTO>> Create([FromBody] CreateTourScheduleDTO dto)
