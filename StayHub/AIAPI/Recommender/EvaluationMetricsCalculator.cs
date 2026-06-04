@@ -230,44 +230,87 @@ public static class EvaluationMetricsCalculator
         return expected >= 1f ? 1f : (observed - expected) / (1f - expected);
     }
 
-    public static float WilcoxonSignedRankPApprox(IReadOnlyList<float> pairedDeltas)
+    public static float WilcoxonSignedRankPApprox(IReadOnlyList<float> pairedDeltas) =>
+        WilcoxonSignedRank(pairedDeltas).PValueApprox;
+
+    public static WilcoxonResult WilcoxonSignedRank(IReadOnlyList<float> pairedDeltas)
     {
-        if (pairedDeltas.Count < 5)
+        if (pairedDeltas.Count < 2)
         {
-            return ApproximatePairedPValue(pairedDeltas);
+            return new WilcoxonResult { PValueApprox = ApproximatePairedPValue(pairedDeltas) };
         }
 
-        var nonZero = pairedDeltas.Where(d => Math.Abs(d) > 1e-6f).Select(Math.Abs).OrderBy(x => x).ToList();
-        if (nonZero.Count == 0)
+        var indexed = pairedDeltas
+            .Select((d, i) => (delta: d, abs: Math.Abs(d), index: i))
+            .Where(x => x.abs > 1e-6f)
+            .OrderBy(x => x.abs)
+            .ToList();
+
+        if (indexed.Count == 0)
         {
-            return 1f;
+            return new WilcoxonResult { PValueApprox = 1f };
+        }
+
+        var ranks = new double[indexed.Count];
+        for (var i = 0; i < indexed.Count;)
+        {
+            var j = i;
+            while (j + 1 < indexed.Count && Math.Abs(indexed[j + 1].abs - indexed[i].abs) < 1e-6f)
+            {
+                j++;
+            }
+
+            var avgRank = (i + j + 2) / 2.0;
+            for (var k = i; k <= j; k++)
+            {
+                ranks[k] = avgRank;
+            }
+
+            i = j + 1;
         }
 
         var wPlus = 0d;
-        for (var i = 0; i < nonZero.Count; i++)
+        var wMinus = 0d;
+        for (var i = 0; i < indexed.Count; i++)
         {
-            var rank = i + 1;
-            if (pairedDeltas.Count(d => Math.Abs(d) == nonZero[i]) > 0 && pairedDeltas.Any(d => d > 0 && Math.Abs(d) == nonZero[i]))
+            if (indexed[i].delta > 0)
             {
-                wPlus += rank;
+                wPlus += ranks[i];
+            }
+            else
+            {
+                wMinus += ranks[i];
             }
         }
 
-        var n = nonZero.Count;
+        var n = indexed.Count;
         var mean = n * (n + 1) / 4.0;
         var std = Math.Sqrt(n * (n + 1) * (2 * n + 1) / 24.0);
-        if (std <= 0)
-        {
-            return 1f;
-        }
-
-        var z = Math.Abs((wPlus - mean) / std);
-        return z switch
+        var z = std <= 0 ? 0 : Math.Abs((wPlus - mean) / std);
+        var p = z switch
         {
             >= 2.576 => 0.01f,
             >= 1.96 => 0.05f,
             >= 1.645 => 0.10f,
             _ => 0.20f
         };
+
+        var r = n <= 0 ? 0f : (float)((wPlus - wMinus) / (wPlus + wMinus));
+
+        return new WilcoxonResult
+        {
+            WPlus = wPlus,
+            WMinus = wMinus,
+            PValueApprox = p,
+            RankBiserial = Math.Abs(r)
+        };
     }
+}
+
+public class WilcoxonResult
+{
+    public double WPlus { get; set; }
+    public double WMinus { get; set; }
+    public float PValueApprox { get; set; } = 1f;
+    public float RankBiserial { get; set; }
 }

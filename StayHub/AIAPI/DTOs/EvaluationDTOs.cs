@@ -90,6 +90,8 @@ public class SignificanceTestDTO
     public float MeanDelta { get; set; }
     public float PValueApprox { get; set; }
     public float WilcoxonPValueApprox { get; set; }
+    public double WilcoxonW { get; set; }
+    public float EffectSizeR { get; set; }
     public bool ProposedBetter { get; set; }
 }
 
@@ -133,12 +135,16 @@ public class BaselineMetricsDTO
     public string StrategyName { get; set; } = "";
     public string Description { get; set; } = "";
     public float NdcgAtK { get; set; }
+    public float NdcgStdDev { get; set; }
     public float PrecisionAtK { get; set; }
     public float RecallAtK { get; set; }
     public float AvgGroupSatisfaction { get; set; }
     public float AvgMinPersonaUtility { get; set; }
+    public float MinPersonaStdDev { get; set; }
     public float AvgDissatisfactionVariance { get; set; }
+    public float DissatisfactionVarianceStdDev { get; set; }
     public float AvgEnvyGap { get; set; }
+    public float EnvyGapStdDev { get; set; }
     public float AvgIntraListDiversity { get; set; }
     public float ConstraintSatisfactionRate { get; set; }
 }

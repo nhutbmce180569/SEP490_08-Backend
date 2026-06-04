@@ -11,6 +11,9 @@ public static class AggregationStrategies
     public const string BordaCount = "borda_count";
     public const string ContentOnly = "content_only";
     public const string CafhrNoKnowledge = "cafhr_no_knowledge";
+    public const string CafhrNoPenalty = "cafhr_no_penalty";
+    public const string PopularityWeighted = "popularity_weighted";
+    public const string MgrsFair = "mgrs_fair";
 
     public static IReadOnlyList<BaselineDefinition> GetAll() =>
     [
@@ -23,9 +26,15 @@ public static class AggregationStrategies
         new BaselineDefinition(BordaCount, "Borda Count",
             "Rank fusion: each persona ranks tours; Borda points summed across personas."),
         new BaselineDefinition(ContentOnly, "Content-Only",
-            "ML.NET semantic similarity only; no persona decomposition or fairness."),
+            "Primary-persona utility only; non-primary personas receive u_p=0 (paper baseline)."),
+        new BaselineDefinition(PopularityWeighted, "Popularity-Weighted Content",
+            "0.6·ω̂(t) + 0.4·s₁,primary with hard filters; no group aggregation."),
+        new BaselineDefinition(MgrsFair, "MGRS-Fair",
+            "Iterative egalitarian swap re-ranking on persona utilities (Sacharidis et al.)."),
         new BaselineDefinition(CafhrNoKnowledge, "CAFHR w/o Knowledge",
-            "CAFHR fair aggregation with cultural_fit dimension disabled (ablation).")
+            "CAFHR fair aggregation with cultural_fit dimension disabled (ablation)."),
+        new BaselineDefinition(CafhrNoPenalty, "FCAHR w/o Penalty",
+            "CAFHR fair aggregation with min-persona penalty disabled (γ=0).")
     ];
 }
 

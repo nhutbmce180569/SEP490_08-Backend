@@ -95,11 +95,15 @@ public class RecommenderEvaluationService : IRecommenderEvaluationService
 
         var catalog = _catalogStore.Tours.ToList();
         var strategies = AggregationStrategies.GetAll();
+        var popularityScores = await BuildPopularityScoresAsync(catalog, cancellationToken);
         var perStrategyMetrics = strategies.ToDictionary(
             s => s.Key,
             s => new StrategyAccumulator(s.Key, s.Name, s.Description));
 
         var perProfileNdcg = strategies.ToDictionary(s => s.Key, _ => new List<float>());
+        var perProfileMinPersona = strategies.ToDictionary(s => s.Key, _ => new List<float>());
+        var perProfileVariance = strategies.ToDictionary(s => s.Key, _ => new List<float>());
+        var perProfileEnvy = strategies.ToDictionary(s => s.Key, _ => new List<float>());
         var groundTruthBundles = new List<GroundTruthBundle>();
         var profilesWithExpert = 0;
         var relevantSum = 0;
@@ -122,12 +126,20 @@ public class RecommenderEvaluationService : IRecommenderEvaluationService
 
             foreach (var strategy in strategies)
             {
-                var ranked = _tourRanker.RankTours(catalog, profile, semantic, null, strategy.Key, null);
+                var ranked = _tourRanker.RankTours(
+                    catalog, profile, semantic, null, strategy.Key, null, popularityScores);
                 var rankedIds = ranked.Select(r => r.Tour.Id).ToList();
                 var ndcg = EvaluationMetricsCalculator.NdcgAtK(rankedIds, bundle.Labels, request.TopK);
 
                 perProfileNdcg[strategy.Key].Add(ndcg);
-                perStrategyMetrics[strategy.Key].AddProfileResult(ranked, bundle.Labels, rankedIds, request.TopK, ndcg);
+                var minPersona = ranked.Count > 0 ? ranked[0].Scoring.MinPersonaScore : 0f;
+                var variance = ranked.Count > 0 ? ranked[0].Scoring.DissatisfactionVariance : 0f;
+                var envy = ranked.Count > 0 ? ranked[0].Scoring.EnvyGap : 0f;
+                perProfileMinPersona[strategy.Key].Add(minPersona);
+                perProfileVariance[strategy.Key].Add(variance);
+                perProfileEnvy[strategy.Key].Add(envy);
+                perStrategyMetrics[strategy.Key].AddProfileResult(
+                    ranked, bundle.Labels, rankedIds, request.TopK, ndcg, minPersona, variance, envy);
             }
         }
 
@@ -194,15 +206,37 @@ public class RecommenderEvaluationService : IRecommenderEvaluationService
                 var baselineScores = perProfileNdcg[baseline.Key];
                 var deltas = proposedScores.Zip(baselineScores, (p, b) => p - b).ToList();
                 var meanDelta = deltas.Count == 0 ? 0f : deltas.Average();
+                var wilcoxon = EvaluationMetricsCalculator.WilcoxonSignedRank(deltas);
                 significance.Add(new SignificanceTestDTO
                 {
                     BaselineKey = baseline.Key,
                     Metric = "ndcg_at_k",
                     MeanDelta = meanDelta,
                     PValueApprox = EvaluationMetricsCalculator.ApproximatePairedPValue(deltas),
-                    WilcoxonPValueApprox = EvaluationMetricsCalculator.WilcoxonSignedRankPApprox(deltas),
+                    WilcoxonPValueApprox = wilcoxon.PValueApprox,
+                    WilcoxonW = wilcoxon.WPlus,
+                    EffectSizeR = wilcoxon.RankBiserial,
                     ProposedBetter = meanDelta > 0
                 });
+
+                var minDeltas = perProfileMinPersona[proposedKey]
+                    .Zip(perProfileMinPersona[baseline.Key], (p, b) => p - b)
+                    .ToList();
+                if (minDeltas.Count > 0)
+                {
+                    var minWilcoxon = EvaluationMetricsCalculator.WilcoxonSignedRank(minDeltas);
+                    significance.Add(new SignificanceTestDTO
+                    {
+                        BaselineKey = baseline.Key,
+                        Metric = "min_persona",
+                        MeanDelta = minDeltas.Average(),
+                        PValueApprox = EvaluationMetricsCalculator.ApproximatePairedPValue(minDeltas),
+                        WilcoxonPValueApprox = minWilcoxon.PValueApprox,
+                        WilcoxonW = minWilcoxon.WPlus,
+                        EffectSizeR = minWilcoxon.RankBiserial,
+                        ProposedBetter = minDeltas.Average() > 0
+                    });
+                }
             }
         }
 
@@ -335,6 +369,33 @@ public class RecommenderEvaluationService : IRecommenderEvaluationService
         return Math.Min(1f, corpusSize / 75f * 0.864f);
     }
 
+    private async Task<Dictionary<int, float>> BuildPopularityScoresAsync(
+        IReadOnlyList<Models.Catalog.TourCatalogItem> catalog,
+        CancellationToken cancellationToken)
+    {
+        var tourIds = catalog.Select(t => t.Id).ToHashSet();
+        var interactions = await _db.UserTourInteractions
+            .AsNoTracking()
+            .Where(i => tourIds.Contains(i.TourId))
+            .ToListAsync(cancellationToken);
+
+        var weights = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["booking"] = 5f,
+            ["book"] = 5f,
+            ["wishlist"] = 4f,
+            ["click"] = 2f,
+            ["view"] = 1f,
+            ["search"] = 0.5f
+        };
+
+        return interactions
+            .GroupBy(i => i.TourId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Sum(i => weights.GetValueOrDefault(i.InteractionType, 1f) * i.Weight));
+    }
+
     private static EvaluationProfileSplit ParseProfileSplit(string? split) =>
         split?.Trim().ToLowerInvariant() switch
         {
@@ -370,6 +431,10 @@ public class RecommenderEvaluationService : IRecommenderEvaluationService
         private float _envySum;
         private float _ildSum;
         private int _constraintOk;
+        private readonly List<float> _ndcgValues = new();
+        private readonly List<float> _minPersonaValues = new();
+        private readonly List<float> _varianceValues = new();
+        private readonly List<float> _envyValues = new();
 
         public StrategyAccumulator(string key, string name, string description)
         {
@@ -383,9 +448,16 @@ public class RecommenderEvaluationService : IRecommenderEvaluationService
             IReadOnlyDictionary<int, int> relevance,
             IReadOnlyList<int> rankedIds,
             int topK,
-            float ndcg)
+            float ndcg,
+            float minPersona,
+            float variance,
+            float envy)
         {
             _ndcgSum += ndcg;
+            _ndcgValues.Add(ndcg);
+            _minPersonaValues.Add(minPersona);
+            _varianceValues.Add(variance);
+            _envyValues.Add(envy);
             _precSum += EvaluationMetricsCalculator.PrecisionAtK(rankedIds, relevance, topK);
             _recallSum += EvaluationMetricsCalculator.RecallAtK(rankedIds, relevance, topK);
             _ildSum += EvaluationMetricsCalculator.IntraListDiversity(ranked.Select(r => r.Tour).ToList());
@@ -394,9 +466,9 @@ public class RecommenderEvaluationService : IRecommenderEvaluationService
             {
                 _constraintOk++;
                 _gsSum += ranked[0].Scoring.FairnessScore;
-                _minPersonaSum += ranked[0].Scoring.MinPersonaScore;
-                _varSum += ranked[0].Scoring.DissatisfactionVariance;
-                _envySum += ranked[0].Scoring.EnvyGap;
+                _minPersonaSum += minPersona;
+                _varSum += variance;
+                _envySum += envy;
             }
         }
 
@@ -409,15 +481,31 @@ public class RecommenderEvaluationService : IRecommenderEvaluationService
                 StrategyName = _name,
                 Description = _description,
                 NdcgAtK = _ndcgSum / n,
+                NdcgStdDev = StdDev(_ndcgValues),
                 PrecisionAtK = _precSum / n,
                 RecallAtK = _recallSum / n,
                 AvgGroupSatisfaction = _gsSum / n,
                 AvgMinPersonaUtility = _minPersonaSum / n,
+                MinPersonaStdDev = StdDev(_minPersonaValues),
                 AvgDissatisfactionVariance = _varSum / n,
+                DissatisfactionVarianceStdDev = StdDev(_varianceValues),
                 AvgEnvyGap = _envySum / n,
+                EnvyGapStdDev = StdDev(_envyValues),
                 AvgIntraListDiversity = _ildSum / n,
                 ConstraintSatisfactionRate = _constraintOk / (float)n
             };
+        }
+
+        private static float StdDev(IReadOnlyList<float> values)
+        {
+            if (values.Count <= 1)
+            {
+                return 0f;
+            }
+
+            var mean = values.Average();
+            var variance = values.Sum(v => (v - mean) * (v - mean)) / (values.Count - 1);
+            return MathF.Sqrt(variance);
         }
     }
 }
