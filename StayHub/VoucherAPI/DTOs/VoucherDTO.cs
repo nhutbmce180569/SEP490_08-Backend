@@ -99,12 +99,27 @@ public abstract class BaseVoucherDTO
 public class CreateVoucherDTO : BaseVoucherDTO
 {
     public List<CreateUserVoucherAssignmentDTO>? CustomerAssignments { get; set; }
+
+    public TopCustomerVoucherAssignmentDTO? TopCustomerAssignment { get; set; }
 }
 
 public class CreateUserVoucherAssignmentDTO
 {
     [Range(1, int.MaxValue, ErrorMessage = "UserId must be greater than 0")]
     public int UserId { get; set; }
+
+    [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1")]
+    public int Quantity { get; set; } = 1;
+}
+
+public class TopCustomerVoucherAssignmentDTO
+{
+    [Range(1, 100, ErrorMessage = "Top must be between 1 and 100")]
+    public int Top { get; set; }
+
+    [Required(ErrorMessage = "RevenuePeriod is required")]
+    [RegularExpression(@"^(Month|Year|AllTime)$", ErrorMessage = "RevenuePeriod must be 'Month', 'Year', or 'AllTime'")]
+    public string RevenuePeriod { get; set; } = null!;
 
     [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1")]
     public int Quantity { get; set; } = 1;
@@ -135,6 +150,8 @@ public class UpdateVoucherDTO
     public string? Description { get; set; }
 
     public List<CreateUserVoucherAssignmentDTO>? CustomerAssignments { get; set; }
+
+    public TopCustomerVoucherAssignmentDTO? TopCustomerAssignment { get; set; }
 }
 
 public class UserApiResponse

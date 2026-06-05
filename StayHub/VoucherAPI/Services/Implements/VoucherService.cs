@@ -11,6 +11,7 @@ public class VoucherService : IVoucherService
     private readonly IUserVoucherRepository _userVoucherRepository;
     private readonly ITourValidationService _tourValidationService;
     private readonly IUserValidationService _userValidationService;
+    private readonly IBookingAnalyticsClient _bookingAnalyticsClient;
     private readonly IMapper _mapper;
 
     public VoucherService(
@@ -18,12 +19,14 @@ public class VoucherService : IVoucherService
         IUserVoucherRepository userVoucherRepository,
         ITourValidationService tourValidationService,
         IUserValidationService userValidationService,
+        IBookingAnalyticsClient bookingAnalyticsClient,
         IMapper mapper)
     {
         _voucherRepository = voucherRepository;
         _userVoucherRepository = userVoucherRepository;
         _tourValidationService = tourValidationService;
         _userValidationService = userValidationService;
+        _bookingAnalyticsClient = bookingAnalyticsClient;
         _mapper = mapper;
     }
 
@@ -143,7 +146,7 @@ public class VoucherService : IVoucherService
             }
         }
 
-        var assignments = dto.CustomerAssignments ?? new List<CreateUserVoucherAssignmentDTO>();
+        var assignments = await ResolveCustomerAssignmentsAsync(dto.CustomerAssignments, dto.TopCustomerAssignment);
         if (assignments.Count > 0)
         {
             ValidateCustomerAssignments(assignments);
@@ -289,13 +292,17 @@ public class VoucherService : IVoucherService
 
         await _voucherRepository.UpdateAsync(entity);
 
-        if (dto.CustomerAssignments != null && dto.CustomerAssignments.Count > 0)
+        var resolvedAssignments = await ResolveCustomerAssignmentsAsync(
+            dto.CustomerAssignments,
+            dto.TopCustomerAssignment);
+
+        if (resolvedAssignments.Count > 0)
         {
-            ValidateCustomerAssignments(dto.CustomerAssignments);
-            await ValidateCustomersAsync(dto.CustomerAssignments);
+            ValidateCustomerAssignments(resolvedAssignments);
+            await ValidateCustomersAsync(resolvedAssignments);
 
             var newAssignments = new List<UserVoucher>();
-            foreach (var assignment in dto.CustomerAssignments)
+            foreach (var assignment in resolvedAssignments)
             {
                 if (await _userVoucherRepository.ExistsForUserAsync(entity.Id, assignment.UserId))
                 {
@@ -426,6 +433,87 @@ public class VoucherService : IVoucherService
                 throw new Exception($"Customer with Id {assignment.UserId} is not active");
             }
         }
+    }
+
+    private async Task<List<CreateUserVoucherAssignmentDTO>> ResolveCustomerAssignmentsAsync(
+        List<CreateUserVoucherAssignmentDTO>? customerAssignments,
+        TopCustomerVoucherAssignmentDTO? topCustomerAssignment)
+    {
+        var assignments = customerAssignments ?? [];
+        var hasSpecific = assignments.Count > 0;
+        var hasTop = topCustomerAssignment != null;
+
+        if (hasSpecific && hasTop)
+        {
+            throw new Exception("Cannot use both specific customer assignments and top customer assignment");
+        }
+
+        if (!hasTop)
+        {
+            return assignments;
+        }
+
+        ValidateTopCustomerAssignment(topCustomerAssignment!);
+        var (from, to) = ResolveRevenuePeriod(topCustomerAssignment!.RevenuePeriod);
+        var topCustomers = await _bookingAnalyticsClient.GetTopCustomersAsync(
+            topCustomerAssignment.Top,
+            from,
+            to);
+
+        if (topCustomers.Count == 0)
+        {
+            throw new Exception("No customers found for the selected revenue period");
+        }
+
+        return topCustomers
+            .Select(customer => new CreateUserVoucherAssignmentDTO
+            {
+                UserId = customer.CustomerId,
+                Quantity = topCustomerAssignment.Quantity
+            })
+            .ToList();
+    }
+
+    private static void ValidateTopCustomerAssignment(TopCustomerVoucherAssignmentDTO assignment)
+    {
+        if (assignment.Top <= 0 || assignment.Top > 100)
+        {
+            throw new Exception("Top must be between 1 and 100");
+        }
+
+        if (assignment.Quantity <= 0)
+        {
+            throw new Exception("Quantity must be at least 1");
+        }
+
+        if (!assignment.RevenuePeriod.Equals("Month", StringComparison.OrdinalIgnoreCase)
+            && !assignment.RevenuePeriod.Equals("Year", StringComparison.OrdinalIgnoreCase)
+            && !assignment.RevenuePeriod.Equals("AllTime", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new Exception("RevenuePeriod must be 'Month', 'Year', or 'AllTime'");
+        }
+    }
+
+    private static (DateTime? From, DateTime? To) ResolveRevenuePeriod(string revenuePeriod)
+    {
+        var now = DateTime.UtcNow;
+
+        if (revenuePeriod.Equals("Month", StringComparison.OrdinalIgnoreCase))
+        {
+            return (new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc), now);
+        }
+
+        if (revenuePeriod.Equals("Year", StringComparison.OrdinalIgnoreCase))
+        {
+            return (new DateTime(now.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc), now);
+        }
+
+        if (revenuePeriod.Equals("AllTime", StringComparison.OrdinalIgnoreCase))
+        {
+            return (null, null);
+        }
+
+        throw new Exception("RevenuePeriod must be 'Month', 'Year', or 'AllTime'");
     }
 
     private static void ValidateCustomerAssignments(IEnumerable<CreateUserVoucherAssignmentDTO> assignments)
