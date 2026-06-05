@@ -98,6 +98,15 @@ public class TourRecommendationItemDTO
     public string? ScheduleNote { get; set; }
 }
 
+public class ScoreDimensionExplanationDTO
+{
+    public string DimensionKey { get; set; } = "";
+    public string Label { get; set; } = "";
+    public float Score { get; set; }
+    public float Weight { get; set; }
+    public string Explanation { get; set; } = "";
+}
+
 public class TourScoreBreakdownDTO
 {
     public float FairnessScore { get; set; }
@@ -105,9 +114,11 @@ public class TourScoreBreakdownDTO
     public float MeanPersonaScore { get; set; }
     public Dictionary<string, float> PersonaScores { get; set; } = new();
     public Dictionary<string, float> DimensionScores { get; set; } = new();
+    public List<ScoreDimensionExplanationDTO> DimensionExplanations { get; set; } = new();
     public float EnvyGap { get; set; }
     public float DissatisfactionVariance { get; set; }
     public string AggregationFormula { get; set; } = "";
+    public string OverallExplanation { get; set; } = "";
 }
 
 public class TourSearchResultItemDTO : TourRecommendationItemDTO

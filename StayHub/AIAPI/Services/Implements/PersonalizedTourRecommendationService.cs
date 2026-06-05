@@ -21,6 +21,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
     private readonly RecommenderSettings _settings;
     private readonly IAiLocalizedCopy _text;
     private readonly IKnowledgeLocalizationService _knowledgeLocalizer;
+    private readonly IDimensionWeightProvider _dimensionWeights;
 
     public PersonalizedTourRecommendationService(
         ICatalogStore catalogStore,
@@ -30,7 +31,8 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         TourRanker tourRanker,
         IOptions<RecommenderSettings> settings,
         IAiLocalizedCopy text,
-        IKnowledgeLocalizationService knowledgeLocalizer)
+        IKnowledgeLocalizationService knowledgeLocalizer,
+        IDimensionWeightProvider dimensionWeights)
     {
         _catalogStore = catalogStore;
         _modelRegistry = modelRegistry;
@@ -40,6 +42,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         _settings = settings.Value;
         _text = text;
         _knowledgeLocalizer = knowledgeLocalizer;
+        _dimensionWeights = dimensionWeights;
     }
 
     public StandardQuestionnaireDTO GetStandardQuestionnaire() => new()
@@ -198,9 +201,9 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
                 weatherCity, profile.PreferredStartDate, profile.PreferredEndDate, cancellationToken);
         }
 
-        var interestQuery = string.Join(" ", profile.TravelInterests);
-        var semanticScores = _modelRegistry.SearchTours(interestQuery, _catalogStore.Tours.Count)
-            .ToDictionary(x => x.TourId, x => x.Score);
+        var interestQuery = InterestMatchHelper.BuildSearchQuery(profile.TravelInterests);
+        var semanticScores = _modelRegistry.ComputeTourSemanticScores(interestQuery)
+            .ToDictionary(x => x.Key, x => x.Value);
 
         var rankingPool = Math.Min(
             _catalogStore.Tours.Count,
@@ -222,7 +225,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             .ToList();
 
         var mapped = rankedDistinct
-            .Select(x => MapTour(x.Tour, x.Scoring, windowStart, windowEnd))
+            .Select(x => MapTour(x.Tour, x.Scoring, profile, windowStart, windowEnd))
             .ToList();
 
         var (exactTours, nearbyTours, scheduleAvailability) =
@@ -298,14 +301,21 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
     private TourRecommendationItemDTO MapTour(
         TourCatalogItem tour,
         TourScoringResult scoring,
+        TourPreferenceQuestionnaireDTO profile,
         DateTime windowStart,
         DateTime windowEnd)
     {
         var publicId = CatalogTourIds.ResolveBaseTourId(tour.Id);
         var display = _catalogStore.Tours.FirstOrDefault(t => t.Id == publicId) ?? tour;
-        var reasons = scoring.MatchReasons.Distinct().Take(8).ToList();
         var matchesDates = ScheduleAvailabilityHelper.IsInPreferredWindow(display.NextDeparture, windowStart, windowEnd);
+        var reasons = EnsureScheduleMatchReason(scoring.MatchReasons, matchesDates);
         var scheduleNote = BuildScheduleNote(display.NextDeparture, windowStart, windowEnd, matchesDates);
+        var dimensionExplanations = CustomerScoreExplanationBuilder.Build(
+            display,
+            profile,
+            scoring.DimensionScores,
+            _dimensionWeights,
+            _text);
 
         return new TourRecommendationItemDTO
         {
@@ -330,11 +340,23 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
                 MeanPersonaScore = scoring.MeanPersonaScore,
                 PersonaScores = scoring.PersonaScores,
                 DimensionScores = scoring.DimensionScores,
+                DimensionExplanations = dimensionExplanations,
                 EnvyGap = scoring.EnvyGap,
                 DissatisfactionVariance = scoring.DissatisfactionVariance,
-                AggregationFormula = ScoringModelSpec.FormalDefinitions.CafhrUtility
+                AggregationFormula = ScoringModelSpec.FormalDefinitions.CafhrUtility,
+                OverallExplanation = BuildOverallScoreExplanation(scoring)
             }
         };
+    }
+
+    private string BuildOverallScoreExplanation(TourScoringResult scoring)
+    {
+        var percent = $"{Math.Round(Math.Clamp(scoring.FairnessScore, 0f, 1f) * 100)}%";
+        var alpha = _settings.FairnessAlpha;
+
+        return _text.IsVietnamese
+            ? $"Độ khớp tổng {percent} được tính từ 7 tiêu chí (sở thích, điểm đến, ngân sách, lịch, thời tiết, độ dễ đi, văn hóa), cân bằng sở thích của mọi người trong nhóm (hệ số công bằng {alpha:0.00})."
+            : $"Overall match {percent} combines 7 factors (interests, destination, budget, schedule, weather, ease, culture), balancing everyone in your travel party (fairness weight {alpha:0.00}).";
     }
 
     private List<TourismInsightDTO> MapCulturalInsights(IReadOnlyList<CulturalFactResult> facts) =>
@@ -655,6 +677,25 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             .Select(g => g.First())
             .Take(12)
             .ToList();
+    }
+
+    private List<string> EnsureScheduleMatchReason(IEnumerable<string> reasons, bool matchesDates)
+    {
+        var list = reasons.Distinct().ToList();
+        if (!matchesDates)
+        {
+            return list.Take(8).ToList();
+        }
+
+        var scheduleReason = _text.ReasonScheduleFit;
+        if (list.All(r => !string.Equals(r, scheduleReason, StringComparison.OrdinalIgnoreCase)
+                          && !r.Contains("lịch khởi hành", StringComparison.OrdinalIgnoreCase)
+                          && !r.Contains("departure date", StringComparison.OrdinalIgnoreCase)))
+        {
+            list.Insert(0, scheduleReason);
+        }
+
+        return list.Take(8).ToList();
     }
 
     private static string BuildCustomerReasonSummary(IReadOnlyList<string> reasons)

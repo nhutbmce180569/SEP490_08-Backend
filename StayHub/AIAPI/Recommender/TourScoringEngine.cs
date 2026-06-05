@@ -30,19 +30,6 @@ public class TourScoringEngine
     private readonly IRagKnowledgeIndex _ragIndex;
     private readonly IAiLocalizedCopy _text;
 
-    private static readonly Dictionary<string, string[]> InterestKeywords = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["beach"] = ["beach", "sea", "island", "resort", "biển", "đảo"],
-        ["culture"] = ["culture", "heritage", "ancient", "temple", "unesco", "văn hóa", "di tích", "phố cổ"],
-        ["nature"] = ["nature", "mountain", "trek", "cloud", "forest", "thiên nhiên", "núi"],
-        ["food"] = ["food", "cuisine", "street food", "ẩm thực", "đặc sản", "seafood"],
-        ["adventure"] = ["adventure", "trek", "climb", "dive", "mạo hiểm", "kayak"],
-        ["relax"] = ["relax", "spa", "resort", "chill", "nghỉ dưỡng", "honeymoon", "cruise"],
-        ["photography"] = ["photo", "sunset", "cloud hunting", "chụp ảnh"],
-        ["city"] = ["city", "night market", "thành phố", "chợ đêm"],
-        ["river"] = ["river", "mekong", "floating market", "sông", "chợ nổi", "delta"]
-    };
-
     public TourScoringEngine(
         IOptions<RecommenderSettings> settings,
         IDimensionWeightProvider weights,
@@ -166,7 +153,7 @@ public class TourScoringEngine
             ["location"] = ScoreLocation(tour, profile),
             ["budget"] = ScoreBudget(tour, profile),
             ["schedule"] = ScoreSchedule(tour, profile),
-            ["interest_semantic"] = semanticScores.TryGetValue(tour.Id, out var s) ? Clamp01(s) : 0f,
+            ["interest_semantic"] = ComputeInterestDimensionScore(tour, profile, semanticScores),
             ["weather"] = ScoreWeather(tour, weather),
             ["accessibility"] = ScoreAccessibilityBase(tour),
             ["cultural_fit"] = includeKnowledge ? ScoreCulturalFit(tour, profile) : 0.5f
@@ -359,30 +346,26 @@ public class TourScoringEngine
         return 0.5f;
     }
 
-    private static float ScoreInterestMatch(string doc, IEnumerable<string> interests)
+    private static float ComputeInterestDimensionScore(
+        TourCatalogItem tour,
+        TourPreferenceQuestionnaireDTO profile,
+        Dictionary<int, float> semanticScores)
     {
-        var list = interests.ToList();
-        if (list.Count == 0)
+        var doc = tour.SearchDocument.ToLowerInvariant();
+        var keywordScore = InterestMatchHelper.ScoreKeywordMatch(doc, profile.TravelInterests);
+        var semanticScore = semanticScores.TryGetValue(tour.Id, out var s) ? Clamp01(s) : 0f;
+
+        if (semanticScore <= 0f)
         {
-            return 0.5f;
+            return keywordScore;
         }
 
-        int hits = 0;
-        foreach (var interest in list)
-        {
-            if (!InterestKeywords.TryGetValue(interest, out var keys))
-            {
-                continue;
-            }
-
-            if (keys.Any(k => doc.Contains(k, StringComparison.OrdinalIgnoreCase)))
-            {
-                hits++;
-            }
-        }
-
-        return hits / (float)list.Count;
+        var blended = keywordScore * 0.55f + semanticScore * 0.45f;
+        return Clamp01(Math.Max(keywordScore, blended));
     }
+
+    private static float ScoreInterestMatch(string doc, IEnumerable<string> interests) =>
+        InterestMatchHelper.ScoreKeywordMatch(doc, interests);
 
     private static float ScoreElderlyFit(string doc, TourCatalogItem tour)
     {

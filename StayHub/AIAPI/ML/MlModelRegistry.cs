@@ -10,6 +10,7 @@ public interface IMlModelRegistry
     TrainedModelBundle Status { get; }
     (string Intent, float Confidence) PredictIntent(string text);
     IReadOnlyList<(int TourId, float Score)> SearchTours(string query, int top, Func<TourCatalogItem, bool>? filter = null);
+    IReadOnlyDictionary<int, float> ComputeTourSemanticScores(string query);
     IReadOnlyList<(int TourismId, float Score)> SearchTourism(string query, int top, string? city = null);
     Task<TrainedModelBundle> TrainAndLoadAsync(
         IReadOnlyList<TourCatalogItem> tours,
@@ -74,6 +75,22 @@ public class MlModelRegistry : IMlModelRegistry
                 .OrderByDescending(x => x.Score)
                 .Take(top)
                 .ToList();
+        }
+    }
+
+    public IReadOnlyDictionary<int, float> ComputeTourSemanticScores(string query)
+    {
+        lock (_lock)
+        {
+            if (_tourSearchModel == null || _tourVectors.Count == 0 || string.IsNullOrWhiteSpace(query))
+            {
+                return new Dictionary<int, float>();
+            }
+
+            var queryVector = _trainer.GetFeatureVector(_tourSearchModel, query);
+            return _tourVectors.ToDictionary(
+                kv => kv.Key,
+                kv => _trainer.CosineSimilarity(queryVector, kv.Value));
         }
     }
 
