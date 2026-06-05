@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using AIAPI.DTOs;
+using AIAPI.Helpers;
 using AIAPI.Models.Catalog;
 using AIAPI.Services;
 
@@ -60,22 +61,22 @@ public class QueryEntityExtractor
 
     private static string? FindKnownPlace(string text, IEnumerable<string?> candidates)
     {
-        foreach (var candidate in candidates.Where(c => !string.IsNullOrWhiteSpace(c)).Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            var normalized = candidate!.ToLowerInvariant();
-            if (text.Contains(normalized, StringComparison.Ordinal))
-            {
-                return candidate;
-            }
+        var catalogCities = candidates
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
-            var compact = normalized.Replace(" ", "", StringComparison.Ordinal);
-            if (compact.Length >= 3 && text.Replace(" ", "", StringComparison.Ordinal).Contains(compact, StringComparison.Ordinal))
-            {
-                return candidate;
-            }
+        var geo = VietnamCityGeoResolver.ResolveFromText(text);
+        if (geo != null)
+        {
+            var catalogMatch = catalogCities.FirstOrDefault(c =>
+                VietnameseTextNormalizer.CityEquals(c, geo.DisplayName));
+            return catalogMatch ?? geo.DisplayName;
         }
 
-        return null;
+        return catalogCities
+            .OrderByDescending(c => c!.Length)
+            .FirstOrDefault(c => VietnameseTextNormalizer.ContainsNormalized(text, c!));
     }
 
     private static long? ExtractMinBudget(string text)

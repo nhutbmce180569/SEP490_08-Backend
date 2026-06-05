@@ -128,7 +128,6 @@ public class TourRanker
         IReadOnlyDictionary<int, float>? popularityScores)
     {
         var personas = TravelPartyDecomposer.Decompose(profile, _text);
-        var primaryType = ScoringModelSpec.PersonaTypes.Primary;
         var rawPop = catalog.ToDictionary(t => t.Id, t => popularityScores?.GetValueOrDefault(t.Id, 0f) ?? 0f);
         var maxPop = rawPop.Values.DefaultIfEmpty(0f).Max();
         var minPop = rawPop.Values.DefaultIfEmpty(0f).Min();

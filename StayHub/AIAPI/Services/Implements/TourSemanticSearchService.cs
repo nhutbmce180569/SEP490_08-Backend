@@ -63,7 +63,7 @@ public class TourSemanticSearchService : ITourSemanticSearchService
                 }
 
                 if (!string.IsNullOrWhiteSpace(city) &&
-                    !string.Equals(item.City, city, StringComparison.OrdinalIgnoreCase))
+                    !VietnameseTextNormalizer.CityEquals(item.City, city))
                 {
                     return null;
                 }
@@ -102,7 +102,7 @@ public class TourSemanticSearchService : ITourSemanticSearchService
         if (!string.IsNullOrWhiteSpace(parsed.Country) &&
             !string.Equals(tour.Country, parsed.Country, StringComparison.OrdinalIgnoreCase)) return false;
         if (!string.IsNullOrWhiteSpace(parsed.City) &&
-            !string.Equals(tour.City, parsed.City, StringComparison.OrdinalIgnoreCase)) return false;
+            !VietnameseTextNormalizer.CityEquals(tour.City, parsed.City)) return false;
         if (parsed.MinPrice.HasValue && (!tour.MaxPrice.HasValue || tour.MaxPrice.Value < parsed.MinPrice.Value)) return false;
         if (parsed.MaxPrice.HasValue && (!tour.MinPrice.HasValue || tour.MinPrice.Value > parsed.MaxPrice.Value)) return false;
         if (parsed.DurationDays.HasValue && tour.DurationDays.HasValue && tour.DurationDays.Value != parsed.DurationDays.Value) return false;
@@ -364,7 +364,7 @@ public class TourRecommendationService : ITourRecommendationService
         if (!string.IsNullOrWhiteSpace(parsed.Country) &&
             !string.Equals(tour.Country, parsed.Country, StringComparison.OrdinalIgnoreCase)) return false;
         if (!string.IsNullOrWhiteSpace(parsed.City) &&
-            !string.Equals(tour.City, parsed.City, StringComparison.OrdinalIgnoreCase)) return false;
+            !VietnameseTextNormalizer.CityEquals(tour.City, parsed.City)) return false;
         if (parsed.MinPrice.HasValue && (!tour.MaxPrice.HasValue || tour.MaxPrice.Value < parsed.MinPrice.Value)) return false;
         if (parsed.MaxPrice.HasValue && (!tour.MinPrice.HasValue || tour.MinPrice.Value > parsed.MaxPrice.Value)) return false;
         if (parsed.DurationDays.HasValue && tour.DurationDays.HasValue && tour.DurationDays.Value != parsed.DurationDays.Value) return false;
