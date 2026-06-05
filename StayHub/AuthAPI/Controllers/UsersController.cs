@@ -10,7 +10,6 @@ namespace AuthAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    // [Authorize(Roles = "Admin")]
     public class UsersController : LocalizedControllerBase
     {
         private readonly IUserService _userService;
@@ -134,6 +133,31 @@ namespace AuthAPI.Controllers
             {
                 var users = await _userService.GetUsersBatchAsync(userIds);
                 return Ok(new { message = M("UsersRetrievedSuccessfully"), data = users });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileFetchingUsersBatch"), details = ex.Message });
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("batch/public")]
+        public async Task<IActionResult> GetUsersBatchPublic([FromBody] List<int> userIds)
+        {
+            if (userIds == null || !userIds.Any())
+                return BadRequest(new { message = M("UserIDsListCannotBeEmpty") });
+
+            try
+            {
+                var users = await _userService.GetUsersBatchAsync(userIds);
+
+                var safeData = users.Select(u => new {
+                    Id = u.Id,
+                    FullName = u.FullName,
+                    AvatarUrl = u.AvatarUrl
+                });
+
+                return Ok(new { message = M("UsersRetrievedSuccessfully"), data = safeData });
             }
             catch (Exception ex)
             {

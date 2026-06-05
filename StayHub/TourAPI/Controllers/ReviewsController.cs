@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OData.Query;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Options;
 using StayHub.Common.Controllers;
 using StayHub.Common.Resources;
 using System;
@@ -8,6 +10,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using TourAPI.DTOs;
+using TourAPI.Models;
 using TourAPI.Services;
 
 namespace TourAPI.Controllers
@@ -103,11 +106,11 @@ namespace TourAPI.Controllers
         // 1. API DÀNH CHO KHÁCH (Không cần đăng nhập, tự động giấu review bị ẩn)
         [AllowAnonymous]
         [HttpGet("tour/{tourId}")]
-        public async Task<IActionResult> GetReviewsByTour(int tourId)
+        public async Task<IActionResult> GetReviewsByTour(int tourId, ODataQueryOptions<Review> options)
         {
             try
             {
-                var result = await _reviewService.GetReviewsByTourAsync(tourId, includeHidden: false);
+                var result = await _reviewService.GetReviewsByTourODataAsync(tourId, options, includeHidden: false);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -118,11 +121,11 @@ namespace TourAPI.Controllers
 
         [Authorize(Roles = "Manager,Staff")]
         [HttpGet("tour/{tourId}/admin")]
-        public async Task<IActionResult> GetReviewsByTourAdmin(int tourId)
+        public async Task<IActionResult> GetReviewsByTourAdmin(int tourId, ODataQueryOptions<Review> options)
         {
             try
             {
-                var result = await _reviewService.GetReviewsByTourAsync(tourId, includeHidden: true);
+                var result = await _reviewService.GetReviewsByTourODataAsync(tourId, options, includeHidden: true);
                 return Ok(result);
             }
             catch (Exception ex)
