@@ -29,11 +29,14 @@ namespace TourAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ReadTourScheduleDTO>>> GetAll()
+        public async Task<ActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             try
             {
-                var result = await _scheduleService.GetAllSchedulesAsync();
+                if (page < 1) page = 1;
+                if (pageSize < 1) pageSize = 10;
+
+                var result = await _scheduleService.GetAllSchedulesAsync(page, pageSize);
                 return Ok(result);
             }
             catch (Exception ex)

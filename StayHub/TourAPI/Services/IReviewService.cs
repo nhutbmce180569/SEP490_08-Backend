@@ -12,8 +12,7 @@ namespace TourAPI.Services
         Task<ReadReviewDTO> UpdateReviewAsync(int reviewId, UpdateReviewDTO model, int customerId);
         Task<ReadReviewDTO?> GetMyReviewByTourAsync(int tourId, int customerId);
         Task<IEnumerable<ReadReviewDTO>> GetMyReviewsAsync(int customerId);
-        Task<IEnumerable<ReadReviewDTO>> GetReviewsByTourAsync(int tourId, bool includeHidden = false);
-        Task<PagedResult<ReadReviewDTO>> GetReviewsByTourODataAsync(int tourId, ODataQueryOptions<Review> options, bool includeHidden = false);
+        Task<PaginationDTO<ReadReviewDTO>> GetReviewsByTourAsync(int tourId, int page, int pageSize, int? rating, string sortOrder, bool includeHidden = false);
         Task<ReadReviewReplyDTO> CreateReviewReplyAsync(int staffId, CreateReviewReplyDTO model);
         Task<ReadReviewReplyDTO> UpdateReviewReplyAsync(int replyId, int staffId, UpdateReviewReplyDTO model);
         Task DeleteReviewReplyAsync(int replyId, int staffId);

@@ -27,8 +27,6 @@ namespace TourAPI.Repositories.Implements
 
             if (tour == null)
                 return;
-
-            // remove child tables
             _context.Reviews.RemoveRange(tour.Reviews);
 
             _context.TourItineraries.RemoveRange(tour.TourItineraries);

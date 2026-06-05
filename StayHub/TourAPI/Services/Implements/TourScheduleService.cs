@@ -16,10 +16,29 @@ namespace TourAPI.Services.Implements
             _mapper = mapper;
         }
 
-        public async Task<IEnumerable<ReadTourScheduleDTO>> GetAllSchedulesAsync()
+        public async Task<PaginationDTO<ReadTourScheduleDTO>> GetAllSchedulesAsync(int page, int pageSize)
         {
             var schedules = await _scheduleRepo.GetAllAsync();
-            return _mapper.Map<IEnumerable<ReadTourScheduleDTO>>(schedules);
+
+            var list = _mapper.Map<List<ReadTourScheduleDTO>>(schedules);
+
+            int total = list.Count;
+
+            list = list
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+            var result = new PaginationDTO<ReadTourScheduleDTO>
+            {
+                Data = list,
+                CurrentPage = page,
+                PageSize = pageSize,
+                Total = total,
+                TotalPages = (int)Math.Ceiling(total / (double)pageSize)
+            };
+
+            return result;
         }
 
         public async Task<ReadTourScheduleDTO> GetScheduleByIdAsync(int id)

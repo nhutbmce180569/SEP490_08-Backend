@@ -4,7 +4,7 @@ namespace TourAPI.Services
 {
     public interface ITourScheduleService
     {
-        Task<IEnumerable<ReadTourScheduleDTO>> GetAllSchedulesAsync();
+        Task<PaginationDTO<ReadTourScheduleDTO>> GetAllSchedulesAsync(int page, int pageSize);
         Task<ReadTourScheduleDTO> GetScheduleByIdAsync(int id);
         Task<ReadTourScheduleDTO> CreateScheduleAsync(CreateTourScheduleDTO dto);
         Task<ReadTourScheduleDTO> UpdateScheduleAsync(int id, UpdateTourScheduleDTO dto);

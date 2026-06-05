@@ -209,12 +209,48 @@ namespace TourAPI.Services.Implements
             return dtos;
         }
 
-        public async Task<IEnumerable<ReadReviewDTO>> GetReviewsByTourAsync(int tourId, bool includeHidden = false)
+        public async Task<PaginationDTO<ReadReviewDTO>> GetReviewsByTourAsync(int tourId, int page, int pageSize, int? rating, string sortOrder, bool includeHidden = false)
         {
-            var reviews = await _reviewRepository.GetByTourAsync(tourId, includeHidden);
-            var dtos = _mapper.Map<IEnumerable<ReadReviewDTO>>(reviews);
+            // Lấy câu query gốc
+            var query = _reviewRepository.GetBaseQueryByTour(tourId, includeHidden);
+
+            // 1. Áp dụng Lọc theo số sao
+            if (rating.HasValue)
+            {
+                query = query.Where(r => r.Rating == rating.Value);
+            }
+
+            // 2. Áp dụng Sắp xếp
+            if (sortOrder?.ToLower() == "oldest")
+            {
+                query = query.OrderBy(r => r.CreatedAt);
+            }
+            else
+            {
+                query = query.OrderByDescending(r => r.CreatedAt); // Mặc định là mới nhất
+            }
+
+            // 3. Đếm tổng số lượng
+            var totalCount = await query.CountAsync();
+
+            // 4. Áp dụng Phân trang (Skip, Take)
+            var reviews = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // 5. Map sang DTO và gán thông tin Avatar/Tên
+            var dtos = _mapper.Map<List<ReadReviewDTO>>(reviews);
             await PopulateReviewerNamesAsync(dtos);
-            return dtos;
+
+            return new PaginationDTO<ReadReviewDTO>
+            {
+                Data = dtos,
+                CurrentPage = page,
+                PageSize = pageSize,
+                Total = totalCount,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            };
         }
 
         public async Task HideReviewAsync(int reviewId, bool hidden)
@@ -229,41 +265,7 @@ namespace TourAPI.Services.Implements
             await _reviewRepository.SaveChangesAsync();
         }
 
-        public async Task<PagedResult<ReadReviewDTO>> GetReviewsByTourODataAsync(int tourId, ODataQueryOptions<Review> options, bool includeHidden = false)
-        {
-            // Lấy câu query gốc (mới chỉ WHERE theo tourId)
-            var query = _reviewRepository.GetBaseQueryByTour(tourId, includeHidden);
-
-            // BƯỚC A: Áp dụng Lọc ($filter) và Sắp xếp ($orderby) từ OData
-            if (options.Filter != null)
-                query = options.Filter.ApplyTo(query, new ODataQuerySettings()) as IQueryable<Review>;
-
-            if (options.OrderBy != null)
-                query = options.OrderBy.ApplyTo(query, new ODataQuerySettings());
-
-            // BƯỚC B: Đếm tổng số lượng thỏa mãn điều kiện (Trước khi cắt trang)
-            var totalCount = await query.CountAsync();
-
-            // BƯỚC C: Áp dụng Phân trang ($skip, $top)
-            if (options.Skip != null)
-                query = options.Skip.ApplyTo(query, new ODataQuerySettings());
-
-            if (options.Top != null)
-                query = options.Top.ApplyTo(query, new ODataQuerySettings());
-
-            // BƯỚC D: Bây giờ mới thực sự Query xuống DB (Chỉ kéo lên đúng 10 dòng)
-            var reviews = await query.ToListAsync();
-
-            // BƯỚC E: Map sang DTO và đi gọi API UserBatch (như đã tối ưu)
-            var dtos = _mapper.Map<List<ReadReviewDTO>>(reviews);
-            await PopulateReviewerNamesAsync(dtos);
-
-            return new PagedResult<ReadReviewDTO>
-            {
-                TotalCount = totalCount,
-                Items = dtos
-            };
-        }
+ 
 
         private async Task PopulateReviewerNamesAsync(IEnumerable<ReadReviewDTO> reviews)
         {
@@ -271,7 +273,6 @@ namespace TourAPI.Services.Implements
 
             var reviewList = reviews.ToList();
 
-            // 1. Gom tất cả ID lại (Customer + Staff repy)
             var allUserIds = reviewList.Select(x => x.CustomerId)
                 .Concat(reviewList.SelectMany(r => r.Replies?.Select(rep => rep.UserId) ?? Enumerable.Empty<int>()))
                 .Distinct()
