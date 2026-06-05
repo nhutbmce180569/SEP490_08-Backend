@@ -83,7 +83,56 @@ public class TourScoringEngine
         result.DissatisfactionVariance = FairnessFormalization.DissatisfactionVariance(result.PersonaScores);
         result.EnvyGap = FairnessFormalization.EnvyGap(result.PersonaScores);
 
+        AppendDimensionMatchReasons(result, tour, profile, dimensionScores);
+
         return result;
+    }
+
+    private void AppendDimensionMatchReasons(
+        TourScoringResult result,
+        TourCatalogItem tour,
+        TourPreferenceQuestionnaireDTO profile,
+        Dictionary<string, float> dimensions)
+    {
+        var candidates = new List<(float Score, string Reason)>();
+
+        if (!string.IsNullOrWhiteSpace(profile.PreferredCity) && dimensions.TryGetValue("location", out var location) && location >= 0.75f)
+        {
+            candidates.Add((location, _text.ReasonLocationMatch(profile.PreferredCity)));
+        }
+
+        if (profile.MaxBudgetPerPerson.HasValue && dimensions.TryGetValue("budget", out var budget) && budget >= 0.7f)
+        {
+            candidates.Add((budget, _text.ReasonBudgetFit));
+        }
+
+        if (dimensions.TryGetValue("interest_semantic", out var interest) && interest >= 0.55f)
+        {
+            candidates.Add((interest, _text.ReasonInterestStrong));
+        }
+
+        if (dimensions.TryGetValue("schedule", out var schedule) && schedule >= 0.9f)
+        {
+            candidates.Add((schedule, _text.ReasonScheduleFit));
+        }
+
+        if (tour.AverageStar is >= 4.0f)
+        {
+            candidates.Add(((float)tour.AverageStar.Value / 5f, _text.ReasonGoodRating));
+        }
+
+        foreach (var (_, reason) in candidates
+                     .OrderByDescending(x => x.Score)
+                     .Where(x => result.MatchReasons.All(r => !string.Equals(r, x.Reason, StringComparison.OrdinalIgnoreCase)))
+                     .Take(Math.Max(0, 4 - result.MatchReasons.Count)))
+        {
+            result.MatchReasons.Add(reason);
+        }
+
+        if (result.MatchReasons.Count == 0 && candidates.Count > 0)
+        {
+            result.MatchReasons.Add(candidates.OrderByDescending(x => x.Score).First().Reason);
+        }
     }
 
     private static bool PassesHardConstraints(TourCatalogItem tour, TourPreferenceQuestionnaireDTO profile)

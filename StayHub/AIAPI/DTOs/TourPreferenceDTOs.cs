@@ -96,17 +96,27 @@ public class WeatherAdviceDTO
     public string ImpactOnTours { get; set; } = "";
 }
 
+public class ScheduleAvailabilityDTO
+{
+    public bool HasToursInPreferredWindow { get; set; }
+    public string PreferredStartDate { get; set; } = "";
+    public string PreferredEndDate { get; set; } = "";
+    public string CustomerMessage { get; set; } = "";
+}
+
 public class PersonalizedRecommendationResponseDTO
 {
     public string SessionId { get; set; } = "";
     public string Summary { get; set; } = "";
     public TourPreferenceQuestionnaireDTO AppliedProfile { get; set; } = new();
+    public ScheduleAvailabilityDTO? ScheduleAvailability { get; set; }
     public WeatherAdviceDTO? WeatherAdvice { get; set; }
     public List<string> GeneralTips { get; set; } = new();
     public List<string> ForeignVisitorTips { get; set; } = new();
     public List<string> ElderlyCompanionTips { get; set; } = new();
     public List<string> ChildrenCompanionTips { get; set; } = new();
     public List<TourRecommendationItemDTO> RecommendedTours { get; set; } = new();
+    public List<TourRecommendationItemDTO> NearbyScheduleTours { get; set; } = new();
     public List<TourismInsightDTO> RelatedInsights { get; set; } = new();
     public RecommenderTransparencyDTO RecommenderMeta { get; set; } = new();
     public List<CulturalFactDTO> CulturalFacts { get; set; } = new();

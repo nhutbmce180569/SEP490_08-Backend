@@ -20,6 +20,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
     private readonly TourRanker _tourRanker;
     private readonly RecommenderSettings _settings;
     private readonly IAiLocalizedCopy _text;
+    private readonly IKnowledgeLocalizationService _knowledgeLocalizer;
 
     public PersonalizedTourRecommendationService(
         ICatalogStore catalogStore,
@@ -28,7 +29,8 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         ICulturalKnowledgeService culturalKnowledge,
         TourRanker tourRanker,
         IOptions<RecommenderSettings> settings,
-        IAiLocalizedCopy text)
+        IAiLocalizedCopy text,
+        IKnowledgeLocalizationService knowledgeLocalizer)
     {
         _catalogStore = catalogStore;
         _modelRegistry = modelRegistry;
@@ -37,6 +39,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         _tourRanker = tourRanker;
         _settings = settings.Value;
         _text = text;
+        _knowledgeLocalizer = knowledgeLocalizer;
     }
 
     public StandardQuestionnaireDTO GetStandardQuestionnaire() => new()
@@ -199,25 +202,37 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         var semanticScores = _modelRegistry.SearchTours(interestQuery, _catalogStore.Tours.Count)
             .ToDictionary(x => x.TourId, x => x.Score);
 
+        var rankingPool = Math.Min(
+            _catalogStore.Tours.Count,
+            Math.Max(profile.Top * 5, 30));
+
         var ranked = _tourRanker.RankTours(
             _catalogStore.Tours.ToList(),
-            profile,
+            WithRankingPool(profile, rankingPool),
             semanticScores,
             weather,
             AggregationStrategies.CafhrFair);
 
-        var scoredTours = ranked
+        var windowStart = profile.PreferredStartDate.Date;
+        var windowEnd = ScheduleAvailabilityHelper.ResolveWindowEnd(profile.PreferredStartDate, profile.PreferredEndDate);
+
+        var rankedDistinct = ranked
             .GroupBy(x => CatalogTourIds.ResolveBaseTourId(x.Tour.Id))
             .Select(g => g.OrderByDescending(x => x.Scoring.FairnessScore).First())
-            .Select(x => MapTour(x.Tour, x.Scoring))
             .ToList();
 
-        var culturalFacts = await _culturalKnowledge.GetFactsAsync(
-            profile.PreferredCity ?? weatherCity,
-            profile.NationalityType == TravelerNationalityTypes.Foreigner,
-            profile.HasElderly,
-            profile.HasChildren,
-            profile.TravelInterests,
+        var mapped = rankedDistinct
+            .Select(x => MapTour(x.Tour, x.Scoring, windowStart, windowEnd))
+            .ToList();
+
+        var (exactTours, nearbyTours, scheduleAvailability) =
+            BuildRecommendationLists(mapped, profile.Top, windowStart, windowEnd);
+
+        var allowedCities = ResolveAllowedCities(exactTours, nearbyTours, profile);
+
+        var culturalFactResults = await GetFactsForRecommendedToursAsync(
+            allowedCities,
+            profile,
             cancellationToken);
 
         var personaTypes = personas.Select(p => p.PersonaType).ToList();
@@ -227,22 +242,23 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             SessionId = sessionId,
             AppliedProfile = profile,
             WeatherAdvice = weather,
-            RecommendedTours = scoredTours,
-            RelatedInsights = MapCulturalInsights(culturalFacts),
-            CulturalFacts = culturalFacts.Select(MapFactDto).ToList(),
+            ScheduleAvailability = scheduleAvailability,
+            RecommendedTours = exactTours,
+            NearbyScheduleTours = nearbyTours,
+            RelatedInsights = MapCulturalInsights(culturalFactResults).Select(_knowledgeLocalizer.LocalizeInsight).ToList(),
+            CulturalFacts = culturalFactResults.Select(MapFactDto).ToList(),
             RecommenderMeta = BuildTransparencyMeta(personaTypes),
             GeneralTips = BuildGeneralTips(weather),
             ForeignVisitorTips = profile.NationalityType == TravelerNationalityTypes.Foreigner
-                ? culturalFacts.Where(f => f.Provider != ScoringModelSpec.KnowledgeSources.ContentApi)
-                    .Select(f => f.Fact).Distinct().Take(6).ToList()
+                ? BuildForeignVisitorTips(allowedCities)
                 : new List<string>(),
             ElderlyCompanionTips = profile.HasElderly
-                ? culturalFacts.Select(f => f.Fact).Where(f => f.Contains("elderly", StringComparison.OrdinalIgnoreCase) || f.Contains("cao tuổi", StringComparison.OrdinalIgnoreCase) || f.Contains("morning", StringComparison.OrdinalIgnoreCase)).Take(4).ToList()
+                ? culturalFactResults.Select(f => f.Fact).Where(f => f.Contains("elderly", StringComparison.OrdinalIgnoreCase) || f.Contains("cao tuổi", StringComparison.OrdinalIgnoreCase) || f.Contains("morning", StringComparison.OrdinalIgnoreCase)).Take(4).ToList()
                 : new List<string>(),
             ChildrenCompanionTips = profile.HasChildren
                 ? new List<string> { _text.TipChildren1, _text.TipChildren2 }
                 : new List<string>(),
-            Summary = BuildSummary(scoredTours, weather, personas.Count)
+            Summary = BuildSummary(exactTours, nearbyTours, weather, personas.Count, scheduleAvailability)
         };
     }
 
@@ -279,11 +295,18 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         }
     }
 
-    private TourRecommendationItemDTO MapTour(TourCatalogItem tour, TourScoringResult scoring)
+    private TourRecommendationItemDTO MapTour(
+        TourCatalogItem tour,
+        TourScoringResult scoring,
+        DateTime windowStart,
+        DateTime windowEnd)
     {
         var publicId = CatalogTourIds.ResolveBaseTourId(tour.Id);
         var display = _catalogStore.Tours.FirstOrDefault(t => t.Id == publicId) ?? tour;
         var reasons = scoring.MatchReasons.Distinct().Take(8).ToList();
+        var matchesDates = ScheduleAvailabilityHelper.IsInPreferredWindow(display.NextDeparture, windowStart, windowEnd);
+        var scheduleNote = BuildScheduleNote(display.NextDeparture, windowStart, windowEnd, matchesDates);
+
         return new TourRecommendationItemDTO
         {
             TourId = publicId,
@@ -296,7 +319,10 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             DurationDays = display.DurationDays,
             Score = scoring.FairnessScore,
             MatchReasons = reasons,
-            Reason = string.Join(" ", reasons),
+            Reason = BuildCustomerReasonSummary(reasons),
+            NextDeparture = display.NextDeparture,
+            MatchesPreferredDates = matchesDates,
+            ScheduleNote = scheduleNote,
             ScoreBreakdown = new TourScoreBreakdownDTO
             {
                 FairnessScore = scoring.FairnessScore,
@@ -311,11 +337,11 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         };
     }
 
-    private static List<TourismInsightDTO> MapCulturalInsights(IReadOnlyList<CulturalFactResult> facts) =>
+    private List<TourismInsightDTO> MapCulturalInsights(IReadOnlyList<CulturalFactResult> facts) =>
         facts.Select((f, i) => new TourismInsightDTO
         {
             Id = i + 1,
-            Name = f.City ?? "Cultural insight",
+            Name = ResolveInsightTitle(f),
             Type = "Knowledge",
             Description = f.Fact,
             City = f.City,
@@ -325,6 +351,18 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             KnowledgeProvider = f.Provider,
             RelevanceScore = 1f
         }).ToList();
+
+    private string ResolveInsightTitle(CulturalFactResult f)
+    {
+        if (!string.IsNullOrWhiteSpace(f.City))
+        {
+            return _text.IsVietnamese
+                ? $"Mẹo khi đến {f.City}"
+                : $"Tips for {f.City}";
+        }
+
+        return _text.IsVietnamese ? "Gợi ý địa phương" : "Local travel tip";
+    }
 
     private static CulturalFactDTO MapFactDto(CulturalFactResult f) => new()
     {
@@ -349,22 +387,293 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         return tips;
     }
 
-    private string BuildSummary(
-        List<TourRecommendationItemDTO> tours,
-        WeatherAdviceDTO? weather,
-        int personaCount)
+    private string BuildScheduleNote(
+        DateTime? departure,
+        DateTime windowStart,
+        DateTime windowEnd,
+        bool matchesDates)
     {
-        if (tours.Count == 0)
+        if (!departure.HasValue)
         {
-            return _text.SummaryNoTours;
+            return _text.ScheduleUnknownDeparture;
         }
 
+        if (matchesDates)
+        {
+            return _text.ScheduleExactMatch(departure.Value);
+        }
+
+        var daysOutside = ScheduleAvailabilityHelper.DaysOutsideWindow(departure, windowStart, windowEnd);
+        if (daysOutside > ScheduleAvailabilityHelper.NearbyWindowDays)
+        {
+            return departure.Value.Date < windowStart.Date
+                ? _text.ScheduleExtendedBefore(departure.Value, daysOutside)
+                : _text.ScheduleExtendedAfter(departure.Value, daysOutside);
+        }
+
+        return departure.Value.Date < windowStart.Date
+            ? _text.ScheduleNearbyBefore(departure.Value, daysOutside)
+            : _text.ScheduleNearbyAfter(departure.Value, daysOutside);
+    }
+
+    private string BuildSummary(
+        List<TourRecommendationItemDTO> exactTours,
+        List<TourRecommendationItemDTO> nearbyTours,
+        WeatherAdviceDTO? weather,
+        int personaCount,
+        ScheduleAvailabilityDTO schedule)
+    {
         var weatherNote = weather != null
-            ? (_text.IsVietnamese ? $" Thời tiết ({weather.DataSource})." : $" Weather ({weather.DataSource}).")
+            ? (_text.IsVietnamese
+                ? $" Thời tiết tại {weather.City} đã được tính vào gợi ý."
+                : $" Weather in {weather.City} was considered.")
             : null;
-        return _text.SummaryFound(personaCount, tours.Count, tours[0].Score.ToString("P0"), weatherNote);
+
+        var totalShown = exactTours.Count + nearbyTours.Count;
+        if (totalShown > 0)
+        {
+            var topScore = exactTours.Count > 0
+                ? exactTours[0].Score.ToString("P0")
+                : nearbyTours[0].Score.ToString("P0");
+            return _text.SummaryFound(personaCount, totalShown, topScore, weatherNote);
+        }
+
+        return _text.SummaryNoTours + (weatherNote ?? "");
     }
 
     private static string? InferCityFromInterests(List<string> interests) =>
         interests.Contains("river", StringComparer.OrdinalIgnoreCase) ? "Can Tho" : null;
+
+    private static TourPreferenceQuestionnaireDTO WithRankingPool(
+        TourPreferenceQuestionnaireDTO profile,
+        int poolSize) => new()
+    {
+        CompanionType = profile.CompanionType,
+        PreferredStartDate = profile.PreferredStartDate,
+        PreferredEndDate = profile.PreferredEndDate,
+        MaxBudgetPerPerson = profile.MaxBudgetPerPerson,
+        HasElderly = profile.HasElderly,
+        HasChildren = profile.HasChildren,
+        ChildrenCount = profile.ChildrenCount,
+        ElderlyCount = profile.ElderlyCount,
+        TravelInterests = profile.TravelInterests,
+        NationalityType = profile.NationalityType,
+        PreferredCity = profile.PreferredCity,
+        PreferredCountry = profile.PreferredCountry,
+        Top = poolSize,
+        SessionId = profile.SessionId
+    };
+
+    private (List<TourRecommendationItemDTO> Exact, List<TourRecommendationItemDTO> Alternate, ScheduleAvailabilityDTO Schedule)
+        BuildRecommendationLists(
+            List<TourRecommendationItemDTO> mapped,
+            int targetTop,
+            DateTime windowStart,
+            DateTime windowEnd)
+    {
+        var usedIds = new HashSet<int>();
+        var exact = mapped
+            .Where(t => t.MatchesPreferredDates)
+            .Take(targetTop)
+            .ToList();
+        foreach (var tour in exact)
+        {
+            usedIds.Add(tour.TourId);
+        }
+
+        var alternate = new List<TourRecommendationItemDTO>();
+        var remaining = targetTop - exact.Count;
+        if (remaining > 0)
+        {
+            alternate.AddRange(TakeScheduleCandidates(
+                mapped, usedIds, remaining, windowStart, windowEnd,
+                minDaysOutside: 1,
+                maxDaysOutside: ScheduleAvailabilityHelper.NearbyWindowDays));
+            remaining = targetTop - exact.Count - alternate.Count;
+        }
+
+        if (remaining > 0)
+        {
+            alternate.AddRange(TakeScheduleCandidates(
+                mapped, usedIds, remaining, windowStart, windowEnd,
+                minDaysOutside: ScheduleAvailabilityHelper.NearbyWindowDays + 1,
+                maxDaysOutside: ScheduleAvailabilityHelper.ExtendedWindowDays));
+            remaining = targetTop - exact.Count - alternate.Count;
+        }
+
+        if (remaining > 0)
+        {
+            var fallback = mapped
+                .Where(t => !usedIds.Contains(t.TourId))
+                .OrderByDescending(t => t.Score)
+                .Take(remaining)
+                .ToList();
+            alternate.AddRange(fallback);
+            foreach (var tour in fallback)
+            {
+                usedIds.Add(tour.TourId);
+            }
+        }
+
+        var schedule = new ScheduleAvailabilityDTO
+        {
+            HasToursInPreferredWindow = exact.Count > 0,
+            PreferredStartDate = windowStart.ToString("yyyy-MM-dd"),
+            PreferredEndDate = windowEnd.ToString("yyyy-MM-dd"),
+            CustomerMessage = BuildScheduleCustomerMessage(exact.Count, alternate.Count)
+        };
+
+        return (exact, alternate, schedule);
+    }
+
+    private static List<TourRecommendationItemDTO> TakeScheduleCandidates(
+        List<TourRecommendationItemDTO> mapped,
+        HashSet<int> usedIds,
+        int take,
+        DateTime windowStart,
+        DateTime windowEnd,
+        int minDaysOutside,
+        int maxDaysOutside)
+    {
+        if (take <= 0)
+        {
+            return new List<TourRecommendationItemDTO>();
+        }
+
+        var picked = mapped
+            .Where(t => !usedIds.Contains(t.TourId))
+            .Where(t => t.NextDeparture.HasValue && !t.MatchesPreferredDates)
+            .Select(t => new
+            {
+                Tour = t,
+                DaysOutside = ScheduleAvailabilityHelper.DaysOutsideWindow(t.NextDeparture, windowStart, windowEnd)
+            })
+            .Where(x => x.DaysOutside >= minDaysOutside && x.DaysOutside <= maxDaysOutside)
+            .OrderBy(x => x.DaysOutside)
+            .ThenByDescending(x => x.Tour.Score)
+            .Take(take)
+            .Select(x => x.Tour)
+            .ToList();
+
+        foreach (var tour in picked)
+        {
+            usedIds.Add(tour.TourId);
+        }
+
+        return picked;
+    }
+
+    private string BuildScheduleCustomerMessage(int exactCount, int alternateCount)
+    {
+        if (exactCount > 0 && alternateCount > 0)
+        {
+            return _text.SchedulePartialExactAndNearby(exactCount, alternateCount);
+        }
+
+        if (exactCount > 0)
+        {
+            return _text.ScheduleHasExact(exactCount);
+        }
+
+        if (alternateCount > 0)
+        {
+            return _text.ScheduleNoExactButNearby;
+        }
+
+        return _text.SummaryNoTours;
+    }
+
+    private static List<string> ResolveAllowedCities(
+        IReadOnlyList<TourRecommendationItemDTO> exactTours,
+        IReadOnlyList<TourRecommendationItemDTO> alternateTours,
+        TourPreferenceQuestionnaireDTO profile)
+    {
+        if (!string.IsNullOrWhiteSpace(profile.PreferredCity))
+        {
+            return new List<string> { profile.PreferredCity.Trim() };
+        }
+
+        return exactTours
+            .Concat(alternateTours)
+            .Select(t => t.City)
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .Select(c => c!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(3)
+            .ToList();
+    }
+
+    private List<string> BuildForeignVisitorTips(IReadOnlyList<string> allowedCities)
+    {
+        var tips = new List<string> { _text.ForeignVisitorGeneralHeader };
+        tips.AddRange(_text.ForeignVisitorGeneralDosAndDonts);
+
+        foreach (var city in allowedCities.Take(2))
+        {
+            var displayCity = _knowledgeLocalizer.LocalizeCityDisplay(city);
+            var cityNotes = _culturalKnowledge.GetForeignVisitorNotesForCity(city);
+            if (cityNotes.Count == 0)
+            {
+                continue;
+            }
+
+            tips.Add(_text.ForeignVisitorDestinationHeader(displayCity));
+            tips.AddRange(cityNotes);
+        }
+
+        return tips;
+    }
+
+    private async Task<IReadOnlyList<CulturalFactResult>> GetFactsForRecommendedToursAsync(
+        IReadOnlyList<string> allowedCities,
+        TourPreferenceQuestionnaireDTO profile,
+        CancellationToken cancellationToken)
+    {
+        if (allowedCities.Count == 0)
+        {
+            return Array.Empty<CulturalFactResult>();
+        }
+
+        var merged = new List<CulturalFactResult>();
+        foreach (var city in allowedCities)
+        {
+            var facts = await _culturalKnowledge.GetFactsAsync(
+                city,
+                forForeignVisitor: false,
+                profile.HasElderly,
+                profile.HasChildren,
+                profile.TravelInterests,
+                cancellationToken);
+
+            merged.AddRange(facts.Where(f =>
+                string.IsNullOrWhiteSpace(f.City) ||
+                allowedCities.Any(c => VietnameseTextNormalizer.CityEquals(f.City, c))));
+        }
+
+        return merged
+            .GroupBy(f => f.Fact, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.First())
+            .Take(12)
+            .ToList();
+    }
+
+    private static string BuildCustomerReasonSummary(IReadOnlyList<string> reasons)
+    {
+        if (reasons.Count == 0) return string.Empty;
+
+        static bool IsCaution(string r) =>
+            r.Contains("Cân nhắc", StringComparison.OrdinalIgnoreCase)
+            || r.Contains("hơi mệt", StringComparison.OrdinalIgnoreCase)
+            || r.Contains("Consider carefully", StringComparison.OrdinalIgnoreCase)
+            || r.Contains("tiring", StringComparison.OrdinalIgnoreCase)
+            || r.Contains("Worth a closer look", StringComparison.OrdinalIgnoreCase);
+
+        var highlights = reasons.Where(r => !IsCaution(r)).Distinct().Take(2).ToList();
+        if (highlights.Count == 0)
+        {
+            highlights = reasons.Distinct().Take(1).ToList();
+        }
+
+        return string.Join(" ", highlights);
+    }
 }

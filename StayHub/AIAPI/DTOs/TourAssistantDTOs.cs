@@ -93,6 +93,9 @@ public class TourRecommendationItemDTO
     public string Reason { get; set; } = "";
     public List<string> MatchReasons { get; set; } = new();
     public TourScoreBreakdownDTO? ScoreBreakdown { get; set; }
+    public DateTime? NextDeparture { get; set; }
+    public bool MatchesPreferredDates { get; set; }
+    public string? ScheduleNote { get; set; }
 }
 
 public class TourScoreBreakdownDTO

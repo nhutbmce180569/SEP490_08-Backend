@@ -15,7 +15,7 @@ public interface IMlModelRegistry
         IReadOnlyList<TourCatalogItem> tours,
         IReadOnlyList<TourismKnowledgeItem> tourismItems,
         CancellationToken cancellationToken = default);
-    void LoadFromDiskIfExists();
+    bool LoadFromDiskIfExists();
     void AttachCatalogVectors(IReadOnlyList<TourCatalogItem> tours, IReadOnlyList<TourismKnowledgeItem> tourismItems);
 }
 
@@ -23,6 +23,7 @@ public class MlModelRegistry : IMlModelRegistry
 {
     private readonly TourMlModelTrainer _trainer = new();
     private readonly MlSettings _settings;
+    private readonly ILogger<MlModelRegistry> _logger;
     private readonly object _lock = new();
     private readonly MLContext _mlContext = new(seed: 42);
 
@@ -33,9 +34,10 @@ public class MlModelRegistry : IMlModelRegistry
     private Dictionary<int, float[]> _tourVectors = new();
     private Dictionary<int, float[]> _tourismVectors = new();
 
-    public MlModelRegistry(IOptions<MlSettings> settings)
+    public MlModelRegistry(IOptions<MlSettings> settings, ILogger<MlModelRegistry> logger)
     {
         _settings = settings.Value;
+        _logger = logger;
         Directory.CreateDirectory(GetModelsDirectory());
     }
 
@@ -153,33 +155,46 @@ public class MlModelRegistry : IMlModelRegistry
         }, cancellationToken);
     }
 
-    public void LoadFromDiskIfExists()
+    public bool LoadFromDiskIfExists()
     {
         var dir = GetModelsDirectory();
         var intentPath = Path.Combine(dir, MlModelFiles.IntentModel);
         var tourPath = Path.Combine(dir, MlModelFiles.TourSearchModel);
-        if (!File.Exists(intentPath) || !File.Exists(tourPath))
+
+        if (!IsValidModelFile(intentPath) || !IsValidModelFile(tourPath))
         {
-            return;
+            return false;
         }
 
         lock (_lock)
         {
-            _intentModel = _mlContext.Model.Load(intentPath, out _);
-            _intentEngine = _mlContext.Model.CreatePredictionEngine<IntentExample, IntentPrediction>(_intentModel);
-            _tourSearchModel = _mlContext.Model.Load(tourPath, out _);
-
-            var tourismPath = Path.Combine(dir, MlModelFiles.TourismSearchModel);
-            if (File.Exists(tourismPath))
+            try
             {
-                _tourismSearchModel = _mlContext.Model.Load(tourismPath, out _);
+                _intentModel = _mlContext.Model.Load(intentPath, out _);
+                _intentEngine = _mlContext.Model.CreatePredictionEngine<IntentExample, IntentPrediction>(_intentModel);
+                _tourSearchModel = _mlContext.Model.Load(tourPath, out _);
+
+                var tourismPath = Path.Combine(dir, MlModelFiles.TourismSearchModel);
+                if (IsValidModelFile(tourismPath))
+                {
+                    _tourismSearchModel = _mlContext.Model.Load(tourismPath, out _);
+                }
+
+                Status = new TrainedModelBundle
+                {
+                    IsReady = _tourSearchModel != null && _intentModel != null,
+                    TrainedAt = File.GetLastWriteTimeUtc(tourPath)
+                };
+
+                return Status.IsReady;
             }
-
-            Status = new TrainedModelBundle
+            catch (Exception ex)
             {
-                IsReady = _tourSearchModel != null && _intentModel != null,
-                TrainedAt = File.GetLastWriteTimeUtc(tourPath)
-            };
+                _logger.LogWarning(ex, "Failed to load ML models from disk. Corrupt files will be removed and models retrained.");
+                ResetInMemoryModels();
+                DeleteModelFiles(dir);
+                return false;
+            }
         }
     }
 
@@ -212,11 +227,53 @@ public class MlModelRegistry : IMlModelRegistry
     private void SaveModels(ITransformer intentModel, ITransformer tourModel, ITransformer? tourismModel)
     {
         var dir = GetModelsDirectory();
-        _mlContext.Model.Save(intentModel, null, Path.Combine(dir, MlModelFiles.IntentModel));
-        _mlContext.Model.Save(tourModel, null, Path.Combine(dir, MlModelFiles.TourSearchModel));
+        SaveModelAtomically(intentModel, Path.Combine(dir, MlModelFiles.IntentModel));
+        SaveModelAtomically(tourModel, Path.Combine(dir, MlModelFiles.TourSearchModel));
         if (tourismModel != null)
         {
-            _mlContext.Model.Save(tourismModel, null, Path.Combine(dir, MlModelFiles.TourismSearchModel));
+            SaveModelAtomically(tourismModel, Path.Combine(dir, MlModelFiles.TourismSearchModel));
+        }
+    }
+
+    private void SaveModelAtomically(ITransformer model, string destinationPath)
+    {
+        var tempPath = destinationPath + ".tmp";
+        _mlContext.Model.Save(model, null, tempPath);
+        File.Move(tempPath, destinationPath, overwrite: true);
+    }
+
+    private static bool IsValidModelFile(string path) =>
+        File.Exists(path) && new FileInfo(path).Length > 0;
+
+    private void ResetInMemoryModels()
+    {
+        _intentModel = null;
+        _intentEngine = null;
+        _tourSearchModel = null;
+        _tourismSearchModel = null;
+        _tourVectors = new Dictionary<int, float[]>();
+        _tourismVectors = new Dictionary<int, float[]>();
+        Status = new TrainedModelBundle();
+    }
+
+    private void DeleteModelFiles(string dir)
+    {
+        foreach (var fileName in new[] { MlModelFiles.IntentModel, MlModelFiles.TourSearchModel, MlModelFiles.TourismSearchModel })
+        {
+            var path = Path.Combine(dir, fileName);
+            if (!File.Exists(path))
+            {
+                continue;
+            }
+
+            try
+            {
+                File.Delete(path);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not delete corrupt model file {ModelFile}.", fileName);
+            }
         }
     }
 

@@ -34,7 +34,11 @@ public class TourAiWarmupBackgroundService : BackgroundService
         var catalogSync = scope.ServiceProvider.GetRequiredService<ICatalogSyncService>();
         var training = scope.ServiceProvider.GetRequiredService<IModelTrainingService>();
 
-        registry.LoadFromDiskIfExists();
+        var modelsLoaded = registry.LoadFromDiskIfExists();
+        if (!modelsLoaded)
+        {
+            _logger.LogInformation("ML models not loaded from disk. Will sync catalog and train if needed.");
+        }
 
         var ragIndex = scope.ServiceProvider.GetRequiredService<IRagKnowledgeIndex>();
         ragIndex.Initialize(_recommenderSettings.RagCorpusMaxChunks);
@@ -47,11 +51,13 @@ public class TourAiWarmupBackgroundService : BackgroundService
             {
                 _logger.LogInformation("Training ML.NET tour assistant models...");
                 await training.RetrainAsync(stoppingToken);
+                _logger.LogInformation("ML.NET tour assistant models are ready.");
             }
             else
             {
                 var catalogStore = scope.ServiceProvider.GetRequiredService<ICatalogStore>();
                 registry.AttachCatalogVectors(catalogStore.Tours, catalogStore.TourismItems);
+                _logger.LogInformation("Loaded ML models from disk and attached catalog vectors.");
             }
         }
         catch (Exception ex)
