@@ -46,6 +46,7 @@ namespace BookingAPI.DTOs
         public int Id { get; set; }
         public int Rating { get; set; }
         public string? Comment { get; set; }
+        public DateTime? CreatedAt { get; set; }
     }
 
     public class ReadOrderScheduleDTO
@@ -131,6 +132,7 @@ namespace BookingAPI.DTOs
         public int CustomerId { get; set; } 
         public int Rating { get; set; }
         public string? Comment { get; set; }
+        public DateTime? CreatedAt { get; set; }
     }
 
     public abstract class BaseOrderDTO
