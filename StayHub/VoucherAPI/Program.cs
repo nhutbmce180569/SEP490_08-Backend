@@ -44,6 +44,12 @@ public class Program
         })
         .AddHttpMessageHandler<AuthorizationHeaderHandler>();
 
+        builder.Services.AddHttpClient<IBookingAnalyticsClient, BookingAnalyticsClient>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(15);
+        })
+        .AddHttpMessageHandler<AuthorizationHeaderHandler>();
+
         builder.Services.AddScoped<IVoucherRepository, VoucherRepository>();
         builder.Services.AddScoped<IUserVoucherRepository, UserVoucherRepository>();
         builder.Services.AddScoped<IVoucherService, VoucherService>();
