@@ -42,6 +42,7 @@ public static class TourIntents
     public const string AskBudget = "ask_budget";
     public const string AskDestination = "ask_destination";
     public const string Greeting = "greeting";
+    public const string AskSystem = "ask_system";
     public const string Unknown = "unknown";
 }
 
@@ -80,6 +81,19 @@ public static class IntentTrainingData
         new() { Label = TourIntents.AskCulture, Text = "van hoa dia phuong o hue" },
         new() { Label = TourIntents.AskCulture, Text = "local food in hoi an" },
         new() { Label = TourIntents.AskCulture, Text = "cho toi biet ve di tich o tour nay" },
-        new() { Label = TourIntents.AskCulture, Text = "thong tin du lich chinh thong ve sapa" }
+        new() { Label = TourIntents.AskCulture, Text = "thong tin du lich chinh thong ve sapa" },
+
+        new() { Label = TourIntents.AskSystem, Text = "stayhub la gi" },
+        new() { Label = TourIntents.AskSystem, Text = "lam sao dat tour" },
+        new() { Label = TourIntents.AskSystem, Text = "cach thanh toan tren stayhub" },
+        new() { Label = TourIntents.AskSystem, Text = "voucher dung the nao" },
+        new() { Label = TourIntents.AskSystem, Text = "ho tro khach hang o dau" },
+        new() { Label = TourIntents.AskSystem, Text = "tro ly ai co the lam gi" },
+        new() { Label = TourIntents.AskSystem, Text = "how to book a tour on stayhub" },
+        new() { Label = TourIntents.AskSystem, Text = "what payment methods are supported" },
+        new() { Label = TourIntents.AskSystem, Text = "how does the ai questionnaire work" },
+        new() { Label = TourIntents.AskSystem, Text = "he thong stayhub gom nhung gi" },
+        new() { Label = TourIntents.AskSystem, Text = "lam sao huy tour va hoan tien" },
+        new() { Label = TourIntents.AskSystem, Text = "tinh nang social cua stayhub" }
     };
 }

@@ -52,6 +52,7 @@ builder.Services.AddHttpClient("Wikidata", client =>
 
 builder.Services.AddSingleton<ICatalogStore, CatalogStore>();
 builder.Services.AddSingleton<IRagKnowledgeIndex, RagKnowledgeIndex>();
+builder.Services.AddSingleton<ISystemKnowledgeIndex, SystemKnowledgeIndex>();
 builder.Services.AddSingleton<IDimensionWeightProvider, DimensionWeightProvider>();
 builder.Services.AddScoped<IAiCultureAccessor, AiCultureAccessor>();
 builder.Services.AddScoped<IAiLocalizedCopy, AiLocalizedCopy>();

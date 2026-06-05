@@ -39,9 +39,28 @@ public static class VietnamCityGeoResolver
             return exact;
         }
 
-        foreach (var pair in Cities)
+        foreach (var pair in Cities.OrderByDescending(p => p.Key.Length))
         {
             if (key.Contains(pair.Key, StringComparison.Ordinal) || pair.Key.Contains(key, StringComparison.Ordinal))
+            {
+                return pair.Value;
+            }
+        }
+
+        return null;
+    }
+
+    public static CityGeo? ResolveFromText(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        var normalized = VietnameseTextNormalizer.Normalize(text);
+        foreach (var pair in Cities.OrderByDescending(p => p.Key.Length))
+        {
+            if (normalized.Contains(pair.Key, StringComparison.Ordinal))
             {
                 return pair.Value;
             }

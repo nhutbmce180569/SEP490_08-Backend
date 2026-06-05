@@ -43,6 +43,9 @@ public class TourAiWarmupBackgroundService : BackgroundService
         var ragIndex = scope.ServiceProvider.GetRequiredService<IRagKnowledgeIndex>();
         ragIndex.Initialize(_recommenderSettings.RagCorpusMaxChunks);
 
+        var systemKnowledge = scope.ServiceProvider.GetRequiredService<ISystemKnowledgeIndex>();
+        systemKnowledge.Initialize();
+
         try
         {
             await catalogSync.SyncCatalogAsync(stoppingToken);

@@ -393,7 +393,7 @@ public class RecommenderEvaluationService : IRecommenderEvaluationService
             .GroupBy(i => i.TourId)
             .ToDictionary(
                 g => g.Key,
-                g => g.Sum(i => weights.GetValueOrDefault(i.InteractionType, 1f) * i.Weight));
+                g => (float)g.Sum(i => weights.GetValueOrDefault(i.InteractionType, 1f) * i.Weight));
     }
 
     private static EvaluationProfileSplit ParseProfileSplit(string? split) =>

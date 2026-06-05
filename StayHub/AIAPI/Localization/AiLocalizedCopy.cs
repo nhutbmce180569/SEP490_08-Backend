@@ -71,12 +71,20 @@ public interface IAiLocalizedCopy
     string ChatCultureSuggest2 { get; }
     string ChatCultureSuggest3 { get; }
     string ChatToursFound(int count);
+    string ChatToursFoundForCity(int count, string city);
     string ChatNoTours { get; }
+    string ChatNoToursForCity(string city);
     string ChatPersonalizedLoggedIn { get; }
     string ChatPersonalizedAnonymous { get; }
     string ChatCultureNoData { get; }
     string ChatCultureNoDataForCity(string city);
     string ChatCultureReply(string source, string name, string type, string description);
+    string ChatSystemReply(string title, string content);
+    string ChatSystemNoData { get; }
+    string ChatSystemMultiHeader { get; }
+    IReadOnlyList<string> ChatSystemSuggestions { get; }
+    string ChatFallbackHelp { get; }
+    string ChatRagInsight(string fact);
 
     // Schedule
     string ScheduleExactMatch(DateTime departure);
@@ -226,24 +234,44 @@ public sealed class AiLocalizedCopy : IAiLocalizedCopy
         "Kiểm tra giá vé trẻ em trước khi đặt.");
 
     public string ChatGreeting => T(
-        "Hello! I'm StayHub's AI assistant, trained with ML.NET on real tour data. Ask about tours, budget, destinations, or local culture.",
-        "Xin chào! Tôi là trợ lý AI của StayHub, được huấn luyện bằng ML.NET trên dữ liệu tour thật. Bạn có thể hỏi về tour, ngân sách, điểm đến hoặc văn hóa địa phương.");
+        "Hello! I'm StayHub's AI assistant. I can help with tour search, personalized recommendations, destination culture, and platform questions (booking, payment, vouchers, AI features).",
+        "Xin chào! Tôi là trợ lý AI của StayHub. Tôi có thể giúp tìm tour, gợi ý cá nhân hóa, văn hóa điểm đến và giải đáp về hệ thống (đặt tour, thanh toán, voucher, tính năng AI).");
 
     public IReadOnlyList<string> ChatDefaultSuggestions => _vi
-        ? ["Gợi ý tour biển giá dưới 5 triệu", "Tour Đà Lạt 3 ngày tháng 7", "Đặc sản và văn hóa Hội An"]
-        : ["Beach tours under 5M VND", "3-day Da Lat tour in July", "Hoi An food and culture"];
+        ?
+        [
+            "Gợi ý tour biển giá dưới 5 triệu",
+            "Tour Đà Lạt 3 ngày tháng 7",
+            "StayHub là gì và có những tính năng gì?",
+            "Làm sao đặt tour và thanh toán?"
+        ]
+        :
+        [
+            "Beach tours under 5M VND",
+            "3-day Da Lat tour in July",
+            "What is StayHub and what can it do?",
+            "How do I book and pay for a tour?"
+        ];
 
     public string ChatCultureSuggest1 => T("Suggest tours for this destination", "Gợi ý tour phù hợp tại đây");
     public string ChatCultureSuggest2 => T("Budget-friendly tours here", "Tour giá rẻ cho điểm đến này");
     public string ChatCultureSuggest3 => T("Sample 3-day itinerary", "Lịch trình mẫu 3 ngày");
 
     public string ChatToursFound(int count) => _vi
-        ? $"Tôi tìm thấy {count} tour phù hợp với yêu cầu của bạn (semantic search ML.NET)."
-        : $"I found {count} tours matching your request (ML.NET semantic search).";
+        ? $"Tôi tìm thấy {count} tour phù hợp với yêu cầu của bạn."
+        : $"I found {count} tours matching your request.";
+
+    public string ChatToursFoundForCity(int count, string city) => _vi
+        ? $"Tôi tìm thấy {count} tour tại {city} phù hợp yêu cầu của bạn."
+        : $"I found {count} tour(s) in {city} matching your request.";
 
     public string ChatNoTours => T(
         "No tour matched perfectly. Try relaxing your budget or changing the city/dates.",
-        "Chưa có tour khớp hoàn toàn. Bạn thử nới ngân sách hoặc đổi thành phố/ thời gian khác nhé.");
+        "Chưa có tour khớp hoàn toàn. Bạn thử nới ngân sách hoặc đổi thành phố/thời gian khác nhé.");
+
+    public string ChatNoToursForCity(string city) => _vi
+        ? $"Hiện chưa có tour nào tại {city} khớp yêu cầu. Bạn thử đổi ngân sách, số ngày hoặc hỏi gợi ý tour khác."
+        : $"No tours in {city} match your request yet. Try adjusting budget, duration, or ask for other suggestions.";
 
     public string ChatPersonalizedLoggedIn => T(
         "Here are personalized tours based on your wishlist, booking history, and our ML models.",
@@ -264,6 +292,42 @@ public sealed class AiLocalizedCopy : IAiLocalizedCopy
     public string ChatCultureReply(string source, string name, string type, string description) => _vi
         ? $"Theo {source}, {name} ({type}): {description}"
         : $"According to {source}, {name} ({type}): {description}";
+
+    public string ChatSystemReply(string title, string content) => _vi
+        ? $"{title}\n{content}"
+        : $"{title}\n{content}";
+
+    public string ChatSystemNoData => T(
+        "I don't have a specific answer for that yet. Try asking about booking, payments, vouchers, the AI assistant, or tour search.",
+        "Tôi chưa có câu trả lời cụ thể cho câu hỏi này. Bạn thử hỏi về đặt tour, thanh toán, voucher, trợ lý AI hoặc tìm tour nhé.");
+
+    public string ChatSystemMultiHeader => T(
+        "Here's what I know about StayHub:",
+        "Đây là thông tin về hệ thống StayHub:");
+
+    public IReadOnlyList<string> ChatSystemSuggestions => _vi
+        ?
+        [
+            "StayHub là gì và có những tính năng gì?",
+            "Làm sao đặt tour trên StayHub?",
+            "Thanh toán trên StayHub hoạt động thế nào?",
+            "Trợ lý AI StayHub có thể làm gì?"
+        ]
+        :
+        [
+            "What is StayHub and what can it do?",
+            "How do I book a tour on StayHub?",
+            "How does payment work on StayHub?",
+            "What can the StayHub AI assistant do?"
+        ];
+
+    public string ChatFallbackHelp => T(
+        "I can help with tour search, personalized recommendations, destination culture, and StayHub platform questions (booking, payment, vouchers, AI features). What would you like to know?",
+        "Tôi có thể giúp tìm tour, gợi ý cá nhân hóa, văn hóa điểm đến và giải đáp về hệ thống StayHub (đặt tour, thanh toán, voucher, tính năng AI). Bạn muốn hỏi gì?");
+
+    public string ChatRagInsight(string fact) => _vi
+        ? $"📚 {fact}"
+        : $"📚 {fact}";
 
     public string ScheduleExactMatch(DateTime departure) => _vi
         ? $"Khởi hành {departure:dd/MM/yyyy} — nằm trong khoảng thời gian bạn chọn."
