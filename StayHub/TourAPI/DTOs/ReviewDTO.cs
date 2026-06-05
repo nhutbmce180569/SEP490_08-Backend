@@ -18,6 +18,7 @@ namespace TourAPI.DTOs
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public ICollection<ReadReviewReplyDTO>? Replies { get; set; }
+        public bool CanEdit => CreatedAt.HasValue && (DateTime.UtcNow - CreatedAt.Value).TotalHours < 24;
     }
 
     public class CreateReviewDTO
