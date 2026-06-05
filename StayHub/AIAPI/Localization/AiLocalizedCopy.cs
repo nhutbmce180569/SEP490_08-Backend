@@ -51,6 +51,11 @@ public interface IAiLocalizedCopy
     string ReasonChildPoor(string persona);
     string ReasonInternationalGood(string persona);
     string ReasonInterestMatch(string persona, IEnumerable<string> interests);
+    string ReasonLocationMatch(string city);
+    string ReasonBudgetFit { get; }
+    string ReasonInterestStrong { get; }
+    string ReasonScheduleFit { get; }
+    string ReasonGoodRating { get; }
 
     // Summary & tips
     string SummaryNoTours { get; }
@@ -73,10 +78,27 @@ public interface IAiLocalizedCopy
     string ChatCultureNoDataForCity(string city);
     string ChatCultureReply(string source, string name, string type, string description);
 
+    // Schedule
+    string ScheduleExactMatch(DateTime departure);
+    string ScheduleNearbyBefore(DateTime departure, int days);
+    string ScheduleNearbyAfter(DateTime departure, int days);
+    string ScheduleUnknownDeparture { get; }
+    string ScheduleNoExactButNearby { get; }
+    string ScheduleNoExactFallback { get; }
+    string ScheduleHasExact(int count);
+    string SchedulePartialExactAndNearby(int exactCount, int alternateCount);
+    string ScheduleExtendedBefore(DateTime departure, int days);
+    string ScheduleExtendedAfter(DateTime departure, int days);
+
     // Recommendations
     string ReasonWishlistHistory { get; }
     string ReasonPopularTour { get; }
     string ReasonSimilarTour(string tourName);
+
+    // Foreign visitors
+    string ForeignVisitorGeneralHeader { get; }
+    IReadOnlyList<string> ForeignVisitorGeneralDosAndDonts { get; }
+    string ForeignVisitorDestinationHeader(string city);
 
     // Weather
     string WeatherForecastSummary(string place, double min, double max, double rain, int days);
@@ -97,8 +119,8 @@ public sealed class AiLocalizedCopy : IAiLocalizedCopy
 
     public string QuestionCompanionType => T("Who are you traveling with?", "Bạn đi tour cùng ai?");
     public string QuestionCompanionHint => T(
-        "The system builds a persona for each member (elderly, children, international guests) and aggregates scores fairly.",
-        "Hệ thống tạo persona riêng cho từng thành viên (người già, trẻ em, khách quốc tế) và gộp điểm công bằng.");
+        "We tailor suggestions for everyone in your group — including elderly and children.",
+        "Chúng tôi gợi ý tour phù hợp với từng người trong nhóm — kể cả người già và trẻ em.");
     public string OptionSolo => T("Solo", "Một mình");
     public string OptionCouple => T("Couple", "Couple / đôi");
     public string OptionFamily => T("Family", "Gia đình");
@@ -136,40 +158,64 @@ public sealed class AiLocalizedCopy : IAiLocalizedCopy
     public string PersonaGroup => T("Group vibe", "Không khí nhóm");
 
     public string ReasonElderlyGood(string persona, float score) => _vi
-        ? $"[{persona}] Lịch trình phù hợp người cao tuổi (điểm accessibility {score:P0})."
-        : $"[{persona}] Schedule suits elderly travelers (accessibility score {score:P0}).";
+        ? "Lịch trình nhẹ nhàng, dễ đi cùng người lớn tuổi."
+        : "A relaxed pace that works well with elderly travelers.";
 
     public string ReasonElderlyPoor(string persona) => _vi
-        ? $"[{persona}] Không tối ưu cho người cao tuổi (trekking/leo núi/xe máy)."
-        : $"[{persona}] Not ideal for elderly travelers (trekking/climbing/motorbike-heavy).";
+        ? "Có thể hơi mệt cho người cao tuổi (đi bộ nhiều hoặc hoạt động mạnh)."
+        : "May be tiring for elderly travelers (lots of walking or strenuous activities).";
 
     public string ReasonChildGood(string persona, float score) => _vi
-        ? $"[{persona}] Thân thiện trẻ em (điểm family-fit {score:P0})."
-        : $"[{persona}] Family-friendly (family-fit score {score:P0}).";
+        ? "Có hoạt động phù hợp cho trẻ em đi cùng."
+        : "Includes activities that work well for children.";
 
     public string ReasonChildPoor(string persona) => _vi
-        ? $"[{persona}] Cân nhắc với trẻ em (hoạt động mạo hiểm/dài)."
-        : $"[{persona}] Consider carefully with children (long or adventurous activities).";
+        ? "Nên cân nhắc nếu đi cùng trẻ nhỏ (tour dài hoặc mạo hiểm)."
+        : "Worth a closer look if traveling with young kids (long days or adventure-heavy).";
 
     public string ReasonInternationalGood(string persona) => _vi
-        ? $"[{persona}] Phù hợp khách quốc tế — văn hóa/ trải nghiệm dễ tiếp cận."
-        : $"[{persona}] Good for international guests — accessible culture and experiences.";
+        ? "Dễ tham gia và tìm hiểu văn hóa — phù hợp khách quốc tế."
+        : "Easy to follow and explore local culture — good for international visitors.";
 
-    public string ReasonInterestMatch(string persona, IEnumerable<string> interests) => _vi
-        ? $"[{persona}] Khớp sở thích ({string.Join(", ", interests)})."
-        : $"[{persona}] Matches interests ({string.Join(", ", interests)}).";
+    public string ReasonInterestMatch(string persona, IEnumerable<string> interests)
+    {
+        var labels = interests.Select(FormatInterestLabel).ToList();
+        return _vi
+            ? $"Phù hợp sở thích của bạn: {string.Join(", ", labels)}."
+            : $"Matches what you enjoy: {string.Join(", ", labels)}.";
+    }
+
+    public string ReasonLocationMatch(string city) => _vi
+        ? $"Đúng khu vực bạn muốn đến: {city}."
+        : $"In the area you asked for: {city}.";
+
+    public string ReasonBudgetFit => _vi
+        ? "Giá tour nằm trong ngân sách bạn đã khai báo."
+        : "Priced within the budget you shared.";
+
+    public string ReasonInterestStrong => _vi
+        ? "Nội dung tour khớp với sở thích du lịch của bạn."
+        : "Tour content aligns with your travel interests.";
+
+    public string ReasonScheduleFit => _vi
+        ? "Có lịch khởi hành phù hợp thời gian bạn dự định đi."
+        : "Has a departure date that fits your travel window.";
+
+    public string ReasonGoodRating => _vi
+        ? "Tour được đánh giá tốt từ khách đã đi trước đó."
+        : "Well rated by travelers who joined before.";
 
     public string SummaryNoTours => T(
         "No tours satisfy the hard constraints. Try increasing your budget or changing the destination.",
         "Không có tour thỏa ràng buộc cứng. Thử nới ngân sách hoặc đổi điểm đến.");
 
     public string SummaryFound(int personaCount, int tourCount, string topScore, string? weatherNote) => _vi
-        ? $"FCAHR đánh giá {personaCount} persona, trả về {tourCount} tour — điểm công bằng cao nhất {topScore}.{weatherNote ?? ""}"
-        : $"FCAHR scored {personaCount} persona(s) and returned {tourCount} tour(s) — top fairness score {topScore}.{weatherNote ?? ""}";
+        ? $"Dựa trên sở thích và người đi cùng bạn, chúng tôi tìm thấy {tourCount} tour phù hợp — tour khớp nhất đạt {topScore}.{weatherNote ?? ""}"
+        : $"Based on your preferences and travel party, we found {tourCount} matching tour(s) — best fit {topScore}.{weatherNote ?? ""}";
 
     public string TipFairnessModel => _vi
-        ? $"Mô hình công bằng: không ưu tiên một thành viên hy sinh sở thích người khác (α={ScoringModelSpec.DefaultFairnessAlpha})."
-        : $"Fairness model: no single traveler should sacrifice their preferences for others (α={ScoringModelSpec.DefaultFairnessAlpha}).";
+        ? "Gợi ý cân bằng sở thích của mọi người trong nhóm — không ai bị bỏ qua hoàn toàn."
+        : "Suggestions balance everyone's preferences in your group — no traveler is completely left out.";
 
     public string TipChildren1 => T(
         "Prefer tours with interactive activities and reasonable rest time for children.",
@@ -219,6 +265,74 @@ public sealed class AiLocalizedCopy : IAiLocalizedCopy
         ? $"Theo {source}, {name} ({type}): {description}"
         : $"According to {source}, {name} ({type}): {description}";
 
+    public string ScheduleExactMatch(DateTime departure) => _vi
+        ? $"Khởi hành {departure:dd/MM/yyyy} — nằm trong khoảng thời gian bạn chọn."
+        : $"Departs {departure:yyyy-MM-dd} — within your preferred dates.";
+
+    public string ScheduleNearbyBefore(DateTime departure, int days) => _vi
+        ? $"Khởi hành {departure:dd/MM/yyyy} — sớm hơn {days} ngày so với khoảng bạn chọn."
+        : $"Departs {departure:yyyy-MM-dd} — {days} day(s) before your preferred window.";
+
+    public string ScheduleNearbyAfter(DateTime departure, int days) => _vi
+        ? $"Khởi hành {departure:dd/MM/yyyy} — muộn hơn {days} ngày so với khoảng bạn chọn."
+        : $"Departs {departure:yyyy-MM-dd} — {days} day(s) after your preferred window.";
+
+    public string ScheduleUnknownDeparture => T(
+        "Departure date will be confirmed when you book — tour matches your interests and budget.",
+        "Lịch khởi hành sẽ xác nhận khi đặt tour — tour vẫn phù hợp sở thích và ngân sách của bạn.");
+
+    public string ScheduleNoExactButNearby => T(
+        "No departures fall exactly within your travel dates, but these tours leave on nearby dates and still match your preferences.",
+        "Không có lịch khởi hành trùng khoảng thời gian bạn chọn, nhưng các tour dưới đây có ngày gần đó và vẫn phù hợp sở thích của bạn.");
+
+    public string ScheduleNoExactFallback => T(
+        "No departures match your exact dates. These are the closest available options based on your preferences.",
+        "Không có tour khởi hành đúng khoảng thời gian bạn chọn. Dưới đây là các lựa chọn gần nhất theo sở thích của bạn.");
+
+    public string ScheduleHasExact(int count) => _vi
+        ? $"Có {count} tour khởi hành trong khoảng thời gian bạn chọn."
+        : $"{count} tour(s) depart within your preferred travel window.";
+
+    public string ForeignVisitorGeneralHeader => _vi
+        ? "Quy tắc chung khi đến Việt Nam (nên tránh):"
+        : "General rules for visiting Vietnam (please avoid):";
+
+    public IReadOnlyList<string> ForeignVisitorGeneralDosAndDonts => _vi
+        ?
+        [
+            "Không chụp ảnh cơ quan nhà nước, quân đội hoặc người dân nếu chưa xin phép.",
+            "Không chỉ tay vào người khác, đặc biệt người lớn tuổi; không vuốt đầu trẻ em.",
+            "Không mặc trang phục hở khi vào chùa, đình hoặc nhà dân.",
+            "Không đưa đồ ăn bằng đũa đang dùng sang bát/người khác; không cắm đũa thẳng vào bát cơm.",
+            "Không tranh cãi to tiếng nơi công cộng; giữ giọng nhẹ nhàng khi giao tiếp.",
+            "Không dùng ma túy; tuân thủ luật giao thông và mang theo hộ chiếu/visa khi di chuyển."
+        ]
+        :
+        [
+            "Do not photograph government sites, military areas, or locals without permission.",
+            "Do not point at people, touch children's heads, or pat elders without consent.",
+            "Do not wear revealing clothing at temples, shrines, or local homes.",
+            "Do not pass food with your personal chopsticks; do not stick chopsticks upright in rice.",
+            "Avoid loud arguments in public; keep a calm, respectful tone.",
+            "Do not use illegal drugs; follow traffic laws and carry passport/visa when traveling."
+        ];
+
+    public string ForeignVisitorDestinationHeader(string city) => _vi
+        ? $"Lưu ý riêng tại {city}:"
+        : $"Destination-specific tips for {city}:";
+
+    public string SchedulePartialExactAndNearby(int exactCount, int alternateCount) => _vi
+        ? $"Có {exactCount} tour khớp lịch bạn chọn; thêm {alternateCount} tour phù hợp với lịch khởi hành gần hoặc xa hơn một chút."
+        : $"{exactCount} tour(s) match your dates; plus {alternateCount} more with nearby or slightly later departures.";
+
+    public string ScheduleExtendedBefore(DateTime departure, int days) => _vi
+        ? $"Khởi hành {departure:dd/MM/yyyy} — sớm hơn {days} ngày (ngoài ±30 ngày, vẫn trong phạm vi gợi ý)."
+        : $"Departs {departure:yyyy-MM-dd} — {days} day(s) earlier (beyond ±30 days, still within our suggestion range).";
+
+    public string ScheduleExtendedAfter(DateTime departure, int days) => _vi
+        ? $"Khởi hành {departure:dd/MM/yyyy} — muộn hơn {days} ngày (xa hơn một chút so với khoảng bạn chọn)."
+        : $"Departs {departure:yyyy-MM-dd} — {days} day(s) later (a bit beyond your preferred window).";
+
     public string ReasonWishlistHistory => T(
         "Based on wishlist/booking history and personal preferences.",
         "Dựa trên lịch sử wishlist/đặt tour và sở thích cá nhân.");
@@ -254,6 +368,20 @@ public sealed class AiLocalizedCopy : IAiLocalizedCopy
     public string WeatherImpactMild => T(
         "Stable weather — suitable for most outdoor tours, beaches, and cultural sites.",
         "Thời tiết ổn định — phù hợp hầu hết tour ngoài trời, tắm biển và tham quan điểm văn hóa.");
+
+    private string FormatInterestLabel(string key) => key.ToLowerInvariant() switch
+    {
+        "beach" => OptionBeach,
+        "culture" => OptionCulture,
+        "nature" => OptionNature,
+        "food" => OptionFood,
+        "adventure" => OptionAdventure,
+        "relax" => OptionRelax,
+        "photography" => OptionPhotography,
+        "city" => OptionCity,
+        "river" => OptionRiver,
+        _ => key
+    };
 
     private string T(string en, string vi) => _vi ? vi : en;
 }

@@ -24,4 +24,6 @@ public interface ICulturalKnowledgeService
         bool forElderly,
         bool forChildren,
         int topK = 8);
+
+    IReadOnlyList<string> GetForeignVisitorNotesForCity(string? city);
 }

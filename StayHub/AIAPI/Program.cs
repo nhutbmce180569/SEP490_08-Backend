@@ -55,6 +55,7 @@ builder.Services.AddSingleton<IRagKnowledgeIndex, RagKnowledgeIndex>();
 builder.Services.AddSingleton<IDimensionWeightProvider, DimensionWeightProvider>();
 builder.Services.AddScoped<IAiCultureAccessor, AiCultureAccessor>();
 builder.Services.AddScoped<IAiLocalizedCopy, AiLocalizedCopy>();
+builder.Services.AddScoped<IKnowledgeLocalizationService, KnowledgeLocalizationService>();
 builder.Services.AddScoped<TourScoringEngine>();
 builder.Services.AddScoped<DimensionWeightCalibrator>();
 builder.Services.AddScoped<TourRanker>();
@@ -76,6 +77,10 @@ builder.Services.AddScoped<IPaperExportService, PaperExportService>();
 builder.Services.AddScoped<IInterRaterAgreementService, InterRaterAgreementService>();
 builder.Services.AddSingleton<IEvaluationResultsExporter, EvaluationResultsExporter>();
 
+builder.Services.Configure<HostOptions>(options =>
+{
+    options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
+});
 builder.Services.AddHostedService<TourAiWarmupBackgroundService>();
 
 builder.Services.AddFluentValidationAutoValidation();

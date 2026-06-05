@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using AIAPI.DTOs;
 using AIAPI.Helpers;
+using AIAPI.Localization;
 using AIAPI.Models.Knowledge;
 using AIAPI.Recommender;
 using AIAPI.Settings;
@@ -17,17 +18,20 @@ public class CulturalKnowledgeService : ICulturalKnowledgeService
     private readonly IRagKnowledgeIndex _ragIndex;
     private readonly RecommenderSettings _settings;
     private readonly CulturalKnowledgeBundle _embedded;
+    private readonly IKnowledgeLocalizationService _localizer;
 
     public CulturalKnowledgeService(
         IHttpClientFactory httpClientFactory,
         ITourSemanticSearchService contentSearch,
         IRagKnowledgeIndex ragIndex,
-        IOptions<RecommenderSettings> settings)
+        IOptions<RecommenderSettings> settings,
+        IKnowledgeLocalizationService localizer)
     {
         _wikidataClient = httpClientFactory.CreateClient("Wikidata");
         _contentSearch = contentSearch;
         _ragIndex = ragIndex;
         _settings = settings.Value;
+        _localizer = localizer;
         _embedded = LoadEmbeddedCorpus();
     }
 
@@ -115,40 +119,45 @@ public class CulturalKnowledgeService : ICulturalKnowledgeService
         if (_ragIndex.IsReady)
         {
             var ragHits = _ragIndex.Retrieve(
-                query, city, interestList, forForeignVisitor, forElderly, forChildren, topK: 5);
+                    query, city, interestList, forForeignVisitor, forElderly, forChildren, topK: 8)
+                .Where(r => ChunkMatchesCity(r.Chunk, city))
+                .Take(5);
 
             results.AddRange(ragHits.Select(r => new CulturalFactResult
             {
-                Fact = $"{r.Chunk.Title}: {r.Chunk.Content}",
+                Fact = _localizer.LocalizeRagFact(r.Chunk.Id, r.Chunk.Title, r.Chunk.Content),
                 SourceName = r.Chunk.Source.Name,
                 SourceUrl = r.Chunk.Source.Url,
                 AuthorityLevel = r.Chunk.Source.Authority,
                 Provider = ScoringModelSpec.KnowledgeSources.RagCorpus,
-                City = city ?? r.Chunk.Region
+                City = _localizer.LocalizeCityDisplay(ResolveChunkDisplayCity(r.Chunk, city))
             }));
         }
 
         var entry = ResolveEmbeddedEntry(city);
         if (entry != null)
         {
-            foreach (var fact in entry.Facts.Take(2))
+            foreach (var (fact, index) in entry.Facts.Take(2).Select((f, i) => (f, i)))
             {
-                results.Add(MapEmbedded(fact, entry, city, "general"));
+                results.Add(MapEmbedded(fact, entry, city, index, entry.FactsVi));
             }
 
             if (forForeignVisitor)
             {
-                results.AddRange(entry.ForeignVisitorNotes.Take(1).Select(n => MapEmbedded(n, entry, city, "foreign_visitor")));
+                results.AddRange(entry.ForeignVisitorNotes.Select((n, i) =>
+                    MapEmbedded(n, entry, city, i, entry.ForeignVisitorNotesVi)));
             }
 
             if (forElderly)
             {
-                results.AddRange(entry.ElderlyNotes.Take(1).Select(n => MapEmbedded(n, entry, city, "elderly")));
+                results.AddRange(entry.ElderlyNotes.Take(1).Select((n, i) =>
+                    MapEmbedded(n, entry, city, i, entry.ElderlyNotesVi)));
             }
 
             if (forChildren)
             {
-                results.AddRange(entry.ChildNotes.Take(1).Select(n => MapEmbedded(n, entry, city, "children")));
+                results.AddRange(entry.ChildNotes.Take(1).Select((n, i) =>
+                    MapEmbedded(n, entry, city, i, entry.ChildNotesVi)));
             }
         }
 
@@ -161,15 +170,18 @@ public class CulturalKnowledgeService : ICulturalKnowledgeService
         if (!string.IsNullOrWhiteSpace(contentQuery))
         {
             var contentFacts = await _contentSearch.SearchTourismAsync(contentQuery, city, 4, cancellationToken);
-            results.AddRange(contentFacts.Select(f => new CulturalFactResult
-            {
-                Fact = string.IsNullOrWhiteSpace(f.Description) ? f.Name : $"{f.Name}: {f.Description}",
-                SourceName = f.SourceName ?? "StayHub ContentAPI",
-                SourceUrl = f.SourceUrl ?? "",
-                AuthorityLevel = "Platform-Curated",
-                Provider = ScoringModelSpec.KnowledgeSources.ContentApi,
-                City = f.City ?? city
-            }));
+            results.AddRange(contentFacts
+                .Where(f => string.IsNullOrWhiteSpace(city) ||
+                            VietnameseTextNormalizer.CityEquals(f.City, city))
+                .Select(f => new CulturalFactResult
+                {
+                    Fact = _localizer.LocalizeTourismContent(f.Name, f.Description, f.Type),
+                    SourceName = f.SourceName ?? "StayHub ContentAPI",
+                    SourceUrl = f.SourceUrl ?? "",
+                    AuthorityLevel = "Platform-Curated",
+                    Provider = ScoringModelSpec.KnowledgeSources.ContentApi,
+                    City = _localizer.LocalizeCityDisplay(f.City ?? city)
+                }));
         }
 
         if (_settings.EnableWikidataEnrichment && !string.IsNullOrWhiteSpace(city))
@@ -182,10 +194,50 @@ public class CulturalKnowledgeService : ICulturalKnowledgeService
         }
 
         return results
+            .Where(r => string.IsNullOrWhiteSpace(city) ||
+                        string.IsNullOrWhiteSpace(r.City) ||
+                        VietnameseTextNormalizer.CityEquals(r.City, city))
             .GroupBy(r => r.Fact, StringComparer.OrdinalIgnoreCase)
-            .Select(g => g.First())
+            .Select(g => _localizer.LocalizeFact(g.First()))
             .Take(12)
             .ToList();
+    }
+
+    public IReadOnlyList<string> GetForeignVisitorNotesForCity(string? city)
+    {
+        var entry = ResolveEmbeddedEntry(city);
+        if (entry == null || entry.ForeignVisitorNotes.Count == 0)
+        {
+            return Array.Empty<string>();
+        }
+
+        return entry.ForeignVisitorNotes
+            .Select((note, index) => _localizer.LocalizeEmbeddedFact(
+                note, entry.ForeignVisitorNotesVi, index))
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static bool ChunkMatchesCity(RagCorpusChunk chunk, string? city)
+    {
+        if (string.IsNullOrWhiteSpace(city))
+        {
+            return true;
+        }
+
+        return chunk.CityKeys.Any(k => VietnameseTextNormalizer.CityEquals(city, k));
+    }
+
+    private static string? ResolveChunkDisplayCity(RagCorpusChunk chunk, string? requestedCity)
+    {
+        if (!string.IsNullOrWhiteSpace(requestedCity) &&
+            chunk.CityKeys.Any(k => VietnameseTextNormalizer.CityEquals(requestedCity, k)))
+        {
+            return requestedCity;
+        }
+
+        return chunk.CityKeys.FirstOrDefault() ?? chunk.Region;
     }
 
     private CulturalKnowledgeEntry? ResolveEmbeddedEntry(string? city)
@@ -201,7 +253,12 @@ public class CulturalKnowledgeService : ICulturalKnowledgeService
                                 VietnameseTextNormalizer.Normalize(k).Contains(key, StringComparison.Ordinal)));
     }
 
-    private static CulturalFactResult MapEmbedded(string fact, CulturalKnowledgeEntry entry, string? city, string category)
+    private CulturalFactResult MapEmbedded(
+        string fact,
+        CulturalKnowledgeEntry entry,
+        string? city,
+        int index,
+        IReadOnlyList<string>? factsVi)
     {
         var source = entry.Sources.FirstOrDefault() ?? new CulturalSourceRef
         {
@@ -210,14 +267,18 @@ public class CulturalKnowledgeService : ICulturalKnowledgeService
             Authority = "Curated"
         };
 
+        var displayCity = _localizer.IsVietnamese
+            ? entry.DisplayNameVi ?? entry.DisplayName
+            : entry.DisplayName;
+
         return new CulturalFactResult
         {
-            Fact = fact,
+            Fact = _localizer.LocalizeEmbeddedFact(fact, factsVi, index),
             SourceName = source.Name,
             SourceUrl = source.Url,
             AuthorityLevel = source.Authority,
             Provider = ScoringModelSpec.KnowledgeSources.EmbeddedCorpus,
-            City = city ?? entry.DisplayName
+            City = _localizer.LocalizeCityDisplay(city ?? displayCity)
         };
     }
 
@@ -225,8 +286,9 @@ public class CulturalKnowledgeService : ICulturalKnowledgeService
     {
         try
         {
+            var lang = _localizer.IsVietnamese ? "vi" : "en";
             var url =
-                $"https://www.wikidata.org/w/api.php?action=wbsearchentities&search={Uri.EscapeDataString(city + " Vietnam")}&language=en&format=json&limit=1";
+                $"https://www.wikidata.org/w/api.php?action=wbsearchentities&search={Uri.EscapeDataString(city + " Vietnam")}&language={lang}&format=json&limit=1";
             var response = await _wikidataClient.GetAsync(url, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
@@ -247,7 +309,7 @@ public class CulturalKnowledgeService : ICulturalKnowledgeService
                 SourceUrl = $"https://www.wikidata.org/wiki/{entity.Id}",
                 AuthorityLevel = "International-CC0",
                 Provider = ScoringModelSpec.KnowledgeSources.Wikidata,
-                City = city
+                City = _localizer.LocalizeCityDisplay(city)
             };
         }
         catch

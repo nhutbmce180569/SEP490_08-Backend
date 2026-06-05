@@ -4,11 +4,16 @@ public class CulturalKnowledgeEntry
 {
     public List<string> CityKeys { get; set; } = new();
     public string DisplayName { get; set; } = "";
+    public string? DisplayNameVi { get; set; }
     public string Region { get; set; } = "";
     public List<string> Facts { get; set; } = new();
+    public List<string>? FactsVi { get; set; }
     public List<string> ForeignVisitorNotes { get; set; } = new();
+    public List<string>? ForeignVisitorNotesVi { get; set; }
     public List<string> ElderlyNotes { get; set; } = new();
+    public List<string>? ElderlyNotesVi { get; set; }
     public List<string> ChildNotes { get; set; } = new();
+    public List<string>? ChildNotesVi { get; set; }
     public List<CulturalSourceRef> Sources { get; set; } = new();
 }
 
