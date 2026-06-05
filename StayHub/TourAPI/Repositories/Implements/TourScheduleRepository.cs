@@ -22,6 +22,8 @@ namespace TourAPI.Repositories.Implements
                 .ToListAsync();
         }
 
+
+
         public async Task<TourSchedule?> GetByIdAsync(int id)
         {
             return await _context.TourSchedules

@@ -513,7 +513,8 @@ namespace BookingAPI.Services.Implements
                         {
                             Id = reviewDetail.Id,
                             Rating = reviewDetail.Rating,
-                            Comment = reviewDetail.Comment
+                            Comment = reviewDetail.Comment,
+                            CreatedAt = reviewDetail.CreatedAt
                         };
                     }
                 }

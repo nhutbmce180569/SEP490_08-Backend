@@ -103,14 +103,21 @@ namespace TourAPI.Controllers
             }
         }
 
-        // 1. API DÀNH CHO KHÁCH (Không cần đăng nhập, tự động giấu review bị ẩn)
         [AllowAnonymous]
         [HttpGet("tour/{tourId}")]
-        public async Task<IActionResult> GetReviewsByTour(int tourId, ODataQueryOptions<Review> options)
+        public async Task<IActionResult> GetReviewsByTour(
+              int tourId,
+              [FromQuery] int page = 1,
+              [FromQuery] int pageSize = 5,
+              [FromQuery] int? rating = null,
+              [FromQuery] string sortOrder = "newest")
         {
             try
             {
-                var result = await _reviewService.GetReviewsByTourODataAsync(tourId, options, includeHidden: false);
+                if (page < 1) page = 1;
+                if (pageSize < 1) pageSize = 5;
+
+                var result = await _reviewService.GetReviewsByTourAsync(tourId, page, pageSize, rating, sortOrder, includeHidden: false);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -119,13 +126,21 @@ namespace TourAPI.Controllers
             }
         }
 
-        [Authorize(Roles = "Manager,Staff")]
+        [Authorize(Roles = "Manager,Staff,Admin")]
         [HttpGet("tour/{tourId}/admin")]
-        public async Task<IActionResult> GetReviewsByTourAdmin(int tourId, ODataQueryOptions<Review> options)
+        public async Task<IActionResult> GetReviewsByTourAdmin(
+            int tourId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 5,
+            [FromQuery] int? rating = null,
+            [FromQuery] string sortOrder = "newest")
         {
             try
             {
-                var result = await _reviewService.GetReviewsByTourODataAsync(tourId, options, includeHidden: true);
+                if (page < 1) page = 1;
+                if (pageSize < 1) pageSize = 5;
+
+                var result = await _reviewService.GetReviewsByTourAsync(tourId, page, pageSize, rating, sortOrder, includeHidden: true);
                 return Ok(result);
             }
             catch (Exception ex)
