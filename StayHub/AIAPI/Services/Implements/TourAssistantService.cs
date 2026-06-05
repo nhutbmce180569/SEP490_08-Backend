@@ -398,6 +398,11 @@ public class TourAssistantService : ITourAssistantService
         DurationDays = item.DurationDays,
         Score = item.Score,
         SemanticScore = item.Score,
-        Reason = item.Reason
+        Reason = item.Reason,
+        MatchReasons = item.MatchReasons,
+        ScoreBreakdown = item.ScoreBreakdown,
+        NextDeparture = item.NextDeparture,
+        MatchesPreferredDates = item.MatchesPreferredDates,
+        ScheduleNote = item.ScheduleNote
     };
 }
