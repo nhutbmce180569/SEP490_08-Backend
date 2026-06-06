@@ -85,6 +85,7 @@ public partial class StayHubIdentityDbContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasDefaultValue("Local");
+            entity.Property(e => e.RequirePasswordChange).HasDefaultValue(false);
             entity.Property(e => e.SecurityStamp).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
