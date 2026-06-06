@@ -18,6 +18,7 @@ namespace TourAPI.Repositories
         public DateTime? EndDate { get; set; }
         public int? Duration { get; set; }
         public string? SortBy { get; set; }
+        public int? CreatedBy { get; set; }
     }
 
     public class TourPageResult

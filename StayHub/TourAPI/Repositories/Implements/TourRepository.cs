@@ -80,6 +80,11 @@ namespace TourAPI.Repositories.Implements
                 query = query.Where(t => t.City == city);
             }
 
+            if (options.CreatedBy.HasValue)
+            {
+                query = query.Where(t => t.CreatedBy == options.CreatedBy.Value);
+            }
+
             if (options.MinPrice.HasValue || options.MaxPrice.HasValue)
             {
                 query = query.Where(t => t.TourSchedules.Any(s =>

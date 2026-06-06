@@ -8,37 +8,29 @@ namespace TourAPI.Services.Implements
     public class TourScheduleService : ITourScheduleService
     {
         private readonly ITourScheduleRepository _scheduleRepo;
+        private readonly ITourRepository _tourRepo;
         private readonly IMapper _mapper;
 
-        public TourScheduleService(ITourScheduleRepository scheduleRepo, IMapper mapper)
+        public TourScheduleService(ITourScheduleRepository scheduleRepo, ITourRepository tourRepo, IMapper mapper)
         {
             _scheduleRepo = scheduleRepo;
+            _tourRepo = tourRepo;
             _mapper = mapper;
         }
 
         public async Task<PaginationDTO<ReadTourScheduleDTO>> GetAllSchedulesAsync(int page, int pageSize)
         {
-            var schedules = await _scheduleRepo.GetAllAsync();
+            var schedules = await _scheduleRepo.GetAllAsync(page, pageSize);
+            var total = await _scheduleRepo.CountAllAsync();
 
-            var list = _mapper.Map<List<ReadTourScheduleDTO>>(schedules);
-
-            int total = list.Count;
-
-            list = list
-                    .Skip((page - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToList();
-
-            var result = new PaginationDTO<ReadTourScheduleDTO>
+            return new PaginationDTO<ReadTourScheduleDTO>
             {
-                Data = list,
+                Data = _mapper.Map<List<ReadTourScheduleDTO>>(schedules),
                 CurrentPage = page,
                 PageSize = pageSize,
                 Total = total,
                 TotalPages = (int)Math.Ceiling(total / (double)pageSize)
             };
-
-            return result;
         }
 
         public async Task<ReadTourScheduleDTO> GetScheduleByIdAsync(int id)
@@ -49,12 +41,34 @@ namespace TourAPI.Services.Implements
             return _mapper.Map<ReadTourScheduleDTO>(schedule);
         }
 
+        public async Task<PaginationDTO<ReadTourScheduleDTO>> SearchSchedulesByTourNameAsync(string tourName, int page, int pageSize)
+        {
+            if (string.IsNullOrWhiteSpace(tourName))
+                return await GetAllSchedulesAsync(page, pageSize);
+
+            var schedules = await _scheduleRepo.SearchByTourNameAsync(tourName.Trim(), page, pageSize);
+            var total = await _scheduleRepo.CountByTourNameAsync(tourName.Trim());
+
+            var list = _mapper.Map<List<ReadTourScheduleDTO>>(schedules);
+
+            return new PaginationDTO<ReadTourScheduleDTO>
+            {
+                Data = list,
+                CurrentPage = page,
+                PageSize = pageSize,
+                Total = total,
+                TotalPages = (int)Math.Ceiling(total / (double)pageSize)
+            };
+        }
+
         public async Task<ReadTourScheduleDTO> CreateScheduleAsync(CreateTourScheduleDTO dto)
         {
             if (dto.DepartureDate >= dto.ReturnDate)
             {
                 throw new Exception("Departure date must be before the return date.");
             }
+
+            await ValidateScheduleDuration(dto.TourId, dto.DepartureDate, dto.ReturnDate);
 
             var schedule = _mapper.Map<TourSchedule>(dto);
 
@@ -68,6 +82,8 @@ namespace TourAPI.Services.Implements
             {
                 throw new Exception("Departure date must be before the return date.");
             }
+
+            await ValidateScheduleDuration(dto.TourId, dto.DepartureDate, dto.ReturnDate);
 
             var existingSchedule = await _scheduleRepo.GetByIdAsync(id);
             if (existingSchedule == null) throw new Exception("Tour schedule not found.");
@@ -90,7 +106,7 @@ namespace TourAPI.Services.Implements
         public async Task<List<ItineraryLocationDto>> GetItinerariesByScheduleIdAsync(int scheduleId)
         {
             var schedule = await _scheduleRepo.GetByIdAsync(scheduleId);
-            if (schedule == null) 
+            if (schedule == null)
             {
                 throw new Exception("Tour schedule not found.");
             }
@@ -104,9 +120,38 @@ namespace TourAPI.Services.Implements
 
         public async Task<IEnumerable<ReadTourScheduleDTO>> GetSchedulesByIdsAsync(IEnumerable<int> scheduleIds)
         {
-            var schedules = await _scheduleRepo.GetAllAsync();
-            var filtered = schedules.Where(s => scheduleIds.Contains(s.Id)).ToList();
-            return _mapper.Map<IEnumerable<ReadTourScheduleDTO>>(filtered);
+            var schedules = await _scheduleRepo.GetByIdsAsync(scheduleIds.ToList());
+            return _mapper.Map<IEnumerable<ReadTourScheduleDTO>>(schedules);
+        }
+
+        public async Task<PaginationDTO<ReadTourScheduleDTO>> GetSchedulesByCreatedByAsync(int userId, int page, int pageSize)
+        {
+            var schedules = await _scheduleRepo.GetByCreatedByAsync(userId, page, pageSize);
+            var total = await _scheduleRepo.CountByCreatedByAsync(userId);
+
+            return new PaginationDTO<ReadTourScheduleDTO>
+            {
+                Data = _mapper.Map<List<ReadTourScheduleDTO>>(schedules),
+                CurrentPage = page,
+                PageSize = pageSize,
+                Total = total,
+                TotalPages = (int)Math.Ceiling(total / (double)pageSize)
+            };
+        }
+
+        private async Task ValidateScheduleDuration(int tourId, DateTime departureDate, DateTime returnDate)
+        {
+            var tour = await _tourRepo.GetById(tourId);
+            if (tour != null && tour.TourItineraries != null && tour.TourItineraries.Any())
+            {
+                int maxDays = tour.TourItineraries.Max(i => i.DayNumber);
+                var expectedReturnDate = departureDate.Date.AddDays(maxDays);
+
+                if (returnDate.Date != expectedReturnDate.Date)
+                {
+                    throw new Exception($"Invalid Return Date. Based on the tour itinerary ({maxDays} days), the return date must be {expectedReturnDate:yyyy-MM-dd}.");
+                }
+            }
         }
     }
 }
