@@ -71,6 +71,8 @@ namespace TourAPI.Services.Implements
 
             var existingSchedule = await _scheduleRepo.GetByIdAsync(id);
             if (existingSchedule == null) throw new Exception("Tour schedule not found.");
+            if (existingSchedule.TourId != dto.TourId)
+                throw new Exception("Cannot change the tour of an existing schedule.");
             _mapper.Map(dto, existingSchedule);
 
             await _scheduleRepo.UpdateAsync(existingSchedule);

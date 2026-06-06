@@ -10,5 +10,6 @@ namespace TourAPI.Services
         Task Update(int id, UpdateTourItineraryDTO dto, int operatorId);
         Task Delete(int id);
         Task AddBatch(CreateTourItineraryBatchDTO batch, int operatorId);
+        byte[] CreateImportTemplate();
     }
 }

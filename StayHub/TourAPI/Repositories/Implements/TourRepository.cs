@@ -41,42 +41,118 @@ namespace TourAPI.Repositories.Implements
             await _context.SaveChangesAsync();
         }
 
-        public async Task<List<Tour>> GetAll()
+        public async Task<TourPageResult> GetPagedAsync(TourQueryOptions options)
         {
-            try
+            var page = Math.Max(1, options.Page);
+            var pageSize = Math.Clamp(options.PageSize, 1, 1000);
+            IQueryable<Tour> query = _context.Tours.AsNoTracking();
+
+            if (options.ActiveOnly)
             {
-                return await _context.Tours
-                    .Include(t => t.TourItineraries)
-                    .Include(t => t.TourSchedules)
-                        .ThenInclude(t => t.TourScheduleTickets)
-                    .Include(t => t.Reviews)
-                        .ThenInclude(r => r.ReviewReplies)
-                    .ToListAsync();
-            }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
+                query = query.Where(t => t.Status == "Active");
             }
 
-        }
+            if (!string.IsNullOrWhiteSpace(options.SearchTerm))
+            {
+                var term = options.SearchTerm.Trim();
+                query = query.Where(t =>
+                    t.Name.Contains(term) ||
+                    (t.Description != null && t.Description.Contains(term)) ||
+                    t.TourItineraries.Any(i =>
+                        (i.Title != null && i.Title.Contains(term)) ||
+                        (i.Description != null && i.Description.Contains(term))));
+            }
 
-        public async Task<List<Tour>> GetActiveTours()
-        {
-            try
+            if (options.CategoryId.HasValue)
             {
-                return await _context.Tours
-                    .Include(t => t.TourItineraries)
-                    .Include(t => t.TourSchedules)
-                        .ThenInclude(t => t.TourScheduleTickets)
-                    .Include(t => t.Reviews)
-                        .ThenInclude(r => r.ReviewReplies)
-                    .Where(t => t.Status == "Active")
-                    .ToListAsync();
+                query = query.Where(t => t.CategoryId == options.CategoryId.Value);
             }
-            catch (Exception e)
+
+            if (!string.IsNullOrWhiteSpace(options.Country))
             {
-                throw new Exception(e.Message);
+                var country = options.Country.Trim();
+                query = query.Where(t => t.Country == country);
             }
+
+            if (!string.IsNullOrWhiteSpace(options.City))
+            {
+                var city = options.City.Trim();
+                query = query.Where(t => t.City == city);
+            }
+
+            if (options.MinPrice.HasValue || options.MaxPrice.HasValue)
+            {
+                query = query.Where(t => t.TourSchedules.Any(s =>
+                    s.TourScheduleTickets.Any(ticket =>
+                        (!options.MinPrice.HasValue || ticket.Price >= options.MinPrice.Value) &&
+                        (!options.MaxPrice.HasValue || ticket.Price <= options.MaxPrice.Value))));
+            }
+
+            if (options.StartDate.HasValue || options.EndDate.HasValue)
+            {
+                var startDate = options.StartDate?.Date;
+                var endDateExclusive = options.EndDate?.Date.AddDays(1);
+                query = query.Where(t => t.TourSchedules.Any(s =>
+                    (!startDate.HasValue || s.DepartureDate >= startDate.Value) &&
+                    (!endDateExclusive.HasValue || s.ReturnDate < endDateExclusive.Value)));
+            }
+
+            if (options.Duration.HasValue)
+            {
+                var duration = options.Duration.Value;
+                query = query.Where(t =>
+                    t.TourItineraries.Count == duration ||
+                    t.TourSchedules.Any(s =>
+                        EF.Functions.DateDiffDay(s.DepartureDate, s.ReturnDate) == duration ||
+                        EF.Functions.DateDiffDay(s.DepartureDate, s.ReturnDate) + 1 == duration));
+            }
+
+            var total = await query.CountAsync();
+
+            query = options.SortBy?.Trim().ToLowerInvariant() switch
+            {
+                "price_asc" => query
+                    .OrderBy(t => t.TourSchedules
+                        .SelectMany(s => s.TourScheduleTickets)
+                        .Select(ticket => (long?)ticket.Price)
+                        .Min() ?? long.MaxValue)
+                    .ThenBy(t => t.Id),
+                "price_desc" => query
+                    .OrderByDescending(t => t.TourSchedules
+                        .SelectMany(s => s.TourScheduleTickets)
+                        .Select(ticket => (long?)ticket.Price)
+                        .Min() ?? 0)
+                    .ThenBy(t => t.Id),
+                "date_asc" => query
+                    .OrderBy(t => t.TourSchedules
+                        .Select(s => (DateTime?)s.DepartureDate)
+                        .Min() ?? DateTime.MaxValue)
+                    .ThenBy(t => t.Id),
+                "date_desc" => query
+                    .OrderByDescending(t => t.TourSchedules
+                        .Select(s => (DateTime?)s.DepartureDate)
+                        .Min() ?? DateTime.MinValue)
+                    .ThenBy(t => t.Id),
+                _ when options.SortDescendingById => query.OrderByDescending(t => t.Id),
+                _ => query.OrderBy(t => t.Id)
+            };
+
+            var items = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Include(t => t.TourItineraries)
+                .Include(t => t.TourSchedules)
+                    .ThenInclude(t => t.TourScheduleTickets)
+                .Include(t => t.Reviews)
+                    .ThenInclude(r => r.ReviewReplies)
+                .AsSplitQuery()
+                .ToListAsync();
+
+            return new TourPageResult
+            {
+                Items = items,
+                Total = total
+            };
         }
 
         public async Task<Tour> GetById(int id)
@@ -89,6 +165,7 @@ namespace TourAPI.Repositories.Implements
                         .ThenInclude(t => t.TourScheduleTickets)
                     .Include(t => t.Reviews)
                         .ThenInclude(r => r.ReviewReplies)
+                    .AsSplitQuery()
                     .FirstOrDefaultAsync(g => g.Id == id);
             }
             catch (Exception e)

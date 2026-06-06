@@ -21,10 +21,16 @@ namespace TourAPI.Controllers
     public class ReviewsController : LocalizedControllerBase
     {
         private readonly IReviewService _reviewService;
+        private readonly ITourAccessService _tourAccessService;
 
-        public ReviewsController(IReviewService reviewService, IStringLocalizer<Messages> localizer)
+        public ReviewsController(
+            IReviewService reviewService,
+            ITourAccessService tourAccessService,
+            IStringLocalizer<Messages> localizer)
             : base(localizer)
-        {_reviewService = reviewService;
+        {
+            _reviewService = reviewService;
+            _tourAccessService = tourAccessService;
         }
 
         private int GetCurrentUserId()
@@ -140,6 +146,14 @@ namespace TourAPI.Controllers
                 if (page < 1) page = 1;
                 if (pageSize < 1) pageSize = 5;
 
+                var currentUserId = GetCurrentUserId();
+                if (!await _tourAccessService.CanManageTourAsync(
+                        tourId,
+                        currentUserId,
+                        User.IsInRole("Admin"),
+                        User.IsInRole("Staff")))
+                    return Forbid();
+
                 var result = await _reviewService.GetReviewsByTourAsync(tourId, page, pageSize, rating, sortOrder, includeHidden: true);
                 return Ok(result);
             }
@@ -149,13 +163,20 @@ namespace TourAPI.Controllers
             }
         }
 
-        [Authorize(Roles = "Manager,Staff")]
+        [Authorize(Roles = "Manager,Staff,Admin")]
         [HttpPost("{reviewId}/replies")]
         public async Task<IActionResult> CreateReviewReply(int reviewId, [FromBody] CreateReviewReplyDTO request)
         {
             try
             {
                 var currentUserId = GetCurrentUserId();
+                if (!await _tourAccessService.CanManageReviewAsync(
+                        reviewId,
+                        currentUserId,
+                        User.IsInRole("Admin"),
+                        User.IsInRole("Staff")))
+                    return Forbid();
+
                 request.ReviewId = reviewId;
                 var result = await _reviewService.CreateReviewReplyAsync(currentUserId, request);
                 return Ok(result);
@@ -166,13 +187,20 @@ namespace TourAPI.Controllers
             }
         }
 
-        [Authorize(Roles = "Manager,Staff")]
+        [Authorize(Roles = "Manager,Staff,Admin")]
         [HttpPut("replies/{replyId}")]
         public async Task<IActionResult> UpdateReviewReply(int replyId, [FromBody] UpdateReviewReplyDTO request)
         {
             try
             {
                 var currentUserId = GetCurrentUserId();
+                if (!await _tourAccessService.CanManageReviewReplyAsync(
+                        replyId,
+                        currentUserId,
+                        User.IsInRole("Admin"),
+                        User.IsInRole("Staff")))
+                    return Forbid();
+
                 var result = await _reviewService.UpdateReviewReplyAsync(replyId, currentUserId, request);
                 return Ok(result);
             }
@@ -182,13 +210,20 @@ namespace TourAPI.Controllers
             }
         }
 
-        [Authorize(Roles = "Manager,Staff")]
+        [Authorize(Roles = "Manager,Staff,Admin")]
         [HttpDelete("replies/{replyId}")]
         public async Task<IActionResult> DeleteReviewReply(int replyId)
         {
             try
             {
                 var currentUserId = GetCurrentUserId();
+                if (!await _tourAccessService.CanManageReviewReplyAsync(
+                        replyId,
+                        currentUserId,
+                        User.IsInRole("Admin"),
+                        User.IsInRole("Staff")))
+                    return Forbid();
+
                 await _reviewService.DeleteReviewReplyAsync(replyId, currentUserId);
                 return NoContent();
             }
@@ -198,12 +233,20 @@ namespace TourAPI.Controllers
             }
         }
 
-        [Authorize(Roles = "Manager,Staff")]
+        [Authorize(Roles = "Manager,Staff,Admin")]
         [HttpPatch("{id}/hide")]
         public async Task<IActionResult> HideReview(int id, [FromQuery] bool hidden = true)
         {
             try
             {
+                var currentUserId = GetCurrentUserId();
+                if (!await _tourAccessService.CanManageReviewAsync(
+                        id,
+                        currentUserId,
+                        User.IsInRole("Admin"),
+                        User.IsInRole("Staff")))
+                    return Forbid();
+
                 await _reviewService.HideReviewAsync(id, hidden);
                 return NoContent();
             }

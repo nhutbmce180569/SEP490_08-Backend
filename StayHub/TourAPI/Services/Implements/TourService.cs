@@ -32,6 +32,8 @@ namespace TourAPI.Services.Implements
         }
         public async Task Add(CreateTourDTO model, int createdBy)
         {
+            ValidateAndNormalize(model);
+
             var checkCategory =
                 await _categoryService.CheckCategoryExist(model.CategoryId);
 
@@ -64,6 +66,7 @@ namespace TourAPI.Services.Implements
 
         public async Task Update(int id, UpdateTourDTO model, int updatedBy)
         {
+            ValidateAndNormalize(model);
 
             var checkCategory = await _categoryService.CheckCategoryExist(model.CategoryId);
 
@@ -136,192 +139,78 @@ namespace TourAPI.Services.Implements
             await _repository.Delete(id);
         }
 
-        public async Task<PaginationDTO<ReadTourDTO>> GetAll(int page, int pageSize, string? searchTerm = null, int? categoryId = null)
+        public async Task<PaginationDTO<ReadTourDTO>> GetAll(int page, int pageSize, int userId, bool isAdmin, string? searchTerm = null, int? categoryId = null)
         {
-            var tours = await _repository.GetAll();
-            var query = tours.AsEnumerable();
-
-            if (!string.IsNullOrWhiteSpace(searchTerm))
+            var result = await _repository.GetPagedAsync(new TourQueryOptions
             {
-                var term = searchTerm.Trim().ToLower();
-                query = query.Where(t =>
-                    (t.Name != null && t.Name.ToLower().Contains(term)) ||
-                    (t.Description != null && t.Description.ToLower().Contains(term)) ||
-                    (t.TourItineraries != null && t.TourItineraries.Any(i =>
-                        (i.Title != null && i.Title.ToLower().Contains(term)) ||
-                        (i.Description != null && i.Description.ToLower().Contains(term)))));
-            }
-
-            if (categoryId.HasValue)
-            {
-                query = query.Where(t => t.CategoryId == categoryId.Value);
-            }
-
-            var filteredTours = query.ToList();
-            int total = filteredTours.Count;
-
-            var list = _mapper.Map<List<ReadTourDTO>>(filteredTours
-                    .OrderBy(x => x.Id)
-                    .Skip((page - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToList());
-
-
-            var result = new PaginationDTO<ReadTourDTO>
-            {
-                Data = list,
-                CurrentPage = page,
+                Page = page,
                 PageSize = pageSize,
-                Total = total,
-                TotalPages = (int)Math.Ceiling(total / (double)pageSize)
-            };
-            return result;
+                SearchTerm = searchTerm,
+                CategoryId = categoryId
+            });
+
+            var list = _mapper.Map<List<ReadTourDTO>>(result.Items);
+            foreach (var tour in list)
+            {
+                tour.CanEdit = isAdmin || tour.CreatedBy == userId;
+            }
+
+            return CreatePagination(list, result.Total, page, pageSize);
         }
 
         public async Task<PaginationDTO<ReadTourDTO>> GetActiveTours(int page, int pageSize)
         {
-            var list = _mapper.Map<List<ReadTourDTO>>(await _repository.GetActiveTours());
-            int total = list.Count;
-
-            list = list
-                    .OrderBy(x => x.Id)
-                    .Skip((page - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToList();
-
-
-            var tours = new PaginationDTO<ReadTourDTO>
+            var result = await _repository.GetPagedAsync(new TourQueryOptions
             {
-                Data = list,
-                CurrentPage = page,
+                Page = page,
                 PageSize = pageSize,
-                Total = total,
-                TotalPages = (int)Math.Ceiling(total / (double)pageSize)
-            };
-            return tours;
+                ActiveOnly = true
+            });
+
+            var list = _mapper.Map<List<ReadTourDTO>>(result.Items);
+            return CreatePagination(list, result.Total, page, pageSize);
         }
 
         public async Task<PaginationDTO<ReadTourDTO>> SearchTours(int page, int pageSize, string? searchTerm = null, int? categoryId = null, string? country = null, string? city = null, long? minPrice = null, long? maxPrice = null, DateTime? startDate = null, DateTime? endDate = null, int? duration = null, string? sortBy = null)
         {
-            var tours = await _repository.GetActiveTours();
-            var query = tours.AsEnumerable();
-
-            if (!string.IsNullOrWhiteSpace(searchTerm))
+            var result = await _repository.GetPagedAsync(new TourQueryOptions
             {
-                var term = searchTerm.ToLower();
-                query = query.Where(t =>
-                    (t.Name != null && t.Name.ToLower().Contains(term)) ||
-                    (t.Description != null && t.Description.ToLower().Contains(term)) ||
-                    (t.TourItineraries != null && t.TourItineraries.Any(i => (i.Title != null && i.Title.ToLower().Contains(term)) || (i.Description != null && i.Description.ToLower().Contains(term))))
-                );
-            }
+                Page = page,
+                PageSize = pageSize,
+                ActiveOnly = true,
+                SearchTerm = searchTerm,
+                CategoryId = categoryId,
+                Country = country,
+                City = city,
+                MinPrice = minPrice,
+                MaxPrice = maxPrice,
+                StartDate = startDate,
+                EndDate = endDate,
+                Duration = duration,
+                SortBy = sortBy
+            });
 
-            if (categoryId.HasValue)
-            {
-                query = query.Where(t => t.CategoryId == categoryId.Value);
-            }
+            var list = _mapper.Map<List<ReadTourDTO>>(result.Items);
 
-            if (!string.IsNullOrWhiteSpace(country))
-            {
-                query = query.Where(t => t.Country != null && t.Country.Equals(country, StringComparison.OrdinalIgnoreCase));
-            }
-
-            if (!string.IsNullOrWhiteSpace(city))
-            {
-                query = query.Where(t => t.City != null && t.City.Equals(city, StringComparison.OrdinalIgnoreCase));
-            }
-
-            if (minPrice.HasValue || maxPrice.HasValue)
-            {
-                query = query.Where(t => t.TourSchedules != null && t.TourSchedules.Any(s => s.TourScheduleTickets != null && s.TourScheduleTickets.Any(tk =>
-                    (!minPrice.HasValue || tk.Price >= minPrice.Value) &&
-                    (!maxPrice.HasValue || tk.Price <= maxPrice.Value)
-                )));
-            }
-
-            if (startDate.HasValue || endDate.HasValue)
-            {
-                query = query.Where(t => t.TourSchedules != null && t.TourSchedules.Any(s =>
-                    (!startDate.HasValue || s.DepartureDate.Date >= startDate.Value.Date) &&
-                    (!endDate.HasValue || s.ReturnDate.Date <= endDate.Value.Date)
-                ));
-            }
-
-            if (duration.HasValue)
-            {
-                query = query.Where(t =>
-                    (t.TourItineraries != null && t.TourItineraries.Count == duration.Value) ||
-                    (t.TourSchedules != null && t.TourSchedules.Any(s =>
-                        (s.ReturnDate.Date - s.DepartureDate.Date).Days == duration.Value ||
-                        (s.ReturnDate.Date - s.DepartureDate.Date).Days + 1 == duration.Value
-                    ))
-                );
-            }
-
-            if (!string.IsNullOrWhiteSpace(sortBy))
-            {
-                switch (sortBy.ToLower())
-                {
-                    case "price_asc":
-                        query = query.OrderBy(t => t.TourSchedules != null && t.TourSchedules.Any(s => s.TourScheduleTickets != null && s.TourScheduleTickets.Any()) 
-                            ? t.TourSchedules.Min(s => s.TourScheduleTickets != null && s.TourScheduleTickets.Any() ? s.TourScheduleTickets.Min(tk => tk.Price) : long.MaxValue) 
-                            : long.MaxValue);
-                        break;
-                    case "price_desc":
-                        query = query.OrderByDescending(t => t.TourSchedules != null && t.TourSchedules.Any(s => s.TourScheduleTickets != null && s.TourScheduleTickets.Any()) 
-                            ? t.TourSchedules.Min(s => s.TourScheduleTickets != null && s.TourScheduleTickets.Any() ? s.TourScheduleTickets.Min(tk => tk.Price) : long.MaxValue) 
-                            : 0);
-                        break;
-                    case "date_asc":
-                        query = query.OrderBy(t => t.TourSchedules != null && t.TourSchedules.Any() ? t.TourSchedules.Min(s => s.DepartureDate) : DateTime.MaxValue);
-                        break;
-                    case "date_desc":
-                        query = query.OrderByDescending(t => t.TourSchedules != null && t.TourSchedules.Any() ? t.TourSchedules.Min(s => s.DepartureDate) : DateTime.MinValue);
-                        break;
-                    default:
-                        query = query.OrderBy(t => t.Id);
-                        break;
-                }
-            }
-            else
-            {
-                query = query.OrderBy(t => t.Id);
-            }
-
-            var filteredTours = query.ToList();
-            int total = filteredTours.Count;
-
-            var pagedTours = filteredTours
-                    .Skip((page - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToList();
-
-            var list = _mapper.Map<List<ReadTourDTO>>(pagedTours);
-
-            // GỌI HÀM LẮP TÊN NGƯỜI DÙNG CHO TOÀN BỘ REVIEW TRONG TRANG NÀY
             var allReviews = list.Where(t => t.Reviews != null).SelectMany(t => t.Reviews!).ToList();
             if (allReviews.Any())
             {
                 await PopulateReviewerNamesAsync(allReviews);
             }
 
-            var result = new PaginationDTO<ReadTourDTO>
-            {
-                Data = list,
-                CurrentPage = page,
-                PageSize = pageSize,
-                Total = total,
-                TotalPages = (int)Math.Ceiling(total / (double)pageSize)
-            };
-            return result;
+            return CreatePagination(list, result.Total, page, pageSize);
         }
 
-        public async Task<ReadTourDTO> GetById(int id)
+        public async Task<ReadTourDTO> GetById(int id, int? userId = null, bool isAdmin = false)
         {
-            var tourDto = _mapper.Map<ReadTourDTO>(await _repository.GetById(id));
+            var entity = await _repository.GetById(id);
+            var tourDto = _mapper.Map<ReadTourDTO>(entity);
 
             if (tourDto != null)
             {
+                tourDto.CanEdit = isAdmin ||
+                    (userId.HasValue && entity.CreatedBy == userId.Value);
+
                 // Lấy tên Operator cho 1 tour này
                 //await PopulateOperatorNamesAsync(new List<ReadTourDTO> { tourDto });
                 tourDto.CreatedByName = await GetAccountNameByIdAsync(tourDto.CreatedBy);
@@ -407,54 +296,22 @@ namespace TourAPI.Services.Implements
 
         public async Task<PaginationDTO<ReadTourDTO>> GetByAdmin(int page, int pageSize, string? searchTerm = null)
         {
-            // 1. Lấy toàn bộ tour từ DB
-            var tours = await _repository.GetAll();
-            var query = tours.AsEnumerable();
-
-            // 2. Tìm kiếm (nếu có)
-            if (!string.IsNullOrWhiteSpace(searchTerm))
+            var result = await _repository.GetPagedAsync(new TourQueryOptions
             {
-                var term = searchTerm.ToLower();
-                query = query.Where(t =>
-                    (t.Name != null && t.Name.ToLower().Contains(term)) ||
-                    (t.Description != null && t.Description.ToLower().Contains(term)) ||
-                    (t.TourItineraries != null && t.TourItineraries.Any(i => (i.Title != null && i.Title.ToLower().Contains(term)) || (i.Description != null && i.Description.ToLower().Contains(term))))
-                );
-            }
+                Page = page,
+                PageSize = pageSize,
+                SearchTerm = searchTerm,
+                SortDescendingById = true
+            });
 
-            // 3. Sắp xếp (Admin thường muốn xem tour mới tạo nhất đưa lên đầu)
-            query = query.OrderByDescending(t => t.Id);
-
-            var filteredTours = query.ToList();
-            int total = filteredTours.Count;
-
-            // 4. Phân trang
-            var pagedTours = filteredTours
-                    .Skip((page - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToList();
-
-            // 5. Map sang DTO
-            var list = _mapper.Map<List<ReadTourDTO>>(pagedTours);
-            //await PopulateOperatorNamesAsync(list);
-
-            // 6. GỌI HÀM LẮP TÊN NGƯỜI DÙNG CHO TOÀN BỘ REVIEW (Giống như hàm GetActiveTours)
+            var list = _mapper.Map<List<ReadTourDTO>>(result.Items);
             var allReviews = list.Where(t => t.Reviews != null).SelectMany(t => t.Reviews!).ToList();
             if (allReviews.Any())
             {
                 await PopulateReviewerNamesAsync(allReviews);
             }
 
-            // 7. Trả về kết quả
-            var result = new PaginationDTO<ReadTourDTO>
-            {
-                Data = list,
-                CurrentPage = page,
-                PageSize = pageSize,
-                Total = total,
-                TotalPages = (int)Math.Ceiling(total / (double)pageSize)
-            };
-            return result;
+            return CreatePagination(list, result.Total, page, pageSize);
         }
 
         private async Task PopulateReviewerNamesAsync(IEnumerable<ReadReviewDTO> reviews)
@@ -540,6 +397,53 @@ namespace TourAPI.Services.Implements
                               .OrderBy(x => x.DayNumber)
                               .ThenBy(x => x.StartDuration).ToList();
             return _mapper.Map<List<ItineraryLocationDto>>(result);
+        }
+
+        private static PaginationDTO<T> CreatePagination<T>(
+            List<T> data,
+            int total,
+            int page,
+            int pageSize)
+        {
+            var normalizedPage = Math.Max(1, page);
+            var normalizedPageSize = Math.Clamp(pageSize, 1, 1000);
+
+            return new PaginationDTO<T>
+            {
+                Data = data,
+                CurrentPage = normalizedPage,
+                PageSize = normalizedPageSize,
+                Total = total,
+                TotalPages = (int)Math.Ceiling(total / (double)normalizedPageSize)
+            };
+        }
+
+        private static void ValidateAndNormalize(BaseTourDTO model)
+        {
+            model.Name = model.Name.Trim();
+            model.Description = model.Description?.Trim();
+            model.Country = model.Country?.Trim();
+            model.City = model.City?.Trim();
+            model.Address = model.Address?.Trim();
+
+            if (model.Image != null)
+            {
+                const long maxImageBytes = 5 * 1024 * 1024;
+                var allowedContentTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "image/jpeg", "image/png", "image/webp"
+                };
+
+                if (model.Image.Length == 0 || model.Image.Length > maxImageBytes)
+                {
+                    throw new Exception("Tour image must be a non-empty file no larger than 5 MB.");
+                }
+
+                if (!allowedContentTypes.Contains(model.Image.ContentType))
+                {
+                    throw new Exception("Tour image must be a JPEG, PNG, or WebP file.");
+                }
+            }
         }
     }
 }

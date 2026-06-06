@@ -23,11 +23,13 @@ namespace TourAPI.Controllers
     public class ToursController : LocalizedControllerBase
     {
         private readonly ITourService _tourService;
+        private readonly ITourAccessService _tourAccessService;
         private readonly IMapper _mapper;
 
-        public ToursController(ITourService tourService, IMapper mapper, IStringLocalizer<Messages> localizer)
+        public ToursController(ITourService tourService, ITourAccessService tourAccessService, IMapper mapper, IStringLocalizer<Messages> localizer)
             : base(localizer)
         {_tourService = tourService;
+            _tourAccessService = tourAccessService;
             _mapper = mapper;
         }
 
@@ -74,7 +76,14 @@ namespace TourAPI.Controllers
             [FromQuery] string? searchTerm = null,
             [FromQuery] int? categoryId = null)
         {
-            var list = await _tourService.GetAll(page, pageSize, searchTerm, categoryId);
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
+            }
+
+            var list = await _tourService.GetAll(
+                page, pageSize, userId.Value, User.IsInRole("Admin"), searchTerm, categoryId);
             return Ok(list);
         }
 
@@ -133,8 +142,20 @@ namespace TourAPI.Controllers
 
         // GET: api/Tours/active/5
         [HttpPut("active/{id}")]
+        [Authorize(Roles = "Manager,Admin")]
         public async Task<ActionResult> Active(int id, bool isActive)
         {
+            var userId = GetCurrentUserId();
+            if (userId == null)
+            {
+                return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
+            }
+
+            if (!await _tourAccessService.CanEditAsync(id, userId.Value, User.IsInRole("Admin")))
+            {
+                return Forbid();
+            }
+
             await _tourService.ActiveTour(id, isActive);
 
             return Ok();
@@ -144,7 +165,8 @@ namespace TourAPI.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<ReadTourDTO>> GetTour(int id)
         {
-            var tour = await _tourService.GetById(id);
+            var userId = GetCurrentUserId();
+            var tour = await _tourService.GetById(id, userId, User.IsInRole("Admin"));
 
             if (tour == null)
             {
@@ -156,6 +178,7 @@ namespace TourAPI.Controllers
 
         // PUT: api/Tours/5
         [HttpPut("{id}")]
+        [Authorize(Roles = "Manager,Admin")]
         public async Task<IActionResult> PutTour(int id, [FromForm] UpdateTourDTO tourDto)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -172,6 +195,11 @@ namespace TourAPI.Controllers
                 return NotFound(new { message = M("TourNotFound") });
             }
 
+            if (!await _tourAccessService.CanEditAsync(id, userId, User.IsInRole("Admin")))
+            {
+                return Forbid();
+            }
+
             try
             {
                 await _tourService.Update(id, tourDto, userId);
@@ -186,6 +214,7 @@ namespace TourAPI.Controllers
 
         // POST: api/Tours
         [HttpPost]
+        [Authorize(Roles = "Manager,Admin")]
         public async Task<ActionResult<ReadTourDTO>> PostTour([FromForm] CreateTourDTO tourDto)
         {
             try
@@ -210,6 +239,7 @@ namespace TourAPI.Controllers
 
         // DELETE: api/Tours/5
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Manager,Admin")]
         public async Task<IActionResult> DeleteTour(int id)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -224,6 +254,11 @@ namespace TourAPI.Controllers
             if (tour == null)
             {
                 return NotFound(new { message = M("TourNotFound") });
+            }
+
+            if (!await _tourAccessService.CanEditAsync(id, userId, User.IsInRole("Admin")))
+            {
+                return Forbid();
             }
 
             try
@@ -260,6 +295,14 @@ namespace TourAPI.Controllers
             {
                 return StatusCode(500, new { message = ex.Message });
             }
+        }
+
+        private int? GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                               ?? User.FindFirst("id")?.Value
+                               ?? User.FindFirst("sub")?.Value;
+            return int.TryParse(userIdClaim, out var userId) ? userId : null;
         }
     }
 }
