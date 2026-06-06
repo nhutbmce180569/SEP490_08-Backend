@@ -16,6 +16,8 @@ namespace TourAPI.DTOs
 
         public string? Note { get; set; }
 
+        public bool CanEdit { get; set; }
+
         public virtual ReadTourBasicDTO? Tour { get; set; }
 
         public virtual ICollection<ReadTourScheduleStaffDTO>? TourScheduleStaffs { get; set; }

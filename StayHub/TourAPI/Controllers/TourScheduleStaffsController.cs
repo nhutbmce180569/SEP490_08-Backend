@@ -6,6 +6,7 @@ using StayHub.Common.Controllers;
 using StayHub.Common.Resources;
 using TourAPI.DTOs;
 using TourAPI.Services;
+using System.Security.Claims;
 
 namespace TourAPI.Controllers
 {
@@ -14,11 +15,16 @@ namespace TourAPI.Controllers
     public class TourScheduleStaffsController : LocalizedControllerBase
     {
         private readonly ITourScheduleStaffService _staffService;
+        private readonly ITourAccessService _tourAccessService;
 
-        public TourScheduleStaffsController(ITourScheduleStaffService staffService, IStringLocalizer<Messages> localizer)
+        public TourScheduleStaffsController(
+            ITourScheduleStaffService staffService,
+            ITourAccessService tourAccessService,
+            IStringLocalizer<Messages> localizer)
             : base(localizer)
         {
             _staffService = staffService;
+            _tourAccessService = tourAccessService;
         }
 
         [HttpPost]
@@ -29,6 +35,14 @@ namespace TourAPI.Controllers
             {
                 if (dto == null || dto.ScheduleId <= 0 || dto.StaffId <= 0)
                     return BadRequest(new { message = M("ScheduleAndStaffIdMustBePositive") });
+
+                var userId = GetCurrentUserId();
+                if (!userId.HasValue) return Unauthorized();
+                if (!await _tourAccessService.CanEditScheduleAsync(
+                        dto.ScheduleId,
+                        userId.Value,
+                        User.IsInRole("Admin")))
+                    return Forbid();
 
                 await _staffService.AssignStaffToScheduleAsync(dto);
                 return Ok(new { message = M("StaffAssignedSuccessfully") });
@@ -51,6 +65,14 @@ namespace TourAPI.Controllers
             {
                 if (scheduleId <= 0 || staffId <= 0)
                     return BadRequest(new { message = M("ScheduleAndStaffIdMustBePositive") });
+
+                var userId = GetCurrentUserId();
+                if (!userId.HasValue) return Unauthorized();
+                if (!await _tourAccessService.CanEditScheduleAsync(
+                        scheduleId,
+                        userId.Value,
+                        User.IsInRole("Admin")))
+                    return Forbid();
 
                 await _staffService.RemoveStaffFromScheduleAsync(scheduleId, staffId);
                 return NoContent();
@@ -81,6 +103,15 @@ namespace TourAPI.Controllers
             {
                 return StatusCode(500, new { message = M("SystemError"), details = ex.Message });
             }
+        }
+
+        private int? GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                               ?? User.FindFirst("id")?.Value
+                               ?? User.FindFirst("sub")?.Value;
+
+            return int.TryParse(userIdClaim, out var userId) ? userId : null;
         }
     }
 }
