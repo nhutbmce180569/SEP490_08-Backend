@@ -5,9 +5,13 @@ using BookingAPI.Models;
 using BookingAPI.Repositories;
 using BookingAPI.Services;
 using BookingAPI.Services.Implements;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Json;
 
 namespace BookingAPI.Services.Implements
 {
@@ -21,6 +25,8 @@ namespace BookingAPI.Services.Implements
         private readonly IAuthApiClient _authApiClient;
         private readonly IBackgroundJobService _backgroundJobService;
         private readonly INotificationInternalService _notificationInternalService;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogger<OrderService> _logger;
         public OrderService(
          IOrderRepository orderRepository,
@@ -31,6 +37,8 @@ namespace BookingAPI.Services.Implements
          IAuthApiClient authApiClient,
          IBackgroundJobService backgroundJobService,
          INotificationInternalService notificationInternalService,
+         IHttpClientFactory httpClientFactory,
+         IHttpContextAccessor httpContextAccessor,
          ILogger<OrderService> logger)
         {
             _orderRepository = orderRepository;
@@ -41,6 +49,8 @@ namespace BookingAPI.Services.Implements
             _authApiClient = authApiClient;
             _backgroundJobService = backgroundJobService;
             _notificationInternalService = notificationInternalService;
+            _httpClientFactory = httpClientFactory;
+            _httpContextAccessor = httpContextAccessor;
             _logger = logger;
         }
 
@@ -318,6 +328,18 @@ namespace BookingAPI.Services.Implements
             _backgroundJobService.EnqueueSendTicketsEmail(orderId, customerEmail);
             await NotifyBookingPaidAsync(order);
 
+            // After marking order as paid, automatically add customer to the schedule chat room
+            // This call should not crash the main flow if it fails
+            try
+            {
+                await AddCustomerToChatRoomAsync(order.ScheduleId, order.CustomerId);
+            }
+            catch (Exception ex)
+            {
+                // Log the error but don't throw - the order was already marked as paid successfully
+                _logger.LogError(ex, $"Failed to add customer {order.CustomerId} to chat room for schedule {order.ScheduleId}. Error: {ex.Message}");
+            }
+
             return true;
         }
 
@@ -533,6 +555,60 @@ namespace BookingAPI.Services.Implements
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to send paid booking notification for order {OrderId}.", order.Id);
+            }
+        }
+
+        private async Task AddCustomerToChatRoomAsync(int scheduleId, int customerId)
+        {
+            try
+            {
+                // Extract JWT token from current HttpContext
+                var token = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].ToString();
+                
+                if (string.IsNullOrWhiteSpace(token))
+                {
+                    _logger.LogWarning($"No Authorization token found in request context for adding customer {customerId} to chat room for schedule {scheduleId}.");
+                    return;
+                }
+
+                // Create request body according to AddMembersRequest format
+                var addMembersRequest = new
+                {
+                    userIds = new List<int> { customerId }
+                };
+
+                using var client = _httpClientFactory.CreateClient();
+                
+                // Forward JWT token to the Chat API
+                client.DefaultRequestHeaders.Add("Authorization", token);
+
+                // Send POST request to Chat API's schedule-specific endpoint with token forwarding
+                var response = await client.PostAsJsonAsync(
+                    $"https://localhost:7010/api/chat/rooms/schedule/{scheduleId}/members",
+                    addMembersRequest
+                );
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning($"Failed to add customer {customerId} to chat room for schedule {scheduleId}. Status: {response.StatusCode}, Content: {errorContent}");
+                }
+                else
+                {
+                    _logger.LogInformation($"Customer {customerId} added to chat room successfully for schedule {scheduleId} (Token forwarded)");
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, $"HTTP error when adding customer {customerId} to chat room for schedule {scheduleId}: {ex.Message}");
+            }
+            catch (TaskCanceledException ex)
+            {
+                _logger.LogError(ex, $"Timeout when adding customer {customerId} to chat room for schedule {scheduleId}: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Unexpected error when adding customer {customerId} to chat room for schedule {scheduleId}: {ex.Message}");
             }
         }
     }
