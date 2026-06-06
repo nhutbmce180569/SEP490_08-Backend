@@ -314,6 +314,35 @@ namespace TourAPI.Services.Implements
             return CreatePagination(list, result.Total, page, pageSize);
         }
 
+
+        public async Task<PaginationDTO<ReadTourDTO>> GetByManager(int managerId, int page, int pageSize, string? searchTerm = null)
+        {
+            var result = await _repository.GetPagedAsync(new TourQueryOptions
+            {
+                Page = page,
+                PageSize = pageSize,
+                SearchTerm = searchTerm,
+                CreatedBy = managerId,
+                SortDescendingById = true
+            });
+
+            var list = _mapper.Map<List<ReadTourDTO>>(result.Items);
+
+            // Manager này chắc chắn có quyền Edit vì đây là tour của họ
+            foreach (var tour in list)
+            {
+                tour.CanEdit = true;
+            }
+
+            var allReviews = list.Where(t => t.Reviews != null).SelectMany(t => t.Reviews!).ToList();
+            if (allReviews.Any())
+            {
+                await PopulateReviewerNamesAsync(allReviews);
+            }
+
+            return CreatePagination(list, result.Total, page, pageSize);
+        }
+
         private async Task PopulateReviewerNamesAsync(IEnumerable<ReadReviewDTO> reviews)
         {
             if (reviews == null || !reviews.Any()) return;
