@@ -39,6 +39,8 @@ namespace TourAPI.DTOs
 
         public double? AverageStar { get; set; }
 
+        public bool CanEdit { get; set; }
+
         public ICollection<ReadTourItineraryDTO>? TourItineraries { get; set; }
 
         public ICollection<ReadTourScheduleDTO>? TourSchedules { get; set; }
@@ -64,19 +66,23 @@ namespace TourAPI.DTOs
         public int CategoryId { get; set; }
 
         [Required(ErrorMessage = "Name is required")]
-        [StringLength(200, ErrorMessage = "Name cannot exceed 200 characters")]
+        [StringLength(200, MinimumLength = 5, ErrorMessage = "Name must be between 5 and 200 characters")]
         public string Name { get; set; } = null!;
 
-        [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
+        [Required(ErrorMessage = "Description is required")]
+        [StringLength(2000, MinimumLength = 20, ErrorMessage = "Description must be between 20 and 2000 characters")]
         public string? Description { get; set; }
 
         [Required(ErrorMessage = "Country is required")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Country must be between 2 and 100 characters")]
         public string? Country { get; set; }
 
         [Required(ErrorMessage = "City is required")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "City must be between 2 and 100 characters")]
         public string? City { get; set; }
 
         [Required(ErrorMessage = "Address is required")]
+        [StringLength(255, MinimumLength = 5, ErrorMessage = "Address must be between 5 and 255 characters")]
         public string? Address { get; set; }
 
         public string? Status { get; set; } = "Inactive";
@@ -110,4 +116,5 @@ namespace TourAPI.DTOs
     {
         public string Status { get; set; } = null!;
     }
+
 }
