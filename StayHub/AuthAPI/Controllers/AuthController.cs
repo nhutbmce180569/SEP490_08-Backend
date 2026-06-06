@@ -157,7 +157,17 @@ namespace AuthAPI.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(new { message = M("InvalidInputData") });
 
-            await _authService.ForgotPassword(dto);
+            var result = await _authService.ForgotPassword(dto);
+            if (result.IsRateLimited)
+            {
+                Response.Headers["Retry-After"] = result.RetryAfterSeconds.ToString();
+                return StatusCode(StatusCodes.Status429TooManyRequests, new
+                {
+                    message = M("OtpRequestTooSoon"),
+                    retryAfterSeconds = result.RetryAfterSeconds
+                });
+            }
+
             return Ok(new { message = M("ForgotPasswordSuccess") });
         }
 

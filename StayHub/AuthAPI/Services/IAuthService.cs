@@ -11,7 +11,7 @@ namespace AuthAPI.Services
         Task<LoginResponseDTO?> FacebookLogin(string accessToken);
         Task Logout(string refreshToken);
         Task<LoginResponseDTO?> ChangePassword(int userId, ChangePasswordDTO changePasswordDTO);
-        Task<bool> ForgotPassword(ForgotPasswordDTO dto);
+        Task<ForgotPasswordResultDTO> ForgotPassword(ForgotPasswordDTO dto);
         Task<bool> ResetPassword(ResetPasswordDTO dto);
         Task<UserResponseDTO?> GetProfileAsync(int userId);
         Task<LoginResponseDTO?> UpdateProfileAsync(int userId, UpdateProfileDTO dto);

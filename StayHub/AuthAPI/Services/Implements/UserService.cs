@@ -4,6 +4,7 @@ using AuthAPI.Models;
 using AuthAPI.Repositories;
 using AuthAPI.Helpers;
 using StackExchange.Redis;
+using System.Security.Cryptography;
 
 namespace AuthAPI.Services.Implements
 {
@@ -62,13 +63,14 @@ namespace AuthAPI.Services.Implements
             return user == null ? null : _mapper.Map<ReadUserDTO>(user);
         }
 
-        public async Task<ReadUserDTO> CreateUserByAdmin(CreateUserDTO createUserDto)
+        public async Task<AdminCreatedUserDTO> CreateUserByAdmin(CreateUserDTO createUserDto)
         {
             var existingUser = await _userRepository.GetByEmail(createUserDto.Email);
             if (existingUser != null)
                 throw new InvalidOperationException("Email is already in use.");
 
             var newUser = _mapper.Map<User>(createUserDto);
+            var temporaryPassword = GenerateTemporaryPassword();
 
             if (createUserDto.AvatarFile != null && createUserDto.AvatarFile.Length > 0)
             {
@@ -80,8 +82,9 @@ namespace AuthAPI.Services.Implements
                 }
             }
 
-            newUser.PasswordHash = _passwordHelper.Hash(newUser, createUserDto.Password);
+            newUser.PasswordHash = _passwordHelper.Hash(newUser, temporaryPassword);
             newUser.Provider = "Local";
+            newUser.RequirePasswordChange = true;
             newUser.SecurityStamp = Guid.NewGuid().ToString();
 
             newUser.CreatedAt = DateTime.UtcNow;
@@ -107,7 +110,34 @@ namespace AuthAPI.Services.Implements
             }
 
             await _userRepository.Add(newUser);
-            return _mapper.Map<ReadUserDTO>(newUser);
+            return new AdminCreatedUserDTO
+            {
+                User = _mapper.Map<ReadUserDTO>(newUser),
+                TemporaryPassword = temporaryPassword
+            };
+        }
+
+        private static string GenerateTemporaryPassword()
+        {
+            const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+            const string lower = "abcdefghijkmnopqrstuvwxyz";
+            const string digits = "23456789";
+            const string special = "@$!%*?&";
+            const string all = upper + lower + digits + special;
+
+            var characters = new char[14];
+            characters[0] = upper[RandomNumberGenerator.GetInt32(upper.Length)];
+            characters[1] = lower[RandomNumberGenerator.GetInt32(lower.Length)];
+            characters[2] = digits[RandomNumberGenerator.GetInt32(digits.Length)];
+            characters[3] = special[RandomNumberGenerator.GetInt32(special.Length)];
+
+            for (var index = 4; index < characters.Length; index++)
+            {
+                characters[index] = all[RandomNumberGenerator.GetInt32(all.Length)];
+            }
+
+            RandomNumberGenerator.Shuffle(characters.AsSpan());
+            return new string(characters);
         }
 
         public async Task<bool> UpdateUserProfile(int id, UpdateUserDTO updateUserDto)
