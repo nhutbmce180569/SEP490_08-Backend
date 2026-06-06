@@ -12,7 +12,8 @@ namespace AuthAPI.Mappers
 
             CreateMap<Role, ReadRoleDTO>();
 
-            CreateMap<User, UserResponseDTO>();
+            CreateMap<User, UserResponseDTO>()
+                .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.Roles.Select(r => r.Name).ToList()));
 
             CreateMap<User, ReadUserDTO>()
                  .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.Roles.Select(r => r.Name).ToList()));

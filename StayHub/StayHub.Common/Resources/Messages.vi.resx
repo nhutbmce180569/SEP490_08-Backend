@@ -214,6 +214,9 @@
   <data name="ForgotPasswordSuccess" xml:space="preserve">
     <value>Nếu email đã đăng ký, mã đặt lại mật khẩu đã được gửi.</value>
   </data>
+  <data name="OtpRequestTooSoon" xml:space="preserve">
+    <value>Vui lòng chờ trước khi yêu cầu mã xác minh mới.</value>
+  </data>
   <data name="GoogleLoginSuccessful" xml:space="preserve">
     <value>Đăng nhập Google thành công.</value>
   </data>
