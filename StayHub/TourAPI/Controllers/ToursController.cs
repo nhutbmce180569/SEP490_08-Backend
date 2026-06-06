@@ -176,6 +176,28 @@ namespace TourAPI.Controllers
             return tour;
         }
 
+        // GET: api/Tours/manager
+        [HttpGet("manager")]
+        [Authorize(Roles = "Manager,Admin")]
+        public async Task<ActionResult> GetToursByManager([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchTerm = null)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (userId == null)
+                {
+                    return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
+                }
+
+                var list = await _tourService.GetByManager(userId.Value, page, pageSize, searchTerm);
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         // PUT: api/Tours/5
         [HttpPut("{id}")]
         [Authorize(Roles = "Manager,Admin")]

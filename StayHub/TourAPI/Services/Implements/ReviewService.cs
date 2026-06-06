@@ -253,6 +253,43 @@ namespace TourAPI.Services.Implements
             };
         }
 
+        public async Task<PaginationDTO<ReadReviewDTO>> GetReviewsByManagerAsync(
+    int managerId, int tourId, int page, int pageSize, int? rating, string sortOrder)
+        {
+            // ✅ Lấy query chỉ gồm reviews của tour do manager này tạo
+            var query = _reviewRepository.GetBaseQueryByManager(managerId, includeHidden: true);
+
+            // ✅ Lọc thêm theo tourId nếu có truyền vào
+            if (tourId > 0)
+                query = query.Where(r => r.TourId == tourId);
+
+            if (rating.HasValue)
+                query = query.Where(r => r.Rating == rating.Value);
+
+            query = sortOrder?.ToLower() == "oldest"
+                ? query.OrderBy(r => r.CreatedAt)
+                : query.OrderByDescending(r => r.CreatedAt);
+
+            var totalCount = await query.CountAsync();
+
+            var reviews = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var dtos = _mapper.Map<List<ReadReviewDTO>>(reviews);
+            await PopulateReviewerNamesAsync(dtos);
+
+            return new PaginationDTO<ReadReviewDTO>
+            {
+                Data = dtos,
+                CurrentPage = page,
+                PageSize = pageSize,
+                Total = totalCount,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            };
+        }
+
         public async Task HideReviewAsync(int reviewId, bool hidden)
         {
             var review = await _reviewRepository.GetByIdAsync(reviewId);
@@ -265,7 +302,7 @@ namespace TourAPI.Services.Implements
             await _reviewRepository.SaveChangesAsync();
         }
 
- 
+
 
         private async Task PopulateReviewerNamesAsync(IEnumerable<ReadReviewDTO> reviews)
         {
@@ -324,6 +361,6 @@ namespace TourAPI.Services.Implements
             }
         }
 
-      
+
     }
 }
