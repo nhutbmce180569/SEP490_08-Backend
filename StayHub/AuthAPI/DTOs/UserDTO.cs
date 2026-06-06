@@ -19,7 +19,14 @@ namespace AuthAPI.DTOs
         public DateTime? LastOnline { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        public bool RequirePasswordChange { get; set; }
         public List<string> Roles { get; set; } = new List<string>();
+    }
+
+    public class AdminCreatedUserDTO
+    {
+        public ReadUserDTO User { get; set; } = null!;
+        public string TemporaryPassword { get; set; } = null!;
     }
 
     public class CreateUserDTO
@@ -27,11 +34,6 @@ namespace AuthAPI.DTOs
         [Required(ErrorMessage = "Email is required.")]
         [EmailAddress(ErrorMessage = "Invalid email format.")]
         public string Email { get; set; } = null!;
-
-        [Required(ErrorMessage = "Password is required.")]
-        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$",
-            ErrorMessage = "Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.")]
-        public string Password { get; set; } = null!;
 
         [Required(ErrorMessage = "Full Name is required.")]
         [StringLength(100, MinimumLength = 2, ErrorMessage = "Full name must be between 2 and 100 characters.")]

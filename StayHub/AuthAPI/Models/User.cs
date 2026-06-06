@@ -25,6 +25,8 @@ public partial class User
 
     public string? Status { get; set; }
 
+    public bool RequirePasswordChange { get; set; }
+
     public bool? LocPrivacy { get; set; }
 
     public bool? MomentPrivacy { get; set; }

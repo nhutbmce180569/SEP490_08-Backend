@@ -45,6 +45,8 @@ namespace AuthAPI.DTOs
         public string? Gender { get; set; }
         public DateOnly? DateOfBirth { get; set; }
         public DateTime? LastOnline { get; set; }
+        public bool RequirePasswordChange { get; set; }
+        public List<string> Roles { get; set; } = new();
     }
 
     public class UpdateProfileDTO
@@ -121,6 +123,12 @@ namespace AuthAPI.DTOs
         [Required(ErrorMessage = "Email is required.")]
         [EmailAddress(ErrorMessage = "Invalid email format.")]
         public string Email { get; set; } = null!;
+    }
+
+    public class ForgotPasswordResultDTO
+    {
+        public bool IsRateLimited { get; set; }
+        public int RetryAfterSeconds { get; set; }
     }
 
     public class ResetPasswordDTO
