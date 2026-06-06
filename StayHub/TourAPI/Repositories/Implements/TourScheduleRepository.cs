@@ -15,14 +15,19 @@ namespace TourAPI.Repositories.Implements
             _context = context;
         }
 
-        public async Task<IEnumerable<TourSchedule>> GetAllAsync()
+        public async Task<IEnumerable<TourSchedule>> GetAllAsync(int page, int pageSize)
         {
             return await _context.TourSchedules
                 .Include(ts => ts.Tour)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
         }
 
-
+        public async Task<int> CountAllAsync()
+        {
+            return await _context.TourSchedules.CountAsync();
+        }
 
         public async Task<TourSchedule?> GetByIdAsync(int id)
         {
@@ -46,6 +51,44 @@ namespace TourAPI.Repositories.Implements
             return await _context.TourSchedules
                 .Where(x => x.TourId == tourId)
                 .ToListAsync();
+        }
+
+        public async Task<IEnumerable<TourSchedule>> GetByCreatedByAsync(int userId, int page, int pageSize)
+        {
+            return await _context.TourSchedules
+                .Include(ts => ts.Tour)
+                .Where(ts => ts.Tour != null && ts.Tour.CreatedBy == userId)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<int> CountByCreatedByAsync(int userId)
+        {
+            return await _context.TourSchedules
+                .Include(ts => ts.Tour)
+                .Where(ts => ts.Tour != null && ts.Tour.CreatedBy == userId)
+                .CountAsync();
+        }
+
+        public async Task<IEnumerable<TourSchedule>> SearchByTourNameAsync(string tourName, int page, int pageSize)
+        {
+            return await _context.TourSchedules
+                .Include(ts => ts.Tour)
+                .Where(ts => ts.Tour != null &&
+                       ts.Tour.Name.ToLower().Contains(tourName.ToLower()))
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<int> CountByTourNameAsync(string tourName)
+        {
+            return await _context.TourSchedules
+                .Include(ts => ts.Tour)
+                .Where(ts => ts.Tour != null &&
+                       ts.Tour.Name.ToLower().Contains(tourName.ToLower()))
+                .CountAsync();
         }
 
         public async Task AddAsync(TourSchedule tourSchedule)

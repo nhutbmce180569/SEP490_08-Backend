@@ -71,6 +71,19 @@ namespace TourAPI.Repositories.Implements
             return query; 
         }
 
+        public IQueryable<Review> GetBaseQueryByManager(int managerId, bool includeHidden = true)
+        {
+            var query = _context.Reviews
+                .Include(r => r.ReviewReplies)
+                .Include(r => r.Tour)
+                .Where(r => r.Tour != null && r.Tour.CreatedBy == managerId);
+
+            if (!includeHidden)
+                query = query.Where(r => !r.IsHidden);
+
+            return query;
+        }
+
         public void Update(Review review)
         {
             _context.Reviews.Update(review);

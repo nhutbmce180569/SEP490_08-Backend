@@ -147,14 +147,38 @@ namespace TourAPI.Controllers
                 if (pageSize < 1) pageSize = 5;
 
                 var currentUserId = GetCurrentUserId();
-                if (!await _tourAccessService.CanManageTourAsync(
-                        tourId,
-                        currentUserId,
-                        User.IsInRole("Admin"),
-                        User.IsInRole("Staff")))
-                    return Forbid();
 
                 var result = await _reviewService.GetReviewsByTourAsync(tourId, page, pageSize, rating, sortOrder, includeHidden: true);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        // GET: api/reviews/manager/tour/{tourId}
+        [Authorize(Roles = "Manager")]
+        [HttpGet("manager/tour/{tourId}")]
+        public async Task<IActionResult> GetReviewsByManager(
+            int tourId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 5,
+            [FromQuery] int? rating = null,
+            [FromQuery] string sortOrder = "newest")
+        {
+            try
+            {
+                if (page < 1) page = 1;
+                if (pageSize < 1) pageSize = 5;
+
+                var currentUserId = GetCurrentUserId();
+                //if (!await _tourAccessService.CanEditAsync(tourId, currentUserId, isAdmin: false))
+                //    return Forbid();
+
+                var result = await _reviewService.GetReviewsByManagerAsync(
+                    currentUserId, tourId, page, pageSize, rating, sortOrder);
+
                 return Ok(result);
             }
             catch (Exception ex)
@@ -170,12 +194,6 @@ namespace TourAPI.Controllers
             try
             {
                 var currentUserId = GetCurrentUserId();
-                if (!await _tourAccessService.CanManageReviewAsync(
-                        reviewId,
-                        currentUserId,
-                        User.IsInRole("Admin"),
-                        User.IsInRole("Staff")))
-                    return Forbid();
 
                 request.ReviewId = reviewId;
                 var result = await _reviewService.CreateReviewReplyAsync(currentUserId, request);
@@ -194,13 +212,6 @@ namespace TourAPI.Controllers
             try
             {
                 var currentUserId = GetCurrentUserId();
-                if (!await _tourAccessService.CanManageReviewReplyAsync(
-                        replyId,
-                        currentUserId,
-                        User.IsInRole("Admin"),
-                        User.IsInRole("Staff")))
-                    return Forbid();
-
                 var result = await _reviewService.UpdateReviewReplyAsync(replyId, currentUserId, request);
                 return Ok(result);
             }
@@ -217,13 +228,6 @@ namespace TourAPI.Controllers
             try
             {
                 var currentUserId = GetCurrentUserId();
-                if (!await _tourAccessService.CanManageReviewReplyAsync(
-                        replyId,
-                        currentUserId,
-                        User.IsInRole("Admin"),
-                        User.IsInRole("Staff")))
-                    return Forbid();
-
                 await _reviewService.DeleteReviewReplyAsync(replyId, currentUserId);
                 return NoContent();
             }
@@ -240,13 +244,6 @@ namespace TourAPI.Controllers
             try
             {
                 var currentUserId = GetCurrentUserId();
-                if (!await _tourAccessService.CanManageReviewAsync(
-                        id,
-                        currentUserId,
-                        User.IsInRole("Admin"),
-                        User.IsInRole("Staff")))
-                    return Forbid();
-
                 await _reviewService.HideReviewAsync(id, hidden);
                 return NoContent();
             }

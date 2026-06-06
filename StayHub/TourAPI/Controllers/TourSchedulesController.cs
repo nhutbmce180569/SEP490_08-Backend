@@ -30,16 +30,21 @@ namespace TourAPI.Controllers
             _staffService = staffService;
             _tourAccessService = tourAccessService;
         }
-
         [HttpGet]
-        public async Task<ActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<ActionResult> GetAll(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? tourName = null)
         {
             try
             {
                 if (page < 1) page = 1;
                 if (pageSize < 1) pageSize = 10;
 
-                var result = await _scheduleService.GetAllSchedulesAsync(page, pageSize);
+                var result = !string.IsNullOrWhiteSpace(tourName)
+                    ? await _scheduleService.SearchSchedulesByTourNameAsync(tourName, page, pageSize)
+                    : await _scheduleService.GetAllSchedulesAsync(page, pageSize);
+
                 return Ok(result);
             }
             catch (Exception ex)
@@ -68,6 +73,31 @@ namespace TourAPI.Controllers
             }
         }
 
+        // GET: api/TourSchedules/my
+        [HttpGet("my")]
+        [Authorize(Roles = "Manager,Admin")]
+        public async Task<ActionResult> GetMySchedules(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                if (page < 1) page = 1;
+                if (pageSize < 1) pageSize = 10;
+
+                var userId = GetCurrentUserId();
+                if (userId == null)
+                    return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
+
+                var result = await _scheduleService.GetSchedulesByCreatedByAsync(userId.Value, page, pageSize);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
         [HttpGet("assigned")]
         [Authorize(Roles = "Staff")]
         public async Task<IActionResult> GetAssignedSchedules()
@@ -89,19 +119,7 @@ namespace TourAPI.Controllers
             }
         }
 
-        private int? GetCurrentUserId()
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                               ?? User.FindFirst("id")?.Value
-                               ?? User.FindFirst("sub")?.Value;
 
-            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-            {
-                return null;
-            }
-
-            return userId;
-        }
 
         [HttpPost]
         [Authorize(Roles = "Manager,Admin")]
@@ -195,6 +213,20 @@ namespace TourAPI.Controllers
             {
                 return StatusCode(500, new { message = ex.Message });
             }
+        }
+
+        private int? GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                               ?? User.FindFirst("id")?.Value
+                               ?? User.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return null;
+            }
+
+            return userId;
         }
     }
 }
