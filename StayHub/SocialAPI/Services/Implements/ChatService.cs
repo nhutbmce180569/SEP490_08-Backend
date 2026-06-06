@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging; // 💡 ĐÃ BỔ SUNG: Namespace để dùng được ILogger
 using SocialAPI.Hubs;
 using System.Threading.Tasks;
 
@@ -17,12 +18,19 @@ namespace SocialAPI.Services.Implements
         private readonly IChatRepository _chatRepository;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IHubContext<ChatHub> _hubContext;
+        private readonly ILogger<ChatService> _logger; // 💡 ĐÃ BỔ SUNG: Khai báo trường logger
 
-        public ChatService(IChatRepository chatRepository, IHttpClientFactory httpClientFactory, IHubContext<ChatHub> hubContext)
+        // 💡 ĐÃ CẬP NHẬT: Tiêm ILogger<ChatService> vào Constructor
+        public ChatService(
+            IChatRepository chatRepository, 
+            IHttpClientFactory httpClientFactory, 
+            IHubContext<ChatHub> hubContext,
+            ILogger<ChatService> logger)
         {
             _chatRepository = chatRepository;
             _httpClientFactory = httpClientFactory;
             _hubContext = hubContext;
+            _logger = logger;
         }
 
         public async Task<List<ChatRoomDto>> GetUserChatRoomsAsync(int userId)
@@ -106,7 +114,6 @@ namespace SocialAPI.Services.Implements
 
         public async Task<List<ChatMessageDto>> GetChatHistoryAsync(int roomId, int userId, int skip = 0, int top = 20)
         {
-            // Kiểm tra quyền (Nghiệp vụ)
             var isMember = await _chatRepository.IsUserInRoomAsync(roomId, userId);
             if (!isMember)
             {
@@ -163,7 +170,6 @@ namespace SocialAPI.Services.Implements
                 };
             }).ToList();
 
-            // Đảo ngược lại để Frontend render từ trên xuống dưới cho đúng flow chat
             return messageDtos.OrderBy(m => m.SentAt).ToList();
         }
 
@@ -224,10 +230,8 @@ namespace SocialAPI.Services.Implements
 
         public async Task<ChatRoomDto> CreateOrGetChatRoomAsync(int currentUserId, int friendId)
         {
-            // Tìm phòng chat trực tiếp hiện tại
             var room = await _chatRepository.GetDirectChatRoomAsync(currentUserId, friendId);
 
-            // Nếu chưa tồn tại, yêu cầu Repository tạo mới
             if (room == null)
             {
                 room = await _chatRepository.CreateDirectChatRoomAsync(currentUserId, friendId);
@@ -284,7 +288,7 @@ namespace SocialAPI.Services.Implements
             {
                 ChatRoomId = targetRoomId,
                 SenderId = 0,
-                Content = "Một thành viên mới đã được thêm vào nhóm",
+                Content = "A new member has been added to the team.",
                 IsRead = false,
                 SentAt = DateTime.UtcNow
             };
@@ -321,6 +325,153 @@ namespace SocialAPI.Services.Implements
         public async Task LeaveRoomAsync(int roomId, int userId)
         {
             await _chatRepository.LeaveRoomAsync(roomId, userId);
+        }
+
+        public async Task<int> CreateScheduleRoomAsync(CreateScheduleChatRoomRequest dto)
+        {
+            try
+            {
+                var existingRoom = await _chatRepository.GetChatRoomByScheduleIdAsync(dto.ScheduleId);
+
+                if (existingRoom != null)
+                {
+                    return existingRoom.Id;
+                }
+
+                var newRoom = await _chatRepository.CreateScheduleChatRoomAsync(dto.ScheduleId, dto.RoomName);
+                return newRoom.Id;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error creating schedule chat room: {ex.Message}", ex);
+            }
+        }
+
+        public async Task AutoAddMemberByScheduleAsync(int scheduleId, AutoAddChatMemberRequest dto)
+        {
+            try
+            {
+                var room = await _chatRepository.GetChatRoomByScheduleIdAsync(scheduleId);
+
+                if (room == null)
+                {
+                    throw new KeyNotFoundException($"Chat room with ScheduleId '{scheduleId}' not found.");
+                }
+
+                var existingMember = room.ChatMembers.FirstOrDefault(cm => cm.UserId == dto.UserId);
+
+                if (existingMember != null)
+                {
+                    return;
+                }
+
+                await _chatRepository.AddMembersToGroupAsync(room.Id, new List<int> { dto.UserId });
+
+                var systemMessage = new ChatMessage
+                {
+                    ChatRoomId = room.Id,
+                    SenderId = 0,
+                    Content = "A new member has been added to the team.",
+                    IsRead = false,
+                    SentAt = DateTime.UtcNow
+                };
+
+                var savedMsg = await _chatRepository.SaveMessageAsync(systemMessage);
+
+                var savedMsgDto = new ChatMessageDto
+                {
+                    Id = savedMsg.Id,
+                    ChatRoomId = savedMsg.ChatRoomId,
+                    SenderId = savedMsg.SenderId,
+                    SenderName = "System",
+                    SenderAvatar = "https://cdn.stayhub.vn/avatars/system.png",
+                    Content = savedMsg.Content,
+                    IsRead = savedMsg.IsRead ?? false,
+                    SentAt = savedMsg.SentAt ?? DateTime.UtcNow
+                };
+
+                await _hubContext.Clients.Group(room.Id.ToString()).SendAsync("ReceiveMessage", savedMsgDto);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error adding member to schedule chat room: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<bool> AddMembersByScheduleAsync(int scheduleId, List<int> userIds)
+        {
+            try
+            {
+                return await _chatRepository.AddMembersToRoomByScheduleIdAsync(scheduleId, userIds);
+            }
+            catch (Exception ex)
+            {
+                // 💡 ĐÃ HẾT LỖI: Trường _logger hiện tại đã tồn tại trong context và hoạt động hoàn hảo
+                _logger.LogError(ex, $"Error adding members to schedule chat room for schedule {scheduleId}");
+                return false;
+            }
+        }
+
+        public async Task<List<UserProfileShortDto>> GetRoomMembersAsync(int roomId)
+        {
+            try
+            {
+                // Step 1: Get all ChatMembers for this roomId
+                var members = await _chatRepository.GetMembersByRoomIdAsync(roomId);
+
+                if (!members.Any())
+                {
+                    return new List<UserProfileShortDto>();
+                }
+
+                // Step 2: Extract UserIds from members
+                var userIds = members.Select(m => m.UserId).Distinct().ToList();
+
+                // Step 3: Fetch user profiles via Gateway
+                var userProfiles = new List<UserProfileShortDto>();
+
+                if (userIds.Any())
+                {
+                    try
+                    {
+                        using var client = _httpClientFactory.CreateClient();
+                        var response = await client.PostAsJsonAsync("https://localhost:7010/api/users/batch", userIds);
+
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
+                            if (apiResult?.Data != null)
+                            {
+                                userProfiles = apiResult.Data;
+                            }
+                        }
+                        else
+                        {
+                            _logger.LogWarning($"Failed to fetch user profiles for room members. Status: {response.StatusCode}");
+                        }
+                    }
+                    catch (HttpRequestException ex)
+                    {
+                        _logger.LogError(ex, "HTTP error fetching user profiles for room members");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error fetching user profiles for room members");
+                    }
+                }
+
+                // Step 4: Return user profile list
+                return userProfiles;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting members for room {roomId}");
+                throw;
+            }
         }
     }
 }
