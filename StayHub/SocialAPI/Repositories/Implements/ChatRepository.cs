@@ -160,5 +160,60 @@ namespace SocialAPI.Repositories.Implements
                 await _context.SaveChangesAsync();
             }
         }
+
+        public async Task<ChatRoom?> GetChatRoomByScheduleIdAsync(int scheduleId)
+        {
+            return await _context.ChatRooms
+                .AsNoTracking()
+                .Include(cr => cr.ChatMembers)
+                .FirstOrDefaultAsync(cr => cr.ScheduleId == scheduleId);
+        }
+
+        public async Task<ChatRoom> CreateScheduleChatRoomAsync(int scheduleId, string roomName)
+        {
+            var chatRoom = new ChatRoom
+            {
+                ScheduleId = scheduleId,
+                RoomName = roomName,
+                IsGroupChat = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _context.ChatRooms.AddAsync(chatRoom);
+            await _context.SaveChangesAsync();
+            return chatRoom;
+        }
+
+        public async Task<bool> AddMembersToRoomByScheduleIdAsync(int scheduleId, List<int> memberIds)
+        {
+            var room = await _context.ChatRooms
+                .Include(cr => cr.ChatMembers)
+                .FirstOrDefaultAsync(cr => cr.ScheduleId == scheduleId);
+
+            if (room == null)
+            {
+                return false;
+            }
+
+            var existingMemberIds = room.ChatMembers.Select(cm => cm.UserId).ToList();
+            foreach (var userId in memberIds.Distinct())
+            {
+                if (!existingMemberIds.Contains(userId))
+                {
+                    room.ChatMembers.Add(new ChatMember { UserId = userId, ChatRoomId = room.Id });
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<List<ChatMember>> GetMembersByRoomIdAsync(int roomId)
+        {
+            return await _context.ChatMembers
+                .AsNoTracking()
+                .Where(cm => cm.ChatRoomId == roomId)
+                .ToListAsync();
+        }
     }
 }

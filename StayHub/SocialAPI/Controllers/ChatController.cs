@@ -171,5 +171,148 @@ namespace SocialAPI.Controllers
                 return StatusCode(500, new { message = M("ErrorLeavingRoom"), details = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Internal API: Create a schedule-based chat room
+        /// Accessible by other internal services via API Gateway without user token validation
+        /// </summary>
+        [HttpPost("rooms/schedule")]
+        [AllowAnonymous]
+        public async Task<IActionResult> CreateScheduleChatRoom([FromBody] CreateScheduleChatRoomRequest request)
+        {
+            try
+            {
+                if (request == null)
+                {
+                    return BadRequest(new { message = "Request body cannot be null." });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.RoomName))
+                {
+                    return BadRequest(new { message = "RoomName is required." });
+                }
+
+                if (request.ScheduleId <= 0)
+                {
+                    return BadRequest(new { message = "ScheduleId must be a positive integer." });
+                }
+
+                var roomId = await _chatService.CreateScheduleRoomAsync(request);
+                return Ok(new { roomId, message = "Schedule chat room created successfully." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while creating the schedule chat room.", error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An unexpected error occurred.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Internal API: Automatically add a member to a schedule-based chat room
+        /// Accessible by other internal services via API Gateway without user token validation
+        /// </summary>
+        [HttpPost("rooms/schedule/{scheduleId}/add-member")]
+        [AllowAnonymous]
+        public async Task<IActionResult> AddMemberToScheduleRoom(int scheduleId, [FromBody] AutoAddChatMemberRequest request)
+        {
+            try
+            {
+                if (request == null)
+                {
+                    return BadRequest(new { message = "Request body cannot be null." });
+                }
+
+                if (request.UserId <= 0)
+                {
+                    return BadRequest(new { message = "UserId must be a positive integer." });
+                }
+
+                if (scheduleId <= 0)
+                {
+                    return BadRequest(new { message = "ScheduleId must be a positive integer." });
+                }
+
+                await _chatService.AutoAddMemberByScheduleAsync(scheduleId, request);
+                return Ok(new { message = "Member added to schedule chat room successfully." });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while adding the member.", error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An unexpected error occurred.", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Internal API: Add members to a schedule-based chat room via ScheduleId
+        /// Used by BookingAPI with JWT token forwarding for secure inter-service communication
+        /// </summary>
+        [HttpPost("rooms/schedule/{scheduleId}/members")]
+        [Authorize]
+        public async Task<IActionResult> AddMembersBySchedule(int scheduleId, [FromBody] AddMembersRequest request)
+        {
+            try
+            {
+                if (request == null)
+                {
+                    return BadRequest(new { message = "Request body cannot be null." });
+                }
+
+                if (request.UserIds == null || !request.UserIds.Any())
+                {
+                    return BadRequest(new { message = "UserIds list cannot be null or empty." });
+                }
+
+                if (scheduleId <= 0)
+                {
+                    return BadRequest(new { message = "ScheduleId must be a positive integer." });
+                }
+
+                var success = await _chatService.AddMembersByScheduleAsync(scheduleId, request.UserIds);
+
+                if (!success)
+                {
+                    return NotFound(new { message = "Chat room corresponding to this tour schedule was not found." });
+                }
+
+                return Ok(new { message = "Members have been automatically added to the tour group successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Get all members of a specific chat room with their profile information
+        /// </summary>
+        [HttpGet("rooms/{roomId}/members")]
+        public async Task<IActionResult> GetRoomMembers(int roomId)
+        {
+            try
+            {
+                if (roomId <= 0)
+                {
+                    return BadRequest(new { message = "RoomId must be a positive integer." });
+                }
+
+                var members = await _chatService.GetRoomMembersAsync(roomId);
+                return Ok(new { message = "Successfully retrieved room members.", data = members });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileRetrievingMembers"), error = ex.Message });
+            }
+        }
+
     }
 }
