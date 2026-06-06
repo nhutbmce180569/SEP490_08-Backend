@@ -130,6 +130,7 @@ CREATE TABLE Users (
     Gender VARCHAR(20),
     DateOfBirth DATE,
     Status VARCHAR(50) DEFAULT 'Active',
+    RequirePasswordChange BIT NOT NULL DEFAULT 0,
     LocPrivacy BIT DEFAULT 1,
     MomentPrivacy BIT DEFAULT 1,
     LastOnline DATETIME,

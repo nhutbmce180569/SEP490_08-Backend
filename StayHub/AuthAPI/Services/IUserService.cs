@@ -8,7 +8,7 @@ namespace AuthAPI.Services
 
         Task<ReadUserDTO?> GetUserById(int id);
         Task<ReadUserDTO?> GetUserByEmail(string email);
-        Task<ReadUserDTO> CreateUserByAdmin(CreateUserDTO createUserDto);
+        Task<AdminCreatedUserDTO> CreateUserByAdmin(CreateUserDTO createUserDto);
         Task<bool> UpdateUserProfile(int id, UpdateUserDTO updateUserDto);
         Task<bool> DeleteUser(int id);
         Task<PaginationDTO<UserSearchResultDto>> SearchUsersAsync(string query, int page, int pageSize, string? role = null);
