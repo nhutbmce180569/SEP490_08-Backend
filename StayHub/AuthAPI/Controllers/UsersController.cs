@@ -75,8 +75,11 @@ namespace AuthAPI.Controllers
 
             try
             {
-                var newUser = await _userService.CreateUserByAdmin(createUserDTO);
-                return CreatedAtAction(nameof(GetUserById), new { id = newUser.Id }, new { message = M("UserCreatedSuccessfullyByAdmin"), data = newUser });
+                var result = await _userService.CreateUserByAdmin(createUserDTO);
+                return CreatedAtAction(
+                    nameof(GetUserById),
+                    new { id = result.User.Id },
+                    new { message = M("UserCreatedSuccessfullyByAdmin"), data = result });
             }
             catch (Exception ex)
             {

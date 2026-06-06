@@ -14,5 +14,9 @@ namespace SocialAPI.Services
         Task<bool> ToggleMuteChatAsync(int roomId, int userId);
         Task<ChatRoomDto> AddMembersToRoomAsync(int currentRoomId, int currentUserId, AddMembersRequest dto);
         Task LeaveRoomAsync(int roomId, int userId);
+        Task<int> CreateScheduleRoomAsync(CreateScheduleChatRoomRequest dto);
+        Task AutoAddMemberByScheduleAsync(int scheduleId, AutoAddChatMemberRequest dto);
+        Task<bool> AddMembersByScheduleAsync(int scheduleId, List<int> userIds);
+        Task<List<UserProfileShortDto>> GetRoomMembersAsync(int roomId);
     }
 }

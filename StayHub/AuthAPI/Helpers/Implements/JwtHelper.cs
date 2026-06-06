@@ -29,6 +29,7 @@ namespace AuthAPI.Helpers.Implements
                 
                 // THÊM MỚI: Đẩy AvatarUrl lên Claim (Xử lý null an toàn)
                 new Claim("AvatarUrl", user.AvatarUrl ?? string.Empty),
+                new Claim("RequirePasswordChange", user.RequirePasswordChange.ToString().ToLowerInvariant()),
 
                 new Claim("SecurityStamp", user.SecurityStamp ?? Guid.NewGuid().ToString())
             };

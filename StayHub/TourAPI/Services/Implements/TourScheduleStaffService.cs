@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using TourAPI.DTOs;
 using TourAPI.Models;
 using TourAPI.Repositories;
@@ -10,11 +11,13 @@ namespace TourAPI.Services.Implements
     {
         private readonly ITourScheduleStaffRepository _staffRepository;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ILogger<TourScheduleStaffService> _logger;
 
-        public TourScheduleStaffService(ITourScheduleStaffRepository staffRepository, IHttpClientFactory httpClientFactory)
+        public TourScheduleStaffService(ITourScheduleStaffRepository staffRepository, IHttpClientFactory httpClientFactory, ILogger<TourScheduleStaffService> logger)
         {
             _staffRepository = staffRepository;
             _httpClientFactory = httpClientFactory;
+            _logger = logger;
         }
 
         public async Task AssignStaffToScheduleAsync(AssignStaffRequestDto dto)
@@ -37,6 +40,57 @@ namespace TourAPI.Services.Implements
 
             // Add to repository
             await _staffRepository.AssignStaffAsync(staffAssignment);
+
+            // After successfully assigning staff, add member to chat room asynchronously
+            // This call should not crash the main flow if it fails
+            try
+            {
+                await AddMemberToChatRoomAsync(dto.ScheduleId, dto.StaffId);
+            }
+            catch (Exception ex)
+            {
+                // Log the error but don't throw - the staff assignment was already completed successfully
+                _logger.LogError(ex, $"Failed to add staff {dto.StaffId} to chat room for schedule {dto.ScheduleId}. Error: {ex.Message}");
+            }
+        }
+
+        private async Task AddMemberToChatRoomAsync(int scheduleId, int userId)
+        {
+            try
+            {
+                var addMemberRequest = new
+                {
+                    userId = userId
+                };
+
+                using var client = _httpClientFactory.CreateClient();
+                var response = await client.PostAsJsonAsync(
+                    $"https://localhost:7010/api/chat/rooms/schedule/{scheduleId}/add-member",
+                    addMemberRequest
+                );
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning($"Failed to add staff {userId} to chat room for schedule {scheduleId}. Status: {response.StatusCode}, Content: {errorContent}");
+                }
+                else
+                {
+                    _logger.LogInformation($"Staff {userId} added to chat room successfully for schedule {scheduleId}");
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, $"HTTP error when adding staff {userId} to chat room for schedule {scheduleId}: {ex.Message}");
+            }
+            catch (TaskCanceledException ex)
+            {
+                _logger.LogError(ex, $"Timeout when adding staff {userId} to chat room for schedule {scheduleId}: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Unexpected error when adding staff {userId} to chat room for schedule {scheduleId}: {ex.Message}");
+            }
         }
 
         public async Task RemoveStaffFromScheduleAsync(int scheduleId, int staffId)

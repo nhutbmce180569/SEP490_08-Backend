@@ -181,6 +181,7 @@ namespace AuthAPI.Services.Implements
                 return null;
 
             user.PasswordHash = _passwordHelper.Hash(user, changePasswordDTO.NewPassword);
+            user.RequirePasswordChange = false;
             user.SecurityStamp = Guid.NewGuid().ToString(); // Vô hiệu hoá nội bộ bên AuthAPI
             user.UpdatedAt = DateTime.UtcNow;
 
@@ -198,17 +199,38 @@ namespace AuthAPI.Services.Implements
         }
 
 
-        public async Task<bool> ForgotPassword(ForgotPasswordDTO dto)
+        public async Task<ForgotPasswordResultDTO> ForgotPassword(ForgotPasswordDTO dto)
         {
-            var user = await _userRepository.GetByEmail(dto.Email);
+            const int cooldownSeconds = 60;
+            var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
+            var db = _redis.GetDatabase();
+            var cooldownKey = $"forgot_pwd_cooldown_{normalizedEmail}";
+            var acquiredCooldown = await db.StringSetAsync(
+                cooldownKey,
+                "1",
+                TimeSpan.FromSeconds(cooldownSeconds),
+                When.NotExists);
+
+            if (!acquiredCooldown)
+            {
+                var remaining = await db.KeyTimeToLiveAsync(cooldownKey);
+                return new ForgotPasswordResultDTO
+                {
+                    IsRateLimited = true,
+                    RetryAfterSeconds = Math.Max(
+                        1,
+                        (int)Math.Ceiling(remaining?.TotalSeconds ?? cooldownSeconds))
+                };
+            }
+
+            var user = await _userRepository.GetByEmail(normalizedEmail);
 
             if (user == null || user.Provider != "Local" || user.Status != "Active")
-                return true;
+                return new ForgotPasswordResultDTO();
 
-            string otp = new Random().Next(100000, 999999).ToString();
+            string otp = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
 
-            var db = _redis.GetDatabase();
-            string redisKey = $"forgot_pwd_otp_{dto.Email}";
+            string redisKey = $"forgot_pwd_otp_{normalizedEmail}";
             await db.StringSetAsync(redisKey, otp, TimeSpan.FromMinutes(5));
 
             string subject = "Your Password Reset Verification Code";
@@ -244,15 +266,23 @@ namespace AuthAPI.Services.Implements
         </div>
     </div>";
 
-            await _emailService.SendEmailAsync(dto.Email, subject, emailBody);
+            try
+            {
+                await _emailService.SendEmailAsync(normalizedEmail, subject, emailBody);
+            }
+            catch
+            {
+                await db.KeyDeleteAsync(new RedisKey[] { redisKey, cooldownKey });
+                throw;
+            }
 
-            return true;
+            return new ForgotPasswordResultDTO();
         }
 
         public async Task<bool> ResetPassword(ResetPasswordDTO dto)
         {
             var db = _redis.GetDatabase();
-            string redisKey = $"forgot_pwd_otp_{dto.Email}";
+            string redisKey = $"forgot_pwd_otp_{dto.Email.Trim().ToLowerInvariant()}";
             var storedOtp = await db.StringGetAsync(redisKey);
 
             if (storedOtp.IsNullOrEmpty || storedOtp.ToString() != dto.Code)
@@ -263,6 +293,7 @@ namespace AuthAPI.Services.Implements
                 return false;
 
             user.PasswordHash = _passwordHelper.Hash(user, dto.NewPassword);
+            user.RequirePasswordChange = false;
             user.SecurityStamp = Guid.NewGuid().ToString();
             user.UpdatedAt = DateTime.UtcNow;
 
