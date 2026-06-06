@@ -1,4 +1,5 @@
 using AutoMapper;
+using ClosedXML.Excel;
 using System.Linq;
 using TourAPI.DTOs;
 using TourAPI.Models;
@@ -49,6 +50,7 @@ namespace TourAPI.Services.Implements
 
         public async Task Add(CreateTourItineraryDTO dto, int operatorId)
         {
+            NormalizeAndValidate(dto);
             ValidateTimeRange(dto.StartDuration, dto.EndDuration);
 
             var tour = await _tourRepository.GetById(dto.TourId);
@@ -62,6 +64,7 @@ namespace TourAPI.Services.Implements
 
         public async Task Update(int id, UpdateTourItineraryDTO dto, int operatorId)
         {
+            NormalizeAndValidate(dto);
             ValidateTimeRange(dto.StartDuration, dto.EndDuration);
 
             var entity = await _repository.GetByIdAsync(id);
@@ -104,6 +107,7 @@ namespace TourAPI.Services.Implements
 
             foreach (var itinerary in batch.Itineraries)
             {
+                NormalizeAndValidate(itinerary);
                 ValidateTimeRange(itinerary.StartDuration, itinerary.EndDuration);
             }
 
@@ -128,6 +132,76 @@ namespace TourAPI.Services.Implements
             await _repository.AddRange(itineraries);
         }
 
+        public byte[] CreateImportTemplate()
+        {
+            using var workbook = new XLWorkbook();
+            var sheet = workbook.Worksheets.Add("Itineraries");
+            var headers = new[]
+            {
+                "DayNumber", "Title", "Description", "StartTime", "EndTime",
+                "LocationName", "Latitude", "Longitude", "TourismName"
+            };
+
+            for (var column = 1; column <= headers.Length; column++)
+            {
+                sheet.Cell(1, column).Value = headers[column - 1];
+            }
+
+            sheet.Range(1, 1, 1, headers.Length).Style
+                .Font.SetBold()
+                .Fill.SetBackgroundColor(XLColor.FromHtml("#E0E7FF"));
+
+            sheet.Cell(2, 1).Value = 1;
+            sheet.Cell(2, 2).Value = "Morning city tour";
+            sheet.Cell(2, 3).Value = "Visit the city center and learn about local history.";
+            sheet.Cell(2, 4).Value = "08:00";
+            sheet.Cell(2, 5).Value = "10:30";
+            sheet.Cell(2, 6).Value = "Ben Thanh Market";
+            sheet.Cell(2, 7).Value = "";
+            sheet.Cell(2, 8).Value = "";
+            sheet.Cell(2, 9).Value = "";
+            sheet.SheetView.FreezeRows(1);
+            sheet.Columns().AdjustToContents();
+
+            var instructions = workbook.Worksheets.Add("Instructions");
+            instructions.Cell(1, 1).Value = "Column";
+            instructions.Cell(1, 2).Value = "Required";
+            instructions.Cell(1, 3).Value = "Notes";
+            instructions.Range(1, 1, 1, 3).Style
+                .Font.SetBold()
+                .Fill.SetBackgroundColor(XLColor.FromHtml("#E0E7FF"));
+
+            var instructionRows = new[]
+            {
+                new[] { "DayNumber", "Yes", "Positive whole number." },
+                new[] { "Title", "Yes", "Between 3 and 255 characters." },
+                new[] { "Description", "Yes", "Between 10 and 2000 characters." },
+                new[] { "StartTime", "Yes", "Use HH:mm format, for example 08:00." },
+                new[] { "EndTime", "Yes", "Use HH:mm format and enter a time later than StartTime." },
+                new[] { "LocationName", "Yes", "Between 3 and 255 characters." },
+                new[] { "Latitude", "No", "May be left blank. Pick the precise location on the web before saving." },
+                new[] { "Longitude", "No", "May be left blank. Pick the precise location on the web before saving." },
+                new[] { "TourismName", "No", "Enter the exact tourism place name shown on StayHub, or leave blank." },
+            };
+
+            for (var row = 0; row < instructionRows.Length; row++)
+            {
+                for (var column = 0; column < instructionRows[row].Length; column++)
+                {
+                    instructions.Cell(row + 2, column + 1).Value = instructionRows[row][column];
+                }
+            }
+
+            instructions.SheetView.FreezeRows(1);
+            instructions.Columns().AdjustToContents();
+            instructions.Column(3).Width = Math.Min(instructions.Column(3).Width, 70);
+            instructions.Column(3).Style.Alignment.WrapText = true;
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            return stream.ToArray();
+        }
+
         private static void ValidateTimeRange(TimeOnly? startDuration, TimeOnly? endDuration)
         {
             if (!startDuration.HasValue || !endDuration.HasValue)
@@ -140,6 +214,29 @@ namespace TourAPI.Services.Implements
                 throw new Exception("End Duration must be later than Start Duration.");
             }
         }
+
+        private static void NormalizeAndValidate(BaseTourItineraryDTO dto)
+        {
+            dto.Title = dto.Title?.Trim();
+            dto.Description = dto.Description?.Trim();
+            dto.LocationName = dto.LocationName?.Trim();
+
+            if (dto.DayNumber <= 0)
+                throw new Exception("DayNumber must be greater than 0.");
+            if (string.IsNullOrWhiteSpace(dto.Title) || dto.Title.Length < 3 || dto.Title.Length > 255)
+                throw new Exception("Title must be between 3 and 255 characters.");
+            if (string.IsNullOrWhiteSpace(dto.Description) || dto.Description.Length < 10 || dto.Description.Length > 2000)
+                throw new Exception("Description must be between 10 and 2000 characters.");
+            if (string.IsNullOrWhiteSpace(dto.LocationName) || dto.LocationName.Length < 3 || dto.LocationName.Length > 255)
+                throw new Exception("LocationName must be between 3 and 255 characters.");
+            if (!dto.LocationLat.HasValue || !dto.LocationLng.HasValue)
+                throw new Exception("Latitude and longitude are required.");
+            if (dto.LocationLat is < -90 or > 90)
+                throw new Exception("Latitude must be between -90 and 90.");
+            if (dto.LocationLng is < -180 or > 180)
+                throw new Exception("Longitude must be between -180 and 180.");
+        }
+
 
         private async Task ValidateStartDurationUniqueness(
             int tourId,

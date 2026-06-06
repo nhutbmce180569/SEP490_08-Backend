@@ -17,15 +17,18 @@ namespace TourAPI.Controllers
     {
         private readonly ITourScheduleService _scheduleService;
         private readonly ITourScheduleStaffService _staffService;
+        private readonly ITourAccessService _tourAccessService;
 
         public TourSchedulesController(
             ITourScheduleService scheduleService,
             ITourScheduleStaffService staffService,
+            ITourAccessService tourAccessService,
             IStringLocalizer<Messages> localizer)
             : base(localizer)
         {
             _scheduleService = scheduleService;
             _staffService = staffService;
+            _tourAccessService = tourAccessService;
         }
 
         [HttpGet]
@@ -51,6 +54,12 @@ namespace TourAPI.Controllers
             try
             {
                 var result = await _scheduleService.GetScheduleByIdAsync(id);
+                var userId = GetCurrentUserId();
+                result.CanEdit = userId.HasValue &&
+                    await _tourAccessService.CanEditAsync(
+                        result.TourId,
+                        userId.Value,
+                        User.IsInRole("Admin"));
                 return Ok(result);
             }
             catch (Exception ex)
@@ -100,6 +109,11 @@ namespace TourAPI.Controllers
         {
             try
             {
+                var userId = GetCurrentUserId();
+                if (userId == null) return Unauthorized();
+                if (!await _tourAccessService.CanEditAsync(dto.TourId, userId.Value, User.IsInRole("Admin")))
+                    return Forbid();
+
                 var result = await _scheduleService.CreateScheduleAsync(dto);
                 return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
             }
@@ -115,6 +129,12 @@ namespace TourAPI.Controllers
         {
             try
             {
+                var userId = GetCurrentUserId();
+                if (userId == null) return Unauthorized();
+                var existing = await _scheduleService.GetScheduleByIdAsync(id);
+                if (!await _tourAccessService.CanEditAsync(existing.TourId, userId.Value, User.IsInRole("Admin")))
+                    return Forbid();
+
                 var result = await _scheduleService.UpdateScheduleAsync(id, dto);
                 return Ok(result);
             }
@@ -130,6 +150,12 @@ namespace TourAPI.Controllers
         {
             try
             {
+                var userId = GetCurrentUserId();
+                if (userId == null) return Unauthorized();
+                var existing = await _scheduleService.GetScheduleByIdAsync(id);
+                if (!await _tourAccessService.CanEditAsync(existing.TourId, userId.Value, User.IsInRole("Admin")))
+                    return Forbid();
+
                 await _scheduleService.DeleteScheduleAsync(id);
                 return NoContent();
             }

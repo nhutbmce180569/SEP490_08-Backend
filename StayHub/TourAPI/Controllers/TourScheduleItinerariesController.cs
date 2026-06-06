@@ -17,10 +17,18 @@ namespace TourAPI.Controllers
     public class TourScheduleItinerariesController : LocalizedControllerBase
     {
         private readonly ITourScheduleItineraryService _service;
+        private readonly ITourScheduleService _scheduleService;
+        private readonly ITourAccessService _tourAccessService;
 
-        public TourScheduleItinerariesController(ITourScheduleItineraryService service, IStringLocalizer<Messages> localizer)
+        public TourScheduleItinerariesController(
+            ITourScheduleItineraryService service,
+            ITourScheduleService scheduleService,
+            ITourAccessService tourAccessService,
+            IStringLocalizer<Messages> localizer)
             : base(localizer)
         {_service = service;
+            _scheduleService = scheduleService;
+            _tourAccessService = tourAccessService;
         }
 
         [HttpGet("schedule/{scheduleId}")]
@@ -42,6 +50,7 @@ namespace TourAPI.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Manager,Admin")]
         public async Task<IActionResult> Create([FromBody] CreateTourScheduleItineraryDTO dto)
         {
             try
@@ -54,6 +63,10 @@ namespace TourAPI.Controllers
                     return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
                 }
 
+                var schedule = await _scheduleService.GetScheduleByIdAsync(dto.ScheduleId);
+                if (!await _tourAccessService.CanEditAsync(schedule.TourId, userId, User.IsInRole("Admin")))
+                    return Forbid();
+
                 var result = await _service.Add(dto, userId);
                 return CreatedAtAction(nameof(Get), new { id = result.Id }, result);
             }
@@ -64,6 +77,7 @@ namespace TourAPI.Controllers
         }
 
         [HttpPost("batch")]
+        [Authorize(Roles = "Manager,Admin")]
         public async Task<IActionResult> CreateBatch([FromBody] CreateTourScheduleItineraryBatchDTO batch)
         {
             try
@@ -76,6 +90,12 @@ namespace TourAPI.Controllers
                     return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
                 }
 
+                var scheduleId = batch.Itineraries.FirstOrDefault()?.ScheduleId;
+                if (!scheduleId.HasValue) return BadRequest(new { message = "Itineraries list cannot be empty." });
+                var schedule = await _scheduleService.GetScheduleByIdAsync(scheduleId.Value);
+                if (!await _tourAccessService.CanEditAsync(schedule.TourId, userId, User.IsInRole("Admin")))
+                    return Forbid();
+
                 await _service.AddBatch(batch, userId);
                 return Ok();
             }
@@ -86,6 +106,7 @@ namespace TourAPI.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Manager,Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateTourScheduleItineraryDTO dto)
         {
             try
@@ -97,6 +118,12 @@ namespace TourAPI.Controllers
                 {
                     return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
                 }
+
+                var existing = await _service.GetById(id);
+                if (existing == null) return NotFound();
+                var schedule = await _scheduleService.GetScheduleByIdAsync(existing.ScheduleId);
+                if (!await _tourAccessService.CanEditAsync(schedule.TourId, userId, User.IsInRole("Admin")))
+                    return Forbid();
 
                 await _service.Update(id, dto, userId);
                 return NoContent();
@@ -112,6 +139,7 @@ namespace TourAPI.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Manager,Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             try
@@ -124,6 +152,12 @@ namespace TourAPI.Controllers
                     return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
                 }
 
+                var existing = await _service.GetById(id);
+                if (existing == null) return NotFound();
+                var schedule = await _scheduleService.GetScheduleByIdAsync(existing.ScheduleId);
+                if (!await _tourAccessService.CanEditAsync(schedule.TourId, userId, User.IsInRole("Admin")))
+                    return Forbid();
+
                 await _service.Delete(id, userId);
                 return NoContent();
             }
@@ -135,6 +169,17 @@ namespace TourAPI.Controllers
             {
                 return BadRequest(new { message = ex.Message });
             }
+        }
+
+        [HttpGet("import-template")]
+        [Authorize(Roles = "Manager,Admin")]
+        public IActionResult DownloadImportTemplate()
+        {
+            var content = _service.CreateImportTemplate();
+            return File(
+                content,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "StayHub_Tour_Schedule_Itinerary_Template.xlsx");
         }
     }
 }

@@ -5,6 +5,7 @@ using StayHub.Common.Controllers;
 using StayHub.Common.Resources;
 using TourAPI.DTOs;
 using TourAPI.Services;
+using System.Security.Claims;
 
 namespace TourAPI.Controllers
 {
@@ -13,10 +14,18 @@ namespace TourAPI.Controllers
     public class TourScheduleTicketsController : LocalizedControllerBase
     {
         private readonly ITourScheduleTicketService _service;
+        private readonly ITourScheduleService _scheduleService;
+        private readonly ITourAccessService _tourAccessService;
 
-        public TourScheduleTicketsController(ITourScheduleTicketService service, IStringLocalizer<Messages> localizer)
+        public TourScheduleTicketsController(
+            ITourScheduleTicketService service,
+            ITourScheduleService scheduleService,
+            ITourAccessService tourAccessService,
+            IStringLocalizer<Messages> localizer)
             : base(localizer)
         {_service = service;
+            _scheduleService = scheduleService;
+            _tourAccessService = tourAccessService;
         }
 
         [HttpGet]
@@ -60,6 +69,7 @@ namespace TourAPI.Controllers
         {
             try
             {
+                if (!await CanEditSchedule(dto.ScheduleId)) return Forbid();
                 var result = await _service.Create(dto);
                 return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
             }
@@ -75,6 +85,9 @@ namespace TourAPI.Controllers
         {
             try
             {
+                var existing = await _service.GetById(id);
+                if (existing == null) return NotFound();
+                if (!await CanEditSchedule(existing.ScheduleId)) return Forbid();
                 var result = await _service.Update(id, dto);
                 return Ok(result);
             }
@@ -94,6 +107,9 @@ namespace TourAPI.Controllers
         {
             try
             {
+                var existing = await _service.GetById(id);
+                if (existing == null) return NotFound();
+                if (!await CanEditSchedule(existing.ScheduleId)) return Forbid();
                 var result = await _service.Activate(id);
                 return Ok(result);
             }
@@ -113,6 +129,9 @@ namespace TourAPI.Controllers
         {
             try
             {
+                var existing = await _service.GetById(id);
+                if (existing == null) return NotFound();
+                if (!await CanEditSchedule(existing.ScheduleId)) return Forbid();
                 var result = await _service.Deactivate(id);
                 return Ok(result);
             }
@@ -162,6 +181,18 @@ namespace TourAPI.Controllers
             {
                 return BadRequest(new { message = ex.Message });
             }
+        }
+
+        private async Task<bool> CanEditSchedule(int scheduleId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                               ?? User.FindFirst("id")?.Value
+                               ?? User.FindFirst("sub")?.Value;
+            if (!int.TryParse(userIdClaim, out var userId)) return false;
+
+            var schedule = await _scheduleService.GetScheduleByIdAsync(scheduleId);
+            return await _tourAccessService.CanEditAsync(
+                schedule.TourId, userId, User.IsInRole("Admin"));
         }
     }
 }
