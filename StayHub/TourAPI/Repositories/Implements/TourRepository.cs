@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TourAPI.DTOs;
 using TourAPI.Models;
 
 namespace TourAPI.Repositories.Implements

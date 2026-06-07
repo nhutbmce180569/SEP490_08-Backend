@@ -139,14 +139,15 @@ namespace TourAPI.Services.Implements
             await _repository.Delete(id);
         }
 
-        public async Task<PaginationDTO<ReadTourDTO>> GetAll(int page, int pageSize, int userId, bool isAdmin, string? searchTerm = null, int? categoryId = null)
+        public async Task<PaginationDTO<ReadTourDTO>> GetAll(int page, int pageSize, int userId, bool isAdmin, string? searchTerm = null, int? categoryId = null, bool createdByMe = false)
         {
             var result = await _repository.GetPagedAsync(new TourQueryOptions
             {
                 Page = page,
                 PageSize = pageSize,
                 SearchTerm = searchTerm,
-                CategoryId = categoryId
+                CategoryId = categoryId,
+                CreatedBy = createdByMe ? userId : null
             });
 
             var list = _mapper.Map<List<ReadTourDTO>>(result.Items);
