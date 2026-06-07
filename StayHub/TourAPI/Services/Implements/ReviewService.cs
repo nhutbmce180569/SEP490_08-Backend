@@ -68,24 +68,21 @@ namespace TourAPI.Services.Implements
             if (existingReview != null)
                 throw new Exception("You can only review this tour once.");
 
+            // ✅ Lấy tất cả scheduleIds của tour này
             var schedules = await _tourScheduleRepository.GetByTourIdAsync(model.TourId);
             if (schedules == null || !schedules.Any())
                 throw new Exception("This tour has no schedules.");
 
-            var completedSchedules = schedules.Where(s => s.ReturnDate < DateTime.UtcNow).ToList();
-            if (!completedSchedules.Any())
-                throw new Exception("This tour schedule has not ended yet.");
+            var scheduleIds = schedules.Select(s => s.Id).ToList();
 
-            var completedScheduleIds = completedSchedules.Select(s => s.Id).ToList();
-
-            var completedBooking = await _orderService.CheckCompletedOrder(new CheckCompletedBookingRequest
+            var hasCompletedBooking = await _orderService.CheckCompletedOrder(new CheckCompletedBookingRequest
             {
                 CustomerId = customerId,
-                ScheduleIds = completedScheduleIds
+                ScheduleIds = scheduleIds
             });
 
-            if (!completedBooking)
-                throw new Exception("You can only review trips you have completed and checked in for.");
+            if (!hasCompletedBooking)
+                throw new Exception("You can only review trips you have paid and checkedin in for.");
 
             var review = _mapper.Map<Review>(model);
             review.CreatedAt = DateTime.UtcNow;
@@ -253,13 +250,10 @@ namespace TourAPI.Services.Implements
             };
         }
 
-        public async Task<PaginationDTO<ReadReviewDTO>> GetReviewsByManagerAsync(
-    int managerId, int tourId, int page, int pageSize, int? rating, string sortOrder)
+        public async Task<PaginationDTO<ReadReviewDTO>> GetReviewsByManagerAsync( int managerId, int tourId, int page, int pageSize, int? rating, string sortOrder)
         {
-            // ✅ Lấy query chỉ gồm reviews của tour do manager này tạo
             var query = _reviewRepository.GetBaseQueryByManager(managerId, includeHidden: true);
 
-            // ✅ Lọc thêm theo tourId nếu có truyền vào
             if (tourId > 0)
                 query = query.Where(r => r.TourId == tourId);
 
