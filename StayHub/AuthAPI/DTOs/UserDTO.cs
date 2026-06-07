@@ -27,6 +27,7 @@ namespace AuthAPI.DTOs
     {
         public ReadUserDTO User { get; set; } = null!;
         public string TemporaryPassword { get; set; } = null!;
+        public bool? CredentialsEmailSent { get; set; }
     }
 
     public class CreateUserDTO
@@ -34,6 +35,8 @@ namespace AuthAPI.DTOs
         [Required(ErrorMessage = "Email is required.")]
         [EmailAddress(ErrorMessage = "Invalid email format.")]
         public string Email { get; set; } = null!;
+
+        public bool SendCredentialsEmail { get; set; }
 
         [Required(ErrorMessage = "Full Name is required.")]
         [StringLength(100, MinimumLength = 2, ErrorMessage = "Full name must be between 2 and 100 characters.")]
