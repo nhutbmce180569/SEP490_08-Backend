@@ -14,6 +14,6 @@ namespace TourAPI.Repositories
 
         Task<List<TourScheduleStaff>> GetStaffByScheduleIdAsync(int scheduleId);
 
-        Task<List<TourScheduleStaff>> GetAssignedSchedulesAsync(int staffId);
+        Task<(List<TourScheduleStaff> Items, int Total)> GetAssignedSchedulesAsync(int staffId, int page, int pageSize, bool upcomingOnly, string? tourName = null);
     }
 }

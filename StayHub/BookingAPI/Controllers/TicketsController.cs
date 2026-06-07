@@ -35,7 +35,7 @@ namespace BookingAPI.Controllers
         }
 
         [HttpGet("schedule/{scheduleId}")]
-        [Authorize]
+        [Authorize(Roles = "Staff,Manager,Admin")]
         public async Task<IActionResult> GetTicketsBySchedule(int scheduleId)
         {
             var tickets = await _ticketService.GetTicketsByScheduleIdAsync(scheduleId);

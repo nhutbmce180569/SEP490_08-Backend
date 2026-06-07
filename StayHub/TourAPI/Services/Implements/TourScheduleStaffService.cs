@@ -22,12 +22,11 @@ namespace TourAPI.Services.Implements
 
         public async Task AssignStaffToScheduleAsync(AssignStaffRequestDto dto)
         {
-            // Check if staff is already assigned to this schedule
             var isAssigned = await _staffRepository.IsStaffAssignedAsync(dto.ScheduleId, dto.StaffId);
             
             if (isAssigned)
             {
-                throw new InvalidOperationException("Nhân viên này đã được phân công cho lịch trình này.");
+                throw new InvalidOperationException("This staff member has already been assigned to this schedule.");
             }
 
             // Create new TourScheduleStaff entity
@@ -100,7 +99,7 @@ namespace TourAPI.Services.Implements
 
             if (assignedStaff == null)
             {
-                throw new KeyNotFoundException("Không tìm thấy phân công nhân viên cho lịch trình này.");
+                throw new KeyNotFoundException("Staff assignment not found for this schedule.");
             }
 
             // Remove from repository
@@ -156,12 +155,12 @@ namespace TourAPI.Services.Implements
 
                 if (userDict.TryGetValue(staff.StaffId, out var userInfo))
                 {
-                    detail.FullName = string.IsNullOrWhiteSpace(userInfo.FullName) ? $"Nhân viên {staff.StaffId}" : userInfo.FullName;
+                    detail.FullName = string.IsNullOrWhiteSpace(userInfo.FullName) ? $"Staff {staff.StaffId}" : userInfo.FullName;
                     detail.AvatarUrl = userInfo.AvatarUrl ?? string.Empty;
                 }
                 else
                 {
-                    detail.FullName = $"Nhân viên {staff.StaffId}";
+                    detail.FullName = $"Staff {staff.StaffId}";
                     detail.AvatarUrl = string.Empty;
                 }
 
@@ -171,15 +170,13 @@ namespace TourAPI.Services.Implements
             return result;
         }
 
-        public async Task<List<AssignedTourScheduleDto>> GetAssignedSchedulesAsync(int staffId)
+        public async Task<PaginationDTO<AssignedTourScheduleDto>> GetAssignedSchedulesAsync(
+     int staffId, int page, int pageSize, bool upcomingOnly, string? tourName = null)
         {
-            var assignedSchedules = await _staffRepository.GetAssignedSchedulesAsync(staffId);
-            if (assignedSchedules == null || !assignedSchedules.Any())
-            {
-                return new List<AssignedTourScheduleDto>();
-            }
+            var (items, total) = await _staffRepository.GetAssignedSchedulesAsync(
+                staffId, page, pageSize, upcomingOnly, tourName);
 
-            return assignedSchedules.Select(assignment => new AssignedTourScheduleDto
+            var data = items.Select(assignment => new AssignedTourScheduleDto
             {
                 ScheduleId = assignment.ScheduleId,
                 TourId = assignment.Schedule?.TourId ?? 0,
@@ -189,6 +186,15 @@ namespace TourAPI.Services.Implements
                 TourImageUrl = assignment.Schedule?.Tour?.ImageUrl ?? string.Empty,
                 AssignedRole = assignment.AssignedRole ?? string.Empty
             }).ToList();
+
+            return new PaginationDTO<AssignedTourScheduleDto>
+            {
+                Data = data,
+                CurrentPage = page,
+                PageSize = pageSize,
+                Total = total,
+                TotalPages = (int)Math.Ceiling(total / (double)pageSize)
+            };
         }
 
         private class BatchUserResponseDto
