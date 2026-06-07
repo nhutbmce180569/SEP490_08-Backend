@@ -174,39 +174,22 @@ namespace SocialAPI.Controllers
 
         /// <summary>
         /// Internal API: Create a schedule-based chat room
-        /// Accessible by other internal services via API Gateway without user token validation
+        /// Accessible via Token Forwarding from Tour Manager
         /// </summary>
         [HttpPost("rooms/schedule")]
-        [AllowAnonymous]
-        public async Task<IActionResult> CreateScheduleChatRoom([FromBody] CreateScheduleChatRoomRequest request)
+        [Authorize] // Sử dụng Token Forwarding từ Manager tạo Tour
+        public async Task<IActionResult> CreateScheduleRoom([FromBody] CreateScheduleChatRoomRequest request)
         {
             try
             {
-                if (request == null)
-                {
-                    return BadRequest(new { message = "Request body cannot be null." });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.RoomName))
-                {
-                    return BadRequest(new { message = "RoomName is required." });
-                }
-
-                if (request.ScheduleId <= 0)
-                {
-                    return BadRequest(new { message = "ScheduleId must be a positive integer." });
-                }
+                if (request == null || request.ScheduleId <= 0) return BadRequest();
 
                 var roomId = await _chatService.CreateScheduleRoomAsync(request);
-                return Ok(new { roomId, message = "Schedule chat room created successfully." });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return StatusCode(500, new { message = "An error occurred while creating the schedule chat room.", error = ex.Message });
+                return Ok(new { message = "Tạo phòng chat cho lịch trình tour thành công.", roomId = roomId });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An unexpected error occurred.", error = ex.Message });
+                return StatusCode(500, new { error = ex.Message });
             }
         }
 

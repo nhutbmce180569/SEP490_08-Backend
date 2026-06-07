@@ -176,7 +176,8 @@ namespace SocialAPI.Repositories.Implements
                 ScheduleId = scheduleId,
                 RoomName = roomName,
                 IsGroupChat = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                ChatMembers = new List<ChatMember>()
             };
 
             await _context.ChatRooms.AddAsync(chatRoom);
