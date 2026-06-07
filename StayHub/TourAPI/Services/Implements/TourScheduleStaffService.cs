@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using TourAPI.DTOs;
 using TourAPI.Models;
@@ -11,25 +12,30 @@ namespace TourAPI.Services.Implements
     {
         private readonly ITourScheduleStaffRepository _staffRepository;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogger<TourScheduleStaffService> _logger;
 
-        public TourScheduleStaffService(ITourScheduleStaffRepository staffRepository, IHttpClientFactory httpClientFactory, ILogger<TourScheduleStaffService> logger)
+        public TourScheduleStaffService(
+            ITourScheduleStaffRepository staffRepository,
+            IHttpClientFactory httpClientFactory,
+            IHttpContextAccessor httpContextAccessor,
+            ILogger<TourScheduleStaffService> logger)
         {
             _staffRepository = staffRepository;
             _httpClientFactory = httpClientFactory;
+            _httpContextAccessor = httpContextAccessor;
             _logger = logger;
         }
 
         public async Task AssignStaffToScheduleAsync(AssignStaffRequestDto dto)
         {
             var isAssigned = await _staffRepository.IsStaffAssignedAsync(dto.ScheduleId, dto.StaffId);
-            
+
             if (isAssigned)
             {
                 throw new InvalidOperationException("This staff member has already been assigned to this schedule.");
             }
 
-            // Create new TourScheduleStaff entity
             var staffAssignment = new TourScheduleStaff
             {
                 ScheduleId = dto.ScheduleId,
@@ -37,18 +43,15 @@ namespace TourAPI.Services.Implements
                 AssignedRole = dto.AssignedRole
             };
 
-            // Add to repository
             await _staffRepository.AssignStaffAsync(staffAssignment);
 
-            // After successfully assigning staff, add member to chat room asynchronously
-            // This call should not crash the main flow if it fails
+            // ✨ LUỒNG TỰ ĐỘNG ADD STAFF VÀO GROUP CHAT
             try
             {
                 await AddMemberToChatRoomAsync(dto.ScheduleId, dto.StaffId);
             }
             catch (Exception ex)
             {
-                // Log the error but don't throw - the staff assignment was already completed successfully
                 _logger.LogError(ex, $"Failed to add staff {dto.StaffId} to chat room for schedule {dto.ScheduleId}. Error: {ex.Message}");
             }
         }
@@ -57,44 +60,34 @@ namespace TourAPI.Services.Implements
         {
             try
             {
+                var token = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].ToString();
+                if (string.IsNullOrWhiteSpace(token)) return;
+
                 var addMemberRequest = new
                 {
-                    userId = userId
+                    userIds = new List<int> { userId } // Khớp DTO đầu nhận của SocialAPI
                 };
 
                 using var client = _httpClientFactory.CreateClient();
+                client.DefaultRequestHeaders.Add("Authorization", token);
+
                 var response = await client.PostAsJsonAsync(
-                    $"https://localhost:7010/api/chat/rooms/schedule/{scheduleId}/add-member",
+                    $"https://localhost:7010/api/chat/rooms/schedule/{scheduleId}/members",
                     addMemberRequest
                 );
 
-                if (!response.IsSuccessStatusCode)
+                if (response.IsSuccessStatusCode)
                 {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    _logger.LogWarning($"Failed to add staff {userId} to chat room for schedule {scheduleId}. Status: {response.StatusCode}, Content: {errorContent}");
+                    _logger.LogInformation($"Staff {userId} automatically added to chat room for schedule {scheduleId}");
                 }
-                else
-                {
-                    _logger.LogInformation($"Staff {userId} added to chat room successfully for schedule {scheduleId}");
-                }
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, $"HTTP error when adding staff {userId} to chat room for schedule {scheduleId}: {ex.Message}");
-            }
-            catch (TaskCanceledException ex)
-            {
-                _logger.LogError(ex, $"Timeout when adding staff {userId} to chat room for schedule {scheduleId}: {ex.Message}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Unexpected error when adding staff {userId} to chat room for schedule {scheduleId}: {ex.Message}");
+                _logger.LogError(ex, $"Error when sending HttpClient request to add staff to chat room: {ex.Message}");
             }
         }
-
         public async Task RemoveStaffFromScheduleAsync(int scheduleId, int staffId)
         {
-            // Get the assigned staff record
             var assignedStaff = await _staffRepository.GetAssignedStaffAsync(scheduleId, staffId);
 
             if (assignedStaff == null)
@@ -102,7 +95,6 @@ namespace TourAPI.Services.Implements
                 throw new KeyNotFoundException("Staff assignment not found for this schedule.");
             }
 
-            // Remove from repository
             await _staffRepository.RemoveStaffAsync(assignedStaff);
         }
 
