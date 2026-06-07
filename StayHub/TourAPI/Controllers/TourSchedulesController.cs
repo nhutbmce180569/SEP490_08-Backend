@@ -98,28 +98,6 @@ namespace TourAPI.Controllers
             }
         }
 
-        [HttpGet("assigned")]
-        [Authorize(Roles = "Staff")]
-        public async Task<IActionResult> GetAssignedSchedules()
-        {
-            try
-            {
-                var userId = GetCurrentUserId();
-                if (userId == null)
-                {
-                    return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
-                }
-
-                var assignedSchedules = await _staffService.GetAssignedSchedulesAsync(userId.Value);
-                return Ok(assignedSchedules);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = M("SystemError"), details = ex.Message });
-            }
-        }
-
-
 
         [HttpPost]
         [Authorize(Roles = "Manager,Admin")]
