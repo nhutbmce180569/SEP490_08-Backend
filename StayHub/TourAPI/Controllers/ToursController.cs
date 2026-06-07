@@ -74,7 +74,8 @@ namespace TourAPI.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
             [FromQuery] string? searchTerm = null,
-            [FromQuery] int? categoryId = null)
+            [FromQuery] int? categoryId = null,
+            [FromQuery] bool createdByMe = false)
         {
             var userId = GetCurrentUserId();
             if (userId == null)
@@ -83,7 +84,7 @@ namespace TourAPI.Controllers
             }
 
             var list = await _tourService.GetAll(
-                page, pageSize, userId.Value, User.IsInRole("Admin"), searchTerm, categoryId);
+                page, pageSize, userId.Value, User.IsInRole("Admin"), searchTerm, categoryId, createdByMe);
             return Ok(list);
         }
 
