@@ -15,6 +15,8 @@ namespace BookingAPI.DTOs
 
         public int TicketTypeId { get; set; }
 
+        public string? TicketTypeName { get; set; }
+
         public string AttendeeName { get; set; } = null!;
 
         public string IdCard { get; set; } = null!;
@@ -66,5 +68,11 @@ namespace BookingAPI.DTOs
         public string QrCode { get; set; } = string.Empty;
 
         public int ScheduleId { get; set; }
+    }
+
+    public class TicketTypeResponseDTO
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = null!;
     }
 }
