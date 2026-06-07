@@ -5,6 +5,7 @@ using AuthAPI.Repositories;
 using AuthAPI.Helpers;
 using StackExchange.Redis;
 using System.Security.Cryptography;
+using System.Net;
 
 namespace AuthAPI.Services.Implements
 {
@@ -17,6 +18,8 @@ namespace AuthAPI.Services.Implements
         private readonly IMapper _mapper;
         private readonly ICloudinaryService _cloudinaryService;
         private readonly IConnectionMultiplexer _redis;
+        private readonly IEmailService _emailService;
+        private readonly ILogger<UserService> _logger;
 
         public UserService(
             IUserRepository userRepository,
@@ -25,7 +28,9 @@ namespace AuthAPI.Services.Implements
             IPasswordHelper passwordHelper,
             IMapper mapper,
             ICloudinaryService cloudinaryService,
-            IConnectionMultiplexer redis)
+            IConnectionMultiplexer redis,
+            IEmailService emailService,
+            ILogger<UserService> logger)
         {
             _userRepository = userRepository;
             _roleRepository = roleRepository;
@@ -34,6 +39,8 @@ namespace AuthAPI.Services.Implements
             _mapper = mapper;
             _cloudinaryService = cloudinaryService;
             _redis = redis;
+            _emailService = emailService;
+            _logger = logger;
         }
 
         public async Task<PaginationDTO<ReadUserDTO>> GetAllUsers(int page, int pageSize)
@@ -110,11 +117,62 @@ namespace AuthAPI.Services.Implements
             }
 
             await _userRepository.Add(newUser);
+            bool? credentialsEmailSent = null;
+
+            if (createUserDto.SendCredentialsEmail)
+            {
+                try
+                {
+                    await SendTemporaryCredentialsEmail(
+                        newUser.Email,
+                        newUser.FullName,
+                        temporaryPassword);
+                    credentialsEmailSent = true;
+                }
+                catch (Exception ex)
+                {
+                    credentialsEmailSent = false;
+                    _logger.LogError(
+                        ex,
+                        "User {UserId} was created, but the temporary credentials email could not be sent.",
+                        newUser.Id);
+                }
+            }
+
             return new AdminCreatedUserDTO
             {
                 User = _mapper.Map<ReadUserDTO>(newUser),
-                TemporaryPassword = temporaryPassword
+                TemporaryPassword = temporaryPassword,
+                CredentialsEmailSent = credentialsEmailSent
             };
+        }
+
+        private Task SendTemporaryCredentialsEmail(
+            string email,
+            string fullName,
+            string temporaryPassword)
+        {
+            var safeEmail = WebUtility.HtmlEncode(email);
+            var safeFullName = WebUtility.HtmlEncode(fullName);
+            var safePassword = WebUtility.HtmlEncode(temporaryPassword);
+            const string subject = "Your StayHub account has been created";
+
+            var body = $@"
+<div style='font-family: Arial, sans-serif; background: #f4f6f8; padding: 32px 16px; color: #1f2937;'>
+  <div style='max-width: 600px; margin: 0 auto; background: #ffffff; padding: 32px; border-radius: 12px;'>
+    <h2 style='margin-top: 0; color: #0f172a;'>Welcome to StayHub</h2>
+    <p>Hello <strong>{safeFullName}</strong>,</p>
+    <p>An administrator has created a StayHub account for you.</p>
+    <div style='margin: 24px 0; padding: 20px; background: #f8fafc; border-radius: 8px;'>
+      <p style='margin: 0 0 12px;'><strong>Email:</strong> {safeEmail}</p>
+      <p style='margin: 0;'><strong>Temporary password:</strong> <span style='font-family: monospace; font-size: 18px;'>{safePassword}</span></p>
+    </div>
+    <p style='color: #b45309;'><strong>For security, you must change this temporary password when you first sign in.</strong></p>
+    <p>Do not share this password with anyone.</p>
+  </div>
+</div>";
+
+            return _emailService.SendEmailAsync(email, subject, body);
         }
 
         private static string GenerateTemporaryPassword()
