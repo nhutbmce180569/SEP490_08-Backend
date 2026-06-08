@@ -103,14 +103,12 @@ namespace BookingAPI.Controllers
 
         [HttpGet("schedule/{scheduleId}/customers")]
         [Authorize]
-        public async Task<IActionResult> GetCustomersByScheduleId(int scheduleId)
+        public async Task<IActionResult> GetCustomersByScheduleId(int scheduleId, [FromQuery] string? attendeeName = null) 
         {
-            var result = await _orderService.GetScheduleCustomersAsync(scheduleId);
+            var result = await _orderService.GetScheduleCustomersAsync(scheduleId, attendeeName);
 
             if (result == null || !result.Any())
-            {
                 return Ok(new { message = $"No customers found for Schedule ID {scheduleId}.", data = new List<ScheduleCustomerDTO>() });
-            }
 
             return Ok(new { message = M("ScheduleCustomersRetrievedSuccessfully"), data = result });
         }
