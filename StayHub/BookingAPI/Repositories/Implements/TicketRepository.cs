@@ -14,31 +14,36 @@ namespace BookingAPI.Repositories.Implements
 
         public async Task<Ticket?> GetByQrCodeAsync(string qrCode)
         {
-            return await _context.Tickets.FirstOrDefaultAsync(t => t.QrCode == qrCode);
+            return await _context.Tickets
+                .Include(t => t.OrderDetail)
+                .FirstOrDefaultAsync(t => t.QrCode == qrCode);
         }
 
         public async Task<Ticket?> GetReadOnlyByQrCodeAsync(string qrCode)
         {
             return await _context.Tickets
                 .AsNoTracking()
+                .Include(t => t.OrderDetail)
                 .FirstOrDefaultAsync(t => t.QrCode == qrCode);
         }
 
         public async Task<List<Ticket>> GetByUserIdAsync(int userId)
         {
             return await _context.Tickets
-                .Include(t => t.Order)
+                .Include(t => t.OrderDetail)
+                    .ThenInclude(od => od.Order)
                 .AsNoTracking()
-                .Where(t => t.UserId == userId || t.Order.CustomerId == userId)
+                .Where(t => t.UserId == userId || t.OrderDetail.Order.CustomerId == userId)
                 .ToListAsync();
         }
 
         public async Task<List<Ticket>> GetByScheduleIdAsync(int scheduleId)
         {
             return await _context.Tickets
-                .Include(t => t.Order)
+                .Include(t => t.OrderDetail)
+                    .ThenInclude(od => od.Order)
                 .AsNoTracking()
-                .Where(t => t.Order.ScheduleId == scheduleId)
+                .Where(t => t.OrderDetail.Order.ScheduleId == scheduleId)
                 .ToListAsync();
         }
 
