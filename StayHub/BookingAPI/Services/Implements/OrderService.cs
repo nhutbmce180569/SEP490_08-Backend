@@ -153,11 +153,9 @@ namespace BookingAPI.Services.Implements
                     ticket.TicketTypeId = detailRequest.TicketTypeId;
                     ticket.CheckInStatus = "Pending";
                     ticket.QrCode = Guid.NewGuid().ToString();
-                    ticket.Order = order;
                     ticket.OrderDetail = orderDetail;
 
                     orderDetail.Tickets.Add(ticket);
-                    order.Tickets.Add(ticket);
                 }
 
                 order.OrderDetails.Add(orderDetail);
@@ -269,7 +267,7 @@ namespace BookingAPI.Services.Implements
                 return new ScheduleCustomerDTO
                 {
                     TicketId = ticket.Id,
-                    OrderId = ticket.OrderId,
+                    OrderId = ticket.OrderDetail.OrderId,
                     UserId = ticket.UserId,
                     AttendeeName = ticket.AttendeeName,
                     IdCard = ticket.IdCard,
