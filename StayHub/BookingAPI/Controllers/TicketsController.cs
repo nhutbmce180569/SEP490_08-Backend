@@ -36,9 +36,10 @@ namespace BookingAPI.Controllers
 
         [HttpGet("schedule/{scheduleId}")]
         [Authorize(Roles = "Staff,Manager,Admin")]
-        public async Task<IActionResult> GetTicketsBySchedule(int scheduleId)
+        public async Task<IActionResult> GetTicketsBySchedule(int scheduleId, [FromQuery] string? attendeeName = null, [FromQuery] string? checkInStatus = null)
         {
-            var tickets = await _ticketService.GetTicketsByScheduleIdAsync(scheduleId);
+            var tickets = await _ticketService.GetTicketsByScheduleIdAsync(
+                scheduleId, attendeeName, checkInStatus);
             return Ok(tickets);
         }
 
@@ -76,6 +77,7 @@ namespace BookingAPI.Controllers
                 return StatusCode(500, new { message = M("CheckInSystemError"), error = ex.Message });
             }
         }
+
         private int? GetCurrentUserId()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value

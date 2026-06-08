@@ -16,6 +16,7 @@ namespace BookingAPI.Repositories.Implements
         {
             return await _context.Tickets
                 .Include(t => t.OrderDetail)
+                    .ThenInclude(od => od.Order)
                 .FirstOrDefaultAsync(t => t.QrCode == qrCode);
         }
 
@@ -37,14 +38,22 @@ namespace BookingAPI.Repositories.Implements
                 .ToListAsync();
         }
 
-        public async Task<List<Ticket>> GetByScheduleIdAsync(int scheduleId)
+        public async Task<List<Ticket>> GetByScheduleIdAsync(int scheduleId, string? attendeeName = null, string? checkInStatus = null)
         {
-            return await _context.Tickets
+            var query = _context.Tickets
                 .Include(t => t.OrderDetail)
                     .ThenInclude(od => od.Order)
                 .AsNoTracking()
-                .Where(t => t.OrderDetail.Order.ScheduleId == scheduleId)
-                .ToListAsync();
+                .Where(t => t.OrderDetail.Order.ScheduleId == scheduleId);
+
+            if (!string.IsNullOrWhiteSpace(attendeeName))
+                query = query.Where(t => t.AttendeeName != null &&
+                                         t.AttendeeName.Contains(attendeeName.Trim()));
+
+            if (!string.IsNullOrWhiteSpace(checkInStatus))
+                query = query.Where(t => t.CheckInStatus == checkInStatus.Trim());
+
+            return await query.ToListAsync();
         }
 
         public async Task UpdateAsync(Ticket ticket)
