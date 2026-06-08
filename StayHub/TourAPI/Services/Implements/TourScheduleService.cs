@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
+using System.Security.Claims; // 💡 ĐÃ THÊM: Để bóc Claims danh tính
 using TourAPI.DTOs;
 using TourAPI.Models;
 using TourAPI.Repositories;
@@ -13,14 +15,22 @@ namespace TourAPI.Services.Implements
         private readonly ITourRepository _tourRepo;
         private readonly IMapper _mapper;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogger<TourScheduleService> _logger;
 
-        public TourScheduleService(ITourScheduleRepository scheduleRepo, IMapper mapper, ITourRepository tourRepo, IHttpClientFactory httpClientFactory, ILogger<TourScheduleService> logger)
+        public TourScheduleService(
+            ITourScheduleRepository scheduleRepo,
+            IMapper mapper,
+            ITourRepository tourRepo,
+            IHttpClientFactory httpClientFactory,
+            IHttpContextAccessor httpContextAccessor,
+            ILogger<TourScheduleService> logger)
         {
             _scheduleRepo = scheduleRepo;
             _tourRepo = tourRepo;
             _mapper = mapper;
             _httpClientFactory = httpClientFactory;
+            _httpContextAccessor = httpContextAccessor;
             _logger = logger;
         }
 
@@ -77,65 +87,73 @@ namespace TourAPI.Services.Implements
             await ValidateScheduleDuration(dto.TourId, dto.DepartureDate, dto.ReturnDate);
 
             var schedule = _mapper.Map<TourSchedule>(dto);
-
             await _scheduleRepo.AddAsync(schedule);
+
             var resultDto = _mapper.Map<ReadTourScheduleDTO>(schedule);
 
-            // After successfully creating the schedule, create a chat room asynchronously
-            // This call should not crash the main flow if it fails
+            // ✨ LUỒNG TỰ ĐỘNG TẠO PHÒNG CHAT & ADD MANAGER
             try
             {
-                await CreateChatRoomForScheduleAsync(schedule.Id, schedule.Tour?.Name ?? "Tour Schedule");
+                // 1. Chủ động kéo thông tin Tour để lấy tên thật
+                var tourInfo = await _tourRepo.GetById(dto.TourId);
+                var tourName = tourInfo?.Name ?? "Tour";
+
+                // 2. Định dạng Tên đoạn chat = Tên Tour _ Tên/Mã Schedule (Sử dụng ngày khởi hành để phân biệt trên UI)
+                string scheduleName = dto.DepartureDate.ToString("dd/MM/yyyy");
+                string fullRoomName = $"{tourName} _{scheduleName}";
+
+                await CreateChatRoomForScheduleAsync(schedule.Id, fullRoomName);
             }
             catch (Exception ex)
             {
-                // Log the error but don't throw - the schedule was already created successfully
                 _logger.LogError(ex, $"Failed to create chat room for schedule {schedule.Id}. Error: {ex.Message}");
             }
 
             return resultDto;
         }
 
-        private async Task CreateChatRoomForScheduleAsync(int scheduleId, string tourName)
+        private async Task CreateChatRoomForScheduleAsync(int scheduleId, string fullRoomName)
         {
             try
             {
+                var token = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].ToString();
+                if (string.IsNullOrWhiteSpace(token)) return;
+
+                // Bóc tách ID của Manager đang tạo Schedule từ JWT Token
+                var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                                  ?? _httpContextAccessor.HttpContext?.User.FindFirst("id")?.Value;
+
                 var chatRoomRequest = new
                 {
                     scheduleId = scheduleId,
-                    roomName = $"Group Chat Tour - {tourName}"
+                    roomName = fullRoomName // Định dạng chuẩn: Tên tour _tên schedule
                 };
 
                 using var client = _httpClientFactory.CreateClient();
+                client.DefaultRequestHeaders.Add("Authorization", token);
+
+                // 👉 Bước A: Ra lệnh cho SocialAPI tạo Group Chat
                 var response = await client.PostAsJsonAsync(
                     "https://localhost:7010/api/chat/rooms/schedule",
                     chatRoomRequest
                 );
 
-                if (!response.IsSuccessStatusCode)
+                // 👉 Bước B: Nếu tạo phòng thành công và tìm thấy Manager ID, tự động add Manager vào luôn
+                if (response.IsSuccessStatusCode && !string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out int managerId))
                 {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    _logger.LogWarning($"Failed to create chat room for schedule {scheduleId}. Status: {response.StatusCode}, Content: {errorContent}");
+                    var addMemberRequest = new { userIds = new List<int> { managerId } };
+                    await client.PostAsJsonAsync(
+                        $"https://localhost:7010/api/chat/rooms/schedule/{scheduleId}/members",
+                        addMemberRequest
+                    );
+                    _logger.LogInformation($"Manager {managerId} automatically added to chat room for schedule {scheduleId}");
                 }
-                else
-                {
-                    _logger.LogInformation($"Chat room created successfully for schedule {scheduleId}");
-                }
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, $"HTTP error when creating chat room for schedule {scheduleId}: {ex.Message}");
-            }
-            catch (TaskCanceledException ex)
-            {
-                _logger.LogError(ex, $"Timeout when creating chat room for schedule {scheduleId}: {ex.Message}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Unexpected error when creating chat room for schedule {scheduleId}: {ex.Message}");
+                _logger.LogError(ex, $"Unexpected error when creating chat room or adding manager for schedule {scheduleId}: {ex.Message}");
             }
         }
-
         public async Task<ReadTourScheduleDTO> UpdateScheduleAsync(int id, UpdateTourScheduleDTO dto)
         {
             if (dto.DepartureDate >= dto.ReturnDate)

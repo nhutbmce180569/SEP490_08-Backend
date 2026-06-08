@@ -8,11 +8,13 @@ namespace BookingAPI.Services.Implements
     {
         private readonly ITicketRepository _ticketRepository;
         private readonly IMapper _mapper;
+        private readonly IContentApiClient _contentApiClient;
 
-        public TicketService(ITicketRepository ticketRepository, IMapper mapper)
+        public TicketService(ITicketRepository ticketRepository, IMapper mapper, IContentApiClient contentApiClient)
         {
             _ticketRepository = ticketRepository;
             _mapper = mapper;
+            _contentApiClient = contentApiClient;
         }
 
         public async Task<ReadTicketDTO?> CheckInTicketAsync(CheckInRequestDTO request)
@@ -38,7 +40,6 @@ namespace BookingAPI.Services.Implements
 
             await _ticketRepository.UpdateAsync(ticket);
 
-            // Trả về DTO (DTO này nên chứa CustomerName, DOB... để FE hiển thị chúc mừng)
             return _mapper.Map<ReadTicketDTO>(ticket);
         }
 
@@ -50,16 +51,51 @@ namespace BookingAPI.Services.Implements
             return ticket == null ? null : _mapper.Map<ReadTicketDTO>(ticket);
         }
 
-        public async Task<List<ReadTicketDTO>> GetTicketsByUserIdAsync(int userId)
-        {
-            var tickets = await _ticketRepository.GetByUserIdAsync(userId);
-            return _mapper.Map<List<ReadTicketDTO>>(tickets);
-        }
-
         public async Task<List<ReadTicketDTO>> GetTicketsByScheduleIdAsync(int scheduleId)
         {
             var tickets = await _ticketRepository.GetByScheduleIdAsync(scheduleId);
-            return _mapper.Map<List<ReadTicketDTO>>(tickets);
+            var ticketDtos = _mapper.Map<List<ReadTicketDTO>>(tickets);
+
+            if (!ticketDtos.Any()) return ticketDtos;
+
+            var activeTicketTypes = await _contentApiClient.GetActiveTicketTypesAsync();
+
+            var ticketTypeDict = activeTicketTypes.ToDictionary(t => t.Id, t => t.Name);
+
+            foreach (var dto in ticketDtos)
+            {
+                if (ticketTypeDict.TryGetValue(dto.TicketTypeId, out var typeName))
+                {
+                    dto.TicketTypeName = typeName;
+                }
+                else
+                {
+                    dto.TicketTypeName = "Unknown Type"; 
+                }
+            }
+
+            return ticketDtos;
+        }
+
+        public async Task<List<ReadTicketDTO>> GetTicketsByUserIdAsync(int userId)
+        {
+            var tickets = await _ticketRepository.GetByUserIdAsync(userId);
+            var ticketDtos = _mapper.Map<List<ReadTicketDTO>>(tickets);
+
+            if (!ticketDtos.Any()) return ticketDtos;
+
+            var activeTicketTypes = await _contentApiClient.GetActiveTicketTypesAsync();
+            var ticketTypeDict = activeTicketTypes.ToDictionary(t => t.Id, t => t.Name);
+
+            foreach (var dto in ticketDtos)
+            {
+                if (ticketTypeDict.TryGetValue(dto.TicketTypeId, out var typeName))
+                {
+                    dto.TicketTypeName = typeName;
+                }
+            }
+
+            return ticketDtos;
         }
     }
 }

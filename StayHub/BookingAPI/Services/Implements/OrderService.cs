@@ -305,7 +305,7 @@ namespace BookingAPI.Services.Implements
             };
         }
 
-     
+
 
         public async Task<bool> MarkOrderPaidAsync(int orderId, string customerEmail)
         {
@@ -458,7 +458,7 @@ namespace BookingAPI.Services.Implements
                 {
                     throw new BookingValidationException(
                         $"TicketTypeId does not match TourScheduleTicketId {detail.TourScheduleTicketId}.");
-                }   
+                }
 
                 if (detail.Tickets.Any(ticket =>
                     ticket.TicketTypeId.HasValue &&
@@ -560,53 +560,41 @@ namespace BookingAPI.Services.Implements
         {
             try
             {
-                // Extract JWT token from current HttpContext
                 var token = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].ToString();
-                
+
                 if (string.IsNullOrWhiteSpace(token))
                 {
-                    _logger.LogWarning($"No Authorization token found in request context for adding customer {customerId} to chat room for schedule {scheduleId}.");
+                    _logger.LogWarning($"No Authorization token found to add customer {customerId} to chat room.");
                     return;
                 }
 
-                // Create request body according to AddMembersRequest format
                 var addMembersRequest = new
                 {
                     userIds = new List<int> { customerId }
                 };
 
                 using var client = _httpClientFactory.CreateClient();
-                
-                // Forward JWT token to the Chat API
                 client.DefaultRequestHeaders.Add("Authorization", token);
 
-                // Send POST request to Chat API's schedule-specific endpoint with token forwarding
+                // Bắn request sang Endpoint chuyên dụng theo ScheduleId qua API Gateway
                 var response = await client.PostAsJsonAsync(
                     $"https://localhost:7010/api/chat/rooms/schedule/{scheduleId}/members",
                     addMembersRequest
                 );
 
-                if (!response.IsSuccessStatusCode)
+                if (response.IsSuccessStatusCode)
                 {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    _logger.LogWarning($"Failed to add customer {customerId} to chat room for schedule {scheduleId}. Status: {response.StatusCode}, Content: {errorContent}");
+                    _logger.LogInformation($"Customer {customerId} automatically added to chat room for schedule {scheduleId} after checkout success.");
                 }
                 else
                 {
-                    _logger.LogInformation($"Customer {customerId} added to chat room successfully for schedule {scheduleId} (Token forwarded)");
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning($"Failed to add customer to chat room. Status: {response.StatusCode}, Content: {errorContent}");
                 }
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, $"HTTP error when adding customer {customerId} to chat room for schedule {scheduleId}: {ex.Message}");
-            }
-            catch (TaskCanceledException ex)
-            {
-                _logger.LogError(ex, $"Timeout when adding customer {customerId} to chat room for schedule {scheduleId}: {ex.Message}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Unexpected error when adding customer {customerId} to chat room for schedule {scheduleId}: {ex.Message}");
+                _logger.LogError(ex, $"Unexpected error when automatically adding customer {customerId} to chat room: {ex.Message}");
             }
         }
     }

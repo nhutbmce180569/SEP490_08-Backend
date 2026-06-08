@@ -10,6 +10,7 @@ namespace TourAPI.Services
 
         Task<List<ScheduleStaffDetailDto>> GetStaffByScheduleIdAsync(int scheduleId);
 
-        Task<List<AssignedTourScheduleDto>> GetAssignedSchedulesAsync(int staffId);
+        Task<PaginationDTO<AssignedTourScheduleDto>> GetAssignedSchedulesAsync(
+    int staffId, int page, int pageSize, bool upcomingOnly, string? tourName = null);
     }
 }
