@@ -33,8 +33,6 @@ namespace BookingAPI.DTOs
     }
     public abstract class BaseTicketDTO
     {
-        public int? OrderId { get; set; }
-
         public int? UserId { get; set; }
 
         public int? TicketTypeId { get; set; }

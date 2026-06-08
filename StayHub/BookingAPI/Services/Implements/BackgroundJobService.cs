@@ -149,7 +149,8 @@ namespace BookingAPI.Services.Implements
 
         private async Task SendTicketsEmailAsync(string customerEmail, Order order)
         {
-            if (string.IsNullOrWhiteSpace(customerEmail) || !order.Tickets.Any())
+            var tickets = order.OrderDetails.SelectMany(od => od.Tickets).ToList();
+            if (string.IsNullOrWhiteSpace(customerEmail) || !tickets.Any())
             {
                 return;
             }
@@ -163,12 +164,13 @@ namespace BookingAPI.Services.Implements
 
             var subject = $"StayHub tickets for order #{order.Id}";
             var inlineImages = new List<EmailInlineImage>();
-            var body = BuildTicketEmailBody(order, schedule, tour, inlineImages);
+            var body = BuildTicketEmailBody(order, tickets, schedule, tour, inlineImages);
             await _emailService.SendEmailAsync(customerEmail, subject, body, inlineImages);
         }
 
         private string BuildTicketEmailBody(
             Order order,
+            List<Ticket> tickets,
             ReadOrderScheduleDTO? schedule,
             ReadOrderTourDTO? tour,
             List<EmailInlineImage> inlineImages)
@@ -247,7 +249,7 @@ namespace BookingAPI.Services.Implements
             </td>
           </tr>");
 
-            foreach (var ticket in order.Tickets)
+            foreach (var ticket in tickets)
             {
                 var scanUrl = BuildTicketScanUrl(ticket.QrCode);
                 var qrContentId = $"ticket-{ticket.Id}-{Guid.NewGuid():N}";
