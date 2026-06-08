@@ -26,5 +26,18 @@ namespace BookingAPI.Services.Implements
                 return new List<TicketTypeResponseDTO>();
             }
         }
+
+        public async Task<TicketTypeResponseDTO?> GetTicketTypeByIdAsync(int ticketTypeId)
+        {
+            try
+            {
+                return await _httpClient.GetFromJsonAsync<TicketTypeResponseDTO>(
+                    $"/api/TicketTypes/{ticketTypeId}");
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 }

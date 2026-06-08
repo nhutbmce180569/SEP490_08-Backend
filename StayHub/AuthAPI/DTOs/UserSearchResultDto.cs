@@ -17,5 +17,7 @@ namespace AuthAPI.DTOs
 
         public List<int> RoleIds { get; set; } = new List<int>();
         public List<string> RoleNames { get; set; } = new List<string>();
+
+        public string? PhoneNumber { get; set; }
     }
 }
