@@ -344,7 +344,6 @@ GO
 CREATE TABLE Tickets (
     Id INT IDENTITY(1,1) PRIMARY KEY,
 
-    OrderId INT NOT NULL,
     OrderDetailId INT NOT NULL,
 
     UserId INT NULL, -- Logical FK -> IdentityDb.Users
@@ -361,10 +360,6 @@ CREATE TABLE Tickets (
 
     CheckInStatus VARCHAR(50) DEFAULT 'Pending',
     -- Pending, CheckedIn
-
-    CONSTRAINT FK_Tickets_Orders
-        FOREIGN KEY (OrderId)
-        REFERENCES Orders(Id),
 
     CONSTRAINT FK_Tickets_OrderDetails
         FOREIGN KEY (OrderDetailId)

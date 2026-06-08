@@ -21,7 +21,7 @@ namespace BookingAPI.Repositories.Implements
                 o.CustomerId == customerId &&
                 scheduleIds.Contains(o.ScheduleId) &&
                 (o.Status == "Paid") &&
-                o.Tickets.Any(t => t.CheckInStatus == "CheckedIn")
+                o.OrderDetails.Any(od => od.Tickets.Any(t => t.CheckInStatus == "CheckedIn"))
             );
         }
         
@@ -44,7 +44,6 @@ namespace BookingAPI.Repositories.Implements
             return await _context.Orders
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Tickets)
-                .Include(o => o.Tickets)
                 .FirstOrDefaultAsync(o => o.Id == id);
         }
 
@@ -53,7 +52,6 @@ namespace BookingAPI.Repositories.Implements
             return await _context.Orders
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Tickets)
-                .Include(o => o.Tickets)
                 .FirstOrDefaultAsync(o => o.Id == id && o.CustomerId == customerId);
         }
 
@@ -63,7 +61,6 @@ namespace BookingAPI.Repositories.Implements
                 .Where(o => o.ScheduleId == scheduleId)
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Tickets)
-                .Include(o => o.Tickets)
                 .OrderBy(o => o.Id)
                 .ToListAsync();
         }
@@ -74,7 +71,6 @@ namespace BookingAPI.Repositories.Implements
                 .Where(o => o.CustomerId == userId)
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Tickets)
-                .Include(o => o.Tickets)
                 .OrderByDescending(o => o.OrderedAt)
                 .ToListAsync();
         }
@@ -91,8 +87,7 @@ namespace BookingAPI.Repositories.Implements
             IQueryable<Order> query = _context.Orders
                 .Where(o => o.CustomerId == userId)
                 .Include(o => o.OrderDetails)
-                    .ThenInclude(od => od.Tickets)
-                .Include(o => o.Tickets);
+                    .ThenInclude(od => od.Tickets);
 
             if (!string.IsNullOrWhiteSpace(status) &&
                 !string.Equals(status, "All", StringComparison.OrdinalIgnoreCase))
@@ -379,7 +374,7 @@ namespace BookingAPI.Repositories.Implements
 
             var checkInCounts = await _context.Tickets
                 .AsNoTracking()
-                .Where(t => periodOrderIdsQuery.Contains(t.OrderId))
+                .Where(t => periodOrderIdsQuery.Contains(t.OrderDetail.OrderId))
                 .GroupBy(t => t.CheckInStatus == "CheckedIn" || t.CheckInStatus == "Checked"
                     ? "CheckedIn"
                     : "NotCheckedIn")
@@ -633,14 +628,13 @@ namespace BookingAPI.Repositories.Implements
             var order = await _context.Orders
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Tickets)
-                .Include(o => o.Tickets)
                 .FirstOrDefaultAsync(o => o.Id == orderId);
 
             if (order == null) return false;
             if (order.Status != "Pending") return false;
 
             order.Status = "Cancelled";
-            foreach (var ticket in order.Tickets)
+            foreach (var ticket in order.OrderDetails.SelectMany(od => od.Tickets))
             {
                 ticket.CheckInStatus = "Cancelled";
             }
@@ -669,7 +663,7 @@ namespace BookingAPI.Repositories.Implements
                 (!to.HasValue || c.RequestedAt <= to.Value)).ToList();
 
             var periodTickets = await _context.Tickets.AsNoTracking()
-                .Where(t => periodOrderIds.Contains(t.OrderId))
+                .Where(t => periodOrderIds.Contains(t.OrderDetail.OrderId))
                 .ToListAsync();
 
             var totalTickets = periodTickets.Count;
