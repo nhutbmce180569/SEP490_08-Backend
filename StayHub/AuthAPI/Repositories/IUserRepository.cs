@@ -9,6 +9,7 @@ namespace AuthAPI.Repositories
         Task<List<User>> GetAll();
         Task<(List<User> Users, int Total)> GetAllPaged(int page, int pageSize);
 
+        Task<string?> GetFcmTokenAsync(int userId);
         Task<User?> GetById(int id);
         Task<User?> GetByEmail(string email);
         Task Update(int id, User model);

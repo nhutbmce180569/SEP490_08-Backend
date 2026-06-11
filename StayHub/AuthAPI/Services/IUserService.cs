@@ -24,5 +24,8 @@ namespace AuthAPI.Services
         Task<CustomerListAnalyticsDTO> GetCustomersForAnalyticsAsync(string? search, int page, int pageSize);
 
         Task<PlatformUserStatsDTO> GetPlatformUserStatsAsync(DateTime? from, DateTime? to, string granularity);
+
+        Task<string?> GetFcmTokenAsync(int userId);
+        Task<bool> UpdateFcmTokenAsync(int userId, string fcmToken);
     }
 }

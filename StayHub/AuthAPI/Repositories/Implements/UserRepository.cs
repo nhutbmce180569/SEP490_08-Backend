@@ -159,6 +159,15 @@ namespace AuthAPI.Repositories.Implements
                 .ToListAsync();
         }
 
+        public async Task<string?> GetFcmTokenAsync(int userId)
+        {
+            var user = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            return user?.FcmToken;
+        }
+
         public async Task<(List<User> Users, int Total)> GetCustomersPagedAsync(string? search, int page, int pageSize)
         {
             var query = _context.Users
