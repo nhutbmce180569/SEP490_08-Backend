@@ -21,15 +21,11 @@ public partial class StayHubIdentityDbContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
-//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-//        => optionsBuilder.UseSqlServer("Server=.\\SQLEXPRESS;Database=StayHub_IdentityDb;User Id=sa;Password=admin;TrustServerCertificate=True;Encrypt=False;");
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<RefreshToken>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__RefreshT__3214EC07D4AB117E");
+            entity.HasKey(e => e.Id).HasName("PK__RefreshT__3214EC07C5D48A28");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.CreatedByIp)
@@ -46,14 +42,14 @@ public partial class StayHubIdentityDbContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.RefreshTokens)
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__RefreshTo__UserI__47DBAE45");
+                .HasConstraintName("FK__RefreshTo__UserI__5BE2A6F2");
         });
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Roles__3214EC072D87AB4F");
+            entity.HasKey(e => e.Id).HasName("PK__Roles__3214EC0755C3D0D1");
 
-            entity.HasIndex(e => e.Name, "UQ__Roles__737584F653E134CC").IsUnique();
+            entity.HasIndex(e => e.Name, "UQ__Roles__737584F6E7B239DA").IsUnique();
 
             entity.Property(e => e.Description).HasMaxLength(255);
             entity.Property(e => e.Name)
@@ -63,14 +59,15 @@ public partial class StayHubIdentityDbContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC07454E8A4B");
+            entity.HasKey(e => e.Id).HasName("PK__Users__3214EC079B11E500");
 
-            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534B7FBB4DE").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__Users__A9D1053458796BB4").IsUnique();
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.Email)
                 .HasMaxLength(255)
                 .IsUnicode(false);
+            entity.Property(e => e.FcmToken).IsUnicode(false);
             entity.Property(e => e.FullName).HasMaxLength(255);
             entity.Property(e => e.Gender)
                 .HasMaxLength(20)
@@ -85,7 +82,6 @@ public partial class StayHubIdentityDbContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasDefaultValue("Local");
-            entity.Property(e => e.RequirePasswordChange).HasDefaultValue(false);
             entity.Property(e => e.SecurityStamp).HasDefaultValueSql("(newid())");
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
@@ -99,14 +95,14 @@ public partial class StayHubIdentityDbContext : DbContext
                     r => r.HasOne<Role>().WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK__UserRoles__RoleI__44FF419A"),
+                        .HasConstraintName("FK__UserRoles__RoleI__59063A47"),
                     l => l.HasOne<User>().WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK__UserRoles__UserI__440B1D61"),
+                        .HasConstraintName("FK__UserRoles__UserI__5812160E"),
                     j =>
                     {
-                        j.HasKey("UserId", "RoleId").HasName("PK__UserRole__AF2760AD4081BC33");
+                        j.HasKey("UserId", "RoleId").HasName("PK__UserRole__AF2760ADDE844665");
                         j.ToTable("UserRoles");
                     });
         });
