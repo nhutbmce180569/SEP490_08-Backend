@@ -53,6 +53,14 @@ namespace TourAPI.Repositories.Implements
                 .ToListAsync();
         }
 
+        public async Task<TourSchedule?> GetScheduleWithItineraryAsync(int scheduleId)
+        {
+            return await _context.TourSchedules
+                .Include(x => x.Tour)
+                .Include(x => x.TourScheduleItineraries)
+                .FirstOrDefaultAsync(x => x.Id == scheduleId);
+        }
+
         public async Task<IEnumerable<TourSchedule>> GetByCreatedByAsync(int userId, int page, int pageSize)
         {
             return await _context.TourSchedules

@@ -520,6 +520,26 @@ namespace AuthAPI.Services.Implements
             };
         }
 
+        // Trong UserService.cs
+        public async Task<string?> GetFcmTokenAsync(int userId)
+        {
+            return await _userRepository.GetFcmTokenAsync(userId);
+        }
+
+        // Thêm hàm này vào AuthAPI.Services.Implements.UserService
+        public async Task<bool> UpdateFcmTokenAsync(int userId, string fcmToken)
+        {
+            var existingUser = await _userRepository.GetById(userId);
+            if (existingUser == null) return false;
+
+            existingUser.FcmToken = fcmToken;
+            existingUser.UpdatedAt = DateTime.UtcNow;
+
+            await _userRepository.Update(userId, existingUser);
+
+            return true;
+        }
+
         private static LabelCountDTO BuildSingleLabel(string label, int count, int total)
         {
             return new LabelCountDTO
