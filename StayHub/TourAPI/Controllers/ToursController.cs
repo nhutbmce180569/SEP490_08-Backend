@@ -28,14 +28,15 @@ namespace TourAPI.Controllers
 
         public ToursController(ITourService tourService, ITourAccessService tourAccessService, IMapper mapper, IStringLocalizer<Messages> localizer)
             : base(localizer)
-        {_tourService = tourService;
+        {
+            _tourService = tourService;
             _tourAccessService = tourAccessService;
             _mapper = mapper;
         }
 
         // GET: api/Tours/admin
         [HttpGet("admin")]
-        [Authorize(Roles = "Admin")] 
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult> GetAllToursForAdmin([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchTerm = null)
         {
             try
@@ -313,6 +314,23 @@ namespace TourAPI.Controllers
             {
                 var result = await _tourService.GetItinerariesByTourIdAsync(tourId);
                 return Ok(new { message = M("ItinerariesRetrievedSuccessfully"), data = result });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("batch")]
+        public async Task<ActionResult<IEnumerable<ReadTourDTO>>> GetBatchTours([FromBody] List<int> tourIds)
+        {
+            try
+            {
+                if (tourIds == null || !tourIds.Any()) return BadRequest("Danh sách ID không được rỗng.");
+
+                var result = await _tourService.GetToursByIdsAsync(tourIds);
+                return Ok(result);
             }
             catch (Exception ex)
             {
