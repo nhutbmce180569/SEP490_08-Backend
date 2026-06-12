@@ -429,6 +429,28 @@ namespace TourAPI.Services.Implements
             return _mapper.Map<List<ItineraryLocationDto>>(result);
         }
 
+        public async Task<IEnumerable<ReadTourDTO>> GetToursByIdsAsync(IEnumerable<int> tourIds)
+        {
+            if (tourIds == null || !tourIds.Any())
+            {
+                return Enumerable.Empty<ReadTourDTO>();
+            }
+
+            var distinctIds = tourIds.Distinct().ToList();
+            var tours = new List<Tour>();
+
+            foreach (var id in distinctIds)
+            {
+                var tour = await _repository.GetById(id);
+                if (tour != null)
+                {
+                    tours.Add(tour);
+                }
+            }
+
+            return _mapper.Map<List<ReadTourDTO>>(tours);
+        }
+
         private static PaginationDTO<T> CreatePagination<T>(
             List<T> data,
             int total,
@@ -475,5 +497,6 @@ namespace TourAPI.Services.Implements
                 }
             }
         }
+
     }
 }

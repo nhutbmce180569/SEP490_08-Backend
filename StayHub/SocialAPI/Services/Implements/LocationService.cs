@@ -39,16 +39,23 @@ namespace SocialAPI.Services.Implements
         public async Task PingLocationAsync(int currentUserId, LocationPingDto dto)
         {
             // 1. Lưu tọa độ vào DB
-            var locationLog = new LocationLog
+            try
             {
-                UserId = currentUserId,
-                Lat = dto.Lat,
-                Lng = dto.Lng,
-                ScheduleId = dto.ScheduleId ?? 0,
-                Timestamp = DateTime.UtcNow
-            };
-            _context.LocationLogs.Add(locationLog);
-            await _context.SaveChangesAsync();
+                var locationLog = new LocationLog
+                {
+                    UserId = currentUserId,
+                    Lat = dto.Lat,
+                    Lng = dto.Lng,
+                    ScheduleId = dto.ScheduleId ?? 0,
+                    Timestamp = DateTime.UtcNow
+                };
+                await _context.LocationLogs.AddAsync(locationLog);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+                // Bỏ qua lỗi DB để không làm gián đoạn việc cập nhật Redis và SignalR (Live Tracking)
+            }
 
             // 2. Lưu tọa độ mới nhất vào Redis (TTL 30 phút)
             var db = _redis.GetDatabase();
@@ -368,6 +375,30 @@ namespace SocialAPI.Services.Implements
             catch (Exception)
             {
                 throw new KeyNotFoundException("Location data is corrupt or cannot be parsed.");
+            }
+        }
+
+        public async Task<IEnumerable<FootprintDto>> GetMyFootprintsAsync(int userId)
+        {
+            try
+            {
+                var footprints = await _context.LocationLogs
+                    .AsNoTracking()
+                    .Where(x => x.UserId == userId)
+                    .OrderBy(x => x.Timestamp)
+                    .Select(x => new FootprintDto
+                    {
+                        Lat = x.Lat,
+                        Lng = x.Lng,
+                        Timestamp = x.Timestamp
+                    })
+                    .ToListAsync();
+
+                return footprints;
+            }
+            catch (Exception)
+            {
+                return new List<FootprintDto>();
             }
         }
     }
