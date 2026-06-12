@@ -16,13 +16,14 @@ namespace BookingAPI.DTOs
     public class TourScheduleDetailDto
     {
         public int Id { get; set; }
+        public int TourId { get; set; }
         public DateTime DepartureDate { get; set; }
         public DateTime ReturnDate { get; set; }
-        public TourBasicDto? Tour { get; set; }
     }
 
-    public class TourBasicDto
+    public class TourDetailFromApiDto
     {
-        public string Name { get; set; } = null!;
+        public int Id { get; set; }
+        public string? Name { get; set; }
     }
 }
