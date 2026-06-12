@@ -137,7 +137,8 @@ CREATE TABLE Users (
     -- BẢO MẬT: SecurityStamp thay đổi mỗi khi đổi pass/info quan trọng
     SecurityStamp NVARCHAR(MAX) DEFAULT NEWID(), 
     CreatedAt DATETIME2 DEFAULT GETDATE(),
-    UpdatedAt DATETIME2 DEFAULT GETDATE() 
+    UpdatedAt DATETIME2 DEFAULT GETDATE(),
+    FcmToken VARCHAR(MAX) NULL
 );
 
 -- Bảng trung gian Nhiều - Nhiều (1 User có nhiều Role)

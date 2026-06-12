@@ -177,6 +177,25 @@ namespace TourAPI.Controllers
             }
         }
 
+        [AllowAnonymous]
+        [HttpGet("{scheduleId}/route")]
+        public async Task<IActionResult> GetTourRoute(int scheduleId)
+        {
+            try
+            {
+                var routeData = await _scheduleService.GetTourRouteAsync(scheduleId);
+                return Ok(new { success = true, data = routeData });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { success = false, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Error retrieving tour route", error = ex.Message });
+            }
+        }
+
         // POST: api/TourSchedules/batch
         [AllowAnonymous]
         [HttpPost("batch")]
