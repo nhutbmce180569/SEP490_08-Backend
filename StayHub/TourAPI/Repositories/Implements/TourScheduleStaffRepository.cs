@@ -43,13 +43,37 @@ namespace TourAPI.Repositories.Implements
                 .ToListAsync();
         }
 
-        public async Task<List<TourScheduleStaff>> GetAssignedSchedulesAsync(int staffId)
+        public async Task<(List<TourScheduleStaff> Items, int Total)> GetAssignedSchedulesAsync(
+     int staffId, int page, int pageSize, bool upcomingOnly, string? tourName = null)
         {
-            return await _context.TourScheduleStaffs
+            var now = DateTime.UtcNow;
+
+            var query = _context.TourScheduleStaffs
                 .Where(x => x.StaffId == staffId)
                 .Include(x => x.Schedule)
                     .ThenInclude(s => s.Tour)
+                .AsQueryable();
+
+            if (upcomingOnly)
+                query = query.Where(x => x.Schedule.DepartureDate >= now);
+
+            // ✅ Filter theo tên tour
+            if (!string.IsNullOrWhiteSpace(tourName))
+                query = query.Where(x => x.Schedule.Tour != null &&
+                                         x.Schedule.Tour.Name.Contains(tourName.Trim()));
+
+            query = upcomingOnly
+                ? query.OrderBy(x => x.Schedule.DepartureDate)
+                : query.OrderByDescending(x => x.Schedule.DepartureDate);
+
+            var total = await query.CountAsync();
+
+            var items = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+
+            return (items, total);
         }
     }
 }

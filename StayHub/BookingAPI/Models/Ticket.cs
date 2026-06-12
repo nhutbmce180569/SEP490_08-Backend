@@ -7,8 +7,6 @@ public partial class Ticket
 {
     public int Id { get; set; }
 
-    public int OrderId { get; set; }
-
     public int OrderDetailId { get; set; }
 
     public int? UserId { get; set; }
@@ -28,8 +26,6 @@ public partial class Ticket
     public string? QrCode { get; set; }
 
     public string? CheckInStatus { get; set; }
-
-    public virtual Order Order { get; set; } = null!;
 
     public virtual OrderDetail OrderDetail { get; set; } = null!;
 }

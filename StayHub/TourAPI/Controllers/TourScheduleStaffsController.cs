@@ -27,6 +27,34 @@ namespace TourAPI.Controllers
             _tourAccessService = tourAccessService;
         }
 
+        [HttpGet("assigned")]
+        [Authorize(Roles = "Staff")]
+        public async Task<IActionResult> GetAssignedSchedules(
+      [FromQuery] int page = 1,
+      [FromQuery] int pageSize = 10,
+      [FromQuery] bool upcomingOnly = false,
+      [FromQuery] string? tourName = null) // ✅ thêm param
+        {
+            try
+            {
+                if (page < 1) page = 1;
+                if (pageSize < 1) pageSize = 10;
+
+                var userId = GetCurrentUserId();
+                if (userId == null)
+                    return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
+
+                var result = await _staffService.GetAssignedSchedulesAsync(
+                    userId.Value, page, pageSize, upcomingOnly, tourName);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = M("SystemError"), details = ex.Message });
+            }
+        }
+
         [HttpPost]
         [Authorize(Roles = "Admin,Manager")]
         public async Task<IActionResult> AssignStaff([FromBody] AssignStaffRequestDto dto)

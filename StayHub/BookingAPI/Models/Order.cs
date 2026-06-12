@@ -32,6 +32,4 @@ public partial class Order
     public virtual ICollection<CancellationRequest> CancellationRequests { get; set; } = new List<CancellationRequest>();
 
     public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
-
-    public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
 }

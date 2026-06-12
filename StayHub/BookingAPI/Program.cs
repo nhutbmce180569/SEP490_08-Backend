@@ -44,6 +44,15 @@ namespace BookingAPI
             builder.Services.AddScoped<IPlatformAnalyticsService, PlatformAnalyticsService>();
             builder.Services.AddScoped<ICancellationRepository, CancellationRepository>();
             builder.Services.AddScoped<ICancellationService, CancellationService>();
+            builder.Services.AddHttpClient<IContentApiClient, ContentApiClient>(client =>
+            {
+                var contentApiBaseUrl = builder.Configuration["ContentApi:BaseUrl"];
+                if (!string.IsNullOrWhiteSpace(contentApiBaseUrl))
+                {
+                    client.BaseAddress = new Uri(contentApiBaseUrl.TrimEnd('/') + "/");
+                }
+            })
+            .AddHttpMessageHandler<AuthorizationHeaderHandler>();
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddTransient<AuthorizationHeaderHandler>();

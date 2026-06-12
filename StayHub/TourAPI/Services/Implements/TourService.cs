@@ -141,16 +141,14 @@ namespace TourAPI.Services.Implements
 
         public async Task<PaginationDTO<ReadTourDTO>> GetAll(int page, int pageSize, int userId, bool isAdmin, string? searchTerm = null, int? categoryId = null, bool createdByMe = false)
         {
-            var result = await _repository.GetPagedAsync(new TourQueryOptions
-            {
-                Page = page,
-                PageSize = pageSize,
-                SearchTerm = searchTerm,
-                CategoryId = categoryId,
-                CreatedBy = createdByMe ? userId : null
-            });
+            var result = await _repository.GetAll(
+                page,
+                pageSize,
+                searchTerm,
+                categoryId,
+                createdByMe ? userId : null);
 
-            var list = _mapper.Map<List<ReadTourDTO>>(result.Items);
+            var list = _mapper.Map<List<ReadTourDTO>>(result.Tours);
             foreach (var tour in list)
             {
                 tour.CanEdit = isAdmin || tour.CreatedBy == userId;
@@ -161,37 +159,29 @@ namespace TourAPI.Services.Implements
 
         public async Task<PaginationDTO<ReadTourDTO>> GetActiveTours(int page, int pageSize)
         {
-            var result = await _repository.GetPagedAsync(new TourQueryOptions
-            {
-                Page = page,
-                PageSize = pageSize,
-                ActiveOnly = true
-            });
+            var result = await _repository.GetActiveTours(page, pageSize);
+            var list = _mapper.Map<List<ReadTourDTO>>(result.Tours);
 
-            var list = _mapper.Map<List<ReadTourDTO>>(result.Items);
             return CreatePagination(list, result.Total, page, pageSize);
         }
 
         public async Task<PaginationDTO<ReadTourDTO>> SearchTours(int page, int pageSize, string? searchTerm = null, int? categoryId = null, string? country = null, string? city = null, long? minPrice = null, long? maxPrice = null, DateTime? startDate = null, DateTime? endDate = null, int? duration = null, string? sortBy = null)
         {
-            var result = await _repository.GetPagedAsync(new TourQueryOptions
-            {
-                Page = page,
-                PageSize = pageSize,
-                ActiveOnly = true,
-                SearchTerm = searchTerm,
-                CategoryId = categoryId,
-                Country = country,
-                City = city,
-                MinPrice = minPrice,
-                MaxPrice = maxPrice,
-                StartDate = startDate,
-                EndDate = endDate,
-                Duration = duration,
-                SortBy = sortBy
-            });
+            var result = await _repository.SearchTours(
+                page,
+                pageSize,
+                searchTerm,
+                categoryId,
+                country,
+                city,
+                minPrice,
+                maxPrice,
+                startDate,
+                endDate,
+                duration,
+                sortBy);
 
-            var list = _mapper.Map<List<ReadTourDTO>>(result.Items);
+            var list = _mapper.Map<List<ReadTourDTO>>(result.Tours);
 
             var allReviews = list.Where(t => t.Reviews != null).SelectMany(t => t.Reviews!).ToList();
             if (allReviews.Any())
@@ -297,15 +287,8 @@ namespace TourAPI.Services.Implements
 
         public async Task<PaginationDTO<ReadTourDTO>> GetByAdmin(int page, int pageSize, string? searchTerm = null)
         {
-            var result = await _repository.GetPagedAsync(new TourQueryOptions
-            {
-                Page = page,
-                PageSize = pageSize,
-                SearchTerm = searchTerm,
-                SortDescendingById = true
-            });
-
-            var list = _mapper.Map<List<ReadTourDTO>>(result.Items);
+            var result = await _repository.GetByAdmin(page, pageSize, searchTerm);
+            var list = _mapper.Map<List<ReadTourDTO>>(result.Tours);
             var allReviews = list.Where(t => t.Reviews != null).SelectMany(t => t.Reviews!).ToList();
             if (allReviews.Any())
             {
@@ -318,16 +301,12 @@ namespace TourAPI.Services.Implements
 
         public async Task<PaginationDTO<ReadTourDTO>> GetByManager(int managerId, int page, int pageSize, string? searchTerm = null)
         {
-            var result = await _repository.GetPagedAsync(new TourQueryOptions
-            {
-                Page = page,
-                PageSize = pageSize,
-                SearchTerm = searchTerm,
-                CreatedBy = managerId,
-                SortDescendingById = true
-            });
-
-            var list = _mapper.Map<List<ReadTourDTO>>(result.Items);
+            var result = await _repository.GetByManager(
+                managerId,
+                page,
+                pageSize,
+                searchTerm);
+            var list = _mapper.Map<List<ReadTourDTO>>(result.Tours);
 
             // Manager này chắc chắn có quyền Edit vì đây là tour của họ
             foreach (var tour in list)
@@ -429,6 +408,28 @@ namespace TourAPI.Services.Implements
             return _mapper.Map<List<ItineraryLocationDto>>(result);
         }
 
+        public async Task<IEnumerable<ReadTourDTO>> GetToursByIdsAsync(IEnumerable<int> tourIds)
+        {
+            if (tourIds == null || !tourIds.Any())
+            {
+                return Enumerable.Empty<ReadTourDTO>();
+            }
+
+            var distinctIds = tourIds.Distinct().ToList();
+            var tours = new List<Tour>();
+
+            foreach (var id in distinctIds)
+            {
+                var tour = await _repository.GetById(id);
+                if (tour != null)
+                {
+                    tours.Add(tour);
+                }
+            }
+
+            return _mapper.Map<List<ReadTourDTO>>(tours);
+        }
+
         private static PaginationDTO<T> CreatePagination<T>(
             List<T> data,
             int total,
@@ -475,5 +476,6 @@ namespace TourAPI.Services.Implements
                 }
             }
         }
+
     }
 }

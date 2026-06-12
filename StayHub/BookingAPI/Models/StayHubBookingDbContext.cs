@@ -109,11 +109,6 @@ public partial class StayHubBookingDbContext : DbContext
                 .HasForeignKey(d => d.OrderDetailId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Tickets_OrderDetails");
-
-            entity.HasOne(d => d.Order).WithMany(p => p.Tickets)
-                .HasForeignKey(d => d.OrderId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Tickets_Orders");
         });
 
         OnModelCreatingPartial(modelBuilder);
