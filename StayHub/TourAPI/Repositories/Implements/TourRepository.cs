@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using TourAPI.DTOs;
 using TourAPI.Models;
 
 namespace TourAPI.Repositories.Implements
@@ -42,80 +41,107 @@ namespace TourAPI.Repositories.Implements
             await _context.SaveChangesAsync();
         }
 
-        public async Task<TourPageResult> GetPagedAsync(TourQueryOptions options)
+        public async Task<(List<Tour> Tours, int Total)> GetAll(
+            int page,
+            int pageSize,
+            string? searchTerm = null,
+            int? categoryId = null,
+            int? createdBy = null)
         {
-            var page = Math.Max(1, options.Page);
-            var pageSize = Math.Clamp(options.PageSize, 1, 1000);
-            IQueryable<Tour> query = _context.Tours.AsNoTracking();
+            var query = _context.Tours.AsNoTracking();
 
-            if (options.ActiveOnly)
+            query = ApplySearch(query, searchTerm);
+
+            if (categoryId.HasValue)
             {
-                query = query.Where(t => t.Status == "Active");
+                query = query.Where(t => t.CategoryId == categoryId.Value);
             }
 
-            if (!string.IsNullOrWhiteSpace(options.SearchTerm))
+            if (createdBy.HasValue)
             {
-                var term = options.SearchTerm.Trim();
-                query = query.Where(t =>
-                    t.Name.Contains(term) ||
-                    (t.Description != null && t.Description.Contains(term)) ||
-                    t.TourItineraries.Any(i =>
-                        (i.Title != null && i.Title.Contains(term)) ||
-                        (i.Description != null && i.Description.Contains(term))));
+                query = query.Where(t => t.CreatedBy == createdBy.Value);
             }
 
-            if (options.CategoryId.HasValue)
+            return await GetPagedTours(query.OrderBy(t => t.Id), page, pageSize);
+        }
+
+        public async Task<(List<Tour> Tours, int Total)> GetActiveTours(
+            int page,
+            int pageSize)
+        {
+            var query = _context.Tours
+                .AsNoTracking()
+                .Where(t => t.Status == "Active")
+                .OrderBy(t => t.Id);
+
+            return await GetPagedTours(query, page, pageSize);
+        }
+
+        public async Task<(List<Tour> Tours, int Total)> SearchTours(
+            int page,
+            int pageSize,
+            string? searchTerm = null,
+            int? categoryId = null,
+            string? country = null,
+            string? city = null,
+            long? minPrice = null,
+            long? maxPrice = null,
+            DateTime? startDate = null,
+            DateTime? endDate = null,
+            int? duration = null,
+            string? sortBy = null)
+        {
+            var query = _context.Tours
+                .AsNoTracking()
+                .Where(t => t.Status == "Active");
+
+            query = ApplySearch(query, searchTerm);
+
+            if (categoryId.HasValue)
             {
-                query = query.Where(t => t.CategoryId == options.CategoryId.Value);
+                query = query.Where(t => t.CategoryId == categoryId.Value);
             }
 
-            if (!string.IsNullOrWhiteSpace(options.Country))
+            if (!string.IsNullOrWhiteSpace(country))
             {
-                var country = options.Country.Trim();
-                query = query.Where(t => t.Country == country);
+                var normalizedCountry = country.Trim();
+                query = query.Where(t => t.Country == normalizedCountry);
             }
 
-            if (!string.IsNullOrWhiteSpace(options.City))
+            if (!string.IsNullOrWhiteSpace(city))
             {
-                var city = options.City.Trim();
-                query = query.Where(t => t.City == city);
+                var normalizedCity = city.Trim();
+                query = query.Where(t => t.City == normalizedCity);
             }
 
-            if (options.CreatedBy.HasValue)
-            {
-                query = query.Where(t => t.CreatedBy == options.CreatedBy.Value);
-            }
-
-            if (options.MinPrice.HasValue || options.MaxPrice.HasValue)
+            if (minPrice.HasValue || maxPrice.HasValue)
             {
                 query = query.Where(t => t.TourSchedules.Any(s =>
                     s.TourScheduleTickets.Any(ticket =>
-                        (!options.MinPrice.HasValue || ticket.Price >= options.MinPrice.Value) &&
-                        (!options.MaxPrice.HasValue || ticket.Price <= options.MaxPrice.Value))));
+                        (!minPrice.HasValue || ticket.Price >= minPrice.Value) &&
+                        (!maxPrice.HasValue || ticket.Price <= maxPrice.Value))));
             }
 
-            if (options.StartDate.HasValue || options.EndDate.HasValue)
+            if (startDate.HasValue || endDate.HasValue)
             {
-                var startDate = options.StartDate?.Date;
-                var endDateExclusive = options.EndDate?.Date.AddDays(1);
+                var start = startDate?.Date;
+                var endExclusive = endDate?.Date.AddDays(1);
                 query = query.Where(t => t.TourSchedules.Any(s =>
-                    (!startDate.HasValue || s.DepartureDate >= startDate.Value) &&
-                    (!endDateExclusive.HasValue || s.ReturnDate < endDateExclusive.Value)));
+                    (!start.HasValue || s.DepartureDate >= start.Value) &&
+                    (!endExclusive.HasValue || s.ReturnDate < endExclusive.Value)));
             }
 
-            if (options.Duration.HasValue)
+            if (duration.HasValue)
             {
-                var duration = options.Duration.Value;
+                var numberOfDays = duration.Value;
                 query = query.Where(t =>
-                    t.TourItineraries.Count == duration ||
+                    t.TourItineraries.Count == numberOfDays ||
                     t.TourSchedules.Any(s =>
-                        EF.Functions.DateDiffDay(s.DepartureDate, s.ReturnDate) == duration ||
-                        EF.Functions.DateDiffDay(s.DepartureDate, s.ReturnDate) + 1 == duration));
+                        EF.Functions.DateDiffDay(s.DepartureDate, s.ReturnDate) == numberOfDays ||
+                        EF.Functions.DateDiffDay(s.DepartureDate, s.ReturnDate) + 1 == numberOfDays));
             }
 
-            var total = await query.CountAsync();
-
-            query = options.SortBy?.Trim().ToLowerInvariant() switch
+            var sortedQuery = sortBy?.Trim().ToLowerInvariant() switch
             {
                 "price_asc" => query
                     .OrderBy(t => t.TourSchedules
@@ -139,13 +165,72 @@ namespace TourAPI.Repositories.Implements
                         .Select(s => (DateTime?)s.DepartureDate)
                         .Min() ?? DateTime.MinValue)
                     .ThenBy(t => t.Id),
-                _ when options.SortDescendingById => query.OrderByDescending(t => t.Id),
                 _ => query.OrderBy(t => t.Id)
             };
 
-            var items = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
+            return await GetPagedTours(sortedQuery, page, pageSize);
+        }
+
+        public async Task<(List<Tour> Tours, int Total)> GetByAdmin(
+            int page,
+            int pageSize,
+            string? searchTerm = null)
+        {
+            var query = ApplySearch(_context.Tours.AsNoTracking(), searchTerm)
+                .OrderByDescending(t => t.Id);
+
+            return await GetPagedTours(query, page, pageSize);
+        }
+
+        public async Task<(List<Tour> Tours, int Total)> GetByManager(
+            int managerId,
+            int page,
+            int pageSize,
+            string? searchTerm = null)
+        {
+            var query = _context.Tours
+                .AsNoTracking()
+                .Where(t => t.CreatedBy == managerId);
+
+            query = ApplySearch(query, searchTerm);
+
+            return await GetPagedTours(
+                query.OrderByDescending(t => t.Id),
+                page,
+                pageSize);
+        }
+
+        private static IQueryable<Tour> ApplySearch(
+            IQueryable<Tour> query,
+            string? searchTerm)
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm))
+            {
+                return query;
+            }
+
+            var term = searchTerm.Trim();
+
+            return query.Where(t =>
+                t.Name.Contains(term) ||
+                (t.Description != null && t.Description.Contains(term)) ||
+                t.TourItineraries.Any(i =>
+                    (i.Title != null && i.Title.Contains(term)) ||
+                    (i.Description != null && i.Description.Contains(term))));
+        }
+
+        private static async Task<(List<Tour> Tours, int Total)> GetPagedTours(
+            IQueryable<Tour> query,
+            int page,
+            int pageSize)
+        {
+            var normalizedPage = Math.Max(1, page);
+            var normalizedPageSize = Math.Clamp(pageSize, 1, 1000);
+            var total = await query.CountAsync();
+
+            var tours = await query
+                .Skip((normalizedPage - 1) * normalizedPageSize)
+                .Take(normalizedPageSize)
                 .Include(t => t.TourItineraries)
                 .Include(t => t.TourSchedules)
                     .ThenInclude(t => t.TourScheduleTickets)
@@ -154,11 +239,7 @@ namespace TourAPI.Repositories.Implements
                 .AsSplitQuery()
                 .ToListAsync();
 
-            return new TourPageResult
-            {
-                Items = items,
-                Total = total
-            };
+            return (tours, total);
         }
 
         public async Task<Tour> GetById(int id)
