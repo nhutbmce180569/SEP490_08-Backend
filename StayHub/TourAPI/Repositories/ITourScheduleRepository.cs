@@ -10,6 +10,7 @@ namespace TourAPI.Repositories
         Task<TourSchedule?> GetByIdAsync(int id);
         Task<List<TourSchedule>> GetByIdsAsync(List<int> ids);
         Task<List<TourSchedule>> GetByTourIdAsync(int tourId);
+        Task<TourSchedule?> GetScheduleWithItineraryAsync(int scheduleId);
         Task<IEnumerable<TourSchedule>> GetByCreatedByAsync(int userId, int page, int pageSize);
         Task<int> CountByCreatedByAsync(int userId);
         Task<IEnumerable<TourSchedule>> SearchByTourNameAsync(string tourName, int page, int pageSize);
