@@ -137,7 +137,8 @@ CREATE TABLE Users (
     -- BẢO MẬT: SecurityStamp thay đổi mỗi khi đổi pass/info quan trọng
     SecurityStamp NVARCHAR(MAX) DEFAULT NEWID(), 
     CreatedAt DATETIME2 DEFAULT GETDATE(),
-    UpdatedAt DATETIME2 DEFAULT GETDATE() 
+    UpdatedAt DATETIME2 DEFAULT GETDATE(),
+    FcmToken VARCHAR(MAX) NULL
 );
 
 -- Bảng trung gian Nhiều - Nhiều (1 User có nhiều Role)
@@ -344,7 +345,6 @@ GO
 CREATE TABLE Tickets (
     Id INT IDENTITY(1,1) PRIMARY KEY,
 
-    OrderId INT NOT NULL,
     OrderDetailId INT NOT NULL,
 
     UserId INT NULL, -- Logical FK -> IdentityDb.Users
@@ -361,10 +361,6 @@ CREATE TABLE Tickets (
 
     CheckInStatus VARCHAR(50) DEFAULT 'Pending',
     -- Pending, CheckedIn
-
-    CONSTRAINT FK_Tickets_Orders
-        FOREIGN KEY (OrderId)
-        REFERENCES Orders(Id),
 
     CONSTRAINT FK_Tickets_OrderDetails
         FOREIGN KEY (OrderDetailId)

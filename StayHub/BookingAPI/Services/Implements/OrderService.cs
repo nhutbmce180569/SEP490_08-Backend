@@ -153,11 +153,9 @@ namespace BookingAPI.Services.Implements
                     ticket.TicketTypeId = detailRequest.TicketTypeId;
                     ticket.CheckInStatus = "Pending";
                     ticket.QrCode = Guid.NewGuid().ToString();
-                    ticket.Order = order;
                     ticket.OrderDetail = orderDetail;
 
                     orderDetail.Tickets.Add(ticket);
-                    order.Tickets.Add(ticket);
                 }
 
                 order.OrderDetails.Add(orderDetail);
@@ -235,18 +233,14 @@ namespace BookingAPI.Services.Implements
             return await Task.WhenAll(orderDtos);
         }
 
-        public async Task<IEnumerable<ScheduleCustomerDTO>> GetScheduleCustomersAsync(int scheduleId)
+        public async Task<IEnumerable<ScheduleCustomerDTO>> GetScheduleCustomersAsync(int scheduleId, string? attendeeName = null) // thêm param search
         {
             if (scheduleId <= 0)
-            {
                 return Array.Empty<ScheduleCustomerDTO>();
-            }
 
-            var tickets = await _ticketRepository.GetByScheduleIdAsync(scheduleId);
+            var tickets = await _ticketRepository.GetByScheduleIdAsync(scheduleId, attendeeName); 
             if (tickets == null || !tickets.Any())
-            {
                 return Array.Empty<ScheduleCustomerDTO>();
-            }
 
             var userIds = tickets
                 .Where(t => t.UserId.HasValue)
@@ -269,13 +263,14 @@ namespace BookingAPI.Services.Implements
                 return new ScheduleCustomerDTO
                 {
                     TicketId = ticket.Id,
-                    OrderId = ticket.OrderId,
+                    OrderId = ticket.OrderDetail.OrderId,
                     UserId = ticket.UserId,
                     AttendeeName = ticket.AttendeeName,
                     IdCard = ticket.IdCard,
                     DateOfBirth = ticket.DateOfBirth,
                     Gender = ticket.Gender,
                     Nationality = ticket.Nationality,
+                    PhoneNumber = profile?.PhoneNumber,
                 };
             }).ToList();
         }
