@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using StayHub.Common.Controllers;
 using StayHub.Common.Resources;
+using System.Security.Claims;
 
 namespace AuthAPI.Controllers
 {
@@ -13,10 +14,12 @@ namespace AuthAPI.Controllers
     public class UsersController : LocalizedControllerBase
     {
         private readonly IUserService _userService;
-
-        public UsersController(IUserService userService, IStringLocalizer<Messages> localizer)
+        private readonly IConfiguration _configuration;
+        public UsersController(IUserService userService, IStringLocalizer<Messages> localizer, IConfiguration configuration)
             : base(localizer)
-        {_userService = userService;
+        {
+            _userService = userService;
+            _configuration = configuration;
         }
 
         // GET: api/users?page=1&pageSize=10
@@ -301,6 +304,64 @@ namespace AuthAPI.Controllers
             }
 
             return Ok(new { message = M("UserProfileRetrievedSuccessfully"), data = profile });
+        }
+
+        // GET: api/users/internal/{id}/fcm-token
+        [HttpGet("internal/{id}/fcm-token")]
+        public async Task<IActionResult> GetFcmTokenInternal(int id, [FromHeader(Name = "X-Internal-Key")] string? internalKey)
+        {
+            if (internalKey != _configuration["InternalApi:SecretKey"])
+                return Unauthorized();
+
+            var token = await _userService.GetFcmTokenAsync(id);
+            return Ok(new { token = token });
+        }
+
+        // PUT: api/users/fcm-token
+        [HttpPut("fcm-token")]
+        [Authorize] 
+        public async Task<IActionResult> UpdateFcmToken([FromBody] UpdateFcmTokenDTO dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = M("InvalidInputData") });
+            }
+
+            // Lấy UserId từ JWT Token của người đang đăng nhập
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                            ?? User.FindFirst("id")?.Value;
+
+            if (!int.TryParse(userIdString, out int userId))
+            {
+                return Unauthorized(new { message = M("InvalidUserToken") });
+            }
+
+            try
+            {
+                var isSuccess = await _userService.UpdateFcmTokenAsync(userId, dto.FcmToken);
+
+                if (!isSuccess)
+                {
+                    return NotFound(new { message = M("UserNotFound") });
+                }
+
+                // Tái sử dụng Localization hoặc trả về text cứng
+                return Ok(new { message = "FCM Token updated successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while updating FCM Token", details = ex.Message });
+            }
+        }
+
+        [HttpDelete("internal/{id}/fcm-token")]
+        public async Task<IActionResult> ClearFcmTokenInternal(int id, [FromHeader(Name = "X-Internal-Key")] string? internalKey)
+        {
+            if (internalKey != _configuration["InternalApi:SecretKey"])
+                return Unauthorized();
+
+            await _userService.UpdateFcmTokenAsync(id, null); // set null = xóa token
+            return Ok();
         }
     }
 }

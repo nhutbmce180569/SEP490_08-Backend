@@ -104,4 +104,10 @@ namespace AuthAPI.DTOs
         [Range(1, 100, ErrorMessage = "PageSize must be between 1 and 100.")]
         public int PageSize { get; set; } = 10;
     }
+
+    public class UpdateFcmTokenDTO
+    {
+        [Required(ErrorMessage = "FCM Token is required")]
+        public string FcmToken { get; set; } = null!;
+    }
 }

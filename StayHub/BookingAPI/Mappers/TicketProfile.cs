@@ -8,7 +8,8 @@ namespace BookingAPI.Mappers
     {
         public TicketProfile() 
         { 
-            CreateMap<Ticket, ReadTicketDTO>();
+            CreateMap<Ticket, ReadTicketDTO>()
+                .ForMember(dest => dest.OrderId, opt => opt.MapFrom(src => src.OrderDetail.OrderId));
         }
     }
 }

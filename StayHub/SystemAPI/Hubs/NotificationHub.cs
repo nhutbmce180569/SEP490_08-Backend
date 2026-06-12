@@ -8,7 +8,6 @@ namespace SystemAPI.Hubs
     {
         public override async Task OnConnectedAsync()
         {
-            // Có thể log ra xem user nào đang kết nối
             var userId = Context.UserIdentifier;
             await base.OnConnectedAsync();
         }

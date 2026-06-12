@@ -1,11 +1,13 @@
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using StayHub.Common.Localization;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
+using StayHub.Common.Localization;
 using System.Text;
 using SystemAPI.Helpers;
 using SystemAPI.Hubs;
@@ -39,6 +41,10 @@ namespace SystemAPI
             builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
             builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
             builder.Services.AddScoped<INotificationService, NotificationService>();
+            builder.Services.AddHttpClient<IAuthApiClient, AuthApiClient>(client =>
+            {
+                client.BaseAddress = new Uri(builder.Configuration["AuthApi:BaseUrl"] ?? "https://localhost:7001/");
+            });
             builder.Services.AddControllers().AddStayHubDataAnnotationsLocalization();
             builder.Services.AddStayHubLocalization();
             builder.Services.AddEndpointsApiExplorer();
@@ -108,6 +114,16 @@ namespace SystemAPI
                     // .AllowCredentials();
                 });
             });
+
+
+            if (FirebaseApp.DefaultInstance == null)
+            {
+                FirebaseApp.Create(new AppOptions
+                {
+                    Credential = GoogleCredential.FromFile("google-services.json")
+                });
+            }
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
