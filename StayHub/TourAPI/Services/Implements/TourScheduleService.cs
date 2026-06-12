@@ -196,6 +196,49 @@ namespace TourAPI.Services.Implements
             return _mapper.Map<List<ItineraryLocationDto>>(result);
         }
 
+        public async Task<TourRouteDto> GetTourRouteAsync(int scheduleId)
+        {
+            var schedule = await _scheduleRepo.GetScheduleWithItineraryAsync(scheduleId);
+            if (schedule == null)
+            {
+                throw new KeyNotFoundException($"Tour schedule with id {scheduleId} not found.");
+            }
+
+            var routeDto = new TourRouteDto
+            {
+                ScheduleId = schedule.Id,
+                TourName = schedule.Tour?.Name
+            };
+
+            if (schedule.TourScheduleItineraries != null && schedule.TourScheduleItineraries.Any())
+            {
+                var sortedItineraries = schedule.TourScheduleItineraries
+                    .OrderBy(x => x.DayNumber)
+                    .ThenBy(x => x.StartDuration)
+                    .ToList();
+
+                int sequence = 1;
+                foreach (var item in sortedItineraries)
+                {
+                    // Chỉ map các điểm đã khai báo toạ độ hợp lệ
+                    if (item.LocationLat.HasValue && item.LocationLng.HasValue)
+                    {
+                        routeDto.Waypoints.Add(new WaypointDto
+                        {
+                            Name = item.LocationName,
+                            Lat = item.LocationLat.Value,
+                            Lng = item.LocationLng.Value,
+                            Sequence = sequence++
+                        });
+
+                        routeDto.GeometryCoordinates.Add(new List<double> { item.LocationLng.Value, item.LocationLat.Value });
+                    }
+                }
+            }
+
+            return routeDto;
+        }
+
         public async Task<IEnumerable<ReadTourScheduleDTO>> GetSchedulesByIdsAsync(IEnumerable<int> scheduleIds)
         {
             var schedules = await _scheduleRepo.GetByIdsAsync(scheduleIds.ToList());
