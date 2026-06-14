@@ -97,9 +97,18 @@ namespace BookingAPI.Services.Implements
             return _mapper.Map<CancellationRequestDetailDTO>(cancellationRequest);
         }
 
-        public async Task<PaginationDTO<CancellationRequestListDTO>> GetCancellationRequestsAsync(string? status, int page, int pageSize)
+        public async Task<PaginationDTO<CancellationRequestListDTO>> GetCancellationRequestsAsync(
+            int operatorId,
+            string? status,
+            int page,
+            int pageSize)
         {
-            var (requests, total) = await _repository.GetAllCancellationRequestsAsync(status, page, pageSize);
+            var scheduleIds = await _tourApiClient.GetManagedScheduleIdsAsync(operatorId);
+            var (requests, total) = await _repository.GetAllCancellationRequestsAsync(
+                scheduleIds,
+                status,
+                page,
+                pageSize);
 
             var mappedData = _mapper.Map<List<CancellationRequestListDTO>>(requests);
 
@@ -115,11 +124,13 @@ namespace BookingAPI.Services.Implements
             };
         }
 
-        public async Task<CancellationRequestDetailDTO> GetCancellationRequestDetailsAsync(int id)
+        public async Task<CancellationRequestDetailDTO> GetCancellationRequestDetailsAsync(int id, int operatorId)
         {
             var request = await _repository.GetCancellationRequestByIdAsync(id);
             if (request == null)
                 throw new Exception("Cancellation request not found.");
+
+            await EnsureOperatorCanManageAsync(request, operatorId);
 
             var dto = _mapper.Map<CancellationRequestDetailDTO>(request);
 
@@ -144,17 +155,22 @@ namespace BookingAPI.Services.Implements
             return dto;
         }
 
-        public async Task<CancellationRequestDetailDTO> ProcessCancellationRequestAsync(int id, int processedByUserId, ProcessCancellationDTO dto)
+        public async Task<CancellationRequestDetailDTO> ProcessCancellationRequestAsync(
+            int id,
+            int operatorId,
+            ProcessCancellationDTO dto)
         {
             var request = await _repository.GetCancellationRequestByIdAsync(id);
 
             if (request == null)
                 throw new Exception("Cancellation request not found.");
 
+            await EnsureOperatorCanManageAsync(request, operatorId);
+
             if (request.Status != "Pending")
                 throw new Exception($"Cannot process this request. It is already marked as '{request.Status}'.");
 
-            request.ProcessedBy = processedByUserId;
+            request.ProcessedBy = operatorId;
             request.ProcessedAt = DateTime.UtcNow;
 
             if (dto.Action == "Approve")
@@ -201,6 +217,16 @@ namespace BookingAPI.Services.Implements
             }
 
             return _mapper.Map<CancellationRequestDetailDTO>(request);
+        }
+
+        private async Task EnsureOperatorCanManageAsync(CancellationRequest request, int operatorId)
+        {
+            if (request.Order == null)
+                throw new Exception("Order information for this cancellation request was not found.");
+
+            var scheduleIds = await _tourApiClient.GetManagedScheduleIdsAsync(operatorId);
+            if (!scheduleIds.Contains(request.Order.ScheduleId))
+                throw new UnauthorizedAccessException("You do not have permission to access this cancellation request.");
         }
     }
 }
