@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Primitives;
 using PaymentAPI.DTOs;
 using PaymentAPI.Services;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text.Json;
 
 namespace PaymentAPI.Controllers
 {
@@ -23,13 +25,22 @@ namespace PaymentAPI.Controllers
         [Authorize]
         public async Task<IActionResult> CreatePayment([FromBody] CreateTransactionDTO transactionDto)
         {
-            if (transactionDto.Amount <= 0)
+            if (transactionDto.Amount < 1_000 || transactionDto.Amount > 50_000_000)
             {
-                return BadRequest("Invalid amount");
+                return BadRequest("MoMo amount must be between 1,000 and 50,000,000 VND.");
             }
+            transactionDto.CustomerEmail =
+                User.FindFirst(JwtRegisteredClaimNames.Email)?.Value
+                ?? User.FindFirst(ClaimTypes.Email)?.Value
+                ?? User.FindFirst("email")?.Value;
 
-            var paymentUrl = await _momoService.CreatePaymentUrlAsync(transactionDto);
-            return Ok(new { paymentUrl });
+            var payment = await _momoService.CreatePaymentAsync(transactionDto);
+            return Ok(new
+            {
+                paymentUrl = payment.PaymentUrl,
+                deeplink = payment.Deeplink,
+                qrCodeUrl = payment.QrCodeUrl
+            });
         }
 
         [HttpGet("momo-return")]
@@ -39,25 +50,26 @@ namespace PaymentAPI.Controllers
         }
 
         [HttpPost("momo-return")]
-        public async Task<IActionResult> MomoNotify()
+        public async Task<IActionResult> MomoNotify(
+            [FromBody] Dictionary<string, JsonElement> payload)
         {
-            if (!Request.HasFormContentType)
-            {
-                return BadRequest(new { message = "Invalid MoMo callback payload." });
-            }
-
-            var values = Request.Form.ToDictionary(
+            var values = payload.ToDictionary(
                 item => item.Key,
-                item => item.Value,
+                item => JsonElementToString(item.Value),
                 StringComparer.OrdinalIgnoreCase);
 
-            var result = await _momoService.HandleMomoReturnAsync(new QueryCollection(values));
-            if (result.Status != "Success")
+            var result = await _momoService.HandleMomoReturnAsync(values);
+            if (string.IsNullOrEmpty(result.OrderId))
             {
                 return BadRequest(new { message = result.Status, orderId = result.OrderId });
             }
 
-            return Ok(new { message = "MoMo payment notification processed.", orderId = result.OrderId });
+            return Ok(new
+            {
+                message = "MoMo payment notification processed.",
+                orderId = result.OrderId,
+                status = result.Status
+            });
         }
 
         [HttpPost("confirm/{orderId}")]
@@ -88,22 +100,32 @@ namespace PaymentAPI.Controllers
 
         private async Task<IActionResult> HandleReturnAsync(IQueryCollection query)
         {
-            var frontendBaseUrl = _configuration["Frontend:BaseUrl"]?.TrimEnd('/')
-                                  ?? "http://localhost:5173";
+            var values = query.ToDictionary(
+                item => item.Key,
+                item => item.Value.ToString(),
+                StringComparer.OrdinalIgnoreCase);
+            var result = await _momoService.HandleMomoReturnAsync(values);
 
-            var result = await _momoService.HandleMomoReturnAsync(query);
-
-            if (result.Status != "Success" || string.IsNullOrEmpty(result.OrderId))
+            var status = result.Status == "Success" ? "success" : "cancelled";
+            if (result.ClientType == "mobile")
             {
-                if (!string.IsNullOrEmpty(result.OrderId))
-                {
-                    return Redirect($"{frontendBaseUrl}/my-bookings/{result.OrderId}?payment=cancelled");
-                }
-
-                return Redirect($"{frontendBaseUrl}/my-bookings?payment=cancelled");
+                return Redirect(
+                    $"stayhub://payment-result?orderId={result.OrderId}&status={status}&provider=momo");
             }
 
-            return Redirect($"{frontendBaseUrl}/my-bookings/{result.OrderId}?payment=success");
+            var frontendBaseUrl = _configuration["Frontend:BaseUrl"]?.TrimEnd('/')
+                                  ?? "http://localhost:5173";
+            return string.IsNullOrEmpty(result.OrderId)
+                ? Redirect($"{frontendBaseUrl}/my-bookings?payment={status}&provider=momo")
+                : Redirect(
+                    $"{frontendBaseUrl}/my-bookings/{result.OrderId}?payment={status}&provider=momo");
+        }
+
+        private static string JsonElementToString(JsonElement element)
+        {
+            return element.ValueKind == JsonValueKind.String
+                ? element.GetString() ?? string.Empty
+                : element.GetRawText();
         }
     }
 }
