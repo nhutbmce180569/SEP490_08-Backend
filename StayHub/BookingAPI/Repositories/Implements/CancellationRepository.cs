@@ -25,9 +25,15 @@ namespace BookingAPI.Repositories.Implements
             await _context.SaveChangesAsync();
         }
 
-        public async Task<(IEnumerable<CancellationRequest> Data, int Total)> GetAllCancellationRequestsAsync(string? status, int page, int pageSize)
+        public async Task<(IEnumerable<CancellationRequest> Data, int Total)> GetAllCancellationRequestsAsync(
+            IReadOnlyCollection<int> scheduleIds,
+            string? status,
+            int page,
+            int pageSize)
         {
-            var query = _context.CancellationRequests.AsQueryable();
+            var query = _context.CancellationRequests
+                .AsNoTracking()
+                .Where(r => r.Order != null && scheduleIds.Contains(r.Order.ScheduleId));
 
             if (!string.IsNullOrEmpty(status))
             {
