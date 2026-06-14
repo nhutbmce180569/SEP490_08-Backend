@@ -30,7 +30,8 @@ namespace PaymentAPI.Repositories.Implements
         {
             return await _context.Set<Transaction>()
                 .Where(t => t.OrderId == orderId && t.Provider == provider)
-                .OrderByDescending(t => t.Id)
+                .OrderByDescending(t => t.Status == "Success")
+                .ThenByDescending(t => t.Id)
                 .FirstOrDefaultAsync();
         }
 

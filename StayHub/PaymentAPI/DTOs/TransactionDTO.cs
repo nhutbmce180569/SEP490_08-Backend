@@ -25,6 +25,11 @@ namespace PaymentAPI.DTOs
         public string Provider { get; set; } = "VNPay";
         public string? ProviderTxnId { get; set; }
         public string? Status { get; set; } = "Pending";
+
+        [RegularExpression("^(web|mobile)$", ErrorMessage = "ClientType must be web or mobile")]
+        public string ClientType { get; set; } = "web";
+
+        public string? CustomerEmail { get; set; }
     }
 
     public class CreateTransactionDTO : BaseTransactionDTO

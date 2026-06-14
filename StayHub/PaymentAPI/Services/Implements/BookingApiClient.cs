@@ -1,70 +1,89 @@
+using System.Net.Http.Json;
+
 namespace PaymentAPI.Services.Implements
 {
     public class BookingApiClient : IBookingApiClient
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<BookingApiClient> _logger;
+        private readonly IConfiguration _configuration;
 
-        public BookingApiClient(HttpClient httpClient, ILogger<BookingApiClient> logger)
+        public BookingApiClient(
+            HttpClient httpClient,
+            ILogger<BookingApiClient> logger,
+            IConfiguration configuration)
         {
             _httpClient = httpClient;
             _logger = logger;
+            _configuration = configuration;
         }
 
-        public async Task<bool> MarkOrderPaidAsync(int orderId)
+        public Task<bool> MarkOrderPaidAsync(int orderId, string? customerEmail)
+        {
+            return ApplyPaymentResultAsync(orderId, true, customerEmail);
+        }
+
+        public Task<bool> CancelOrderAsync(int orderId)
+        {
+            return ApplyPaymentResultAsync(orderId, false, null);
+        }
+
+        private async Task<bool> ApplyPaymentResultAsync(
+            int orderId,
+            bool isSuccess,
+            string? customerEmail)
         {
             if (_httpClient.BaseAddress == null || orderId <= 0)
             {
                 return false;
             }
 
-            try
+            for (var attempt = 0; attempt < 3; attempt++)
             {
-                var response = await _httpClient.PatchAsync($"api/orders/{orderId}/mark-paid", null);
-                if (response.IsSuccessStatusCode)
+                try
                 {
-                    return true;
+                    using var request = new HttpRequestMessage(
+                        HttpMethod.Post,
+                        $"api/orders/{orderId}/internal-payment-result")
+                    {
+                        Content = JsonContent.Create(new
+                        {
+                            isSuccess,
+                            customerEmail
+                        })
+                    };
+                    request.Headers.TryAddWithoutValidation(
+                        "X-StayHub-Service-Key",
+                        _configuration["InternalService:Key"]);
+
+                    var response = await _httpClient.SendAsync(request);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return true;
+                    }
+
+                    _logger.LogWarning(
+                        "Failed to apply payment result for order {OrderId}. Attempt: {Attempt}. Status: {StatusCode}",
+                        orderId,
+                        attempt + 1,
+                        response.StatusCode);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(
+                        ex,
+                        "Error applying payment result for order {OrderId}. Attempt: {Attempt}",
+                        orderId,
+                        attempt + 1);
                 }
 
-                _logger.LogWarning(
-                    "Failed to mark order {OrderId} as paid. Status: {StatusCode}",
-                    orderId,
-                    response.StatusCode);
-                return false;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calling BookingAPI to mark order {OrderId} as paid", orderId);
-                return false;
-            }
-        }
-
-        public async Task<bool> CancelOrderAsync(int orderId)
-        {
-            if (_httpClient.BaseAddress == null || orderId <= 0)
-            {
-                return false;
-            }
-
-            try
-            {
-                var response = await _httpClient.PatchAsync($"api/orders/{orderId}/cancel", null);
-                if (response.IsSuccessStatusCode)
+                if (attempt < 2)
                 {
-                    return true;
+                    await Task.Delay(TimeSpan.FromMilliseconds(500 * (attempt + 1)));
                 }
+            }
 
-                _logger.LogWarning(
-                    "Failed to cancel order {OrderId}. Status: {StatusCode}",
-                    orderId,
-                    response.StatusCode);
-                return false;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calling BookingAPI to cancel order {OrderId}", orderId);
-                return false;
-            }
+            return false;
         }
     }
 }
