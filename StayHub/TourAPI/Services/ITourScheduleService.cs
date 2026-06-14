@@ -13,6 +13,7 @@ namespace TourAPI.Services
         Task<IEnumerable<ReadTourScheduleDTO>> GetSchedulesByIdsAsync(IEnumerable<int> scheduleIds);
         Task<PaginationDTO<ReadTourScheduleDTO>> SearchSchedulesByTourNameAsync(string tourName, int page, int pageSize);
         Task<PaginationDTO<ReadTourScheduleDTO>> GetSchedulesByCreatedByAsync(int userId, int page, int pageSize);
+        Task<List<int>> GetScheduleIdsByCreatedByAsync(int userId);
         Task<TourRouteDto> GetTourRouteAsync(int scheduleId);
     }
 }
