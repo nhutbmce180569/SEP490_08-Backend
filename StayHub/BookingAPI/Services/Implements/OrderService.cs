@@ -320,7 +320,10 @@ namespace BookingAPI.Services.Implements
                 return false;
             }
 
-            _backgroundJobService.EnqueueSendTicketsEmail(orderId, customerEmail);
+            if (!string.IsNullOrWhiteSpace(customerEmail))
+            {
+                _backgroundJobService.EnqueueSendTicketsEmail(orderId, customerEmail);
+            }
             await NotifyBookingPaidAsync(order);
 
             // After marking order as paid, automatically add customer to the schedule chat room
