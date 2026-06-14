@@ -3,6 +3,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace BookingAPI.DTOs
 {
+    public class InternalPaymentResultDTO
+    {
+        public bool IsSuccess { get; set; }
+        public string? CustomerEmail { get; set; }
+    }
+
     public class ReadOrderDTO
     {
         public int Id { get; set; }
