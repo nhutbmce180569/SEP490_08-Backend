@@ -62,7 +62,11 @@ namespace BookingAPI.Controllers
                 if (page <= 0) page = 1;
                 if (pageSize <= 0) pageSize = 5;
 
-                var result = await _cancellationService.GetCancellationRequestsAsync(status, page, pageSize);
+                var operatorId = GetCurrentUserId();
+                if (operatorId == null)
+                    return Unauthorized(new { message = M("AdminStaffIdentityCouldNotBeVerified") });
+
+                var result = await _cancellationService.GetCancellationRequestsAsync(operatorId.Value, status, page, pageSize);
 
                 return Ok(new
                 {
@@ -82,12 +86,20 @@ namespace BookingAPI.Controllers
         {
             try
             {
-                var result = await _cancellationService.GetCancellationRequestDetailsAsync(id);
+                var operatorId = GetCurrentUserId();
+                if (operatorId == null)
+                    return Unauthorized(new { message = M("AdminStaffIdentityCouldNotBeVerified") });
+
+                var result = await _cancellationService.GetCancellationRequestDetailsAsync(id, operatorId.Value);
                 return Ok(new
                 {
                     message = M("RetrievedCancellationRequestDetailsSuccessfully"),
                     data = result
                 });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -101,14 +113,11 @@ namespace BookingAPI.Controllers
         {
             try
             {
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int processedByUserId))
-                {
+                var operatorId = GetCurrentUserId();
+                if (operatorId == null)
                     return Unauthorized(new { message = M("AdminStaffIdentityCouldNotBeVerified") });
-                }
 
-                var result = await _cancellationService.ProcessCancellationRequestAsync(id, processedByUserId, dto);
+                var result = await _cancellationService.ProcessCancellationRequestAsync(id, operatorId.Value, dto);
 
                 return Ok(new
                 {
@@ -116,10 +125,20 @@ namespace BookingAPI.Controllers
                     data = result
                 });
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+            }
             catch (Exception ex)
             {
                 return BadRequest(new { message = ex.Message });
             }
+        }
+
+        private int? GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return int.TryParse(userIdClaim, out var userId) ? userId : null;
         }
     }
 }

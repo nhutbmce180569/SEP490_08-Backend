@@ -39,6 +39,10 @@ namespace PaymentAPI.Services.Implements
             var tmnCode = _config.TmnCode;
             var hashSecret = _config.HashSecret;
             var returnUrl = _config.ReturnUrl;
+            var clientType = NormalizeClientType(transactionDto.ClientType);
+            var paymentMetadata = BuildPaymentMetadata(
+                clientType,
+                transactionDto.CustomerEmail);
 
             var vnpayData = new SortedDictionary<string, string>
             {
@@ -50,7 +54,7 @@ namespace PaymentAPI.Services.Implements
                 { "vnp_CurrCode", "VND" },
                 { "vnp_IpAddr", ipAddress ?? "127.0.0.1" },
                 { "vnp_Locale", "en" },
-                { "vnp_OrderInfo", $"Thanh toan don hang {savedTransaction.OrderId}" },
+                { "vnp_OrderInfo", paymentMetadata },
                 { "vnp_OrderType", "other" },
                 { "vnp_ReturnUrl", returnUrl },
                 { "vnp_TxnRef", savedTransaction.Id.ToString() } // Dùng Transaction Id thay vì OrderId làm mã tham chiếu
@@ -87,19 +91,43 @@ namespace PaymentAPI.Services.Implements
             }
         }
 
-        public async Task<(string Status, string? OrderId)> HandleVnPayReturnAsync(IQueryCollection query, string rawQuery)
+        public async Task<PaymentCallbackResultDTO> HandleVnPayReturnAsync(
+            IQueryCollection query,
+            string rawQuery)
         {
-            if (!ValidateSignature(query, rawQuery)) return ("Invalid signature", null);
+            var metadata = ParsePaymentMetadata(query["vnp_OrderInfo"].ToString());
+            if (!ValidateSignature(query, rawQuery))
+            {
+                return new PaymentCallbackResultDTO
+                {
+                    Status = "Invalid signature",
+                    ClientType = metadata.ClientType
+                };
+            }
 
             var responseCode = query["vnp_ResponseCode"].ToString();
             var transactionStatus = query["vnp_TransactionStatus"].ToString();
             var txnRefStr = query["vnp_TxnRef"].ToString();
             var vnpTransactionNo = query["vnp_TransactionNo"].ToString();
 
-            if (!int.TryParse(txnRefStr, out int transactionId)) return ("Invalid transaction id", null);
+            if (!int.TryParse(txnRefStr, out int transactionId))
+            {
+                return new PaymentCallbackResultDTO
+                {
+                    Status = "Invalid transaction id",
+                    ClientType = metadata.ClientType
+                };
+            }
 
             var transaction = await _transactionRepository.GetByIdAsync(transactionId);
-            if (transaction == null) return ("Transaction not found", null);
+            if (transaction == null)
+            {
+                return new PaymentCallbackResultDTO
+                {
+                    Status = "Transaction not found",
+                    ClientType = metadata.ClientType
+                };
+            }
 
             transaction.ProviderTxnId = vnpTransactionNo;
 
@@ -107,7 +135,18 @@ namespace PaymentAPI.Services.Implements
             transaction.Status = (responseCode == "00" && transactionStatus == "00") ? "Success" : "Failed";
             await _transactionRepository.UpdateAsync(transaction);
 
-            return (transaction.Status, transaction.OrderId.ToString());
+            var orderUpdated = transaction.Status == "Success"
+                ? await _bookingApiClient.MarkOrderPaidAsync(
+                    transaction.OrderId,
+                    metadata.CustomerEmail)
+                : await _bookingApiClient.CancelOrderAsync(transaction.OrderId);
+
+            return new PaymentCallbackResultDTO
+            {
+                Status = transaction.Status,
+                OrderId = transaction.OrderId.ToString(),
+                ClientType = metadata.ClientType
+            };
         }
 
         public async Task<bool> ConfirmOrderPaymentAsync(int orderId)
@@ -118,7 +157,7 @@ namespace PaymentAPI.Services.Implements
                 return false;
             }
 
-            return await _bookingApiClient.MarkOrderPaidAsync(orderId);
+            return await _bookingApiClient.MarkOrderPaidAsync(orderId, null);
         }
 
         public async Task<bool> CancelOrderPaymentAsync(int orderId)
@@ -130,6 +169,53 @@ namespace PaymentAPI.Services.Implements
             }
 
             return await _bookingApiClient.CancelOrderAsync(orderId);
+        }
+
+        private static string BuildPaymentMetadata(
+            string clientType,
+            string? customerEmail)
+        {
+            var email = Convert.ToBase64String(
+                    Encoding.UTF8.GetBytes(customerEmail ?? string.Empty))
+                .TrimEnd('=')
+                .Replace('+', '-')
+                .Replace('/', '_');
+            return $"StayHub|{clientType}|{email}";
+        }
+
+        private static (string ClientType, string? CustomerEmail) ParsePaymentMetadata(
+            string orderInfo)
+        {
+            var parts = orderInfo.Split('|');
+            if (parts.Length != 3 || parts[0] != "StayHub")
+            {
+                return ("web", null);
+            }
+
+            var clientType = NormalizeClientType(parts[1]);
+            try
+            {
+                var base64 = parts[2].Replace('-', '+').Replace('_', '/');
+                base64 = base64.PadRight(
+                    base64.Length + ((4 - base64.Length % 4) % 4),
+                    '=');
+                var email = Encoding.UTF8.GetString(Convert.FromBase64String(base64));
+                return (clientType, string.IsNullOrWhiteSpace(email) ? null : email);
+            }
+            catch (FormatException)
+            {
+                return (clientType, null);
+            }
+        }
+
+        private static string NormalizeClientType(string? clientType)
+        {
+            return string.Equals(
+                clientType,
+                "mobile",
+                StringComparison.OrdinalIgnoreCase)
+                ? "mobile"
+                : "web";
         }
     }
 }

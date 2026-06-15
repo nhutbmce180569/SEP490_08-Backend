@@ -1,5 +1,4 @@
 using AutoMapper;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using PaymentAPI.DTOs;
 using PaymentAPI.Models;
@@ -38,134 +37,185 @@ namespace PaymentAPI.Services.Implements
             _logger = logger;
         }
 
-        public async Task<string> CreatePaymentUrlAsync(CreateTransactionDTO transactionDto)
+        public async Task<MomoPaymentDTO> CreatePaymentAsync(
+            CreateTransactionDTO transactionDto)
         {
             var transaction = _mapper.Map<Transaction>(transactionDto);
             transaction.Provider = ProviderName;
             transaction.Status = "Pending";
 
             var savedTransaction = await _transactionRepository.CreateAsync(transaction);
-
             var requestId = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
             var momoOrderId = $"STAYHUB-{savedTransaction.Id}-{requestId}";
             var orderInfo = $"Payment for StayHub order {savedTransaction.OrderId}";
-            var extraData = savedTransaction.Id.ToString();
+            var clientType = NormalizeClientType(transactionDto.ClientType);
+            var extraData = Convert.ToBase64String(
+                Encoding.UTF8.GetBytes(
+                    JsonSerializer.Serialize(new
+                    {
+                        transactionId = savedTransaction.Id,
+                        clientType,
+                        customerEmail = transactionDto.CustomerEmail
+                    })));
 
             var rawHash =
-                $"partnerCode={_config.PartnerCode}" +
-                $"&accessKey={_config.AccessKey}" +
-                $"&requestId={requestId}" +
+                $"accessKey={_config.AccessKey}" +
                 $"&amount={savedTransaction.Amount}" +
+                $"&extraData={extraData}" +
+                $"&ipnUrl={_config.IpnUrl}" +
                 $"&orderId={momoOrderId}" +
                 $"&orderInfo={orderInfo}" +
-                $"&returnUrl={_config.ReturnUrl}" +
-                $"&notifyUrl={_config.NotifyUrl}" +
-                $"&extraData={extraData}";
+                $"&partnerCode={_config.PartnerCode}" +
+                $"&redirectUrl={_config.RedirectUrl}" +
+                $"&requestId={requestId}" +
+                $"&requestType={_config.RequestType}";
 
             var requestBody = new
             {
-                accessKey = _config.AccessKey,
                 partnerCode = _config.PartnerCode,
                 requestType = _config.RequestType,
-                notifyUrl = _config.NotifyUrl,
-                returnUrl = _config.ReturnUrl,
+                ipnUrl = _config.IpnUrl,
+                redirectUrl = _config.RedirectUrl,
                 orderId = momoOrderId,
-                amount = savedTransaction.Amount.ToString(),
+                amount = savedTransaction.Amount,
                 orderInfo,
                 requestId,
                 extraData,
-                signature = HmacSHA256(_config.SecretKey, rawHash)
+                signature = HmacSHA256(_config.SecretKey, rawHash),
+                lang = "vi"
             };
 
-            using var response = await _httpClient.PostAsJsonAsync(_config.MomoApiUrl, requestBody);
+            using var response = await _httpClient.PostAsJsonAsync(
+                _config.MomoApiUrl,
+                requestBody);
             var responseContent = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
             {
-                savedTransaction.Status = "Failed";
-                await _transactionRepository.UpdateAsync(savedTransaction);
-
+                await MarkTransactionFailedAsync(savedTransaction);
                 _logger.LogWarning(
                     "MoMo create payment failed for transaction {TransactionId}. Status: {StatusCode}. Response: {Response}",
                     savedTransaction.Id,
                     response.StatusCode,
                     responseContent);
-
-                throw new InvalidOperationException("Could not create MoMo payment URL.");
+                throw new InvalidOperationException("Could not create MoMo payment.");
             }
 
             using var momoResponse = JsonDocument.Parse(responseContent);
-            if (momoResponse.RootElement.TryGetProperty("payUrl", out var payUrlElement))
+            var root = momoResponse.RootElement;
+            var resultCode = root.TryGetProperty("resultCode", out var resultCodeElement)
+                ? resultCodeElement.GetInt32()
+                : -1;
+
+            if (resultCode == 0 &&
+                root.TryGetProperty("payUrl", out var payUrlElement))
             {
                 var payUrl = payUrlElement.GetString();
                 if (!string.IsNullOrWhiteSpace(payUrl))
                 {
-                    return payUrl;
+                    return new MomoPaymentDTO
+                    {
+                        PaymentUrl = payUrl,
+                        Deeplink = GetOptionalString(root, "deeplink"),
+                        QrCodeUrl = GetOptionalString(root, "qrCodeUrl")
+                    };
                 }
             }
 
-            savedTransaction.Status = "Failed";
-            await _transactionRepository.UpdateAsync(savedTransaction);
-
+            await MarkTransactionFailedAsync(savedTransaction);
             _logger.LogWarning(
-                "MoMo response did not contain payUrl for transaction {TransactionId}. Response: {Response}",
+                "MoMo rejected transaction {TransactionId}. Response: {Response}",
                 savedTransaction.Id,
                 responseContent);
-
-            throw new InvalidOperationException("MoMo response did not contain a payment URL.");
+            throw new InvalidOperationException("MoMo did not accept the payment request.");
         }
 
-        public async Task<(string Status, string? OrderId)> HandleMomoReturnAsync(IQueryCollection query)
+        public async Task<PaymentCallbackResultDTO> HandleMomoReturnAsync(
+            IReadOnlyDictionary<string, string> values)
         {
-            if (!ValidateSignature(query))
+            var metadata = ParseExtraData(GetValue(values, "extraData"));
+            if (!ValidateSignature(values))
             {
-                return ("Invalid signature", null);
+                return new PaymentCallbackResultDTO
+                {
+                    Status = "Invalid signature",
+                    ClientType = metadata.ClientType
+                };
             }
 
-            var transactionIdText = query["extraData"].ToString();
-            if (!int.TryParse(transactionIdText, out var transactionId))
+            if (metadata.TransactionId <= 0)
             {
-                return ("Invalid transaction id", null);
+                return new PaymentCallbackResultDTO
+                {
+                    Status = "Invalid transaction id",
+                    ClientType = metadata.ClientType
+                };
             }
 
-            var transaction = await _transactionRepository.GetByIdAsync(transactionId);
+            var transaction =
+                await _transactionRepository.GetByIdAsync(metadata.TransactionId);
             if (transaction == null)
             {
-                return ("Transaction not found", null);
+                return new PaymentCallbackResultDTO
+                {
+                    Status = "Transaction not found",
+                    ClientType = metadata.ClientType
+                };
             }
 
-            if (!string.Equals(transaction.Provider, ProviderName, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(
+                    transaction.Provider,
+                    ProviderName,
+                    StringComparison.OrdinalIgnoreCase))
             {
-                return ("Invalid provider", transaction.OrderId.ToString());
+                return new PaymentCallbackResultDTO
+                {
+                    Status = "Invalid provider",
+                    OrderId = transaction.OrderId.ToString(),
+                    ClientType = metadata.ClientType
+                };
             }
 
-            var resultCode = query["resultCode"].ToString();
-            if (string.IsNullOrWhiteSpace(resultCode))
-            {
-                resultCode = query["errorCode"].ToString();
-            }
-
-            transaction.ProviderTxnId = query["transId"].ToString();
-            transaction.Status = resultCode == "0" ? "Success" : "Failed";
+            transaction.ProviderTxnId = GetValue(values, "transId");
+            transaction.Status = GetValue(values, "resultCode") == "0"
+                ? "Success"
+                : "Failed";
             await _transactionRepository.UpdateAsync(transaction);
 
-            return (transaction.Status, transaction.OrderId.ToString());
+            var orderUpdated = transaction.Status == "Success"
+                ? await _bookingApiClient.MarkOrderPaidAsync(
+                    transaction.OrderId,
+                    metadata.CustomerEmail)
+                : await _bookingApiClient.CancelOrderAsync(transaction.OrderId);
+
+            return new PaymentCallbackResultDTO
+            {
+                Status = transaction.Status,
+                OrderId = transaction.OrderId.ToString(),
+                ClientType = metadata.ClientType
+            };
         }
 
         public async Task<bool> ConfirmOrderPaymentAsync(int orderId)
         {
-            var transaction = await _transactionRepository.GetByOrderIdAndProviderAsync(orderId, ProviderName);
+            var transaction =
+                await _transactionRepository.GetByOrderIdAndProviderAsync(
+                    orderId,
+                    ProviderName);
             if (transaction == null || transaction.Status != "Success")
             {
                 return false;
             }
 
-            return await _bookingApiClient.MarkOrderPaidAsync(orderId);
+            return await _bookingApiClient.MarkOrderPaidAsync(orderId, null);
         }
 
         public async Task<bool> CancelOrderPaymentAsync(int orderId)
         {
-            var transaction = await _transactionRepository.GetByOrderIdAndProviderAsync(orderId, ProviderName);
+            var transaction =
+                await _transactionRepository.GetByOrderIdAndProviderAsync(
+                    orderId,
+                    ProviderName);
             if (transaction?.Status == "Success")
             {
                 return false;
@@ -174,46 +224,101 @@ namespace PaymentAPI.Services.Implements
             return await _bookingApiClient.CancelOrderAsync(orderId);
         }
 
-        private bool ValidateSignature(IQueryCollection query)
+        private bool ValidateSignature(IReadOnlyDictionary<string, string> values)
         {
-            var partnerCode = query["partnerCode"].ToString();
-            var requestId = query["requestId"].ToString();
-            var amount = query["amount"].ToString();
-            var orderId = query["orderId"].ToString();
-            var orderInfo = query["orderInfo"].ToString();
-            var orderType = query["orderType"].ToString();
-            var transId = query["transId"].ToString();
-            var message = query["message"].ToString();
-            var localMessage = query["localMessage"].ToString();
-            var responseTime = query["responseTime"].ToString();
-            var resultCode = query["resultCode"].ToString();
-            if (string.IsNullOrWhiteSpace(resultCode))
-            {
-                resultCode = query["errorCode"].ToString();
-            }
-
-            var payType = query["payType"].ToString();
-            var extraData = query["extraData"].ToString();
-            var momoSignature = query["signature"].ToString();
-
             var rawHash =
-                $"partnerCode={partnerCode}" +
-                $"&accessKey={_config.AccessKey}" +
-                $"&requestId={requestId}" +
-                $"&amount={amount}" +
-                $"&orderId={orderId}" +
-                $"&orderInfo={orderInfo}" +
-                $"&orderType={orderType}" +
-                $"&transId={transId}" +
-                $"&message={message}" +
-                $"&localMessage={localMessage}" +
-                $"&responseTime={responseTime}" +
-                $"&errorCode={resultCode}" +
-                $"&payType={payType}" +
-                $"&extraData={extraData}";
+                $"accessKey={_config.AccessKey}" +
+                $"&amount={GetValue(values, "amount")}" +
+                $"&extraData={GetValue(values, "extraData")}" +
+                $"&message={GetValue(values, "message")}" +
+                $"&orderId={GetValue(values, "orderId")}" +
+                $"&orderInfo={GetValue(values, "orderInfo")}" +
+                $"&orderType={GetValue(values, "orderType")}" +
+                $"&partnerCode={GetValue(values, "partnerCode")}" +
+                $"&payType={GetValue(values, "payType")}" +
+                $"&requestId={GetValue(values, "requestId")}" +
+                $"&responseTime={GetValue(values, "responseTime")}" +
+                $"&resultCode={GetValue(values, "resultCode")}" +
+                $"&transId={GetValue(values, "transId")}";
 
             var computedSignature = HmacSHA256(_config.SecretKey, rawHash);
-            return computedSignature.Equals(momoSignature, StringComparison.OrdinalIgnoreCase);
+            return computedSignature.Equals(
+                GetValue(values, "signature"),
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private async Task MarkTransactionFailedAsync(Transaction transaction)
+        {
+            transaction.Status = "Failed";
+            await _transactionRepository.UpdateAsync(transaction);
+        }
+
+        private static string GetValue(
+            IReadOnlyDictionary<string, string> values,
+            string key)
+        {
+            return values.TryGetValue(key, out var value) ? value : string.Empty;
+        }
+
+        private static string? GetOptionalString(
+            JsonElement root,
+            string propertyName)
+        {
+            return root.TryGetProperty(propertyName, out var element)
+                ? element.GetString()
+                : null;
+        }
+
+        private static (
+            int TransactionId,
+            string ClientType,
+            string? CustomerEmail) ParseExtraData(string extraData)
+        {
+            if (int.TryParse(extraData, out var legacyTransactionId))
+            {
+                return (legacyTransactionId, "web", null);
+            }
+
+            try
+            {
+                var json = Encoding.UTF8.GetString(Convert.FromBase64String(extraData));
+                using var document = JsonDocument.Parse(json);
+                var root = document.RootElement;
+                var transactionId =
+                    root.TryGetProperty("transactionId", out var idElement) &&
+                    idElement.TryGetInt32(out var parsedId)
+                        ? parsedId
+                        : 0;
+                var clientType = root.TryGetProperty(
+                    "clientType",
+                    out var clientTypeElement)
+                    ? NormalizeClientType(clientTypeElement.GetString())
+                    : "web";
+                var customerEmail = root.TryGetProperty(
+                    "customerEmail",
+                    out var emailElement)
+                    ? emailElement.GetString()
+                    : null;
+                return (transactionId, clientType, customerEmail);
+            }
+            catch (FormatException)
+            {
+                return (0, "web", null);
+            }
+            catch (JsonException)
+            {
+                return (0, "web", null);
+            }
+        }
+
+        private static string NormalizeClientType(string? clientType)
+        {
+            return string.Equals(
+                clientType,
+                "mobile",
+                StringComparison.OrdinalIgnoreCase)
+                ? "mobile"
+                : "web";
         }
 
         private static string HmacSHA256(string key, string rawData)
@@ -224,7 +329,7 @@ namespace PaymentAPI.Services.Implements
             using var hmac = new HMACSHA256(keyBytes);
             var hash = hmac.ComputeHash(rawBytes);
 
-            return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+            return Convert.ToHexString(hash).ToLowerInvariant();
         }
     }
 }

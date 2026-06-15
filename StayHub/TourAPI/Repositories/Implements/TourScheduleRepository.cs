@@ -71,6 +71,15 @@ namespace TourAPI.Repositories.Implements
                 .ToListAsync();
         }
 
+        public async Task<List<int>> GetIdsByCreatedByAsync(int userId)
+        {
+            return await _context.TourSchedules
+                .AsNoTracking()
+                .Where(ts => ts.Tour.CreatedBy == userId)
+                .Select(ts => ts.Id)
+                .ToListAsync();
+        }
+
         public async Task<int> CountByCreatedByAsync(int userId)
         {
             return await _context.TourSchedules

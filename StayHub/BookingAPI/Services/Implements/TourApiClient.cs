@@ -48,6 +48,24 @@ namespace BookingAPI.Services.Implements
             }
         }
 
+        public async Task<IReadOnlyCollection<int>> GetManagedScheduleIdsAsync(int operatorId)
+        {
+            if (operatorId <= 0)
+            {
+                throw new UnauthorizedAccessException("Operator identity could not be verified.");
+            }
+
+            if (_httpClient.BaseAddress == null)
+            {
+                throw new InvalidOperationException("Tour API base address is not configured.");
+            }
+
+            using var response = await _httpClient.GetAsync("api/tourschedules/my/ids");
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content.ReadFromJsonAsync<List<int>>() ?? new List<int>();
+        }
+
         public async Task<ReadOrderScheduleTicketDTO?> GetScheduleTicketByIdAsync(int tourScheduleTicketId)
         {
             if (tourScheduleTicketId <= 0 || _httpClient.BaseAddress == null)
