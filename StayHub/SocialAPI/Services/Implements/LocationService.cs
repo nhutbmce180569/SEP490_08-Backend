@@ -21,19 +21,22 @@ namespace SocialAPI.Services.Implements
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IHubContext<FriendshipHub> _hubContext;
         private readonly IHubContext<TrackingHub> _trackingHubContext;
+        private readonly IAuthApiClient _authApiClient;
 
         public LocationService(
             StayHubSocialDbContext context,
             IConnectionMultiplexer redis,
             IHttpClientFactory httpClientFactory,
             IHubContext<FriendshipHub> hubContext,
-            IHubContext<TrackingHub> trackingHubContext)
+            IHubContext<TrackingHub> trackingHubContext,
+            IAuthApiClient authApiClient)
         {
             _context = context;
             _redis = redis;
             _httpClientFactory = httpClientFactory;
             _hubContext = hubContext;
             _trackingHubContext = trackingHubContext;
+            _authApiClient = authApiClient;
         }
 
         public async Task PingLocationAsync(int currentUserId, LocationPingDto dto)
@@ -134,99 +137,59 @@ namespace SocialAPI.Services.Implements
             }
         }
 
-        public async Task<IEnumerable<FriendLocationResponseDto>> GetLiveScheduleLocationsAsync(int scheduleId)
+        public async Task<IEnumerable<LiveScheduleMemberLocationDto>> GetLiveScheduleLocationsAsync(
+              int scheduleId)
         {
-            if (scheduleId <= 0)
-            {
-                return new List<FriendLocationResponseDto>();
-            }
+            if (scheduleId <= 0) return [];
 
             var db = _redis.GetDatabase();
-            var scheduleLiveKey = $"schedule_live_{scheduleId}";
-            var members = await db.SetMembersAsync(scheduleLiveKey);
+            var members = await db.SetMembersAsync($"schedule_live_{scheduleId}");
+            if (members is not { Length: > 0 }) return [];
 
-            if (members == null || members.Length == 0)
+            var onlineUserIds = members
+                .Select(m => int.TryParse(m.ToString(), out var id) ? id : -1)
+                .Where(id => id > 0)
+                .ToList();
+
+            if (!onlineUserIds.Any()) return [];
+
+            // ✅ Batch lấy tất cả tọa độ từ Redis song song
+            var redisKeys = onlineUserIds
+                .Select(id => (RedisKey)$"live_loc_{id}")
+                .ToArray();
+            var redisValues = await db.StringGetAsync(redisKeys);
+
+            var liveLocations = new List<LiveScheduleMemberLocationDto>();
+            for (var i = 0; i < onlineUserIds.Count; i++)
             {
-                return new List<FriendLocationResponseDto>();
-            }
-
-            var liveLocations = new List<FriendLocationResponseDto>();
-            var onlineUserIds = new List<int>();
-
-            foreach (var member in members)
-            {
-                if (int.TryParse(member.ToString(), out var userId))
-                {
-                    onlineUserIds.Add(userId);
-                }
-            }
-
-            foreach (var userId in onlineUserIds)
-            {
-                var redisKey = $"live_loc_{userId}";
-                var redisValue = await db.StringGetAsync(redisKey);
-                if (!redisValue.HasValue)
-                {
-                    continue;
-                }
-
+                if (!redisValues[i].HasValue) continue;
                 try
                 {
-                    using var doc = JsonDocument.Parse((string)redisValue);
+                    using var doc = JsonDocument.Parse(redisValues[i].ToString());
                     var root = doc.RootElement;
-                    var lat = root.GetProperty("lat").GetDouble();
-                    var lng = root.GetProperty("lng").GetDouble();
-                    var lastUpdated = root.GetProperty("lastUpdated").GetDateTime();
-
-                    liveLocations.Add(new FriendLocationResponseDto
+                    liveLocations.Add(new LiveScheduleMemberLocationDto
                     {
-                        UserId = userId,
-                        Lat = lat,
-                        Lng = lng,
-                        LastUpdated = lastUpdated
+                        UserId = onlineUserIds[i],
+                        Lat = root.GetProperty("lat").GetDouble(),
+                        Lng = root.GetProperty("lng").GetDouble(),
+                        LastUpdated = root.GetProperty("lastUpdated").GetDateTime()
                     });
                 }
-                catch
-                {
-                    // Ignore malformed Redis entries
-                }
+                catch { /* bỏ qua dữ liệu lỗi */ }
             }
 
-            if (!liveLocations.Any())
-            {
-                return new List<FriendLocationResponseDto>();
-            }
+            if (!liveLocations.Any()) return [];
 
-            var userProfiles = new Dictionary<int, UserProfileShortDto>();
-            try
-            {
-                using var client = _httpClientFactory.CreateClient();
-                var response = await client.PostAsJsonAsync("https://localhost:7001/api/users/batch", onlineUserIds);
-                if (response.IsSuccessStatusCode)
-                {
-                    var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                    if (apiResult?.Data != null)
-                    {
-                        userProfiles = apiResult.Data.ToDictionary(u => u.Id, u => u);
-                    }
-                }
-            }
-            catch
-            {
-                // Ignore if AuthAPI is unavailable
-            }
+            // ✅ Gọi AuthApiClient
+            var userProfiles = await _authApiClient.GetUserProfilesAsync(
+                liveLocations.Select(l => l.UserId));
 
-            foreach (var location in liveLocations)
+            foreach (var loc in liveLocations)
             {
-                if (userProfiles.TryGetValue(location.UserId, out var profile))
-                {
-                    location.FullName = profile.FullName ?? "Anonymous";
-                    location.AvatarUrl = profile.AvatarUrl;
-                }
-                else
-                {
-                    location.FullName = "Anonymous";
-                }
+                loc.FullName = userProfiles.TryGetValue(loc.UserId, out var p)
+                    ? p.FullName ?? "Anonymous"
+                    : "Anonymous";
+                loc.AvatarUrl = userProfiles.GetValueOrDefault(loc.UserId)?.AvatarUrl;
             }
 
             return liveLocations;
@@ -365,7 +328,7 @@ namespace SocialAPI.Services.Implements
                 return new FriendLocationResponseDto
                 {
                     UserId = userId,
-                    FullName = "Anonymous user", // Tối ưu: Không gọi AuthAPI cho tính năng public để giảm tải
+                    FullName = "Anonymous user", 
                     AvatarUrl = null,
                     Lat = lat,
                     Lng = lng,

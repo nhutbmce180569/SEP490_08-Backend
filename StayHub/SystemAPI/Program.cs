@@ -100,6 +100,20 @@ namespace SystemAPI
 
                     ClockSkew = TimeSpan.Zero
                 };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                        {
+                            context.Token = accessToken;
+                        }
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
             builder.Services.AddCors(options =>
@@ -109,9 +123,8 @@ namespace SystemAPI
                     policy
                         .WithOrigins("http://localhost:5173")
                         .AllowAnyHeader()
-                        .AllowAnyMethod();
-                    // Nếu request có cookie/session thì mới thêm:
-                    // .AllowCredentials();
+                        .AllowAnyMethod()
+                        .AllowCredentials();
                 });
             });
 
@@ -134,11 +147,9 @@ namespace SystemAPI
             }
 
             app.UseHttpsRedirection();
-            app.UseCors("FrontendDev");
+            app.UseCors("FrontendDev");    // ← CORS trước
             app.UseStayHubLocalization();
-
-            app.UseRouting();
-            app.UseAuthentication();
+            app.UseAuthentication();       // ← Auth trước Authorization
             app.UseAuthorization();
             app.MapControllers();
             app.MapHub<NotificationHub>("/hubs/notifications");

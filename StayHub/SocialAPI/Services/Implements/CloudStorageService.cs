@@ -27,7 +27,7 @@ public class CloudStorageService : ICloudStorageService
         var uploadParams = new ImageUploadParams
         {
             File = new FileDescription(file.FileName, stream),
-            Folder = folderName, // 👈 Chỉ định thư mục lưu trữ trên Cloudinary
+            Folder = folderName,
             Transformation = new Transformation().Quality("auto").FetchFormat("auto")
         };
 

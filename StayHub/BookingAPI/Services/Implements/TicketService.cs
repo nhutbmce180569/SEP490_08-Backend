@@ -40,14 +40,16 @@ namespace BookingAPI.Services.Implements
             if (ticket.OrderDetail?.Order == null)
                 throw new InvalidOperationException("Ticket data error: corresponding order not found.");
 
+            if (ticket.OrderDetail.Order.Status != "Paid")
+                throw new InvalidOperationException(
+                    $"This ticket's order has not been paid yet. Current status: {ticket.OrderDetail.Order.Status}.");
+
             var scheduleId = ticket.OrderDetail.Order.ScheduleId;
 
-            // 4. Gọi TourAPI lấy thông tin lịch trình để kiểm tra ngày khởi hành
             var schedule = await _tourApiClient.GetScheduleByIdAsync(scheduleId);
             if (schedule == null)
                 throw new KeyNotFoundException($"Schedule information for ID {scheduleId} not found.");
 
-            // Chuyển tất cả về DateOnly để so sánh cho chính xác (bỏ qua giờ phút giây)
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
             var departureDate = DateOnly.FromDateTime(schedule.DepartureDate);
 
@@ -64,8 +66,6 @@ namespace BookingAPI.Services.Implements
 
             // 6. Cập nhật vé
             ticket.CheckInStatus = "CheckedIn";
-            // Nếu entity Ticket của bạn có trường CheckInTime (kiểu DateTime?), hãy mở comment dòng dưới:
-            // ticket.CheckInTime = DateTime.UtcNow; 
 
             await _ticketRepository.UpdateAsync(ticket);
 
