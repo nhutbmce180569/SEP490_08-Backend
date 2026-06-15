@@ -6,7 +6,9 @@ namespace PaymentAPI.Services
     public interface IVnPayService
     {
         Task<string> CreatePaymentUrl(CreateTransactionDTO transactionDto, string? ipAddress);
-        Task<(string Status, string? OrderId)> HandleVnPayReturnAsync(IQueryCollection query, string rawQuery);
+        Task<PaymentCallbackResultDTO> HandleVnPayReturnAsync(
+            IQueryCollection query,
+            string rawQuery);
         Task<bool> ConfirmOrderPaymentAsync(int orderId);
         Task<bool> CancelOrderPaymentAsync(int orderId);
     }
