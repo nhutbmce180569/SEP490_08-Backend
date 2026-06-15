@@ -137,7 +137,7 @@ namespace SocialAPI.Services.Implements
             }
         }
 
-        public async Task<IEnumerable<FriendLocationResponseDto>> GetLiveScheduleLocationsAsync(
+        public async Task<IEnumerable<LiveScheduleMemberLocationDto>> GetLiveScheduleLocationsAsync(
               int scheduleId)
         {
             if (scheduleId <= 0) return [];
@@ -159,7 +159,7 @@ namespace SocialAPI.Services.Implements
                 .ToArray();
             var redisValues = await db.StringGetAsync(redisKeys);
 
-            var liveLocations = new List<FriendLocationResponseDto>();
+            var liveLocations = new List<LiveScheduleMemberLocationDto>();
             for (var i = 0; i < onlineUserIds.Count; i++)
             {
                 if (!redisValues[i].HasValue) continue;
@@ -167,7 +167,7 @@ namespace SocialAPI.Services.Implements
                 {
                     using var doc = JsonDocument.Parse(redisValues[i].ToString());
                     var root = doc.RootElement;
-                    liveLocations.Add(new FriendLocationResponseDto
+                    liveLocations.Add(new LiveScheduleMemberLocationDto
                     {
                         UserId = onlineUserIds[i],
                         Lat = root.GetProperty("lat").GetDouble(),
@@ -328,7 +328,7 @@ namespace SocialAPI.Services.Implements
                 return new FriendLocationResponseDto
                 {
                     UserId = userId,
-                    FullName = "Anonymous user", // Tối ưu: Không gọi AuthAPI cho tính năng public để giảm tải
+                    FullName = "Anonymous user", 
                     AvatarUrl = null,
                     Lat = lat,
                     Lng = lng,

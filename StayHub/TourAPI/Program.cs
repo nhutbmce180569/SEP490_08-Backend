@@ -97,6 +97,11 @@ namespace TourAPI
             builder.Services.AddScoped<ICustomerAnalyticsService, CustomerAnalyticsService>();
             builder.Services.AddScoped<IPlatformCatalogRepository, PlatformCatalogRepository>();
             builder.Services.AddScoped<IPlatformAnalyticsService, PlatformAnalyticsService>();
+            builder.Services.AddHttpClient<IBookingApiClient, BookingApiClient>(client =>
+            {
+                client.BaseAddress = new Uri(builder.Configuration["BookingApi:BaseUrl"]
+                    ?? "https://localhost:7002/");
+            });
             builder.Services.AddHttpClient<IPlatformAnalyticsClients, PlatformAnalyticsClients>(client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(15);

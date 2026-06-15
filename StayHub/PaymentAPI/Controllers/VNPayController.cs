@@ -5,6 +5,8 @@ using StayHub.Common.Controllers;
 using StayHub.Common.Resources;
 using PaymentAPI.DTOs;
 using PaymentAPI.Services;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace PaymentAPI.Controllers
 {
@@ -26,6 +28,10 @@ namespace PaymentAPI.Controllers
         public async Task<ActionResult<string>> CreatePayment([FromBody] CreateTransactionDTO transactionDto)
         {
             if (transactionDto.Amount <= 0) return BadRequest("Invalid amount");
+            transactionDto.CustomerEmail =
+                User.FindFirst(JwtRegisteredClaimNames.Email)?.Value
+                ?? User.FindFirst(ClaimTypes.Email)?.Value
+                ?? User.FindFirst("email")?.Value;
 
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.MapToIPv4()?.ToString()
                             ?? HttpContext.Connection.RemoteIpAddress?.ToString();
@@ -39,22 +45,8 @@ namespace PaymentAPI.Controllers
         {
             var query = Request.Query;
             string rawQuery = Request.QueryString.Value ?? string.Empty;
-            var frontendBaseUrl = _configuration["Frontend:BaseUrl"]?.TrimEnd('/')
-                                  ?? "http://localhost:5173";
-
             var result = await _vnPayService.HandleVnPayReturnAsync(query, rawQuery);
-
-            if (result.Status != "Success" || string.IsNullOrEmpty(result.OrderId))
-            {
-                if (!string.IsNullOrEmpty(result.OrderId))
-                {
-                    return Redirect($"{frontendBaseUrl}/my-bookings/{result.OrderId}?payment=cancelled");
-                }
-
-                return Redirect($"{frontendBaseUrl}/my-bookings?payment=cancelled");
-            }
-
-            return Redirect($"{frontendBaseUrl}/my-bookings/{result.OrderId}?payment=success");
+            return RedirectToClient(result, "vnpay");
         }
 
         /// <summary>
@@ -84,6 +76,25 @@ namespace PaymentAPI.Controllers
             }
 
             return Ok(new { message = M("OrderCancelledDueToPaymentCancellation"), orderId });
+        }
+
+        private IActionResult RedirectToClient(
+            PaymentCallbackResultDTO result,
+            string provider)
+        {
+            var status = result.Status == "Success" ? "success" : "cancelled";
+            if (result.ClientType == "mobile")
+            {
+                return Redirect(
+                    $"stayhub://payment-result?orderId={result.OrderId}&status={status}&provider={provider}");
+            }
+
+            var frontendBaseUrl = _configuration["Frontend:BaseUrl"]?.TrimEnd('/')
+                                  ?? "http://localhost:5173";
+            return string.IsNullOrEmpty(result.OrderId)
+                ? Redirect($"{frontendBaseUrl}/my-bookings?payment={status}&provider={provider}")
+                : Redirect(
+                    $"{frontendBaseUrl}/my-bookings/{result.OrderId}?payment={status}&provider={provider}");
         }
     }
 }

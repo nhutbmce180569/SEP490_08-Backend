@@ -1,5 +1,4 @@
 ﻿using System.Security.Claims;
-using System.IdentityModel.Tokens.Jwt;
 using BookingAPI.DTOs;
 using BookingAPI.Exceptions;
 using BookingAPI.Services;
@@ -9,6 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using StayHub.Common.Controllers;
 using StayHub.Common.Resources;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace BookingAPI.Controllers
 {
@@ -148,28 +149,6 @@ namespace BookingAPI.Controllers
             return Ok(new { message = M("OrdersRetrievedSuccessfully"), data = result });
         }
 
-        [HttpPatch("{id}/mark-paid")]
-        [Authorize]
-        public async Task<IActionResult> MarkOrderPaid(int id)
-        {
-            var customerEmail = User.FindFirst(JwtRegisteredClaimNames.Email)?.Value
-                                ?? User.FindFirst(ClaimTypes.Email)?.Value
-                                ?? User.FindFirst("email")?.Value;
-
-            if (string.IsNullOrWhiteSpace(customerEmail))
-            {
-                return Unauthorized(new { message = M("InvalidTokenClaimsEmailNotFound") });
-            }
-
-            var updated = await _orderService.MarkOrderPaidAsync(id, customerEmail);
-            if (!updated)
-            {
-                return NotFound(new { message = $"Order with ID {id} not found." });
-            }
-
-            return Ok(new { message = M("OrderMarkedAsPaid"), orderId = id });
-        }
-
         [HttpPatch("{id}/cancel")]
         [Authorize]
         public async Task<IActionResult> CancelOrder(int id)
@@ -181,6 +160,74 @@ namespace BookingAPI.Controllers
             }
 
             return Ok(new { message = M("OrderCancelled"), orderId = id });
+        }
+
+        [HttpGet("schedules/{scheduleId}/has-orders")]
+        [AllowAnonymous] // Internal call từ TourAPI, không cần user token
+        public async Task<IActionResult> CheckScheduleHasOrders(int scheduleId)
+        {
+            if (scheduleId <= 0)
+                return BadRequest(new { message = "Invalid scheduleId." });
+
+            // Dùng lại CheckBookingAsync đã có sẵn trong service
+            var hasOrders = await _orderService.CheckBookingAsync(new CheckBookingTour
+            {
+                ScheduleIds = new List<int> { scheduleId }
+            });
+
+            return Ok(new
+            {
+                hasOrders,
+                scheduleId
+            });
+        }
+
+        [HttpPost("{id}/internal-payment-result")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ApplyInternalPaymentResult(
+            int id,
+            [FromBody] InternalPaymentResultDTO request,
+            [FromServices] IConfiguration configuration)
+        {
+            var configuredKey = configuration["InternalService:Key"];
+            var providedKey = Request.Headers["X-StayHub-Service-Key"].ToString();
+            if (!KeysMatch(configuredKey, providedKey))
+            {
+                return Unauthorized(new { message = "Invalid internal service key." });
+            }
+
+            var updated = request.IsSuccess
+                ? await _orderService.MarkOrderPaidAsync(
+                    id,
+                    request.CustomerEmail ?? string.Empty)
+                : await _orderService.CancelOrderAsync(id);
+
+            if (!updated)
+            {
+                return BadRequest(new { message = "Order payment result could not be applied." });
+            }
+
+            return Ok(new
+            {
+                orderId = id,
+                status = request.IsSuccess ? "Paid" : "Cancelled"
+            });
+        }
+
+        private static bool KeysMatch(string? configuredKey, string? providedKey)
+        {
+            if (string.IsNullOrWhiteSpace(configuredKey) ||
+                string.IsNullOrWhiteSpace(providedKey))
+            {
+                return false;
+            }
+
+            var configuredBytes = Encoding.UTF8.GetBytes(configuredKey);
+            var providedBytes = Encoding.UTF8.GetBytes(providedKey);
+            return configuredBytes.Length == providedBytes.Length &&
+                   CryptographicOperations.FixedTimeEquals(
+                       configuredBytes,
+                       providedBytes);
         }
     }
 }
