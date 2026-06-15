@@ -16,6 +16,7 @@ namespace TourAPI.Services.Implements
         private readonly IMapper _mapper;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IBookingApiClient _bookingApiClient;
         private readonly ILogger<TourScheduleService> _logger;
 
         public TourScheduleService(
@@ -24,6 +25,7 @@ namespace TourAPI.Services.Implements
             ITourRepository tourRepo,
             IHttpClientFactory httpClientFactory,
             IHttpContextAccessor httpContextAccessor,
+            IBookingApiClient bookingApiClient,
             ILogger<TourScheduleService> logger)
         {
             _scheduleRepo = scheduleRepo;
@@ -31,6 +33,7 @@ namespace TourAPI.Services.Implements
             _mapper = mapper;
             _httpClientFactory = httpClientFactory;
             _httpContextAccessor = httpContextAccessor;
+            _bookingApiClient = bookingApiClient;
             _logger = logger;
         }
 
@@ -156,6 +159,10 @@ namespace TourAPI.Services.Implements
         }
         public async Task<ReadTourScheduleDTO> UpdateScheduleAsync(int id, UpdateTourScheduleDTO dto)
         {
+            var hasOrders = await _bookingApiClient.HasOrdersForScheduleAsync(id);
+            if (hasOrders)
+                throw new InvalidOperationException("Cannot update this schedule because it already has active orders.");
+
             if (dto.DepartureDate >= dto.ReturnDate)
             {
                 throw new Exception("Departure date must be before the return date.");
@@ -175,6 +182,9 @@ namespace TourAPI.Services.Implements
 
         public async Task DeleteScheduleAsync(int id)
         {
+            var hasOrders = await _bookingApiClient.HasOrdersForScheduleAsync(id);
+            if (hasOrders)
+                throw new InvalidOperationException("Cannot delete this schedule because it already has active orders.");
             var schedule = await _scheduleRepo.GetByIdAsync(id);
             if (schedule == null) throw new Exception("Tour schedule not found.");
 

@@ -44,6 +44,14 @@ namespace SocialAPI
             builder.Services.AddStayHubLocalization();
             builder.Services.AddScoped<IChatRepository, ChatRepository>();
             builder.Services.AddScoped<IChatService, ChatService>();
+            builder.Services.AddHttpClient<IAuthApiClient, AuthApiClient>(client =>
+            {
+                var authApiBaseUrl = builder.Configuration["AuthApi:BaseUrl"] ?? "https://localhost:7001";
+                if (!string.IsNullOrWhiteSpace(authApiBaseUrl))
+                {
+                    client.BaseAddress = new Uri(authApiBaseUrl.TrimEnd('/') + "/");
+                }
+            });
             builder.Services.AddFluentValidationAutoValidation();
             builder.Services.AddFluentValidationClientsideAdapters();
             builder.Services.AddValidatorsFromAssemblyContaining<Program>();
@@ -181,7 +189,7 @@ namespace SocialAPI
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-            app.MapHub<ChatHub>("/hubs/chat");
+         
             app.UseHttpsRedirection();
 
             app.UseCors("AllowSignalR");
@@ -191,6 +199,7 @@ namespace SocialAPI
             app.UseAuthorization();
 
             app.MapControllers();
+            app.MapHub<ChatHub>("/hubs/chat");
             app.MapHub<FriendshipHub>("/hubs/friendship");
             app.MapHub<TrackingHub>("/hubs/tracking");
 

@@ -162,6 +162,26 @@ namespace BookingAPI.Controllers
             return Ok(new { message = M("OrderCancelled"), orderId = id });
         }
 
+        [HttpGet("schedules/{scheduleId}/has-orders")]
+        [AllowAnonymous] // Internal call từ TourAPI, không cần user token
+        public async Task<IActionResult> CheckScheduleHasOrders(int scheduleId)
+        {
+            if (scheduleId <= 0)
+                return BadRequest(new { message = "Invalid scheduleId." });
+
+            // Dùng lại CheckBookingAsync đã có sẵn trong service
+            var hasOrders = await _orderService.CheckBookingAsync(new CheckBookingTour
+            {
+                ScheduleIds = new List<int> { scheduleId }
+            });
+
+            return Ok(new
+            {
+                hasOrders,
+                scheduleId
+            });
+        }
+
         [HttpPost("{id}/internal-payment-result")]
         [AllowAnonymous]
         public async Task<IActionResult> ApplyInternalPaymentResult(
