@@ -92,6 +92,11 @@ namespace BookingAPI
                     client.BaseAddress = new Uri(authApiBaseUrl.TrimEnd('/') + "/");
                 }
             });
+            builder.Services.AddHttpClient("SocialApiClient", client =>
+  {
+      var gatewayBaseUrl = builder.Configuration["GatewayApi:BaseUrl"] ?? "https://localhost:7000";
+      client.BaseAddress = new Uri(gatewayBaseUrl.TrimEnd('/') + "/");
+  });
             builder.Services.AddScoped<ITicketRepository, TicketRepository>();
             builder.Services.AddScoped<ITicketService, TicketService>();
             builder.Services.AddAutoMapper(cfg =>

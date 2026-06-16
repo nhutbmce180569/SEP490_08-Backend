@@ -238,7 +238,7 @@ namespace BookingAPI.Services.Implements
             if (scheduleId <= 0)
                 return Array.Empty<ScheduleCustomerDTO>();
 
-            var tickets = await _ticketRepository.GetByScheduleIdAsync(scheduleId, attendeeName); 
+            var tickets = await _ticketRepository.GetByScheduleIdAsync(scheduleId, attendeeName);
             if (tickets == null || !tickets.Any())
                 return Array.Empty<ScheduleCustomerDTO>();
 
@@ -560,25 +560,15 @@ namespace BookingAPI.Services.Implements
         {
             try
             {
-                var token = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].ToString();
-
-                if (string.IsNullOrWhiteSpace(token))
-                {
-                    _logger.LogWarning($"No Authorization token found to add customer {customerId} to chat room.");
-                    return;
-                }
-
                 var addMembersRequest = new
                 {
                     userIds = new List<int> { customerId }
                 };
 
-                using var client = _httpClientFactory.CreateClient();
-                client.DefaultRequestHeaders.Add("Authorization", token);
+                using var client = _httpClientFactory.CreateClient("SocialApiClient");
 
-                // Bắn request sang Endpoint chuyên dụng theo ScheduleId qua API Gateway
                 var response = await client.PostAsJsonAsync(
-                    $"https://localhost:7010/api/chat/rooms/schedule/{scheduleId}/members",
+                    $"api/chat/rooms/schedule/{scheduleId}/members",
                     addMembersRequest
                 );
 
