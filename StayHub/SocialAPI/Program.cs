@@ -1,6 +1,4 @@
 using FluentValidation;
-
-using FluentValidation.AspNetCore;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.OData;
@@ -11,7 +9,6 @@ using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
-// Thêm các thư viện cần thiết để nhận diện được Services và Repositories
 using SocialAPI.DTOs;
 using SocialAPI.Helper;
 using SocialAPI.Hubs;
@@ -33,7 +30,7 @@ namespace SocialAPI
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-            builder.Services.AddHttpClient(); // Đã được cấu hình để Inject HttpClient trong Service
+            builder.Services.AddHttpClient();
             builder.Services.AddDbContext<StayHubSocialDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -42,29 +39,20 @@ namespace SocialAPI
                        .AddRouteComponents("api", GetEdmModel())
             ).AddStayHubDataAnnotationsLocalization();
             builder.Services.AddStayHubLocalization();
+
             builder.Services.AddScoped<IChatRepository, ChatRepository>();
             builder.Services.AddScoped<IChatService, ChatService>();
-            builder.Services.AddHttpClient<IAuthApiClient, AuthApiClient>(client =>
-            {
-                var authApiBaseUrl = builder.Configuration["AuthApi:BaseUrl"] ?? "https://localhost:7001";
-                if (!string.IsNullOrWhiteSpace(authApiBaseUrl))
-                {
-                    client.BaseAddress = new Uri(authApiBaseUrl.TrimEnd('/') + "/");
-                }
-            });
+
             builder.Services.AddFluentValidationAutoValidation();
             builder.Services.AddFluentValidationClientsideAdapters();
             builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
 
-            // 2. CẤU HÌNH SWAGGER CHUẨN (Tự động thêm Bearer)
+            // CẤU HÌNH SWAGGER CHUẨN
             builder.Services.AddSwaggerGen(option =>
             {
                 option.SwaggerDoc("v1", new OpenApiInfo { Title = "Social API", Version = "v1" });
-
-                // DÒNG NÀY SẼ CỨU SWAGGER KHỎI LỖI XUNG ĐỘT VỚI ODATA:
                 option.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
 
                 option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -89,12 +77,10 @@ namespace SocialAPI
                 });
             });
 
-            // 3. CẤU HÌNH AUTHENTICATION TRIỆT ĐỂ
+            // CẤU HÌNH AUTHENTICATION TRIỆT ĐỂ
             var jwtSettings = builder.Configuration.GetSection("Jwt");
             var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
 
-            // Đăng ký JWT Authentication
-            // Đăng ký JWT Authentication
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -108,31 +94,22 @@ namespace SocialAPI
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-
                     ValidIssuer = builder.Configuration["Jwt:Issuer"],
                     ValidAudience = builder.Configuration["Jwt:Audience"],
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
-
-                    ClockSkew = TimeSpan.Zero // Không cho thời gian trễ
+                    ClockSkew = TimeSpan.Zero
                 };
 
-                // ==========================================================
-                // THÊM ĐOẠN NÀY ĐỂ BẮT TOKEN CHO SIGNALR (WEBSOCKET)
-                // ==========================================================
+                // THÊM ĐOẠN BẮT TOKEN CHO SIGNALR (WEBSOCKET CHUNG TOÀN CỤC)
                 options.Events = new JwtBearerEvents
                 {
                     OnMessageReceived = context =>
                     {
-                        // Lấy token từ query string
                         var accessToken = context.Request.Query["access_token"];
-
-                        // Lấy path của request
                         var path = context.HttpContext.Request.Path;
 
-                        // 🚨 FIX LỖI: Chỉ cần check bắt đầu bằng "/hubs" là nhận hết mọi Hub
                         if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
                         {
-                            // Gắn token vào context để hệ thống xác thực
                             context.Token = accessToken;
                         }
                         return Task.CompletedTask;
@@ -141,31 +118,30 @@ namespace SocialAPI
             });
 
             // ============================================================
-            // 4. ĐĂNG KÝ DEPENDENCY INJECTION (DI) CHO CỤM CHỨC NĂNG 
+            // 🚨 SỬA LỖI DI CRASH: Đăng ký IAuthApiClient vào Container
             // ============================================================
+            // Lưu ý: Nếu lớp triển khai của bạn tên khác (ví dụ: AuthApiClient), hãy đổi tên cho khớp nhé
+            builder.Services.AddScoped<IAuthApiClient, AuthApiClient>();
 
-            // 4.1 Cấu hình Cloudinary
+            // Cấu hình Cloudinary & Redis
             builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
             var redisConnectionString = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
             builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnectionString));
 
-            // 2. Đăng ký Location Service
+            // Đăng ký các dịch vụ hệ thống khác
             builder.Services.AddScoped<ILocationService, LocationService>();
-            // 4.2 Đăng ký Repositories & Services
             builder.Services.AddScoped<IMomentRepository, MomentRepository>();
             builder.Services.AddScoped<ICloudStorageService, CloudStorageService>();
-
             builder.Services.AddScoped<IMomentService, MomentService>();
-
             builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
             builder.Services.AddScoped<IFriendshipService, FriendshipService>();
             builder.Services.AddScoped<IPlatformAnalyticsService, PlatformAnalyticsService>();
-            // 4.3 Đăng ký AutoMapper (Cách dùng Lambda Action an toàn nhất)
+
             builder.Services.AddAutoMapper(cfg =>
             {
-                // Lưu ý: Nếu file Profile của bạn tên là "MomentProfile" thì đổi tên ở đây nhé
                 cfg.AddProfile<MappingProfile>();
             });
+
             builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
             builder.Services.AddSignalR();
 
@@ -179,19 +155,16 @@ namespace SocialAPI
                           .AllowCredentials();
                 });
             });
-            // ============================================================
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-         
-            app.UseHttpsRedirection();
 
+            app.UseHttpsRedirection();
             app.UseCors("AllowSignalR");
             app.UseStayHubLocalization();
 
@@ -199,9 +172,14 @@ namespace SocialAPI
             app.UseAuthorization();
 
             app.MapControllers();
+
+            // ============================================================
+            // MAPPING CÁC CỔNG ENDPOINT HUB SIGNALR TOÀN CỤC VÀ CỤC BỘ
+            // ============================================================
             app.MapHub<ChatHub>("/hubs/chat");
             app.MapHub<FriendshipHub>("/hubs/friendship");
             app.MapHub<TrackingHub>("/hubs/tracking");
+            app.MapHub<NotificationHub>("/hubs/global-chat"); // Định vị cổng Hub thông báo riêng biệt của phân hệ mình
 
             app.Run();
         }
