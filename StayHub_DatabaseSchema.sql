@@ -678,7 +678,19 @@ ADD CONSTRAINT CHK_MomentPrivacy CHECK (Privacy IN ('Public', 'Private', 'Friend
 GO
 USE StayHub_SocialDb;
 GO
+USE StayHub_SocialDb;
+GO
 
+-- Thêm cột lưu vết thời gian đọc tin nhắn cuối cùng
+ALTER TABLE ChatMembers 
+ADD LastReadAt DATETIME2 NULL;
+GO
+
+-- Cập nhật dữ liệu cũ mặc định là thời điểm hiện tại để không bị lỗi null
+UPDATE ChatMembers 
+SET LastReadAt = GETUTCDATE() 
+WHERE LastReadAt IS NULL;
+GO
 -- Thêm cột IsPinned và IsMuted cho bảng ChatMembers
 ALTER TABLE ChatMembers ADD IsPinned BIT DEFAULT 0;
 ALTER TABLE ChatMembers ADD IsMuted BIT DEFAULT 0;
