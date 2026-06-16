@@ -545,10 +545,19 @@ namespace BookingAPI.Services.Implements
         {
             try
             {
+                var schedule = await _tourApiClient.GetScheduleByIdAsync(order.ScheduleId);
+                var tour = schedule != null ? await _tourApiClient.GetTourByIdAsync(schedule.TourId) : null;
+
+                var tourName = tour?.Name ?? "N/A";
+                var departure = schedule?.DepartureDate.ToString("dd/MM/yyyy") ?? "N/A";
+                var returnDate = schedule?.ReturnDate.ToString("dd/MM/yyyy") ?? "N/A";
+
                 await _notificationInternalService.NotifyUserAsync(
-                    order.CustomerId,
-                    "Booking payment successful",
-                    $"Your booking #{order.Id} has been paid successfully. Your tickets are being sent to your email.");
+                        order.CustomerId,
+                        "Booking payment successful",
+                        $"Your booking for tour \"{tourName}\" " +
+                        $"{departure} → {returnDate} " +
+                        $"has been paid successfully. Your tickets are being sent to your email.");
             }
             catch (Exception ex)
             {
