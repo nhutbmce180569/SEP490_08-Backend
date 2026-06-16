@@ -130,6 +130,29 @@ namespace SocialAPI.Controllers
             }
         }
 
+        [HttpPost("rooms/{roomId}/read")]
+        public async Task<IActionResult> MarkRoomAsRead(int roomId)
+        {
+            try
+            {
+                var userId = GetUserId();
+                await _chatService.MarkRoomAsReadAsync(userId, roomId);
+                return Ok(new { message = "Marked as read successfully." });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileMarkingAsRead"), error = ex.Message });
+            }
+        }
+
         [HttpPost("rooms/{roomId}/members")]
         public async Task<IActionResult> AddMembers(int roomId, [FromBody] AddMembersRequest request)
         {

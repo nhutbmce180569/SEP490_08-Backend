@@ -76,6 +76,14 @@ namespace SocialAPI.Services.Implements
                 var latestMsg = cr.ChatMessages.OrderByDescending(m => m.SentAt).FirstOrDefault();
                 var currentUserMember = cr.ChatMembers.FirstOrDefault(cm => cm.UserId == userId);
 
+                int unreadCount = 0;
+                if (currentUserMember != null && cr.ChatMessages != null)
+                {
+                    // Logic: Đếm tin nhắn của người khác gửi sau thời điểm đọc cuối cùng
+                    unreadCount = cr.ChatMessages.Count(m => m.SenderId != userId &&
+                        (currentUserMember.LastReadAt == null || m.SentAt > currentUserMember.LastReadAt));
+                }
+
                 var dto = new ChatRoomDto
                 {
                     Id = cr.Id,
@@ -85,7 +93,8 @@ namespace SocialAPI.Services.Implements
                     LatestMessage = latestMsg?.Content,
                     LatestMessageTime = latestMsg?.SentAt,
                     IsPinned = currentUserMember?.IsPinned ?? false,
-                    IsMuted = currentUserMember?.IsMuted ?? false
+                    IsMuted = currentUserMember?.IsMuted ?? false,
+                    UnreadCount = unreadCount
                 };
 
                 if (cr.IsGroupChat == false)
@@ -491,6 +500,20 @@ namespace SocialAPI.Services.Implements
                 _logger.LogError(ex, $"Error getting members for room {roomId}");
                 throw;
             }
+        }
+
+        public async Task MarkRoomAsReadAsync(int userId, int roomId)
+        {
+            var room = await _chatRepository.GetChatRoomByIdAsync(roomId);
+            if (room == null) throw new KeyNotFoundException("Chat room not found.");
+
+            var member = room.ChatMembers?.FirstOrDefault(cm => cm.UserId == userId);
+            if (member == null) throw new UnauthorizedAccessException("You are not a member of this chat room.");
+
+            member.LastReadAt = DateTime.UtcNow;
+
+            // 💡 LƯU Ý: Repository cần có sẵn hàm UpdateMemberAsync để gọi `DbContext.Update(member)` và `SaveChangesAsync()`
+            await _chatRepository.UpdateMemberAsync(member);
         }
     }
 }

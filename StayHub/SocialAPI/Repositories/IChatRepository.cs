@@ -22,5 +22,6 @@ namespace SocialAPI.Repositories
         Task<ChatRoom> CreateScheduleChatRoomAsync(int scheduleId, string roomName);
         Task<bool> AddMembersToRoomByScheduleIdAsync(int scheduleId, List<int> memberIds);
         Task<List<ChatMember>> GetMembersByRoomIdAsync(int roomId);
+        Task UpdateMemberAsync(ChatMember member);
     }
 }
