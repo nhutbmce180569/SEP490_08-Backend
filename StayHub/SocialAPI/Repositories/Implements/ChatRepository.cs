@@ -69,7 +69,7 @@ namespace SocialAPI.Repositories.Implements
             };
 
             await _context.ChatRooms.AddAsync(chatRoom);
-            
+
             // Tự động tạo quan hệ (mapping) cho 2 user thông qua ChatMembers
             chatRoom.ChatMembers.Add(new ChatMember { UserId = userId1 });
             chatRoom.ChatMembers.Add(new ChatMember { UserId = userId2 });
@@ -82,7 +82,7 @@ namespace SocialAPI.Repositories.Implements
         {
             var member = await _context.ChatMembers
                 .FirstOrDefaultAsync(cm => cm.ChatRoomId == roomId && cm.UserId == userId);
-            
+
             if (member == null) return false;
 
             member.IsPinned = !(member.IsPinned ?? false);
@@ -94,7 +94,7 @@ namespace SocialAPI.Repositories.Implements
         {
             var member = await _context.ChatMembers
                 .FirstOrDefaultAsync(cm => cm.ChatRoomId == roomId && cm.UserId == userId);
-            
+
             if (member == null) return false;
 
             member.IsMuted = !(member.IsMuted ?? false);
@@ -112,7 +112,7 @@ namespace SocialAPI.Repositories.Implements
             };
 
             await _context.ChatRooms.AddAsync(chatRoom);
-            
+
             foreach (var userId in memberIds.Distinct())
             {
                 chatRoom.ChatMembers.Add(new ChatMember { UserId = userId });
@@ -137,7 +137,7 @@ namespace SocialAPI.Repositories.Implements
 
             if (room != null)
             {
-               var existingMemberIds = room.ChatMembers.Select(cm => cm.UserId).ToList();
+                var existingMemberIds = room.ChatMembers.Select(cm => cm.UserId).ToList();
                 foreach (var userId in memberIds.Distinct())
                 {
                     if (!existingMemberIds.Contains(userId))
@@ -153,7 +153,7 @@ namespace SocialAPI.Repositories.Implements
         {
             var member = await _context.ChatMembers
                 .FirstOrDefaultAsync(cm => cm.ChatRoomId == roomId && cm.UserId == userId);
-            
+
             if (member != null)
             {
                 _context.ChatMembers.Remove(member);
@@ -215,6 +215,12 @@ namespace SocialAPI.Repositories.Implements
                 .AsNoTracking()
                 .Where(cm => cm.ChatRoomId == roomId)
                 .ToListAsync();
+        }
+
+        public async Task UpdateMemberAsync(ChatMember member)
+        {
+            _context.ChatMembers.Update(member);
+            await _context.SaveChangesAsync();
         }
     }
 }

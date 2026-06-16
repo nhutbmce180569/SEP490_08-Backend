@@ -13,5 +13,6 @@ namespace SocialAPI.DTOs
         public DateTime? LatestMessageTime { get; set; }
         public bool? IsPinned { get; set; }
         public bool? IsMuted { get; set; }
+        public int UnreadCount { get; set; }
     }
 }
