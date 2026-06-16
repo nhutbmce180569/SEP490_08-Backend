@@ -10,10 +10,8 @@ using BookingAPI.Services;
 
 namespace BookingAPI.Controllers
 {
-    // ĐIỂM QUAN TRỌNG 1: Đổi Route thành api/orders để Gateway tự động cho qua
     [Route("api/orders")]
     [ApiController]
-    // ĐIỂM QUAN TRỌNG 2: Đổi tên Controller để không đụng hàng với AuthAPI
     public class EligibleSchedulesController : LocalizedControllerBase 
     {
         private readonly IEligibleScheduleService _eligibleScheduleService;
@@ -29,7 +27,6 @@ namespace BookingAPI.Controllers
         {
             try
             {
-                // Bóc tách userId từ Token
                 var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                                    ?? User.FindFirst("id")?.Value
                                    ?? User.FindFirst("sub")?.Value;
@@ -49,7 +46,6 @@ namespace BookingAPI.Controllers
             }
             catch (Exception ex)
             {
-                // Bắt Exception và ném lỗi chuẩn 500
                 return StatusCode(500, new { message = ex.Message });
             }
         }

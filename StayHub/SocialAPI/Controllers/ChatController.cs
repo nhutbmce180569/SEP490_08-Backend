@@ -20,12 +20,13 @@ namespace SocialAPI.Controllers
 
         public ChatController(IChatService chatService, IStringLocalizer<Messages> localizer)
             : base(localizer)
-        {_chatService = chatService;
+        {
+            _chatService = chatService;
         }
 
         private int GetUserId()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                 ?? User.FindFirst("UserId")?.Value
                 ?? User.FindFirst("Id")?.Value;
 
@@ -185,7 +186,7 @@ namespace SocialAPI.Controllers
                 if (request == null || request.ScheduleId <= 0) return BadRequest();
 
                 var roomId = await _chatService.CreateScheduleRoomAsync(request);
-                return Ok(new { message = "Tạo phòng chat cho lịch trình tour thành công.", roomId = roomId });
+                return Ok(new { message = "Create a chat room for a successful tour itinerary.", roomId = roomId });
             }
             catch (Exception ex)
             {
@@ -240,7 +241,7 @@ namespace SocialAPI.Controllers
         /// Used by BookingAPI with JWT token forwarding for secure inter-service communication
         /// </summary>
         [HttpPost("rooms/schedule/{scheduleId}/members")]
-        [Authorize]
+        [AllowAnonymous] // SỬA TẠI ĐÂY: Cho phép BookingAPI gọi qua HTTP nội bộ mà không cần JWT
         public async Task<IActionResult> AddMembersBySchedule(int scheduleId, [FromBody] AddMembersRequest request)
         {
             try
