@@ -22,8 +22,8 @@ namespace SocialAPI.Services.Implements
 
         // 💡 ĐÃ CẬP NHẬT: Tiêm ILogger<ChatService> vào Constructor
         public ChatService(
-            IChatRepository chatRepository, 
-            IHttpClientFactory httpClientFactory, 
+            IChatRepository chatRepository,
+            IHttpClientFactory httpClientFactory,
             IHubContext<ChatHub> hubContext,
             ILogger<ChatService> logger)
         {
@@ -355,10 +355,13 @@ namespace SocialAPI.Services.Implements
 
                 if (room == null)
                 {
-                    throw new KeyNotFoundException($"Chat room with ScheduleId '{scheduleId}' not found.");
+                    // THAY VÌ BÁO LỖI THÌ TỰ ĐỘNG TẠO LUÔN PHÒNG CHAT CHO SCHEDULE NÀY
+                    var roomName = $"Tour Schedule {scheduleId}";
+                    room = await _chatRepository.CreateScheduleChatRoomAsync(scheduleId, roomName);
                 }
 
-                var existingMember = room.ChatMembers.FirstOrDefault(cm => cm.UserId == dto.UserId);
+                // Dùng toán tử ?. để đề phòng lỗi NullReference nếu Repository quên Include ChatMembers
+                var existingMember = room.ChatMembers?.FirstOrDefault(cm => cm.UserId == dto.UserId);
 
                 if (existingMember != null)
                 {
@@ -391,6 +394,9 @@ namespace SocialAPI.Services.Implements
                 };
 
                 await _hubContext.Clients.Group(room.Id.ToString()).SendAsync("ReceiveMessage", savedMsgDto);
+
+                // QUAN TRỌNG: Gõ cửa Frontend của user để báo hiệu "bạn vừa có một phòng chat mới"
+                await _hubContext.Clients.User(dto.UserId.ToString()).SendAsync("NewRoomAdded", room.Id);
             }
             catch (KeyNotFoundException ex)
             {
@@ -406,7 +412,20 @@ namespace SocialAPI.Services.Implements
         {
             try
             {
-                return await _chatRepository.AddMembersToRoomByScheduleIdAsync(scheduleId, userIds);
+                var success = await _chatRepository.AddMembersToRoomByScheduleIdAsync(scheduleId, userIds);
+
+                if (success)
+                {
+                    var room = await _chatRepository.GetChatRoomByScheduleIdAsync(scheduleId);
+                    if (room != null)
+                    {
+                        foreach (var userId in userIds)
+                        {
+                            await _hubContext.Clients.User(userId.ToString()).SendAsync("NewRoomAdded", room.Id);
+                        }
+                    }
+                }
+                return success;
             }
             catch (Exception ex)
             {
