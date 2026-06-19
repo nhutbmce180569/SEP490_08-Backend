@@ -38,12 +38,6 @@ public sealed class FileCatalogClient : IGatewayCatalogClient
     public Task<IReadOnlyList<TourismKnowledgeItem>> FetchActiveTourismAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyList<TourismKnowledgeItem>>(Array.Empty<TourismKnowledgeItem>());
 
-    public Task<IReadOnlyList<int>> FetchWishlistTourIdsAsync(CancellationToken cancellationToken = default) =>
-        Task.FromResult<IReadOnlyList<int>>(Array.Empty<int>());
-
-    public Task<IReadOnlyList<int>> FetchBookingTourIdsAsync(int customerId, CancellationToken cancellationToken = default) =>
-        Task.FromResult<IReadOnlyList<int>>(Array.Empty<int>());
-
     private sealed class CatalogFile
     {
         public List<TourCatalogItem> Tours { get; set; } = [];

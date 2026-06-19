@@ -39,6 +39,8 @@ public class TrainingController : LocalizedControllerBase
                 bundle.IsReady,
                 bundle.TrainedAt,
                 bundle.IntentAccuracy,
+                bundle.ProfileMatchReady,
+                bundle.ProfileMatchTrainingSamples,
                 bundle.TourCount,
                 bundle.TourismCount
             });

@@ -148,16 +148,20 @@ public class TourScoringEngine
         WeatherAdviceDTO? weather,
         bool includeKnowledge)
     {
-        return new Dictionary<string, float>
+        var dict = new Dictionary<string, float>
         {
             ["location"] = ScoreLocation(tour, profile),
             ["budget"] = ScoreBudget(tour, profile),
             ["schedule"] = ScoreSchedule(tour, profile),
             ["interest_semantic"] = ComputeInterestDimensionScore(tour, profile, semanticScores),
             ["weather"] = ScoreWeather(tour, weather),
+            ["season"] = ScoreSeason(tour, profile),
+            ["crowd"] = ScoreCrowd(tour, profile),
             ["accessibility"] = ScoreAccessibilityBase(tour),
             ["cultural_fit"] = includeKnowledge ? ScoreCulturalFit(tour, profile) : 0.5f
         };
+        dict["context"] = (dict["weather"] + dict["season"] + dict["crowd"]) / 3.0f;
+        return dict;
     }
 
     private static float ScoreForPersona(
@@ -177,7 +181,7 @@ public class TourScoringEngine
             dimensions["location"] * weights.Location +
             dimensions["budget"] * weights.Budget +
             dimensions["schedule"] * weights.Schedule +
-            dimensions["weather"] * weights.Weather +
+            dimensions["context"] * weights.Weather + // Context replaces raw weather weight
             dimensions["cultural_fit"] * weights.CulturalFit;
 
         var accessibility = dimensions["accessibility"];
@@ -239,7 +243,7 @@ public class TourScoringEngine
     {
         if (string.IsNullOrWhiteSpace(profile.PreferredCity))
         {
-            return 0.5f;
+            return 1f;
         }
 
         if (VietnameseTextNormalizer.CityEquals(tour.City, profile.PreferredCity))
@@ -259,11 +263,22 @@ public class TourScoringEngine
     {
         if (!profile.MaxBudgetPerPerson.HasValue || !tour.MinPrice.HasValue)
         {
-            return 0.5f;
+            return 1f;
         }
 
         var ratio = tour.MinPrice.Value / (float)profile.MaxBudgetPerPerson.Value;
-        return ratio <= 1f ? 1f - ratio * 0.3f : 0f;
+        if (ratio > 1f)
+        {
+            return 0f;
+        }
+
+        // Peak score (1.0) around 70-100% of budget. If < 70%, it scales down to 0.4.
+        if (ratio >= 0.7f)
+        {
+            return 1f;
+        }
+        
+        return 0.4f + (ratio / 0.7f) * 0.6f;
     }
 
     private static float ScoreSchedule(TourCatalogItem tour, TourPreferenceQuestionnaireDTO profile)
@@ -275,7 +290,22 @@ public class TourScoringEngine
 
         var start = profile.PreferredStartDate.Date;
         var end = (profile.PreferredEndDate ?? profile.PreferredStartDate.AddDays(30)).Date;
-        return tour.NextDeparture.Value.Date >= start && tour.NextDeparture.Value.Date <= end ? 1f : 0.3f;
+        
+        var daysOutside = ScheduleAvailabilityHelper.DaysOutsideWindow(tour.NextDeparture, start, end);
+        if (daysOutside == 0)
+        {
+            return 1f;
+        }
+        
+        // Use a Gaussian decay curve for a smoother score drop-off
+        // sigma = 14 days. 
+        // 7 days outside -> ~88%
+        // 14 days outside -> ~60%
+        // 22 days outside -> ~29%
+        double sigma = 14.0;
+        double score = Math.Exp(-(daysOutside * daysOutside) / (2 * sigma * sigma));
+        
+        return (float)Math.Clamp(score, 0.0, 1.0);
     }
 
     private static float ScoreWeather(TourCatalogItem tour, WeatherAdviceDTO? weather)
@@ -306,6 +336,39 @@ public class TourScoringEngine
         return 0.6f;
     }
 
+    private static float ScoreSeason(TourCatalogItem tour, TourPreferenceQuestionnaireDTO profile)
+    {
+        // Dummy implementation for Season aware logic
+        var doc = tour.SearchDocument.ToLowerInvariant();
+        var month = profile.PreferredStartDate.Month;
+
+        if (month is >= 5 and <= 8 && doc.Contains("beach"))
+        {
+            return 0.9f; // High score for summer beaches
+        }
+
+        if (month is >= 11 or <= 2 && doc.Contains("mountain"))
+        {
+            return 0.8f; // High score for winter mountains
+        }
+
+        return 0.5f; // Neutral
+    }
+
+    private static float ScoreCrowd(TourCatalogItem tour, TourPreferenceQuestionnaireDTO profile)
+    {
+        // Dummy implementation for Crowd aware logic
+        var isHoliday = profile.PreferredStartDate.DayOfWeek == DayOfWeek.Saturday || 
+                        profile.PreferredStartDate.DayOfWeek == DayOfWeek.Sunday;
+
+        if (isHoliday && (tour.ReviewCount > 100))
+        {
+            return 0.4f; // Penalize crowded places on holidays
+        }
+
+        return 0.8f; // Otherwise good
+    }
+
     private static float ScoreAccessibilityBase(TourCatalogItem tour)
     {
         var doc = tour.SearchDocument.ToLowerInvariant();
@@ -333,14 +396,11 @@ public class TourScoringEngine
             }
         }
 
-        if (profile.TravelInterests.Contains("culture", StringComparer.OrdinalIgnoreCase) ||
-            profile.NationalityType == TravelerNationalityTypes.Foreigner)
+        var doc = tour.SearchDocument.ToLowerInvariant();
+        if (doc.Contains("heritage") || doc.Contains("ancient") || doc.Contains("culture") || doc.Contains("mekong") ||
+            doc.Contains("văn hóa") || doc.Contains("bản sắc") || doc.Contains("di sản") || doc.Contains("lịch sử"))
         {
-            var doc = tour.SearchDocument.ToLowerInvariant();
-            if (doc.Contains("heritage") || doc.Contains("ancient") || doc.Contains("culture") || doc.Contains("mekong"))
-            {
-                return 0.9f;
-            }
+            return 0.9f;
         }
 
         return 0.5f;
