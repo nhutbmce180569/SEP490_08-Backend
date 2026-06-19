@@ -105,6 +105,16 @@ namespace AuthAPI
 
                 options.Events = new JwtBearerEvents
                 {
+                    OnAuthenticationFailed = context =>
+                    {
+                        Console.WriteLine($"[JWT-AUTH] Authentication failed: {context.Exception.Message}");
+                        if (context.Exception.InnerException != null)
+                        {
+                            Console.WriteLine($"[JWT-AUTH] Inner exception: {context.Exception.InnerException.Message}");
+                        }
+                        return Task.CompletedTask;
+                    },
+
                     OnTokenValidated = async context =>
                     {
                         var dbContext = context.HttpContext.RequestServices.GetRequiredService<StayHubIdentityDbContext>();
@@ -112,8 +122,11 @@ namespace AuthAPI
                         var userIdClaim = context.Principal?.FindFirst(ClaimTypes.NameIdentifier);
                         var tokenSecurityStamp = context.Principal?.FindFirst("SecurityStamp")?.Value;
 
+                        Console.WriteLine($"[JWT-AUTH] Token validated event triggered. UserId claim: '{userIdClaim?.Value}', Token SecurityStamp: '{tokenSecurityStamp}'");
+
                         if (userIdClaim == null || string.IsNullOrEmpty(tokenSecurityStamp))
                         {
+                            Console.WriteLine("[JWT-AUTH] UserId claim or token SecurityStamp is missing!");
                             context.Fail("InvalidTokenPayload");
                             return;
                         }
@@ -125,18 +138,36 @@ namespace AuthAPI
                             .Select(u => new { u.SecurityStamp, u.Status })
                             .FirstOrDefaultAsync();
 
-                        // Deny access if user is deleted, deactivated, or SecurityStamp does not match
-                        if (currentUserInfo == null ||
-                            currentUserInfo.Status != "Active" ||
-                            currentUserInfo.SecurityStamp != tokenSecurityStamp)
+                        if (currentUserInfo == null)
                         {
+                            Console.WriteLine($"[JWT-AUTH] User {userId} not found in database!");
+                            context.Fail("UserNotFound");
+                            return;
+                        }
+
+                        Console.WriteLine($"[JWT-AUTH] Database User Status: '{currentUserInfo.Status}', DB SecurityStamp: '{currentUserInfo.SecurityStamp}'");
+
+                        // Deny access if user is deleted, deactivated, or SecurityStamp does not match
+                        if (currentUserInfo.Status != "Active")
+                        {
+                            Console.WriteLine($"[JWT-AUTH] User status is '{currentUserInfo.Status}', not Active!");
+                            context.Fail("UserInactive");
+                        }
+                        else if (currentUserInfo.SecurityStamp != tokenSecurityStamp)
+                        {
+                            Console.WriteLine($"[JWT-AUTH] Security stamp mismatch! DB: '{currentUserInfo.SecurityStamp}', Token: '{tokenSecurityStamp}'");
                             context.Fail("SessionExpiredSecurity");
+                        }
+                        else
+                        {
+                            Console.WriteLine("[JWT-AUTH] Token successfully validated for user!");
                         }
                     },
 
                     // === 2. RETURN STANDARDIZED JSON ERROR PAYLOAD FOR FRONTEND ===
                     OnChallenge = async context =>
                     {
+                        Console.WriteLine($"[JWT-AUTH] Challenge triggered. Error: '{context.Error}', Description: '{context.ErrorDescription}', Failure exception: '{context.AuthenticateFailure?.Message}'");
                         // Suppress the default plain browser challenge response
                         context.HandleResponse();
 

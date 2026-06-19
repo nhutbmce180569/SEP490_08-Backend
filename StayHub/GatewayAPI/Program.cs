@@ -35,11 +35,15 @@ namespace GatewayAPI
             }
 
             builder.Services.AddReverseProxy()
-                .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+                .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
+                .ConfigureHttpClient((context, handler) =>
+                {
+                    handler.SslOptions.RemoteCertificateValidationCallback = (sender, cert, chain, sslPolicyErrors) => true;
+                });
 
             var app = builder.Build();
 
-            app.UseHttpsRedirection();
+            // app.UseHttpsRedirection(); // Bỏ qua để tránh lỗi CORS Preflight Redirect khi dùng HTTP ở local
 
             // Áp dụng CORS vừa sửa
             app.UseCors("AllowFrontend");

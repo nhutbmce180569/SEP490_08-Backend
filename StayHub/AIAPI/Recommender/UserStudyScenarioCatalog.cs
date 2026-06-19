@@ -67,8 +67,8 @@ public static class UserStudyScenarioCatalog
         {
             case "solo":
                 profile.CompanionType = TravelCompanionTypes.Solo;
-                profile.HasElderly = false;
-                profile.HasChildren = false;
+                profile.ElderlyCount = 0;
+                profile.ChildrenCount = 0;
                 break;
             case "family":
                 profile.CompanionType = TravelCompanionTypes.Family;
@@ -78,8 +78,8 @@ public static class UserStudyScenarioCatalog
                 break;
             case "couple":
                 profile.CompanionType = TravelCompanionTypes.Couple;
-                profile.HasElderly = false;
-                profile.HasChildren = false;
+                profile.ElderlyCount = 0;
+                profile.ChildrenCount = 0;
                 break;
         }
     }
@@ -113,12 +113,12 @@ public static class UserStudyScenarioCatalog
             : "du khách Việt Nam";
 
         var extras = new List<string>();
-        if (p.HasElderly)
+        if (p.ElderlyCount > 0)
         {
             extras.Add("có người cao tuổi");
         }
 
-        if (p.HasChildren)
+        if (p.ChildrenCount > 0)
         {
             extras.Add("có trẻ em");
         }

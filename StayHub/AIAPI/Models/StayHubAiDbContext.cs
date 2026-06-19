@@ -8,7 +8,6 @@ public class StayHubAiDbContext : DbContext
     {
     }
 
-    public DbSet<UserTourInteraction> UserTourInteractions => Set<UserTourInteraction>();
     public DbSet<ModelTrainingRun> ModelTrainingRuns => Set<ModelTrainingRun>();
     public DbSet<TourRelevanceJudgment> TourRelevanceJudgments => Set<TourRelevanceJudgment>();
     public DbSet<UserStudyAssignment> UserStudyAssignments => Set<UserStudyAssignment>();
@@ -16,13 +15,6 @@ public class StayHubAiDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<UserTourInteraction>(entity =>
-        {
-            entity.HasIndex(e => new { e.CustomerId, e.TourId, e.InteractionType });
-            entity.Property(e => e.InteractionType).HasMaxLength(50);
-            entity.Property(e => e.SessionId).HasMaxLength(64);
-        });
-
         modelBuilder.Entity<ModelTrainingRun>(entity =>
         {
             entity.Property(e => e.ModelName).HasMaxLength(100);

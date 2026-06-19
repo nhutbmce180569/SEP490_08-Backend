@@ -193,7 +193,7 @@ public class CulturalKnowledgeService : ICulturalKnowledgeService
             }
         }
 
-        return results
+        var finalResults = results
             .Where(r => string.IsNullOrWhiteSpace(city) ||
                         string.IsNullOrWhiteSpace(r.City) ||
                         VietnameseTextNormalizer.CityEquals(r.City, city))
@@ -201,6 +201,44 @@ public class CulturalKnowledgeService : ICulturalKnowledgeService
             .Select(g => _localizer.LocalizeFact(g.First()))
             .Take(12)
             .ToList();
+
+        if (finalResults.Count == 0 && !string.IsNullOrWhiteSpace(city))
+        {
+            var fallbackCity = _localizer.LocalizeCityDisplay(city);
+            
+            var viFallbacks = new[]
+            {
+                $"Trải nghiệm nhịp sống địa phương và nét văn hóa đặc trưng tại {fallbackCity}. Hãy chuẩn bị tinh thần cho những khám phá đầy bất ngờ nhé!",
+                $"Khám phá vẻ đẹp tiềm ẩn của {fallbackCity}. Một điểm đến mang đậm dấu ấn bản địa dành cho những ai thích sự yên bình.",
+                $"{fallbackCity} không quá ồn ào nhưng lại sở hữu những nét độc đáo riêng về ẩm thực và cảnh quan đang chờ bạn.",
+                $"Thả mình vào không gian mộc mạc của {fallbackCity}, nơi bạn có thể gắn kết hơn với thiên nhiên và con người nơi đây.",
+                $"Một hành trình về với {fallbackCity} sẽ mang lại những góc nhìn mới mẻ và những kỷ niệm khó quên."
+            };
+            
+            var enFallbacks = new[]
+            {
+                $"Experience the local lifestyle and unique culture in {fallbackCity}. Get ready for exciting discoveries!",
+                $"Discover the hidden gems of {fallbackCity}. A destination with a strong local vibe for those seeking peace.",
+                $"{fallbackCity} is not too crowded but has its own unique culinary and scenic charms waiting for you.",
+                $"Immerse yourself in the rustic atmosphere of {fallbackCity}, where you can connect with nature and locals.",
+                $"A journey to {fallbackCity} will bring fresh perspectives and unforgettable memories."
+            };
+
+            var hash = Math.Abs(fallbackCity.GetHashCode());
+            var index = hash % viFallbacks.Length;
+
+            finalResults.Add(new CulturalFactResult
+            {
+                Fact = _localizer.IsVietnamese ? viFallbacks[index] : enFallbacks[index],
+                SourceName = "StayHub AI Guide",
+                SourceUrl = "",
+                AuthorityLevel = "AI-Generated",
+                Provider = ScoringModelSpec.KnowledgeSources.EmbeddedCorpus,
+                City = fallbackCity
+            });
+        }
+
+        return finalResults;
     }
 
     public IReadOnlyList<string> GetForeignVisitorNotesForCity(string? city)

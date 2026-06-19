@@ -29,12 +29,17 @@ builder.Services.Configure<RecommenderSettings>(builder.Configuration.GetSection
 builder.Services.AddDbContext<StayHubAiDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddTransient<AuthorizationHeaderHandler>();
 
 builder.Services.AddHttpClient<IGatewayCatalogClient, GatewayCatalogClient>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(30);
+})
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
 })
 .AddHttpMessageHandler<AuthorizationHeaderHandler>();
 
@@ -53,6 +58,7 @@ builder.Services.AddHttpClient("Wikidata", client =>
 builder.Services.AddSingleton<ICatalogStore, CatalogStore>();
 builder.Services.AddSingleton<IRagKnowledgeIndex, RagKnowledgeIndex>();
 builder.Services.AddSingleton<ISystemKnowledgeIndex, SystemKnowledgeIndex>();
+builder.Services.AddSingleton<ILocalEmbeddingService, LocalEmbeddingService>();
 builder.Services.AddSingleton<IDimensionWeightProvider, DimensionWeightProvider>();
 builder.Services.AddScoped<IAiCultureAccessor, AiCultureAccessor>();
 builder.Services.AddScoped<IAiLocalizedCopy, AiLocalizedCopy>();
