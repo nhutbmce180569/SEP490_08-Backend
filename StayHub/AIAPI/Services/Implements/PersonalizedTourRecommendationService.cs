@@ -7,6 +7,7 @@ using AIAPI.Models.Knowledge;
 using AIAPI.Recommender;
 using AIAPI.Services;
 using AIAPI.Settings;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
 namespace AIAPI.Services.Implements;
@@ -22,6 +23,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
     private readonly IAiLocalizedCopy _text;
     private readonly IKnowledgeLocalizationService _knowledgeLocalizer;
     private readonly IDimensionWeightProvider _dimensionWeights;
+    private readonly IMemoryCache _cache;
 
     public PersonalizedTourRecommendationService(
         ICatalogStore catalogStore,
@@ -32,7 +34,8 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         IOptions<RecommenderSettings> settings,
         IAiLocalizedCopy text,
         IKnowledgeLocalizationService knowledgeLocalizer,
-        IDimensionWeightProvider dimensionWeights)
+        IDimensionWeightProvider dimensionWeights,
+        IMemoryCache cache)
     {
         _catalogStore = catalogStore;
         _modelRegistry = modelRegistry;
@@ -43,6 +46,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         _text = text;
         _knowledgeLocalizer = knowledgeLocalizer;
         _dimensionWeights = dimensionWeights;
+        _cache = cache;
     }
 
     public StandardQuestionnaireDTO GetStandardQuestionnaire() => new()
@@ -50,21 +54,6 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         Version = "2.1",
         Questions =
         [
-            new QuestionnaireFieldDTO
-            {
-                FieldKey = "companionType",
-                Label = _text.QuestionCompanionType,
-                InputType = "single_select",
-                Required = true,
-                Hint = _text.QuestionCompanionHint,
-                Options =
-                [
-                    new() { Value = TravelCompanionTypes.Solo, Label = _text.OptionSolo },
-                    new() { Value = TravelCompanionTypes.Couple, Label = _text.OptionCouple },
-                    new() { Value = TravelCompanionTypes.Family, Label = _text.OptionFamily },
-                    new() { Value = TravelCompanionTypes.Group, Label = _text.OptionGroup }
-                ]
-            },
             new QuestionnaireFieldDTO
             {
                 FieldKey = "preferredStartDate",
@@ -89,17 +78,37 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             },
             new QuestionnaireFieldDTO
             {
-                FieldKey = "hasElderly",
-                Label = _text.QuestionHasElderly,
-                InputType = "boolean",
+                FieldKey = "adultCount",
+                Label = "Bao nhiêu người lớn?",
+                InputType = "number",
                 Required = true
             },
             new QuestionnaireFieldDTO
             {
-                FieldKey = "hasChildren",
-                Label = _text.QuestionHasChildren,
-                InputType = "boolean",
+                FieldKey = "childrenCount",
+                Label = "Có \"búp măng non\" đi cùng không? (trẻ em)",
+                InputType = "number",
                 Required = true
+            },
+            new QuestionnaireFieldDTO
+            {
+                FieldKey = "elderlyCount",
+                Label = "Có \"bậc thầy dưỡng sinh\" đi cùng không? (người cao tuổi)",
+                InputType = "number",
+                Required = true
+            },
+            new QuestionnaireFieldDTO
+            {
+                FieldKey = "travelPace",
+                Label = "Pace chuyến đi (Nhịp độ)",
+                InputType = "single_select",
+                Required = true,
+                Options =
+                [
+                    new() { Value = TravelPaceTypes.Relaxed, Label = "Chill chill lướt sóng 🍃" },
+                    new() { Value = TravelPaceTypes.Moderate, Label = "Balance (Nghỉ + Chơi) ⚖️" },
+                    new() { Value = TravelPaceTypes.Packed, Label = "Bào tour không bỏ sót! 🔥" }
+                ]
             },
             new QuestionnaireFieldDTO
             {
@@ -136,9 +145,20 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             {
                 FieldKey = "preferredCity",
                 Label = _text.QuestionPreferredCity,
-                InputType = "text",
+                InputType = "single_select",
                 Required = false,
-                Hint = _text.QuestionPreferredCityHint
+                Hint = _text.QuestionPreferredCityHint,
+                Options =
+                [
+                    new() { Value = "", Label = "Bất kỳ đâu (Surprise me!)" },
+                    new() { Value = "Phu Quoc", Label = "Phú Quốc" },
+                    new() { Value = "Da Nang", Label = "Đà Nẵng" },
+                    new() { Value = "Da Lat", Label = "Đà Lạt" },
+                    new() { Value = "Nha Trang", Label = "Nha Trang" },
+                    new() { Value = "Ha Noi", Label = "Hà Nội" },
+                    new() { Value = "Ho Chi Minh", Label = "TP. HCM" },
+                    new() { Value = "Can Tho", Label = "Cần Thơ" }
+                ]
             }
         ]
     };
@@ -147,15 +167,15 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
     {
         Specification = BuildTransparencyMeta(Array.Empty<string>()),
         MethodologySummary =
-            "FCAHR — Fair Constraint-Aware Hybrid Recommender for group tour planning. " +
-            "Primary contribution: U = α·min_p u_p + (1-α)·mean_p u_p with persona decomposition. " +
-            "Multi-source knowledge augmentation (UNESCO-cited corpus, ContentAPI, Wikidata CC0). " +
+            ScoringModelSpec.MethodologySummary + " " +
+            "Multi-source knowledge augmentation uses UNESCO-cited corpus rows, ContentAPI, Wikidata CC0, and Open-Meteo. " +
             "Baselines available via GET /api/ai/evaluation/baselines and POST /api/ai/evaluation/run.",
         PaperTitleSuggestion = ScoringModelSpec.PaperTitleSuggestion,
         FormalDefinitions = new Dictionary<string, string>
         {
             ["persona_utility"] = ScoringModelSpec.FormalDefinitions.PersonaUtility,
             ["fcahr_utility"] = ScoringModelSpec.FormalDefinitions.CafhrUtility,
+            ["mgrs_fair_reranking"] = ScoringModelSpec.FormalDefinitions.MgrsFairReranking,
             ["min_persona_penalty"] = ScoringModelSpec.FormalDefinitions.MinPersonaPenalty,
             ["dissatisfaction_variance"] = ScoringModelSpec.FormalDefinitions.DissatisfactionVariance,
             ["envy_gap"] = ScoringModelSpec.FormalDefinitions.EnvyGap,
@@ -164,20 +184,20 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             ["borda_baseline"] = ScoringModelSpec.FormalDefinitions.BordaBaseline,
             ["evaluation_protocol"] = ScoringModelSpec.EvaluationProtocol.ProfileGeneration
         },
+        AcademicReferences = MapAcademicReferences(),
         Baselines = AggregationStrategies.GetAll()
             .Select(b => new BaselineInfoDTO
             {
                 Key = b.Key,
                 Name = b.Name,
                 Description = b.Description,
-                IsProposed = b.Key == AggregationStrategies.CafhrFair
+                IsProposed = b.Key == ScoringModelSpec.ProductionStrategyKey
             })
             .ToList()
     };
 
     public async Task<PersonalizedRecommendationResponseDTO> RecommendFromProfileAsync(
         TourPreferenceQuestionnaireDTO profile,
-        int? customerId,
         CancellationToken cancellationToken = default)
     {
         if (!_catalogStore.IsReady || !_modelRegistry.Status.IsReady)
@@ -202,34 +222,77 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         }
 
         var interestQuery = InterestMatchHelper.BuildSearchQuery(profile.TravelInterests);
-        var semanticScores = _modelRegistry.ComputeTourSemanticScores(interestQuery)
-            .ToDictionary(x => x.Key, x => x.Value);
+        var semanticCacheKey = $"semantic_{interestQuery.GetHashCode()}";
+        if (!_cache.TryGetValue(semanticCacheKey, out Dictionary<int, float>? semanticScores) || semanticScores == null)
+        {
+            semanticScores = _modelRegistry.ComputeTourSemanticScores(interestQuery)
+                .ToDictionary(x => x.Key, x => x.Value);
+            _cache.Set(semanticCacheKey, semanticScores, TimeSpan.FromMinutes(15));
+        }
 
-        var rankingPool = Math.Min(
-            _catalogStore.Tours.Count,
-            Math.Max(profile.Top * 5, 30));
-
-        var ranked = _tourRanker.RankTours(
-            _catalogStore.Tours.ToList(),
-            WithRankingPool(profile, rankingPool),
-            semanticScores,
-            weather,
-            AggregationStrategies.CafhrFair);
+        var activeProfile = profile;
+        var isRelaxed = false;
+        List<TourRecommendationItemDTO> exactTours = new();
+        List<TourRecommendationItemDTO> nearbyTours = new();
+        ScheduleAvailabilityDTO scheduleAvailability = new();
 
         var windowStart = profile.PreferredStartDate.Date;
         var windowEnd = ScheduleAvailabilityHelper.ResolveWindowEnd(profile.PreferredStartDate, profile.PreferredEndDate);
 
-        var rankedDistinct = ranked
-            .GroupBy(x => CatalogTourIds.ResolveBaseTourId(x.Tour.Id))
-            .Select(g => g.OrderByDescending(x => x.Scoring.FairnessScore).First())
-            .ToList();
+        for (int attempt = 0; attempt < 2; attempt++)
+        {
+            var profileMatchScores = _modelRegistry.ComputeProfileMatchScores(activeProfile);
+            var hybridRetrievalScores = BlendRetrievalScores(semanticScores, profileMatchScores);
 
-        var mapped = rankedDistinct
-            .Select(x => MapTour(x.Tour, x.Scoring, profile, windowStart, windowEnd))
-            .ToList();
+            var rankingPool = Math.Min(
+                _catalogStore.Tours.Count,
+                Math.Max(activeProfile.Top * 5, 30));
 
-        var (exactTours, nearbyTours, scheduleAvailability) =
-            BuildRecommendationLists(mapped, profile.Top, windowStart, windowEnd);
+            var ranked = _tourRanker.RankTours(
+                _catalogStore.Tours.ToList(),
+                activeProfile,
+                hybridRetrievalScores,
+                weather,
+                ScoringModelSpec.ProductionStrategyKey);
+
+            var rankedDistinct = ranked
+                .GroupBy(x => CatalogTourIds.ResolveBaseTourId(x.Tour.Id))
+                .Select(g => g.OrderByDescending(x => x.Scoring.FairnessScore).First())
+                .ToList();
+
+            var mapped = rankedDistinct
+                .Select(x => 
+                {
+                    var scoringToUse = x.Scoring;
+                    if (isRelaxed)
+                    {
+                        scoringToUse = _tourRanker.ScoreTour(x.Tour, profile, hybridRetrievalScores, weather);
+                    }
+                    return MapTour(x.Tour, scoringToUse, profile, windowStart, windowEnd);
+                })
+                .ToList();
+
+            var lists = BuildRecommendationLists(mapped, activeProfile.Top, windowStart, windowEnd);
+            exactTours = lists.Exact;
+            nearbyTours = lists.Alternate;
+            scheduleAvailability = lists.Schedule;
+
+            if (exactTours.Count > 0 || nearbyTours.Count > 0)
+            {
+                break;
+            }
+
+            if (attempt == 0)
+            {
+                isRelaxed = true;
+                activeProfile = CloneProfile(activeProfile);
+                activeProfile.PreferredCity = null;
+                if (activeProfile.MaxBudgetPerPerson.HasValue)
+                {
+                    activeProfile.MaxBudgetPerPerson = (long)(activeProfile.MaxBudgetPerPerson.Value * 1.5f);
+                }
+            }
+        }
 
         var allowedCities = ResolveAllowedCities(exactTours, nearbyTours, profile);
 
@@ -243,7 +306,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         return new PersonalizedRecommendationResponseDTO
         {
             SessionId = sessionId,
-            AppliedProfile = profile,
+            AppliedProfile = activeProfile,
             WeatherAdvice = weather,
             ScheduleAvailability = scheduleAvailability,
             RecommendedTours = exactTours,
@@ -255,22 +318,43 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             ForeignVisitorTips = profile.NationalityType == TravelerNationalityTypes.Foreigner
                 ? BuildForeignVisitorTips(allowedCities)
                 : new List<string>(),
-            ElderlyCompanionTips = profile.HasElderly
+            ElderlyCompanionTips = profile.ElderlyCount > 0
                 ? culturalFactResults.Select(f => f.Fact).Where(f => f.Contains("elderly", StringComparison.OrdinalIgnoreCase) || f.Contains("cao tuổi", StringComparison.OrdinalIgnoreCase) || f.Contains("morning", StringComparison.OrdinalIgnoreCase)).Take(4).ToList()
                 : new List<string>(),
-            ChildrenCompanionTips = profile.HasChildren
+            ChildrenCompanionTips = profile.ChildrenCount > 0
                 ? new List<string> { _text.TipChildren1, _text.TipChildren2 }
                 : new List<string>(),
-            Summary = BuildSummary(exactTours, nearbyTours, weather, personas.Count, scheduleAvailability)
+            Summary = BuildSummary(exactTours, nearbyTours, weather, personas.Count, scheduleAvailability, isRelaxed)
         };
     }
+
+    private TourPreferenceQuestionnaireDTO CloneProfile(TourPreferenceQuestionnaireDTO p) => new()
+    {
+        CompanionType = p.CompanionType,
+        PreferredStartDate = p.PreferredStartDate,
+        PreferredEndDate = p.PreferredEndDate,
+        AdultCount = p.AdultCount,
+        ElderlyCount = p.ElderlyCount,
+        ChildrenCount = p.ChildrenCount,
+        TravelPace = p.TravelPace,
+        TravelInterests = p.TravelInterests.ToList(),
+        PreferredCity = p.PreferredCity,
+        PreferredCountry = p.PreferredCountry,
+        MaxBudgetPerPerson = p.MaxBudgetPerPerson,
+        Top = p.Top,
+        NationalityType = p.NationalityType,
+        SessionId = p.SessionId
+    };
 
     private RecommenderTransparencyDTO BuildTransparencyMeta(IReadOnlyList<string> personaTypes) => new()
     {
         ModelVersion = ScoringModelSpec.ModelVersion,
         ModelFamily = ScoringModelSpec.ModelFamily,
+        MethodologySummary = ScoringModelSpec.MethodologySummary,
         FairnessAlpha = _settings.FairnessAlpha,
-        AggregationFormula = $"FairnessScore = {_settings.FairnessAlpha:0.00} × min(persona_scores) + {1 - _settings.FairnessAlpha:0.00} × mean(persona_scores)",
+        AggregationFormula =
+            $"SeedScore = {_settings.FairnessAlpha:0.00} × min(persona_scores) + {1 - _settings.FairnessAlpha:0.00} × mean(persona_scores); " +
+            "MGRS-Fair re-ranks the top-N list to improve the least-satisfied persona.",
         PersonaTypesUsed = personaTypes.ToList(),
         KnowledgeSources = _culturalKnowledge.GetRegisteredSources().Select(s => new KnowledgeSourceDTO
         {
@@ -278,6 +362,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             Url = s.Url,
             Authority = s.Authority
         }).ToList(),
+        AcademicReferences = MapAcademicReferences(),
         DimensionWeights = new Dictionary<string, float>
         {
             ["interest_semantic"] = ScoringModelSpec.DimensionWeights.InterestSemantic,
@@ -289,6 +374,43 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             ["cultural_fit"] = ScoringModelSpec.DimensionWeights.CulturalFit
         }
     };
+
+    private static List<AcademicReferenceDTO> MapAcademicReferences() =>
+        ScoringModelSpec.AcademicReferences.Select(r => new AcademicReferenceDTO
+        {
+            Key = r.Key,
+            Title = r.Title,
+            Authors = r.Authors,
+            Venue = r.Venue,
+            Year = r.Year,
+            Url = r.Url,
+            Doi = r.Doi,
+            UsedFor = r.UsedFor
+        }).ToList();
+
+    private static Dictionary<int, float> BlendRetrievalScores(
+        IReadOnlyDictionary<int, float> semanticScores,
+        IReadOnlyDictionary<int, float> profileMatchScores)
+    {
+        if (profileMatchScores.Count == 0)
+        {
+            return semanticScores.ToDictionary(kv => kv.Key, kv => kv.Value);
+        }
+
+        var ids = semanticScores.Keys
+            .Concat(profileMatchScores.Keys)
+            .Distinct()
+            .ToList();
+
+        return ids.ToDictionary(
+            id => id,
+            id =>
+            {
+                var semantic = semanticScores.GetValueOrDefault(id, 0f);
+                var pm = profileMatchScores.GetValueOrDefault(id, 0f);
+                return Math.Clamp(semantic * 0.55f + pm * 0.45f, 0f, 1f);
+            });
+    }
 
     private static void ValidateProfile(TourPreferenceQuestionnaireDTO profile)
     {
@@ -343,7 +465,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
                 DimensionExplanations = dimensionExplanations,
                 EnvyGap = scoring.EnvyGap,
                 DissatisfactionVariance = scoring.DissatisfactionVariance,
-                AggregationFormula = ScoringModelSpec.FormalDefinitions.CafhrUtility,
+                AggregationFormula = ScoringModelSpec.FormalDefinitions.MgrsFairReranking,
                 OverallExplanation = BuildOverallScoreExplanation(scoring)
             }
         };
@@ -355,8 +477,8 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         var alpha = _settings.FairnessAlpha;
 
         return _text.IsVietnamese
-            ? $"Độ khớp tổng {percent} được tính từ 7 tiêu chí (sở thích, điểm đến, ngân sách, lịch, thời tiết, độ dễ đi, văn hóa), cân bằng sở thích của mọi người trong nhóm (hệ số công bằng {alpha:0.00})."
-            : $"Overall match {percent} combines 7 factors (interests, destination, budget, schedule, weather, ease, culture), balancing everyone in your travel party (fairness weight {alpha:0.00}).";
+            ? $"Độ khớp tổng {percent} được tính từ 7 tiêu chí, sau đó mô hình MGRS-Fair sắp xếp lại danh sách để giảm rủi ro bỏ quên thành viên có mức phù hợp thấp nhất (hệ số công bằng {alpha:0.00})."
+            : $"Overall match {percent} combines 7 factors, then MGRS-Fair re-ranks the list to reduce the risk of leaving the least-satisfied traveler behind (fairness weight {alpha:0.00}).";
     }
 
     private List<TourismInsightDTO> MapCulturalInsights(IReadOnlyList<CulturalFactResult> facts) =>
@@ -439,11 +561,12 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
     }
 
     private string BuildSummary(
-        List<TourRecommendationItemDTO> exactTours,
-        List<TourRecommendationItemDTO> nearbyTours,
+        IReadOnlyList<TourRecommendationItemDTO> exactTours,
+        IReadOnlyList<TourRecommendationItemDTO> nearbyTours,
         WeatherAdviceDTO? weather,
         int personaCount,
-        ScheduleAvailabilityDTO schedule)
+        ScheduleAvailabilityDTO scheduleAvailability,
+        bool isRelaxed)
     {
         var weatherNote = weather != null
             ? (_text.IsVietnamese
@@ -457,14 +580,24 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             var topScore = exactTours.Count > 0
                 ? exactTours[0].Score.ToString("P0")
                 : nearbyTours[0].Score.ToString("P0");
-            return _text.SummaryFound(personaCount, totalShown, topScore, weatherNote);
+                
+            return isRelaxed
+                ? _text.SummaryFoundRelaxed(personaCount, totalShown, topScore, weatherNote)
+                : _text.SummaryFound(personaCount, totalShown, topScore, weatherNote);
         }
 
         return _text.SummaryNoTours + (weatherNote ?? "");
     }
 
-    private static string? InferCityFromInterests(List<string> interests) =>
-        interests.Contains("river", StringComparer.OrdinalIgnoreCase) ? "Can Tho" : null;
+    private static string InferCityFromInterests(List<string> interests)
+    {
+        if (interests.Contains("beach", StringComparer.OrdinalIgnoreCase)) return "Nha Trang";
+        if (interests.Contains("nature", StringComparer.OrdinalIgnoreCase)) return "Da Lat";
+        if (interests.Contains("culture", StringComparer.OrdinalIgnoreCase)) return "Hue";
+        if (interests.Contains("food", StringComparer.OrdinalIgnoreCase)) return "Ho Chi Minh";
+        if (interests.Contains("river", StringComparer.OrdinalIgnoreCase)) return "Can Tho";
+        return "Da Nang";
+    }
 
     private static TourPreferenceQuestionnaireDTO WithRankingPool(
         TourPreferenceQuestionnaireDTO profile,
@@ -474,8 +607,8 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         PreferredStartDate = profile.PreferredStartDate,
         PreferredEndDate = profile.PreferredEndDate,
         MaxBudgetPerPerson = profile.MaxBudgetPerPerson,
-        HasElderly = profile.HasElderly,
-        HasChildren = profile.HasChildren,
+        AdultCount = profile.AdultCount,
+        TravelPace = profile.TravelPace,
         ChildrenCount = profile.ChildrenCount,
         ElderlyCount = profile.ElderlyCount,
         TravelInterests = profile.TravelInterests,
@@ -621,7 +754,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             .Where(c => !string.IsNullOrWhiteSpace(c))
             .Select(c => c!)
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(3)
+            .Take(8)
             .ToList();
     }
 
@@ -662,8 +795,8 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             var facts = await _culturalKnowledge.GetFactsAsync(
                 city,
                 forForeignVisitor: false,
-                profile.HasElderly,
-                profile.HasChildren,
+                profile.ElderlyCount > 0,
+                profile.ChildrenCount > 0,
                 profile.TravelInterests,
                 cancellationToken);
 

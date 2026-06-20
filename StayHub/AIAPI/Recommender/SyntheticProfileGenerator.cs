@@ -44,10 +44,10 @@ public static class SyntheticProfileGenerator
                 PreferredStartDate = start,
                 PreferredEndDate = start.AddDays(2 + (i % 4)),
                 MaxBudgetPerPerson = 2_000_000L + (i % 8) * 1_000_000L,
-                HasElderly = hasElderly,
-                HasChildren = hasChildren,
-                ElderlyCount = hasElderly ? 1 + (i % 2) : null,
-                ChildrenCount = hasChildren ? 1 + (i % 2) : null,
+                TravelPace = i % 3 == 0 ? TravelPaceTypes.Relaxed : (i % 3 == 1 ? TravelPaceTypes.Packed : TravelPaceTypes.Moderate),
+                AdultCount = companion == TravelCompanionTypes.Solo ? 1 : 2 + (i % 3),
+                ElderlyCount = hasElderly ? 1 + (i % 2) : 0,
+                ChildrenCount = hasChildren ? 1 + (i % 2) : 0,
                 TravelInterests = InterestSets[i % InterestSets.Length].ToList(),
                 NationalityType = i % 5 == 0
                     ? TravelerNationalityTypes.Foreigner

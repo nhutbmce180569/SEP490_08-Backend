@@ -2,7 +2,6 @@ using AIAPI.DTOs;
 using AIAPI.Helpers;
 using AIAPI.Localization;
 using AIAPI.ML;
-using AIAPI.Models;
 using AIAPI.Models.Knowledge;
 using AIAPI.Services;
 
@@ -13,39 +12,36 @@ public class TourAssistantService : ITourAssistantService
     private readonly IMlModelRegistry _modelRegistry;
     private readonly ICatalogStore _catalogStore;
     private readonly ITourSemanticSearchService _searchService;
-    private readonly ITourRecommendationService _recommendationService;
+    private readonly IPersonalizedTourRecommendationService _personalizedService;
     private readonly ICulturalKnowledgeService _culturalKnowledge;
     private readonly ISystemKnowledgeIndex _systemKnowledge;
     private readonly IKnowledgeLocalizationService _knowledgeLocalization;
     private readonly QueryEntityExtractor _entityExtractor;
-    private readonly StayHubAiDbContext _dbContext;
     private readonly IAiLocalizedCopy _text;
 
     public TourAssistantService(
         IMlModelRegistry modelRegistry,
         ICatalogStore catalogStore,
         ITourSemanticSearchService searchService,
-        ITourRecommendationService recommendationService,
+        IPersonalizedTourRecommendationService personalizedService,
         ICulturalKnowledgeService culturalKnowledge,
         ISystemKnowledgeIndex systemKnowledge,
         IKnowledgeLocalizationService knowledgeLocalization,
         QueryEntityExtractor entityExtractor,
-        StayHubAiDbContext dbContext,
         IAiLocalizedCopy text)
     {
         _modelRegistry = modelRegistry;
         _catalogStore = catalogStore;
         _searchService = searchService;
-        _recommendationService = recommendationService;
+        _personalizedService = personalizedService;
         _culturalKnowledge = culturalKnowledge;
         _systemKnowledge = systemKnowledge;
         _knowledgeLocalization = knowledgeLocalization;
         _entityExtractor = entityExtractor;
-        _dbContext = dbContext;
         _text = text;
     }
 
-    public async Task<ChatResponseDTO> ChatAsync(string message, string? sessionId, int? customerId, CancellationToken cancellationToken = default)
+    public async Task<ChatResponseDTO> ChatAsync(string message, string? sessionId, CancellationToken cancellationToken = default)
     {
         if (!_catalogStore.IsReady || !_modelRegistry.Status.IsReady)
         {
@@ -63,7 +59,7 @@ public class TourAssistantService : ITourAssistantService
             Intent = intent,
             IntentConfidence = confidence,
             ParsedQuery = parsed,
-            UsedPersonalization = customerId.HasValue
+            UsedPersonalization = false
         };
 
         switch (intent)
@@ -94,18 +90,8 @@ public class TourAssistantService : ITourAssistantService
                     break;
                 }
 
-                await HandleRecommendationAsync(response, message, parsed, customerId, cancellationToken);
+                await HandleRecommendationAsync(response, message, parsed, cancellationToken);
                 break;
-        }
-
-        foreach (var tour in response.RecommendedTours.Take(3))
-        {
-            await LogInteractionAsync(customerId, new LogInteractionRequestDTO
-            {
-                TourId = tour.TourId,
-                InteractionType = "chat_recommend",
-                SessionId = session
-            }, cancellationToken);
         }
 
         return response;
@@ -240,24 +226,40 @@ public class TourAssistantService : ITourAssistantService
         ChatResponseDTO response,
         string message,
         ParsedQueryDTO parsed,
-        int? customerId,
         CancellationToken cancellationToken)
     {
-        var recommended = await _recommendationService.RecommendAsync(customerId, 6, parsed, cancellationToken);
-        response.RecommendedTours = recommended.Select(MapRecommendationToSearch).ToList();
+        response.RecommendedTours = (await _searchService.SearchAsync(new NaturalLanguageSearchRequestDTO
+        {
+            Query = message,
+            Top = 6,
+            City = parsed.City,
+            Country = parsed.Country,
+            MinPrice = parsed.MinPrice,
+            MaxPrice = parsed.MaxPrice,
+            DurationDays = parsed.DurationDays,
+            GroupSize = parsed.GroupSize,
+            StartDate = parsed.StartDate,
+            EndDate = parsed.EndDate,
+            CategoryId = parsed.CategoryId
+        }, cancellationToken)).Select(MapToSearchItem).ToList();
 
-        if (response.RecommendedTours.Count > 0)
-        {
-            response.Reply = customerId.HasValue
-                ? _text.ChatPersonalizedLoggedIn
-                : _text.ChatPersonalizedAnonymous;
-        }
-        else
-        {
-            response.Reply = _text.ChatFallbackHelp;
-        }
+        response.Reply = response.RecommendedTours.Count > 0
+            ? _text.ChatRecommendFound(response.RecommendedTours.Count)
+            : _text.ChatRecommendNone;
 
         response.SuggestedQuestions = _text.ChatDefaultSuggestions.ToList();
+    }
+
+    public async Task<List<TourRecommendationItemDTO>> ConsultAsync(
+        TourConsultationRequestDTO request,
+        CancellationToken cancellationToken = default)
+    {
+        var profile = ConsultProfileMapper.ToQuestionnaire(request);
+        var response = await _personalizedService.RecommendFromProfileAsync(profile, cancellationToken);
+        return response.RecommendedTours
+            .Concat(response.NearbyScheduleTours)
+            .Take(request.Top)
+            .ToList();
     }
 
     private string BuildSystemReply(IReadOnlyList<SystemKnowledgeHit> hits)
@@ -332,77 +334,8 @@ public class TourAssistantService : ITourAssistantService
         return string.Join("\n\n", parts);
     }
 
-    public async Task<List<TourRecommendationItemDTO>> ConsultAsync(
-        TourConsultationRequestDTO request,
-        int? customerId,
-        CancellationToken cancellationToken = default)
-    {
-        var parsed = _entityExtractor.Merge(new ParsedQueryDTO(), request);
-        if (!string.IsNullOrWhiteSpace(request.TravelStyle))
-        {
-            var styleMatches = _modelRegistry.SearchTours(request.TravelStyle, 20);
-            var styleTourIds = styleMatches.Select(m => m.TourId).ToHashSet();
-            var filtered = _catalogStore.Tours.Where(t => styleTourIds.Contains(t.Id)).Select(t => t.Id).ToHashSet();
-
-            var recommendations = await _recommendationService.RecommendAsync(customerId, request.Top * 2, parsed, cancellationToken);
-            return recommendations.Where(r => filtered.Contains(r.TourId)).Take(request.Top).ToList();
-        }
-
-        return await _recommendationService.RecommendAsync(customerId, request.Top, parsed, cancellationToken);
-    }
-
-    public async Task LogInteractionAsync(int? customerId, LogInteractionRequestDTO request, CancellationToken cancellationToken = default)
-    {
-        var catalogTourId = CatalogTourIds.ResolveBaseTourId(request.TourId);
-        if (!_catalogStore.Tours.Any(t => t.Id == catalogTourId || t.Id == request.TourId))
-        {
-            throw new InvalidOperationException("TourId does not exist in active catalog.");
-        }
-
-        var weight = request.InteractionType switch
-        {
-            "booking" => 5f,
-            "wishlist" => 4f,
-            "chat_recommend" => 2f,
-            "click" => 1.5f,
-            _ => 1f
-        };
-
-        _dbContext.UserTourInteractions.Add(new UserTourInteraction
-        {
-            CustomerId = customerId,
-            TourId = catalogTourId,
-            InteractionType = request.InteractionType,
-            Weight = weight,
-            SessionId = request.SessionId,
-            CreatedAt = DateTime.UtcNow
-        });
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-    }
-
     private static string Trim(string? text, int max) =>
         string.IsNullOrWhiteSpace(text) ? "" : text.Length <= max ? text : text[..max] + "...";
 
     private static TourSearchResultItemDTO MapToSearchItem(TourSearchResultItemDTO item) => item;
-
-    private static TourSearchResultItemDTO MapRecommendationToSearch(TourRecommendationItemDTO item) => new()
-    {
-        TourId = CatalogTourIds.ResolveBaseTourId(item.TourId),
-        Name = item.Name,
-        City = item.City,
-        Country = item.Country,
-        ImageUrl = item.ImageUrl,
-        AverageStar = item.AverageStar,
-        MinPrice = item.MinPrice,
-        DurationDays = item.DurationDays,
-        Score = item.Score,
-        SemanticScore = item.Score,
-        Reason = item.Reason,
-        MatchReasons = item.MatchReasons,
-        ScoreBreakdown = item.ScoreBreakdown,
-        NextDeparture = item.NextDeparture,
-        MatchesPreferredDates = item.MatchesPreferredDates,
-        ScheduleNote = item.ScheduleNote
-    };
 }

@@ -31,7 +31,7 @@ public static class TravelPartyDecomposer
             }
         };
 
-        if (profile.HasElderly)
+        if (profile.ElderlyCount > 0)
         {
             personas.Add(new TravelPersona
             {
@@ -43,7 +43,7 @@ public static class TravelPartyDecomposer
             });
         }
 
-        if (profile.HasChildren)
+        if (profile.ChildrenCount > 0)
         {
             personas.Add(new TravelPersona
             {

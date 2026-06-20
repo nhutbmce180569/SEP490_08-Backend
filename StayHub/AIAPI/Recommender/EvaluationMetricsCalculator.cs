@@ -52,12 +52,12 @@ public static class RelevanceLabeler
             score += 1;
         }
 
-        if (profile.HasElderly && (doc.Contains("trek") || doc.Contains("motorbike")))
+        if (profile.ElderlyCount > 0 && (doc.Contains("trek") || doc.Contains("motorbike")))
         {
             score = Math.Max(0, score - 2);
         }
 
-        if (profile.HasChildren && (doc.Contains("dive") || doc.Contains("motorbike")))
+        if (profile.ChildrenCount > 0 && (doc.Contains("dive") || doc.Contains("motorbike")))
         {
             score = Math.Max(0, score - 1);
         }

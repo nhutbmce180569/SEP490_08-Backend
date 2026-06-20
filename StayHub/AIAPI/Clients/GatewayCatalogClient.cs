@@ -84,43 +84,6 @@ public class GatewayCatalogClient : IGatewayCatalogClient
         return all;
     }
 
-    public async Task<IReadOnlyList<int>> FetchWishlistTourIdsAsync(CancellationToken cancellationToken = default)
-    {
-        var response = await _httpClient.GetAsync("api/wishlists", cancellationToken);
-        if (!response.IsSuccessStatusCode)
-        {
-            return Array.Empty<int>();
-        }
-
-        var items = await response.Content.ReadFromJsonAsync<List<ExternalWishlistItemDTO>>(JsonOptions, cancellationToken);
-        return items?.Select(i => i.TourId).Distinct().ToList() ?? new List<int>();
-    }
-
-    public async Task<IReadOnlyList<int>> FetchBookingTourIdsAsync(int customerId, CancellationToken cancellationToken = default)
-    {
-        var response = await _httpClient.GetAsync(
-            $"api/orders/user/{customerId}?page=1&pageSize=100",
-            cancellationToken);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            return Array.Empty<int>();
-        }
-
-        var wrapper = await response.Content.ReadFromJsonAsync<BookingOrdersWrapperDTO>(JsonOptions, cancellationToken);
-        var orders = wrapper?.Data?.Data;
-        if (orders == null)
-        {
-            return Array.Empty<int>();
-        }
-
-        return orders
-            .Where(o => o.Tour != null || o.Schedule != null)
-            .Select(o => o.Tour?.Id ?? o.Schedule!.TourId)
-            .Distinct()
-            .ToList();
-    }
-
     private static TourCatalogItem MapTour(ExternalTourDTO tour)
     {
         var itineraryTitles = tour.TourItineraries?
