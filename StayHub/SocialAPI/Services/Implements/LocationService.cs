@@ -364,5 +364,48 @@ namespace SocialAPI.Services.Implements
                 return new List<FootprintDto>();
             }
         }
+        public async Task<IEnumerable<HeatPointDto>> GetHeatmapDataAsync(int? scheduleId, int days)
+        {
+            try
+            {
+                // Độ "thô" của lưới gom điểm:
+                //   3 chữ số ~ 111m  | 2 chữ số ~ 1.1km (gom rộng hơn, ít điểm hơn)
+                const int precision = 3;
+
+                if (days <= 0) days = 90;
+                var since = DateTime.UtcNow.AddDays(-days);
+
+                var query = _context.LocationLogs
+                    .AsNoTracking()
+                    .Where(x => x.Timestamp >= since);
+
+                if (scheduleId.HasValue && scheduleId.Value > 0)
+                {
+                    query = query.Where(x => x.ScheduleId == scheduleId.Value);
+                }
+
+                // GROUP BY ROUND(Lat,3), ROUND(Lng,3) -> COUNT(*)
+                // EF Core dịch Math.Round(double,int) thành ROUND() của SQL Server.
+                var points = await query
+                    .GroupBy(x => new
+                    {
+                        LatBucket = Math.Round(x.Lat, precision),
+                        LngBucket = Math.Round(x.Lng, precision)
+                    })
+                    .Select(g => new HeatPointDto
+                    {
+                        Lat = g.Key.LatBucket,
+                        Lng = g.Key.LngBucket,
+                        Weight = g.Count()
+                    })
+                    .ToListAsync();
+
+                return points;
+            }
+            catch (Exception)
+            {
+                return new List<HeatPointDto>();
+            }
+        }
     }
 }

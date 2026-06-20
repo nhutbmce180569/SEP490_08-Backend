@@ -113,5 +113,20 @@ namespace SocialAPI.Controllers
                 return StatusCode(500, new { message = M("AnErrorOccurredWhileRetrievingLocation"), details = ex.Message });
             }
         }
+
+        // GET /api/locations/heatmap?scheduleId=&days=90
+        [HttpGet("heatmap")]
+        public async Task<IActionResult> GetHeatmap([FromQuery] int? scheduleId, [FromQuery] int days = 90)
+        {
+            try
+            {
+                var data = await _locationService.GetHeatmapDataAsync(scheduleId, days);
+                return Ok(new { message = M("HeatmapDataRetrievedSuccessfully"), data });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileRetrievingHeatmap"), details = ex.Message });
+            }
+        }
     }
 }
