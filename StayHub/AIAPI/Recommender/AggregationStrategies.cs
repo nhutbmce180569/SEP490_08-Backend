@@ -17,8 +17,8 @@ public static class AggregationStrategies
 
     public static IReadOnlyList<BaselineDefinition> GetAll() =>
     [
-        new BaselineDefinition(CafhrFair, "Proposed CAFHR",
-            "U = α·min_p u_p + (1-α)·mean_p u_p with min-persona penalty (τ=0.35)."),
+        new BaselineDefinition(CafhrFair, "Hybrid Fair Utility",
+            "Seed scorer: U = α·min_p u_p + (1-α)·mean_p u_p with min-persona penalty (τ=0.35)."),
         new BaselineDefinition(MeanUtility, "Mean Utility",
             "U = mean_p u_p — ignores least-satisfied member (strawman for fairness comparison)."),
         new BaselineDefinition(LeastMisery, "Least Misery",
@@ -29,8 +29,8 @@ public static class AggregationStrategies
             "Primary-persona utility only; non-primary personas receive u_p=0 (paper baseline)."),
         new BaselineDefinition(PopularityWeighted, "Popularity-Weighted Content",
             "0.6·ω̂(t) + 0.4·s₁,primary with hard filters; no group aggregation."),
-        new BaselineDefinition(MgrsFair, "MGRS-Fair",
-            "Iterative egalitarian swap re-ranking on persona utilities (Sacharidis et al.)."),
+        new BaselineDefinition(MgrsFair, "Proposed EC-FHGR / MGRS-Fair",
+            "Evidence-cited hybrid scoring plus iterative egalitarian swap re-ranking on persona utilities (Sacharidis et al.)."),
         new BaselineDefinition(CafhrNoKnowledge, "CAFHR w/o Knowledge",
             "CAFHR fair aggregation with cultural_fit dimension disabled (ablation)."),
         new BaselineDefinition(CafhrNoPenalty, "FCAHR w/o Penalty",

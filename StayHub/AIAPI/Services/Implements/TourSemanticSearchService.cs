@@ -1,11 +1,8 @@
-using AIAPI.Clients;
 using AIAPI.DTOs;
 using AIAPI.Helpers;
 using AIAPI.Localization;
 using AIAPI.ML;
-using AIAPI.Models;
 using AIAPI.Models.Catalog;
-using Microsoft.EntityFrameworkCore;
 
 namespace AIAPI.Services.Implements;
 
@@ -205,26 +202,19 @@ public class TourRecommendationService : ITourRecommendationService
 {
     private readonly ICatalogStore _catalogStore;
     private readonly IMlModelRegistry _modelRegistry;
-    private readonly IGatewayCatalogClient _gatewayClient;
-    private readonly StayHubAiDbContext _dbContext;
     private readonly IAiLocalizedCopy _text;
 
     public TourRecommendationService(
         ICatalogStore catalogStore,
         IMlModelRegistry modelRegistry,
-        IGatewayCatalogClient gatewayClient,
-        StayHubAiDbContext dbContext,
         IAiLocalizedCopy text)
     {
         _catalogStore = catalogStore;
         _modelRegistry = modelRegistry;
-        _gatewayClient = gatewayClient;
-        _dbContext = dbContext;
         _text = text;
     }
 
-    public async Task<List<TourRecommendationItemDTO>> RecommendAsync(
-        int? customerId,
+    public Task<List<TourRecommendationItemDTO>> RecommendFromQueryAsync(
         int top,
         ParsedQueryDTO? hints = null,
         CancellationToken cancellationToken = default)
@@ -240,28 +230,16 @@ public class TourRecommendationService : ITourRecommendationService
             tours = tours.Where(BuildFilter(hints)).ToList();
         }
 
-        var profileText = await BuildUserProfileTextAsync(customerId, cancellationToken);
+        var queryText = BuildQueryText(hints);
         var scored = new Dictionary<int, (float Score, string Reason)>();
 
-        if (!string.IsNullOrWhiteSpace(profileText))
+        if (!string.IsNullOrWhiteSpace(queryText))
         {
-            foreach (var match in _modelRegistry.SearchTours(profileText, tours.Count))
+            foreach (var match in _modelRegistry.SearchTours(queryText, tours.Count, BuildFilter(hints ?? new ParsedQueryDTO())))
             {
-                scored[match.TourId] = (match.Score * 0.55f + PopularityScore(match.TourId) * 0.25f, _text.ReasonWishlistHistory);
-            }
-        }
-
-        var interactionBoosts = await GetInteractionBoostsAsync(customerId, cancellationToken);
-        foreach (var boost in interactionBoosts)
-        {
-            if (!scored.ContainsKey(boost.TourId))
-            {
-                scored[boost.TourId] = (boost.Weight, boost.Reason);
-            }
-            else
-            {
-                var current = scored[boost.TourId];
-                scored[boost.TourId] = (current.Score + boost.Weight, current.Reason);
+                scored[match.TourId] = (
+                    match.Score * 0.75f + CatalogQualityScore(match.TourId) * 0.25f,
+                    _text.ReasonQueryMatch);
             }
         }
 
@@ -269,11 +247,11 @@ public class TourRecommendationService : ITourRecommendationService
         {
             if (!scored.ContainsKey(tour.Id))
             {
-                scored[tour.Id] = (PopularityScore(tour.Id), _text.ReasonPopularTour);
+                scored[tour.Id] = (CatalogQualityScore(tour.Id), _text.ReasonCatalogQuality);
             }
         }
 
-        return scored
+        var result = scored
             .Where(kv => tours.Any(t => t.Id == kv.Key))
             .GroupBy(kv => CatalogTourIds.ResolveBaseTourId(kv.Key))
             .Select(g => g.OrderByDescending(kv => kv.Value.Score).First())
@@ -281,6 +259,8 @@ public class TourRecommendationService : ITourRecommendationService
             .Take(top)
             .Select(kv => MapRecommendation(kv.Key, kv.Value.Score, kv.Value.Reason))
             .ToList();
+
+        return Task.FromResult(result);
     }
 
     public Task<List<TourRecommendationItemDTO>> RecommendSimilarAsync(int tourId, int top, CancellationToken cancellationToken = default)
@@ -304,48 +284,22 @@ public class TourRecommendationService : ITourRecommendationService
         return Task.FromResult(matches);
     }
 
-    private async Task<string> BuildUserProfileTextAsync(int? customerId, CancellationToken cancellationToken)
+    private static string BuildQueryText(ParsedQueryDTO? hints)
     {
-        if (!customerId.HasValue)
+        if (hints == null)
         {
             return "";
         }
 
-        var tourIds = new HashSet<int>();
-        tourIds.UnionWith(await _gatewayClient.FetchWishlistTourIdsAsync(cancellationToken));
-        tourIds.UnionWith(await _gatewayClient.FetchBookingTourIdsAsync(customerId.Value, cancellationToken));
-
-        var docs = _catalogStore.Tours
-            .Where(t => tourIds.Contains(t.Id))
-            .Select(t => t.SearchDocument)
-            .ToList();
-
-        return string.Join(" ", docs);
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(hints.City)) parts.Add(hints.City);
+        if (!string.IsNullOrWhiteSpace(hints.Country)) parts.Add(hints.Country);
+        if (hints.DurationDays.HasValue) parts.Add($"{hints.DurationDays.Value} days");
+        if (hints.MaxPrice.HasValue) parts.Add($"budget {hints.MaxPrice.Value}");
+        return string.Join(' ', parts);
     }
 
-    private async Task<List<(int TourId, float Weight, string Reason)>> GetInteractionBoostsAsync(
-        int? customerId,
-        CancellationToken cancellationToken)
-    {
-        var query = _dbContext.UserTourInteractions.AsQueryable();
-        if (customerId.HasValue)
-        {
-            query = query.Where(i => i.CustomerId == customerId || i.CustomerId == null);
-        }
-
-        var grouped = await query
-            .GroupBy(i => i.TourId)
-            .Select(g => new { TourId = g.Key, Weight = g.Sum(x => x.Weight) })
-            .OrderByDescending(x => x.Weight)
-            .Take(20)
-            .ToListAsync(cancellationToken);
-
-        return grouped
-            .Select(g => (g.TourId, Math.Min((float)(g.Weight / 10.0), 1f), "Có tín hiệu tương tác từ người dùng tương tự."))
-            .ToList();
-    }
-
-    private float PopularityScore(int tourId)
+    private float CatalogQualityScore(int tourId)
     {
         var tour = _catalogStore.Tours.FirstOrDefault(t => t.Id == tourId);
         if (tour == null)

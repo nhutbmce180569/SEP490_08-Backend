@@ -8,8 +8,8 @@ public class EvaluationRunRequestDTO
     public bool IncludeAlphaSweep { get; set; } = true;
     public List<float>? AlphaValues { get; set; }
 
-    /// <summary>proxy | hybrid | interaction_augmented | expert</summary>
-    public string LabelingMode { get; set; } = "hybrid";
+    /// <summary>proxy | hybrid | expert</summary>
+    public string LabelingMode { get; set; } = "proxy";
 
     public bool IncludeSignificanceTests { get; set; } = true;
 
@@ -78,7 +78,6 @@ public class GroundTruthStatsDTO
 {
     public string Mode { get; set; } = "";
     public int TotalExpertJudgmentsInDb { get; set; }
-    public int TotalInteractionSignals { get; set; }
     public float AvgRelevantToursPerProfile { get; set; }
     public int ProfilesWithExpertLabels { get; set; }
 }

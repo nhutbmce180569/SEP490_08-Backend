@@ -8,12 +8,16 @@ namespace AIAPI.Services.Implements;
 
 public class SystemKnowledgeIndex : ISystemKnowledgeIndex
 {
-    private readonly TourMlModelTrainer _trainer = new();
+    private readonly ILocalEmbeddingService _embeddingService;
     private readonly object _lock = new();
-    private ITransformer? _searchModel;
     private List<(SystemKnowledgeEntry Entry, float[] Vector)> _indexed = new();
     private List<(SystemKnowledgeEntry Entry, string NormalizedPrompt)> _promptIndex = new();
     private SystemKnowledgeBundle _bundle = new();
+
+    public SystemKnowledgeIndex(ILocalEmbeddingService embeddingService)
+    {
+        _embeddingService = embeddingService;
+    }
 
     public bool IsReady { get; private set; }
     public int EntryCount { get; private set; }
@@ -23,7 +27,6 @@ public class SystemKnowledgeIndex : ISystemKnowledgeIndex
         lock (_lock)
         {
             IsReady = false;
-            _searchModel = null;
             _indexed = new List<(SystemKnowledgeEntry Entry, float[] Vector)>();
             _promptIndex = new List<(SystemKnowledgeEntry Entry, string NormalizedPrompt)>();
             _bundle = LoadBundle();
@@ -34,11 +37,8 @@ public class SystemKnowledgeIndex : ISystemKnowledgeIndex
                 return;
             }
 
-            _searchModel = _trainer.TrainTextSearchModel(
-                _bundle.Entries.Select(e => new TourDocument { Text = e.BuildSearchDocument() }));
-
             _indexed = _bundle.Entries
-                .Select(e => (e, _trainer.GetFeatureVector(_searchModel, e.BuildSearchDocument())))
+                .Select(e => (e, _embeddingService.EmbedText(e.BuildSearchDocument())))
                 .ToList();
 
             _promptIndex = _bundle.Entries
@@ -57,7 +57,7 @@ public class SystemKnowledgeIndex : ISystemKnowledgeIndex
     {
         lock (_lock)
         {
-            if (!IsReady || _searchModel == null || string.IsNullOrWhiteSpace(query))
+            if (!IsReady || _indexed.Count == 0 || string.IsNullOrWhiteSpace(query))
             {
                 return Array.Empty<SystemKnowledgeHit>();
             }
@@ -69,12 +69,12 @@ public class SystemKnowledgeIndex : ISystemKnowledgeIndex
                 return [promptHit];
             }
 
-            var queryVector = _trainer.GetFeatureVector(_searchModel, query);
+            var queryVector = _embeddingService.EmbedText(query);
 
             return _indexed
                 .Select(item =>
                 {
-                    var semantic = _trainer.CosineSimilarity(queryVector, item.Vector);
+                    var semantic = _embeddingService.CosineSimilarity(queryVector, item.Vector);
                     var keywordBoost = ComputeKeywordBoost(normalizedQuery, item.Entry);
                     var titleBoost = ComputeTitleBoost(normalizedQuery, item.Entry);
                     return new SystemKnowledgeHit

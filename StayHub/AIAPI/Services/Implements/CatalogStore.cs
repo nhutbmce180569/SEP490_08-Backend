@@ -7,6 +7,12 @@ public class CatalogStore : ICatalogStore
     private readonly object _lock = new();
     private List<TourCatalogItem> _tours = new();
     private List<TourismKnowledgeItem> _tourism = new();
+    private readonly ILocalEmbeddingService _embeddingService;
+
+    public CatalogStore(ILocalEmbeddingService embeddingService)
+    {
+        _embeddingService = embeddingService;
+    }
 
     public IReadOnlyList<TourCatalogItem> Tours
     {
@@ -27,9 +33,20 @@ public class CatalogStore : ICatalogStore
         IReadOnlyList<TourismKnowledgeItem> tourismItems,
         CatalogStoreStats? stats = null)
     {
+        var processedTours = tours.ToList();
+        
+        // Compute Semantic Embeddings for all tours
+        foreach (var tour in processedTours)
+        {
+            if (tour.SemanticEmbedding == null)
+            {
+                tour.SemanticEmbedding = _embeddingService.EmbedText(tour.SearchDocument);
+            }
+        }
+
         lock (_lock)
         {
-            _tours = tours.ToList();
+            _tours = processedTours;
             _tourism = tourismItems.ToList();
             Stats = stats;
             LastSyncedAt = DateTime.UtcNow;

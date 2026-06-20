@@ -34,6 +34,38 @@ public class ScoredTourDocument
     public float Score { get; set; }
 }
 
+public class TourProfileMatchExample
+{
+    [LoadColumn(0)] public float TourPrice { get; set; }
+    [LoadColumn(1)] public float TourDuration { get; set; }
+    [LoadColumn(2)] public float ProfileBudget { get; set; }
+    [LoadColumn(3)] public float ProfileDuration { get; set; }
+    [LoadColumn(4)] public float CityMatch { get; set; }
+    [LoadColumn(5)] public float InterestMatchScore { get; set; }
+    [LoadColumn(6)] public float AdventureLevel { get; set; }
+    [LoadColumn(7)] public float AgeSuitability { get; set; }
+    [LoadColumn(8)] public float DifficultyScore { get; set; }
+    [LoadColumn(9)] public float Label { get; set; }
+}
+
+public class TourProfileMatchPrediction
+{
+    [ColumnName("Score")]
+    public float Score { get; set; }
+}
+
+public static class TourRecommendationArchetypes
+{
+    public const uint BeachRelax = 1;
+    public const uint CultureFood = 2;
+    public const uint NatureAdventure = 3;
+    public const uint FamilyAccessible = 4;
+    public const uint InternationalCulture = 5;
+    public const uint RiverCity = 6;
+    public const uint PhotographyNature = 7;
+    public const uint BudgetGeneralist = 8;
+}
+
 public static class TourIntents
 {
     public const string SearchTour = "search_tour";

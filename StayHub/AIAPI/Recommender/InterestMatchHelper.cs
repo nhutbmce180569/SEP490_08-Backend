@@ -45,11 +45,11 @@ public static class InterestMatchHelper
         var list = interests.ToList();
         if (list.Count == 0)
         {
-            return 0.5f;
+            return 1f;
         }
 
         var hits = CountMatchedInterests(doc, list);
-        return hits / (float)list.Count;
+        return Math.Clamp(hits / Math.Min(3f, list.Count), 0f, 1f);
     }
 
     public static int CountMatchedInterests(string doc, IEnumerable<string> interests)
