@@ -44,7 +44,7 @@ public class MomentService : IMomentService
         {
             ScheduleId = dto.ScheduleId,
             UserId = dto.UserId,
-            ImageUrl = imageUrl, 
+            ImageUrl = imageUrl,
             Caption = dto.Caption,
             Lat = dto.Lat,
             Lng = dto.Lng,
@@ -81,7 +81,7 @@ public class MomentService : IMomentService
         }
         else
         {
-            var reaction = new MomentReaction { MomentId = momentId, UserId = dto.UserId, IsLike = dto.IsLike };
+            var reaction = new MomentReaction { MomentId = momentId, UserId = dto.UserId, IsLike = true };
             await _momentRepository.AddReactionAsync(reaction);
         }
     }
@@ -94,7 +94,17 @@ public class MomentService : IMomentService
         var comment = new MomentComment { MomentId = momentId, UserId = dto.UserId, Comment = dto.Comment, Timestamp = DateTime.UtcNow };
         var createdComment = await _momentRepository.AddCommentAsync(comment);
 
-        return _mapper.Map<CommentResponseDto>(createdComment);
+        var result = _mapper.Map<CommentResponseDto>(createdComment);
+
+        // ✅ Enrich thông tin người bình luận để client hiển thị tên/avatar ngay.
+        var profiles = await FetchUserProfilesAsync(new List<int> { dto.UserId });
+        if (profiles.TryGetValue(dto.UserId, out var p))
+        {
+            result.UserName = p.FullName;
+            result.AvatarUrl = p.AvatarUrl;
+        }
+
+        return result;
     }
 
     public async Task<CommentResponseDto> UpdateCommentAsync(int commentId, CommentRequestDto dto)
@@ -131,14 +141,67 @@ public class MomentService : IMomentService
 
     public async Task<IEnumerable<MomentResponseDto>> GetMomentFeedWithUsersAsync(int? scheduleId, int currentUserId, int skip, int top)
     {
-        var moments = await _momentRepository.GetMomentFeedPagedAsync(scheduleId, currentUserId, skip, top);
+        var moments = (await _momentRepository.GetMomentFeedPagedAsync(scheduleId, currentUserId, skip, top)).ToList();
         var dtos = _mapper.Map<List<MomentResponseDto>>(moments);
 
         if (!dtos.Any()) return dtos;
 
-        // Batch fetch users to prevent N+1 HTTP calls
-        var userIds = dtos.Select(d => d.UserId).Distinct().ToList();
-        var userProfiles = new Dictionary<int, UserProfileShortDto>();
+        // ✅ 1) Xác định moment nào đã được currentUser thả tim (lấy trực tiếp từ entity).
+        var likedMomentIds = moments
+            .Where(m => m.MomentReactions.Any(r => r.UserId == currentUserId && r.IsLike == true))
+            .Select(m => m.Id)
+            .ToHashSet();
+
+        // ✅ 2) Gom userId của TÁC GIẢ moment LẪN người BÌNH LUẬN -> fetch 1 lần.
+        var userIds = dtos.Select(d => d.UserId)
+            .Concat(dtos.SelectMany(d => d.Comments).Select(c => c.UserId))
+            .Distinct()
+            .ToList();
+
+        var userProfiles = await FetchUserProfilesAsync(userIds);
+
+        foreach (var dto in dtos)
+        {
+            // Trạng thái like của tôi + số đếm (đã map sẵn ReactionCount/TotalLikes)
+            dto.IsLikedByMe = likedMomentIds.Contains(dto.Id);
+
+            // Thông tin tác giả moment
+            if (dto.User != null)
+            {
+                if (userProfiles.TryGetValue(dto.UserId, out var author))
+                {
+                    dto.User.FullName = author.FullName ?? "Anonymous user";
+                    dto.User.AvatarUrl = author.AvatarUrl;
+                }
+                else
+                {
+                    dto.User.FullName = "Anonymous user";
+                }
+            }
+
+            // ✅ 3) Thông tin từng người bình luận
+            foreach (var c in dto.Comments)
+            {
+                if (userProfiles.TryGetValue(c.UserId, out var cu))
+                {
+                    c.UserName = cu.FullName ?? "Anonymous user";
+                    c.AvatarUrl = cu.AvatarUrl;
+                }
+                else
+                {
+                    c.UserName = "Anonymous user";
+                }
+            }
+        }
+
+        return dtos;
+    }
+
+    // ✅ Helper dùng chung: batch fetch user profiles (an toàn nếu user service lỗi).
+    private async Task<Dictionary<int, UserProfileShortDto>> FetchUserProfilesAsync(List<int> userIds)
+    {
+        var result = new Dictionary<int, UserProfileShortDto>();
+        if (userIds == null || userIds.Count == 0) return result;
 
         using var client = _httpClientFactory.CreateClient();
         try
@@ -149,31 +212,16 @@ public class MomentService : IMomentService
                 var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
                 if (apiResult?.Data != null)
                 {
-                    userProfiles = apiResult.Data.ToDictionary(u => u.Id, u => u);
+                    result = apiResult.Data.ToDictionary(u => u.Id, u => u);
                 }
             }
         }
-        catch 
-        { 
-            // Intentionally swallowed to allow the feed to load even if the user service is unavailable
-        }
-
-        foreach (var dto in dtos)
+        catch
         {
-            if (dto.User == null) continue;
-
-            if (userProfiles.TryGetValue(dto.UserId, out var profile))
-            {
-                dto.User.FullName = profile.FullName ?? "Anonymous user";
-                dto.User.AvatarUrl = profile.AvatarUrl;
-            }
-            else
-            {
-                dto.User.FullName = "Anonymous user";
-            }
+            // Nuốt lỗi để feed vẫn load được khi user service không khả dụng.
         }
 
-        return dtos;
+        return result;
     }
 
     public async Task<IEnumerable<FootprintDto>> GetMyFootprintsAsync(int userId)
