@@ -45,7 +45,8 @@ public class VoucherService : IVoucherService
         string? status,
         bool? isActive,
         bool? createdByMe,
-        int currentUserId)
+        int currentUserId,
+        string? voucherType)
     {
         if (page <= 0) page = 1;
         if (pageSize <= 0) pageSize = 10;
@@ -77,6 +78,18 @@ public class VoucherService : IVoucherService
         if (tourId.HasValue)
         {
             list = list.Where(v => v.TourId == tourId.Value).ToList();
+        }
+
+        if (!string.IsNullOrWhiteSpace(voucherType))
+        {
+            if (voucherType.Equals("birthday", StringComparison.OrdinalIgnoreCase))
+            {
+                list = list.Where(v => v.Code.StartsWith("BDAY_", StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+            else if (voucherType.Equals("tour", StringComparison.OrdinalIgnoreCase))
+            {
+                list = list.Where(v => !v.Code.StartsWith("BDAY_", StringComparison.OrdinalIgnoreCase)).ToList();
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(discountType))
@@ -216,11 +229,6 @@ public class VoucherService : IVoucherService
         if (!isAdmin && entity.CreatorId != currentUserId)
         {
             throw new Exception("You can only edit vouchers that you created");
-        }
-
-        if (!entity.IsActive)
-        {
-            throw new Exception("Cannot update a deactivated voucher");
         }
 
         var newStartDate = dto.StartDate ?? entity.StartDate;
@@ -631,13 +639,19 @@ public class VoucherService : IVoucherService
         }
     }
 
+    public async Task<bool> CheckBirthdayVoucherDistributedAsync(int month, int year)
+    {
+        var voucherCode = $"BDAY_{year}_{month:D2}";
+        return await _voucherRepository.CodeExistsAsync(voucherCode);
+    }
+
     public async Task<object> DistributeBirthdayVoucherAsync(int month, int currentAdminId)
     {
         var now = DateTime.Now;
         var year = now.Year;
         var voucherCode = $"BDAY_{year}_{month:D2}";
 
-        if (await _voucherRepository.CodeExistsAsync(voucherCode))
+        if (await CheckBirthdayVoucherDistributedAsync(month, year))
         {
             throw new Exception($"Birthday voucher for month {month}/{year} has already been distributed (Code: {voucherCode}).");
         }

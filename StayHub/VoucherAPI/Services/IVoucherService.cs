@@ -5,15 +5,16 @@ namespace VoucherAPI.Services;
 public interface IVoucherService
 {
     Task<PaginationDTO<ReadVoucherDTO>> GetAll(
-        int page,
-        int pageSize,
-        string? search,
-        int? tourId,
-        string? discountType,
-        string? status,
-        bool? isActive,
-        bool? createdByMe,
-        int currentUserId);
+        int page = 1,
+        int pageSize = 10,
+        string? search = null,
+        int? tourId = null,
+        string? discountType = null,
+        string? status = null,
+        bool? isActive = null,
+        bool? createdByMe = null,
+        int currentUserId = 0,
+        string? voucherType = null);
 
     Task<ReadVoucherDetailDTO?> GetById(int id);
 
@@ -26,4 +27,5 @@ public interface IVoucherService
     Task<ReadVoucherDTO> Deactivate(int id, int currentUserId, bool isAdmin);
 
     Task<object> DistributeBirthdayVoucherAsync(int month, int currentAdminId);
+    Task<bool> CheckBirthdayVoucherDistributedAsync(int month, int year);
 }

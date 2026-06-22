@@ -30,9 +30,10 @@ public class VouchersController : LocalizedControllerBase
         [FromQuery] string? discountType = null,
         [FromQuery] string? status = null,
         [FromQuery] bool? isActive = null,
-        [FromQuery] bool? createdByMe = null)
+        [FromQuery] bool? createdByMe = null,
+        [FromQuery] string? voucherType = null)
     {
-        var result = await _voucherService.GetAll(page, pageSize, search, tourId, discountType, status, isActive, createdByMe, GetCurrentUserId() ?? 0);
+        var result = await _voucherService.GetAll(page, pageSize, search, tourId, discountType, status, isActive, createdByMe, GetCurrentUserId() ?? 0, voucherType);
         return Ok(result);
     }
 
@@ -149,6 +150,21 @@ public class VouchersController : LocalizedControllerBase
         catch (Exception ex) when (ex.Message == "Voucher not found")
         {
             return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("birthday-distribute/status")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> CheckBirthdayVoucherStatus([FromQuery] int month, [FromQuery] int year)
+    {
+        try
+        {
+            var isDistributed = await _voucherService.CheckBirthdayVoucherDistributedAsync(month, year);
+            return Ok(new { isDistributed });
         }
         catch (Exception ex)
         {
