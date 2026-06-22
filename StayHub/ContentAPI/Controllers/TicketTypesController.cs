@@ -16,7 +16,8 @@ namespace ContentAPI.Controllers
 
         public TicketTypesController(ITicketTypeService ticketTypeService, IStringLocalizer<Messages> localizer)
             : base(localizer)
-        {_ticketTypeService = ticketTypeService;
+        {
+            _ticketTypeService = ticketTypeService;
         }
 
         // GET: api/TicketTypes?page=1&pageSize=10&searchTerm=vip
@@ -63,9 +64,15 @@ namespace ContentAPI.Controllers
             {
                 return BadRequest(ModelState);
             }
-
-            var createdTicketType = await _ticketTypeService.CreateTicketType(dto);
-            return CreatedAtAction(nameof(GetById), new { id = createdTicketType.Id }, createdTicketType);
+            try
+            {
+                var createdTicketType = await _ticketTypeService.CreateTicketType(dto);
+                return CreatedAtAction(nameof(GetById), new { id = createdTicketType.Id }, createdTicketType);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // PUT: api/TicketTypes/5
@@ -77,14 +84,21 @@ namespace ContentAPI.Controllers
             {
                 return BadRequest(ModelState);
             }
-
-            var result = await _ticketTypeService.UpdateTicketType(id, dto);
-            if (!result)
+            try
             {
-                return NotFound(new { message = M("TicketTypeNotFound") });
+                var result = await _ticketTypeService.UpdateTicketType(id, dto);
+                if (!result)
+                {
+                    return NotFound(new { message = M("TicketTypeNotFound") });
+                }
+
+                return Ok(new { message = M("TicketTypeUpdatedSuccessfully") });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
             }
 
-            return Ok(new { message = M("TicketTypeUpdatedSuccessfully") });
         }
 
         // PATCH: api/TicketTypes/5/activate
