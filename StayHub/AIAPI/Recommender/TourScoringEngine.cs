@@ -148,19 +148,20 @@ public class TourScoringEngine
         WeatherAdviceDTO? weather,
         bool includeKnowledge)
     {
+        var rawWeather = ScoreWeather(tour, weather);
+        var season = ScoreSeason(tour, profile);
+        var crowd = ScoreCrowd(tour, profile);
+
         var dict = new Dictionary<string, float>
         {
             ["location"] = ScoreLocation(tour, profile),
             ["budget"] = ScoreBudget(tour, profile),
             ["schedule"] = ScoreSchedule(tour, profile),
             ["interest_semantic"] = ComputeInterestDimensionScore(tour, profile, semanticScores),
-            ["weather"] = ScoreWeather(tour, weather),
-            ["season"] = ScoreSeason(tour, profile),
-            ["crowd"] = ScoreCrowd(tour, profile),
+            ["weather"] = (rawWeather + season + crowd) / 3.0f,
             ["accessibility"] = ScoreAccessibilityBase(tour),
             ["cultural_fit"] = includeKnowledge ? ScoreCulturalFit(tour, profile) : 0.5f
         };
-        dict["context"] = (dict["weather"] + dict["season"] + dict["crowd"]) / 3.0f;
         return dict;
     }
 
@@ -181,7 +182,7 @@ public class TourScoringEngine
             dimensions["location"] * weights.Location +
             dimensions["budget"] * weights.Budget +
             dimensions["schedule"] * weights.Schedule +
-            dimensions["context"] * weights.Weather + // Context replaces raw weather weight
+            dimensions["weather"] * weights.Weather + 
             dimensions["cultural_fit"] * weights.CulturalFit;
 
         var accessibility = dimensions["accessibility"];
