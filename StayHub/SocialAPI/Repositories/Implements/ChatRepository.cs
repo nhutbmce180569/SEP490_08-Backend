@@ -217,6 +217,16 @@ namespace SocialAPI.Repositories.Implements
                 .ToListAsync();
         }
 
+        public async Task<DateTime?> GetLatestMessageSentAtAsync(int roomId)
+        {
+            return await _context.ChatMessages
+                .AsNoTracking()
+                .Where(m => m.ChatRoomId == roomId)
+                .OrderByDescending(m => m.SentAt)
+                .Select(m => m.SentAt)
+                .FirstOrDefaultAsync();
+        }
+
         public async Task UpdateMemberAsync(ChatMember member)
         {
             _context.ChatMembers.Update(member);
