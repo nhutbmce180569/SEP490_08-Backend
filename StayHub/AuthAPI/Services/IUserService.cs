@@ -1,4 +1,4 @@
-﻿using AuthAPI.DTOs;
+using AuthAPI.DTOs;
 
 namespace AuthAPI.Services
 {
@@ -22,6 +22,8 @@ namespace AuthAPI.Services
         Task<CustomerDemographicsDTO> GetCustomerDemographicsAsync(DateTime? from, DateTime? to, string granularity);
 
         Task<CustomerListAnalyticsDTO> GetCustomersForAnalyticsAsync(string? search, int page, int pageSize);
+
+        Task<List<ReadUserDTO>> GetCustomersByBirthdayMonthAsync(int month);
 
         Task<PlatformUserStatsDTO> GetPlatformUserStatsAsync(DateTime? from, DateTime? to, string granularity);
 

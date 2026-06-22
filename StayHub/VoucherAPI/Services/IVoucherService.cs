@@ -11,15 +11,19 @@ public interface IVoucherService
         int? tourId,
         string? discountType,
         string? status,
-        bool? isActive);
+        bool? isActive,
+        bool? createdByMe,
+        int currentUserId);
 
     Task<ReadVoucherDetailDTO?> GetById(int id);
 
-    Task<ReadVoucherDetailDTO> Create(CreateVoucherDTO dto, int creatorId);
+    Task<ReadVoucherDetailDTO> Create(CreateVoucherDTO dto, int creatorId, bool isAdmin);
 
-    Task<ReadVoucherDetailDTO> Update(int id, UpdateVoucherDTO dto);
+    Task<ReadVoucherDetailDTO> Update(int id, UpdateVoucherDTO dto, int currentUserId, bool isAdmin);
 
-    Task<ReadVoucherDTO> Activate(int id);
+    Task<ReadVoucherDTO> Activate(int id, int currentUserId, bool isAdmin);
 
-    Task<ReadVoucherDTO> Deactivate(int id);
+    Task<ReadVoucherDTO> Deactivate(int id, int currentUserId, bool isAdmin);
+
+    Task<object> DistributeBirthdayVoucherAsync(int month, int currentAdminId);
 }
