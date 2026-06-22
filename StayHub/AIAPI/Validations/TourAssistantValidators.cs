@@ -55,17 +55,6 @@ public class TourConsultationRequestValidator : AbstractValidator<TourConsultati
     }
 }
 
-public class LogInteractionRequestValidator : AbstractValidator<LogInteractionRequestDTO>
-{
-    public LogInteractionRequestValidator(ValidationLocalizer v)
-    {
-        RuleFor(x => x.TourId).GreaterThan(0).WithMessage(v.Get("TourId must be greater than 0"));
-        RuleFor(x => x.InteractionType)
-            .Must(t => new[] { "view", "click", "wishlist", "booking", "chat_recommend" }.Contains(t))
-            .WithMessage(v.Get("Invalid interaction type."));
-    }
-}
-
 public class TourPreferenceQuestionnaireValidator : AbstractValidator<TourPreferenceQuestionnaireDTO>
 {
     private static readonly string[] ValidInterests =
@@ -96,16 +85,5 @@ public class TourPreferenceQuestionnaireValidator : AbstractValidator<TourPrefer
 
         RuleFor(x => x.Top).InclusiveBetween(1, 30).WithMessage(v.Get("Top must be between 1 and 30."));
 
-        RuleFor(x => x.ChildrenCount)
-            .NotNull()
-            .GreaterThan(0)
-            .When(x => x.HasChildren)
-            .WithMessage(v.Get("ChildrenCount is required when HasChildren is true."));
-
-        RuleFor(x => x.ElderlyCount)
-            .NotNull()
-            .GreaterThan(0)
-            .When(x => x.HasElderly)
-            .WithMessage(v.Get("ElderlyCount is required when HasElderly is true."));
     }
 }

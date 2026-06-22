@@ -20,6 +20,7 @@ public class TourCatalogItem
     public DateTime? NextDeparture { get; set; }
     public int? DurationDays { get; set; }
     public string SearchDocument { get; set; } = "";
+    public float[]? SemanticEmbedding { get; set; }
     public List<string> ItineraryTitles { get; set; } = new();
     public List<int> TourismInfoIds { get; set; } = new();
 }

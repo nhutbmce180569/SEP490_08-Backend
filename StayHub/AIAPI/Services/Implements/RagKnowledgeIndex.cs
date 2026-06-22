@@ -9,11 +9,15 @@ namespace AIAPI.Services.Implements;
 
 public class RagKnowledgeIndex : IRagKnowledgeIndex
 {
-    private readonly TourMlModelTrainer _trainer = new();
+    private readonly ILocalEmbeddingService _embeddingService;
     private readonly object _lock = new();
-    private ITransformer? _searchModel;
     private List<(RagCorpusChunk Chunk, float[] Vector)> _indexed = new();
     private RagCorpusBundle _corpus = new();
+
+    public RagKnowledgeIndex(ILocalEmbeddingService embeddingService)
+    {
+        _embeddingService = embeddingService;
+    }
 
     public bool IsReady { get; private set; }
     public int ActiveChunkCount { get; private set; }
@@ -26,7 +30,6 @@ public class RagKnowledgeIndex : IRagKnowledgeIndex
         lock (_lock)
         {
             IsReady = false;
-            _searchModel = null;
             _indexed = new List<(RagCorpusChunk Chunk, float[] Vector)>();
 
             _corpus = LoadCorpus();
@@ -37,11 +40,8 @@ public class RagKnowledgeIndex : IRagKnowledgeIndex
                 return;
             }
 
-            _searchModel = _trainer.TrainTextSearchModel(
-                chunks.Select(c => new TourDocument { Text = c.BuildSearchDocument() }));
-
             _indexed = chunks
-                .Select(c => (c, _trainer.GetFeatureVector(_searchModel, c.BuildSearchDocument())))
+                .Select(c => (c, _embeddingService.EmbedText(c.BuildSearchDocument())))
                 .ToList();
 
             ActiveChunkCount = chunks.Count;
@@ -103,7 +103,7 @@ public class RagKnowledgeIndex : IRagKnowledgeIndex
     {
         lock (_lock)
         {
-            if (!IsReady || _searchModel == null)
+            if (!IsReady || _indexed.Count == 0)
             {
                 return Array.Empty<RagRetrievalResult>();
             }
@@ -112,12 +112,12 @@ public class RagKnowledgeIndex : IRagKnowledgeIndex
             var enrichedQuery = string.Join(" ",
                 new[] { query, city, string.Join(" ", interestList) }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
-            var queryVector = _trainer.GetFeatureVector(_searchModel, enrichedQuery);
+            var queryVector = _embeddingService.EmbedText(enrichedQuery);
 
             return _indexed
                 .Select(item =>
                 {
-                    var semantic = _trainer.CosineSimilarity(queryVector, item.Vector);
+                    var semantic = _embeddingService.CosineSimilarity(queryVector, item.Vector);
                     var boost = ComputeBoost(item.Chunk, city, interestList, forForeignVisitor, forElderly, forChildren);
                     return new RagRetrievalResult { Chunk = item.Chunk, Score = semantic * 0.7f + boost * 0.3f };
                 })
@@ -136,8 +136,8 @@ public class RagKnowledgeIndex : IRagKnowledgeIndex
             profile.PreferredCity ?? tourCity,
             profile.TravelInterests,
             profile.NationalityType == TravelerNationalityTypes.Foreigner,
-            profile.HasElderly,
-            profile.HasChildren,
+            profile.ElderlyCount > 0,
+            profile.ChildrenCount > 0,
             topK: 8);
 
         if (results.Count == 0)

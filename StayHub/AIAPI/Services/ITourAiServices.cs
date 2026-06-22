@@ -16,8 +16,15 @@ public interface IModelTrainingService
 
 public interface ITourRecommendationService
 {
-    Task<List<TourRecommendationItemDTO>> RecommendAsync(int? customerId, int top, ParsedQueryDTO? hints = null, CancellationToken cancellationToken = default);
-    Task<List<TourRecommendationItemDTO>> RecommendSimilarAsync(int tourId, int top, CancellationToken cancellationToken = default);
+    Task<List<TourRecommendationItemDTO>> RecommendFromQueryAsync(
+        int top,
+        ParsedQueryDTO? hints = null,
+        CancellationToken cancellationToken = default);
+
+    Task<List<TourRecommendationItemDTO>> RecommendSimilarAsync(
+        int tourId,
+        int top,
+        CancellationToken cancellationToken = default);
 }
 
 public interface ITourSemanticSearchService
@@ -28,7 +35,6 @@ public interface ITourSemanticSearchService
 
 public interface ITourAssistantService
 {
-    Task<ChatResponseDTO> ChatAsync(string message, string? sessionId, int? customerId, CancellationToken cancellationToken = default);
-    Task<List<TourRecommendationItemDTO>> ConsultAsync(TourConsultationRequestDTO request, int? customerId, CancellationToken cancellationToken = default);
-    Task LogInteractionAsync(int? customerId, LogInteractionRequestDTO request, CancellationToken cancellationToken = default);
+    Task<ChatResponseDTO> ChatAsync(string message, string? sessionId, CancellationToken cancellationToken = default);
+    Task<List<TourRecommendationItemDTO>> ConsultAsync(TourConsultationRequestDTO request, CancellationToken cancellationToken = default);
 }

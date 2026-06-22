@@ -68,238 +68,118 @@ public static class CustomerScoreExplanationBuilder
     private static string ExplainLocation(float score, TourCatalogItem tour, TourPreferenceQuestionnaireDTO profile, IAiLocalizedCopy text)
     {
         if (string.IsNullOrWhiteSpace(profile.PreferredCity))
-        {
-            return text.IsVietnamese
-                ? "Bạn chưa chọn điểm đến cụ thể nên chỉ số này ở mức trung bình (50%) — tour vẫn được xét theo sở thích khác."
-                : "You did not pick a specific destination, so this stays at a neutral 50% — other factors still drive the match.";
-        }
+            return text.IsVietnamese ? "Phù hợp với tiêu chí 'Đi đâu cũng được' của bạn." : "Matches your 'Anywhere' preference.";
 
         if (score >= 0.99f)
-        {
-            return text.IsVietnamese
-                ? $"Tour tại {tour.City} — khớp hoàn toàn với điểm đến bạn chọn ({profile.PreferredCity})."
-                : $"Tour is in {tour.City}, exactly matching your preferred destination ({profile.PreferredCity}).";
-        }
+            return text.IsVietnamese ? $"Tour nằm trọn tại {tour.City}, hoàn toàn khớp với điểm đến {profile.PreferredCity} bạn muốn." : $"Located in {tour.City}, exactly as requested.";
 
-        if (score >= 0.7f)
-        {
-            return text.IsVietnamese
-                ? $"Tour có liên quan đến {profile.PreferredCity} trong tên hoặc mô tả (khớp {FormatPercent(score)})."
-                : $"The tour references {profile.PreferredCity} in its name or description ({FormatPercent(score)} match).";
-        }
+        if (score >= 0.75f)
+            return text.IsVietnamese ? $"Lịch trình có đi qua hoặc tham gia hoạt động tại {profile.PreferredCity}." : $"References {profile.PreferredCity} in activities.";
 
-        return text.IsVietnamese
-            ? $"Tour không nằm tại {profile.PreferredCity} bạn đã chọn nên chỉ số điểm đến thấp ({FormatPercent(score)})."
-            : $"The tour is not in your chosen area ({profile.PreferredCity}), so the destination score is low ({FormatPercent(score)}).";
+        return text.IsVietnamese ? $"Tour này tổ chức tại {tour.City}, không nằm trong khu vực ưu tiên ({profile.PreferredCity}) của bạn." : $"Organized in {tour.City}, not in your preferred area.";
     }
 
     private static string ExplainBudget(float score, TourCatalogItem tour, TourPreferenceQuestionnaireDTO profile, IAiLocalizedCopy text)
     {
         if (!profile.MaxBudgetPerPerson.HasValue || !tour.MinPrice.HasValue)
-        {
-            return text.IsVietnamese
-                ? "Bạn chưa khai báo ngân sách hoặc tour chưa có giá — chỉ số mặc định 50%."
-                : "Budget or tour price is missing — this factor defaults to 50%.";
-        }
+            return text.IsVietnamese ? "Phù hợp vì bạn không gò bó ngân sách." : "No budget constraints specified.";
 
-        var price = tour.MinPrice.Value;
-        var budget = profile.MaxBudgetPerPerson.Value;
-        var priceText = price.ToString("N0");
-        var budgetText = budget.ToString("N0");
-
-        if (score <= 0.01f)
-        {
-            return text.IsVietnamese
-                ? $"Giá từ {priceText} VND vượt ngân sách {budgetText} VND/người bạn đã khai báo."
-                : $"Price from {priceText} VND exceeds your {budgetText} VND/person budget.";
-        }
-
-        if (score >= 0.85f)
-        {
-            return text.IsVietnamese
-                ? $"Giá từ {priceText} VND nằm thoải mái trong ngân sách {budgetText} VND/người ({FormatPercent(score)} khớp)."
-                : $"Price from {priceText} VND sits comfortably within your {budgetText} VND/person budget ({FormatPercent(score)} fit).";
-        }
-
-        return text.IsVietnamese
-            ? $"Giá từ {priceText} VND gần với ngân sách {budgetText} VND/người — vẫn trong giới hạn nhưng ít dư hơn ({FormatPercent(score)})."
-            : $"Price from {priceText} VND is close to your {budgetText} VND/person cap — still within budget but with less headroom ({FormatPercent(score)}).";
+        var priceText = tour.MinPrice.Value.ToString("N0");
+        return score <= 0.01f
+            ? (text.IsVietnamese ? $"Giá từ {priceText} VND vượt mức trần bạn đặt ra." : $"Price {priceText} VND exceeds budget.")
+            : (text.IsVietnamese ? $"Giá từ {priceText} VND nằm hoàn toàn trong giới hạn ngân sách." : $"Price {priceText} VND is well within budget.");
     }
 
     private static string ExplainSchedule(float score, TourCatalogItem tour, TourPreferenceQuestionnaireDTO profile, IAiLocalizedCopy text)
     {
         if (!tour.NextDeparture.HasValue)
-        {
-            return text.IsVietnamese
-                ? "Tour chưa có lịch khởi hành cụ thể nên chỉ số lịch trình ở mức thấp-trung bình (40%)."
-                : "No confirmed departure date yet, so the schedule score stays at a modest 40%.";
-        }
+            return text.IsVietnamese ? "Lịch linh hoạt, sẽ chốt khi bạn đặt tour." : "Flexible schedule, confirmed upon booking.";
 
         var departure = tour.NextDeparture.Value.ToString("dd/MM/yyyy");
-        var windowStart = profile.PreferredStartDate.Date;
-        var windowEnd = (profile.PreferredEndDate ?? profile.PreferredStartDate.AddDays(30)).Date;
-
-        if (score >= 0.99f)
-        {
-            return text.IsVietnamese
-                ? $"Khởi hành {departure} nằm trong khoảng ngày bạn chọn ({windowStart:dd/MM/yyyy} → {windowEnd:dd/MM/yyyy})."
-                : $"Departure on {departure} falls inside your travel window ({windowStart:dd/MM/yyyy} → {windowEnd:dd/MM/yyyy}).";
-        }
-
-        return text.IsVietnamese
-            ? $"Khởi hành {departure} ngoài khoảng ngày bạn chọn — vẫn có thể cân nhắc nếu linh hoạt lịch ({FormatPercent(score)})."
-            : $"Departure on {departure} is outside your selected dates — worth considering if your dates are flexible ({FormatPercent(score)}).";
+        return score >= 0.99f
+            ? (text.IsVietnamese ? $"Khởi hành {departure} nằm ngay trong khoảng ngày bạn rảnh." : $"Departs {departure}, right in your window.")
+            : (text.IsVietnamese ? $"Khởi hành {departure} hơi lệch lịch một chút, bạn xem xét nhé." : $"Departs {departure}, slightly outside your window.");
     }
 
-    private static string ExplainInterestSemantic(
-        float score,
-        TourPreferenceQuestionnaireDTO profile,
-        IAiLocalizedCopy text,
-        TourCatalogItem? tour = null)
+    private static string ExplainInterestSemantic(float score, TourPreferenceQuestionnaireDTO profile, IAiLocalizedCopy text, TourCatalogItem? tour = null)
     {
-        var total = profile.TravelInterests.Count;
-        var matchedKeys = tour != null
-            ? InterestMatchHelper.GetMatchedInterestKeys(tour.SearchDocument, profile.TravelInterests)
-            : [];
-        var matchedLabels = matchedKeys.Select(i => FormatInterestLabel(i, text)).ToList();
-        var joined = string.Join(", ", profile.TravelInterests.Select(i => FormatInterestLabel(i, text)));
+        if (profile.TravelInterests.Count == 0)
+            return text.IsVietnamese ? "Không gò bó sở thích, tour nào cũng có thể trải nghiệm." : "No specific interests, open to all.";
 
-        if (total > 0 && matchedKeys.Count > 0)
+        var hitInterests = new List<string>();
+        if (tour != null && !string.IsNullOrWhiteSpace(tour.SearchDocument))
         {
-            var matchedText = string.Join(", ", matchedLabels);
-            return text.IsVietnamese
-                ? $"Khớp {matchedKeys.Count}/{total} sở thích bạn chọn ({matchedText}). Điểm tổng hợp từ khớp từ khóa + AI semantic: {FormatPercent(score)}."
-                : $"Matches {matchedKeys.Count}/{total} interests you selected ({matchedText}). Combined keyword + semantic AI score: {FormatPercent(score)}.";
+            var doc = tour.SearchDocument.ToLowerInvariant();
+            hitInterests = profile.TravelInterests
+                .Where(i => doc.Contains(i.ToLowerInvariant()) || (i == "beach" && doc.Contains("island")) || (i == "nature" && (doc.Contains("mountain") || doc.Contains("trek"))) || (i == "relax" && doc.Contains("resort")))
+                .Select(i => FormatInterestLabel(i, text))
+                .ToList();
         }
+
+        var hitText = hitInterests.Count > 0 ? string.Join(", ", hitInterests) : "";
 
         if (score >= 0.75f)
-        {
-            return text.IsVietnamese
-                ? $"Nội dung tour khớp mạnh với sở thích bạn chọn ({joined}) — {FormatPercent(score)}."
-                : $"Tour content strongly aligns with your interests ({joined}) — {FormatPercent(score)}.";
-        }
+            return text.IsVietnamese 
+                ? (hitText != "" ? $"Khớp rất mạnh với các sở thích ({hitText}) của bạn." : "Khớp rất mạnh với các Vibe du lịch bạn đang tìm kiếm.")
+                : (hitText != "" ? $"Strongly matches your interests ({hitText})." : "Strongly matches your travel vibe.");
 
         if (score >= 0.45f)
-        {
-            return text.IsVietnamese
-                ? $"Tour có phần phù hợp sở thích ({joined}) nhưng chưa khớp hoàn toàn ({FormatPercent(score)})."
-                : $"The tour partially matches your interests ({joined}) but not perfectly ({FormatPercent(score)}).";
-        }
+            return text.IsVietnamese 
+                ? (hitText != "" ? $"Có một vài điểm nhấn ({hitText}) đúng với sở thích của bạn." : "Có một vài điểm nhấn đúng với sở thích của bạn.")
+                : (hitText != "" ? $"Has a few highlights ({hitText}) you might like." : "Has a few highlights you might like.");
 
-        if (total > 0)
-        {
-            return text.IsVietnamese
-                ? $"Bạn chọn {total} sở thích ({joined}) nhưng mô tả tour chưa chứa từ khóa tương ứng — chỉ số {FormatPercent(score)}."
-                : $"You selected {total} interests ({joined}) but the tour description lacks matching keywords — score {FormatPercent(score)}.";
-        }
-
-        return text.IsVietnamese
-            ? $"Nội dung tour ít liên quan đến sở thích bạn chọn — chỉ số {FormatPercent(score)}."
-            : $"Tour content has limited overlap with your interests — score {FormatPercent(score)}.";
+        return text.IsVietnamese ? "Tour mang phong cách trải nghiệm mới, có thể thử nếu muốn đổi gió." : "Different style, good for trying something new.";
     }
 
     private static string ExplainWeather(float score, TourCatalogItem tour, IAiLocalizedCopy text)
     {
-        var doc = tour.SearchDocument.ToLowerInvariant();
-        var isBeach = doc.Contains("beach") || doc.Contains("island") || doc.Contains("biển");
+        if (score >= 0.75f)
+            return text.IsVietnamese ? "Điều kiện thời tiết rất ủng hộ cho các hoạt động ngoài trời trong tour này." : "Great weather, perfect for outdoor activities.";
 
-        if (score >= 0.85f)
-        {
-            return text.IsVietnamese
-                ? "Thời tiết dự kiến thuận lợi cho loại hình tour này (ít mưa, phù hợp hoạt động ngoài trời)."
-                : "Forecast weather suits this tour type (low rain, good for outdoor activities).";
-        }
+        if (score <= 0.4f)
+            return text.IsVietnamese ? "Có khả năng gặp mưa hoặc thời tiết không quá lý tưởng, bạn nhớ xem dự báo và chuẩn bị ô/áo mưa nhé." : "Might rain or have bad weather, bring an umbrella.";
 
-        if (score <= 0.35f && isBeach)
-        {
-            return text.IsVietnamese
-                ? "Dự báo nhiều mưa trong khoảng ngày đi — tour biển/đảo có thể bị ảnh hưởng."
-                : "Rain is expected during your dates — beach/island tours may be affected.";
-        }
-
-        if (score >= 0.55f)
-        {
-            return text.IsVietnamese
-                ? "Thời tiết ở mức chấp nhận được cho tour này — không quá thuận lợi nhưng vẫn đi được."
-                : "Weather is acceptable for this tour — not ideal, but still workable.";
-        }
-
-        return text.IsVietnamese
-            ? $"Thời tiết ảnh hưởng vừa phải đến trải nghiệm tour ({FormatPercent(score)})."
-            : $"Weather has a moderate impact on this tour experience ({FormatPercent(score)}).";
+        return text.IsVietnamese ? "Thời tiết tương đối ổn định, không ảnh hưởng nhiều đến trải nghiệm của bạn." : "Stable weather, minimal impact on itinerary.";
     }
 
     private static string ExplainAccessibility(float score, TourCatalogItem tour, TourPreferenceQuestionnaireDTO profile, IAiLocalizedCopy text)
     {
-        var doc = tour.SearchDocument.ToLowerInvariant();
-        var strenuous = doc.Contains("trek") || doc.Contains("motorbike") || doc.Contains("climb");
-        var gentle = doc.Contains("cruise") || doc.Contains("garden") || doc.Contains("resort") || doc.Contains("floating market");
+        var hasVulnerable = profile.ElderlyCount > 0 || profile.ChildrenCount > 0;
+        var doc = tour.SearchDocument?.ToLowerInvariant() ?? "";
+        
+        var isTrek = doc.Contains("trek") || doc.Contains("leo núi");
+        var isDive = doc.Contains("lặn") || doc.Contains("dive");
+        
+        var activities = new List<string>();
+        if (isTrek) activities.Add(text.IsVietnamese ? "trekking/leo núi" : "trekking");
+        if (isDive) activities.Add(text.IsVietnamese ? "lặn biển" : "diving");
 
-        if (profile.HasElderly || profile.HasChildren)
-        {
-            if (score >= 0.75f)
-            {
-                return text.IsVietnamese
-                    ? "Lịch trình nhẹ nhàng, phù hợp khi đi cùng người cao tuổi hoặc trẻ em."
-                    : "Relaxed pace — suitable when traveling with elderly or children.";
-            }
+        var actText = activities.Count > 0 ? string.Join(", ", activities) : "";
+        
+        if (score >= 0.75f)
+            return text.IsVietnamese ? "Hoạt động cực kỳ nhẹ nhàng, phù hợp và an toàn cho mọi lứa tuổi." : "Gentle activities, safe and easy for everyone.";
 
-            if (strenuous)
-            {
-                return text.IsVietnamese
-                    ? "Tour có hoạt động mạnh (trek/xe máy/leo núi) — cần cân nhắc nếu có người già hoặc trẻ nhỏ."
-                    : "Includes strenuous activities (trek/motorbike/climb) — consider carefully with elderly or young kids.";
-            }
-        }
+        if (hasVulnerable && score <= 0.4f)
+            return text.IsVietnamese 
+                ? (actText != "" ? $"Tour có hoạt động mang tính thử thách ({actText}), hãy cân nhắc kĩ khi đi cùng người lớn tuổi/trẻ em." : "Tour có hoạt động tốn nhiều sức, cân nhắc kĩ nếu có người lớn tuổi/trẻ em.")
+                : (actText != "" ? $"Includes challenging activities ({actText}), consider carefully for vulnerable travelers." : "Strenuous activities, consider carefully for vulnerable travelers.");
 
-        if (gentle && score >= 0.8f)
-        {
-            return text.IsVietnamese
-                ? "Tour có hoạt động nhẹ nhàng (du thuyền, tham quan, nghỉ dưỡng) — dễ tham gia cho mọi lứa tuổi."
-                : "Gentle activities (cruise, sightseeing, resort) — easy for most travelers.";
-        }
-
-        if (strenuous)
-        {
-            return text.IsVietnamese
-                ? "Tour thiên về mạo hiểm/vận động nhiều nên chỉ số dễ đi thấp hơn."
-                : "Adventure-heavy itinerary lowers the ease-of-travel score.";
-        }
-
-        return text.IsVietnamese
-            ? $"Mức độ dễ đi và an toàn của tour: {FormatPercent(score)}."
-            : $"Ease and safety rating for this tour: {FormatPercent(score)}.";
+        return text.IsVietnamese ? "Lịch trình có chút vận động cơ bản (đi bộ tham quan) nhưng nhìn chung vẫn an toàn." : "Some physical activity but generally safe.";
     }
 
     private static string ExplainCulturalFit(float score, TourCatalogItem tour, TourPreferenceQuestionnaireDTO profile, IAiLocalizedCopy text)
     {
-        var wantsCulture = profile.TravelInterests.Contains("culture", StringComparer.OrdinalIgnoreCase)
-            || profile.NationalityType == TravelerNationalityTypes.Foreigner;
+        var hasCultureKeyword = tour.SearchDocument?.ToLowerInvariant().Contains("văn hóa") == true || tour.SearchDocument?.ToLowerInvariant().Contains("di sản") == true || tour.SearchDocument?.ToLowerInvariant().Contains("lịch sử") == true;
 
-        if (!wantsCulture && score >= 0.45f && score <= 0.55f)
-        {
-            return text.IsVietnamese
-                ? "Bạn không ưu tiên văn hóa địa phương nên chỉ số này ở mức trung bình (50%)."
-                : "Local culture is not a top priority for you, so this stays neutral (50%).";
-        }
+        if (score >= 0.75f)
+            return text.IsVietnamese 
+                ? (hasCultureKeyword ? "Lịch trình tập trung khám phá các giá trị văn hóa, lịch sử và di sản đặc sắc của địa phương." : "Rất đậm đà bản sắc văn hóa địa phương.") 
+                : "Rich in local culture and heritage.";
 
-        if (score >= 0.8f)
-        {
-            return text.IsVietnamese
-                ? $"Tour tại {tour.City} có nhiều yếu tố văn hóa/di sản phù hợp nhu cầu tìm hiểu địa phương ({FormatPercent(score)})."
-                : $"Tour in {tour.City} offers strong cultural/heritage experiences ({FormatPercent(score)}).";
-        }
+        if (score >= 0.45f)
+            return text.IsVietnamese ? "Có đan xen một vài điểm đến văn hóa vào lịch trình nhưng không quá nặng nề." : "Some cultural stops, but not heavy.";
 
-        if (score >= 0.55f)
-        {
-            return text.IsVietnamese
-                ? "Có một số điểm văn hóa trong hành trình nhưng chưa phải trọng tâm chính."
-                : "Some cultural stops are included, but culture is not the main focus.";
-        }
-
-        return text.IsVietnamese
-            ? $"Mức phù hợp văn hóa địa phương: {FormatPercent(score)}."
-            : $"Local culture fit: {FormatPercent(score)}.";
+        return text.IsVietnamese ? "Tập trung chủ yếu vào ngắm cảnh tự nhiên hoặc hoạt động vui chơi thay vì văn hóa." : "Focuses more on scenery/activities than culture.";
     }
 
     private static string FormatInterestLabel(string key, IAiLocalizedCopy text) => key.ToLowerInvariant() switch

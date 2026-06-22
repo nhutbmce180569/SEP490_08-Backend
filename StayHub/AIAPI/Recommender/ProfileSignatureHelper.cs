@@ -8,7 +8,7 @@ public static class ProfileSignatureHelper
     {
         var interests = string.Join(",", profile.TravelInterests.OrderBy(x => x, StringComparer.OrdinalIgnoreCase));
         var raw =
-            $"{profile.CompanionType}|{profile.NationalityType}|{profile.HasElderly}|{profile.HasChildren}|" +
+            $"{profile.CompanionType}|{profile.NationalityType}|{profile.ElderlyCount > 0}|{profile.ChildrenCount > 0}|" +
             $"{profile.PreferredCity?.Trim().ToLowerInvariant()}|{interests}|{profile.MaxBudgetPerPerson}";
 
         return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(

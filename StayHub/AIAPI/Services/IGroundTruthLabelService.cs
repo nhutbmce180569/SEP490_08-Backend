@@ -10,7 +10,6 @@ public class GroundTruthBundle
     public string ProfileQueryKey { get; set; } = "";
     public Dictionary<int, int> Labels { get; set; } = new();
     public int ExpertJudgmentCount { get; set; }
-    public int InteractionSignalCount { get; set; }
     public int ProxyRelevantCount { get; set; }
 }
 

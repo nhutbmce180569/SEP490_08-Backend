@@ -22,6 +22,25 @@ public class TourRanker
         _text = text;
     }
 
+    public TourScoringResult ScoreTour(
+        TourCatalogItem tour,
+        TourPreferenceQuestionnaireDTO profile,
+        Dictionary<int, float>? semanticScores,
+        WeatherAdviceDTO? weather)
+    {
+        var personas = TravelPartyDecomposer.Decompose(profile, _text);
+        var scoring = _scoringEngine.ScoreTour(tour, profile, personas, semanticScores ?? new Dictionary<int, float>(), weather, includeKnowledgeDimensions: true);
+        
+        // Re-calculate FairnessScore based on ProductionStrategy (CafhrFair)
+        scoring.FairnessScore = ComputeAggregateUtility(
+            scoring.PersonaScores, 
+            ScoringModelSpec.ProductionStrategyKey, 
+            _settings.FairnessAlpha, 
+            _settings.MinPersonaScoreThreshold);
+            
+        return scoring;
+    }
+
     public IReadOnlyList<(TourCatalogItem Tour, TourScoringResult Scoring)> RankTours(
         IReadOnlyList<TourCatalogItem> catalog,
         TourPreferenceQuestionnaireDTO profile,
