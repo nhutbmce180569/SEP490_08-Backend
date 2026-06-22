@@ -8,6 +8,5 @@ public interface IPersonalizedTourRecommendationService
     ScoringModelDocumentationDTO GetScoringDocumentation();
     Task<PersonalizedRecommendationResponseDTO> RecommendFromProfileAsync(
         TourPreferenceQuestionnaireDTO profile,
-        int? customerId,
         CancellationToken cancellationToken = default);
 }

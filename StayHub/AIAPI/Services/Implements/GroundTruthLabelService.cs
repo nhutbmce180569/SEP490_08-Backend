@@ -8,16 +8,6 @@ namespace AIAPI.Services.Implements;
 
 public class GroundTruthLabelService : IGroundTruthLabelService
 {
-    private static readonly Dictionary<string, float> InteractionWeights = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["booking"] = 5f,
-        ["book"] = 5f,
-        ["wishlist"] = 4f,
-        ["click"] = 2f,
-        ["view"] = 1f,
-        ["search"] = 0.5f
-    };
-
     private readonly StayHubAiDbContext _db;
 
     public GroundTruthLabelService(StayHubAiDbContext db)
@@ -45,21 +35,15 @@ public class GroundTruthLabelService : IGroundTruthLabelService
             .GroupBy(j => j.TourId)
             .ToDictionary(g => g.Key, g => g.Max(j => j.RelevanceGrade));
 
-        var interactionPrior = await BuildInteractionPriorAsync(catalog, cancellationToken);
-
         var merged = new Dictionary<int, int>();
         foreach (var tour in catalog)
         {
             merged[tour.Id] = normalizedMode switch
             {
                 GroundTruthModes.Expert => expert.GetValueOrDefault(tour.Id, 0),
-                GroundTruthModes.InteractionAugmented => MergeInteractionAugmented(
-                    proxy.GetValueOrDefault(tour.Id, 0),
-                    interactionPrior.GetValueOrDefault(tour.Id, 0f)),
-                GroundTruthModes.Hybrid => MergeHybrid(
-                    proxy.GetValueOrDefault(tour.Id, 0),
-                    expert.GetValueOrDefault(tour.Id, -1),
-                    interactionPrior.GetValueOrDefault(tour.Id, 0f)),
+                GroundTruthModes.Hybrid => expert.GetValueOrDefault(tour.Id, -1) >= 0
+                    ? expert[tour.Id]
+                    : proxy.GetValueOrDefault(tour.Id, 0),
                 _ => proxy.GetValueOrDefault(tour.Id, 0)
             };
         }
@@ -71,7 +55,6 @@ public class GroundTruthLabelService : IGroundTruthLabelService
             ProfileQueryKey = queryKey,
             Labels = merged,
             ExpertJudgmentCount = expert.Count,
-            InteractionSignalCount = interactionPrior.Count(kv => kv.Value > 0),
             ProxyRelevantCount = proxy.Count(kv => kv.Value >= 2)
         };
     }
@@ -140,64 +123,8 @@ public class GroundTruthLabelService : IGroundTruthLabelService
         return m switch
         {
             GroundTruthModes.Hybrid => GroundTruthModes.Hybrid,
-            GroundTruthModes.InteractionAugmented => GroundTruthModes.InteractionAugmented,
             GroundTruthModes.Expert => GroundTruthModes.Expert,
             _ => GroundTruthModes.Proxy
         };
-    }
-
-    private static int MergeHybrid(int proxy, int expert, float interactionScore)
-    {
-        if (expert >= 0)
-        {
-            return expert;
-        }
-
-        var boosted = proxy;
-        if (interactionScore >= 8f && proxy >= 1)
-        {
-            boosted = Math.Min(3, proxy + 1);
-        }
-
-        return boosted;
-    }
-
-    private static int MergeInteractionAugmented(int proxy, float interactionScore)
-    {
-        if (interactionScore >= 12f)
-        {
-            return Math.Max(proxy, 2);
-        }
-
-        if (interactionScore >= 6f && proxy >= 1)
-        {
-            return Math.Min(3, proxy + 1);
-        }
-
-        return proxy;
-    }
-
-    private async Task<Dictionary<int, float>> BuildInteractionPriorAsync(
-        IReadOnlyList<TourCatalogItem> catalog,
-        CancellationToken cancellationToken)
-    {
-        var tourIds = catalog.Select(t => t.Id).ToHashSet();
-        var interactions = await _db.UserTourInteractions
-            .AsNoTracking()
-            .Where(i => tourIds.Contains(i.TourId))
-            .ToListAsync(cancellationToken);
-
-        var scores = new Dictionary<int, float>();
-        foreach (var group in interactions.GroupBy(i => i.TourId))
-        {
-            var score = group.Sum(i =>
-            {
-                var typeWeight = InteractionWeights.GetValueOrDefault(i.InteractionType, 1f);
-                return (float)(typeWeight * i.Weight);
-            });
-            scores[group.Key] = score;
-        }
-
-        return scores;
     }
 }

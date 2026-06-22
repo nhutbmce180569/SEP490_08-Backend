@@ -108,14 +108,12 @@ public class ModelTrainingService : IModelTrainingService
             throw new InvalidOperationException("Catalog is empty. Ensure TourAPI has active tours before training.");
         }
 
-        var interactionCount = await _dbContext.UserTourInteractions.CountAsync(cancellationToken);
         var run = new ModelTrainingRun
         {
             ModelName = "tour_assistant_bundle",
             Status = "Running",
             TourCount = _catalogStore.Tours.Count,
             TourismCount = _catalogStore.TourismItems.Count,
-            InteractionCount = interactionCount,
             StartedAt = DateTime.UtcNow
         };
 
@@ -154,15 +152,14 @@ public class ModelTrainingService : IModelTrainingService
             .Take(5)
             .ToListAsync(cancellationToken);
 
-        var interactionCount = await _dbContext.UserTourInteractions.CountAsync(cancellationToken);
-
         return new ModelTrainingStatusDTO
         {
             IsReady = _modelRegistry.Status.IsReady && _catalogStore.IsReady,
             LastTrainedAt = _modelRegistry.Status.TrainedAt,
             TourCatalogCount = _catalogStore.Tours.Count,
             TourismKnowledgeCount = _catalogStore.TourismItems.Count,
-            InteractionCount = interactionCount,
+            ProfileMatchReady = _modelRegistry.Status.ProfileMatchReady,
+            ProfileMatchTrainingSamples = _modelRegistry.Status.ProfileMatchTrainingSamples,
             IntentModelAccuracy = _modelRegistry.Status.IntentAccuracy,
             RecentRuns = runs.Select(r => new ModelTrainingRunDTO
             {
@@ -171,7 +168,6 @@ public class ModelTrainingService : IModelTrainingService
                 Status = r.Status,
                 TourCount = r.TourCount,
                 TourismCount = r.TourismCount,
-                InteractionCount = r.InteractionCount,
                 IntentAccuracy = r.IntentAccuracy,
                 Message = r.Message,
                 StartedAt = r.StartedAt,

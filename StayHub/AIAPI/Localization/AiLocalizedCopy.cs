@@ -60,6 +60,7 @@ public interface IAiLocalizedCopy
     // Summary & tips
     string SummaryNoTours { get; }
     string SummaryFound(int personaCount, int tourCount, string topScore, string? weatherNote);
+    string SummaryFoundRelaxed(int personaCount, int tourCount, string topScore, string? weatherNote);
     string TipFairnessModel { get; }
     string TipChildren1 { get; }
     string TipChildren2 { get; }
@@ -74,8 +75,8 @@ public interface IAiLocalizedCopy
     string ChatToursFoundForCity(int count, string city);
     string ChatNoTours { get; }
     string ChatNoToursForCity(string city);
-    string ChatPersonalizedLoggedIn { get; }
-    string ChatPersonalizedAnonymous { get; }
+    string ChatRecommendFound(int count);
+    string ChatRecommendNone { get; }
     string ChatCultureNoData { get; }
     string ChatCultureNoDataForCity(string city);
     string ChatCultureReply(string source, string name, string type, string description);
@@ -99,8 +100,8 @@ public interface IAiLocalizedCopy
     string ScheduleExtendedAfter(DateTime departure, int days);
 
     // Recommendations
-    string ReasonWishlistHistory { get; }
-    string ReasonPopularTour { get; }
+    string ReasonQueryMatch { get; }
+    string ReasonCatalogQuality { get; }
     string ReasonSimilarTour(string tourName);
 
     // Foreign visitors
@@ -133,29 +134,29 @@ public sealed class AiLocalizedCopy : IAiLocalizedCopy
     public string OptionCouple => T("Couple", "Couple / đôi");
     public string OptionFamily => T("Family", "Gia đình");
     public string OptionGroup => T("Friends group", "Nhóm bạn");
-    public string QuestionStartDate => T("Planned start date?", "Dự kiến đi từ ngày nào?");
+    public string QuestionStartDate => T("When are we taking off? ✈️", "Bao giờ xách balo lên và đi? ✈️");
     public string QuestionStartDateHint => T(
-        "≤14 days: Open-Meteo forecast. Further out: historical data for the same period.",
-        "≤14 ngày: Open-Meteo forecast. Xa hơn: dữ liệu lịch sử cùng kỳ.");
-    public string QuestionEndDate => T("Planned end date?", "Dự kiến đến ngày nào?");
-    public string QuestionBudget => T("Max budget per person (VND)?", "Ngân sách tối đa mỗi người (VND)?");
+        "≤14 days: Open-Meteo forecast. Further out: historical data.",
+        "Đi sớm (≤14 ngày) AI sẽ soi dự báo thời tiết xịn xò cho bạn nha.");
+    public string QuestionEndDate => T("When are we back?", "Dự kiến ngày về?");
+    public string QuestionBudget => T("Budget per person? 💸", "Ví bạn đang dày cỡ nào? (VND) 💸");
     public string QuestionHasElderly => T("Any elderly travelers?", "Có người cao tuổi đi cùng không?");
     public string QuestionHasChildren => T("Any children traveling?", "Có trẻ em đi cùng không?");
-    public string QuestionInterests => T("What types of travel do you enjoy?", "Bạn thích loại hình du lịch nào?");
-    public string OptionBeach => T("Beach / islands", "Biển / đảo");
-    public string OptionCulture => T("Culture / heritage", "Văn hóa / di sản");
-    public string OptionNature => T("Nature", "Thiên nhiên");
-    public string OptionFood => T("Food", "Ẩm thực");
-    public string OptionAdventure => T("Adventure", "Mạo hiểm");
-    public string OptionRelax => T("Relaxation", "Nghỉ dưỡng");
-    public string OptionPhotography => T("Photography", "Chụp ảnh");
-    public string OptionCity => T("City exploration", "Khám phá thành phố");
-    public string OptionRiver => T("Rivers / Mekong Delta", "Sông nước / miền Tây");
-    public string QuestionNationality => T("Vietnamese or international guest?", "Bạn là khách Việt Nam hay quốc tế?");
-    public string OptionVietnamese => T("Vietnamese", "Người Việt Nam");
+    public string QuestionInterests => T("What's your travel vibe? 🎒", "Travel Vibe của bạn là gì? 🎒");
+    public string OptionBeach => T("Vitamin Sea 🌊", "Vitamin Sea / Đảo 🌊");
+    public string OptionCulture => T("Culture & Heritage 🏛️", "Thăm thú văn hóa 🏛️");
+    public string OptionNature => T("Nature & Chill 🌲", "Về với thiên nhiên 🌲");
+    public string OptionFood => T("Food Tour 🍜", "Phá đảo ẩm thực 🍜");
+    public string OptionAdventure => T("Adventure & Thrills 🧗", "Bạo hiểm / Trekking 🧗");
+    public string OptionRelax => T("Healing / Resort 🧘‍♀️", "Healing / Nghỉ dưỡng 🧘‍♀️");
+    public string OptionPhotography => T("Instagrammable spots 📸", "Sống ảo / Chụp choẹt 📸");
+    public string OptionCity => T("City Life 🏙️", "Khám phá thành phố 🏙️");
+    public string OptionRiver => T("River / Mekong 🛶", "Chèo xuồng miền Tây 🛶");
+    public string QuestionNationality => T("Are you a local or international guest? 🌍", "Bạn là khách nội địa hay quốc tế? 🌍");
+    public string OptionVietnamese => T("Local (Vietnamese)", "Người Việt Nam");
     public string OptionForeigner => T("International guest", "Khách quốc tế");
-    public string QuestionPreferredCity => T("Where do you want to go? (optional)", "Muốn đi đâu? (tùy chọn)");
-    public string QuestionPreferredCityHint => T("e.g. Can Tho, Hoi An…", "Ví dụ: Can Tho, Hoi An...");
+    public string QuestionPreferredCity => T("Any specific destination? 🗺️", "Chốt sổ địa điểm nào chưa? 🗺️");
+    public string QuestionPreferredCityHint => T("Skip if you want us to surprise you!", "Cứ bỏ qua nếu muốn AI tự 'flex' gợi ý nhé!");
 
     public string PersonaPrimary => T("Primary traveler", "Du khách chính");
     public string PersonaElderly => T("Elderly companion", "Người cao tuổi đi cùng");
@@ -166,19 +167,19 @@ public sealed class AiLocalizedCopy : IAiLocalizedCopy
     public string PersonaGroup => T("Group vibe", "Không khí nhóm");
 
     public string ReasonElderlyGood(string persona, float score) => _vi
-        ? "Lịch trình nhẹ nhàng, dễ đi cùng người lớn tuổi."
-        : "A relaxed pace that works well with elderly travelers.";
+        ? "Lịch trình siêu êm ái, người lớn tuổi đi bao khỏe! 🍵"
+        : "A relaxed pace that works perfectly for elderly travelers.";
 
     public string ReasonElderlyPoor(string persona) => _vi
-        ? "Có thể hơi mệt cho người cao tuổi (đi bộ nhiều hoặc hoạt động mạnh)."
+        ? "Hoạt động hơi 'bào', các bác lớn tuổi đi có thể bị mệt."
         : "May be tiring for elderly travelers (lots of walking or strenuous activities).";
 
     public string ReasonChildGood(string persona, float score) => _vi
-        ? "Có hoạt động phù hợp cho trẻ em đi cùng."
-        : "Includes activities that work well for children.";
+        ? "Nhiều hoạt động giải trí thú vị, các bé đi là mê tít! 🧸"
+        : "Includes activities that kids will absolutely love.";
 
     public string ReasonChildPoor(string persona) => _vi
-        ? "Nên cân nhắc nếu đi cùng trẻ nhỏ (tour dài hoặc mạo hiểm)."
+        ? "Lịch trình hơi thử thách, cân nhắc xíu nếu dắt theo em bé nha."
         : "Worth a closer look if traveling with young kids (long days or adventure-heavy).";
 
     public string ReasonInternationalGood(string persona) => _vi
@@ -187,10 +188,9 @@ public sealed class AiLocalizedCopy : IAiLocalizedCopy
 
     public string ReasonInterestMatch(string persona, IEnumerable<string> interests)
     {
-        var labels = interests.Select(FormatInterestLabel).ToList();
         return _vi
-            ? $"Phù hợp sở thích của bạn: {string.Join(", ", labels)}."
-            : $"Matches what you enjoy: {string.Join(", ", labels)}.";
+            ? "Đúng gu du lịch bạn đang tìm kiếm."
+            : "Matches your selected travel vibe.";
     }
 
     public string ReasonLocationMatch(string city) => _vi
@@ -198,20 +198,20 @@ public sealed class AiLocalizedCopy : IAiLocalizedCopy
         : $"In the area you asked for: {city}.";
 
     public string ReasonBudgetFit => _vi
-        ? "Giá tour nằm trong ngân sách bạn đã khai báo."
-        : "Priced within the budget you shared.";
+        ? "Mức giá cực kỳ ưng bụng, không lo lạm chi đâu nhé! 💸"
+        : "Priced perfectly within the budget you shared.";
 
     public string ReasonInterestStrong => _vi
-        ? "Nội dung tour khớp với sở thích du lịch của bạn."
-        : "Tour content aligns with your travel interests.";
+        ? "Vibe tour này sinh ra là dành cho bạn! ✨"
+        : "Tour vibe matches perfectly with what you love.";
 
     public string ReasonScheduleFit => _vi
-        ? "Có lịch khởi hành phù hợp thời gian bạn dự định đi."
-        : "Has a departure date that fits your travel window.";
+        ? "Chuyến đi khởi hành đúng vào mấy ngày bạn rảnh luôn nè! 🗓️"
+        : "Has a departure date that fits exactly in your travel window.";
 
     public string ReasonGoodRating => _vi
-        ? "Tour được đánh giá tốt từ khách đã đi trước đó."
-        : "Well rated by travelers who joined before.";
+        ? "Tour xịn xò được khách đi trước review 5 sao ầm ầm! ⭐"
+        : "Highly rated by travelers who joined before.";
 
     public string SummaryNoTours => T(
         "No tours satisfy the hard constraints. Try increasing your budget or changing the destination.",
@@ -220,6 +220,10 @@ public sealed class AiLocalizedCopy : IAiLocalizedCopy
     public string SummaryFound(int personaCount, int tourCount, string topScore, string? weatherNote) => _vi
         ? $"Dựa trên sở thích và người đi cùng bạn, chúng tôi tìm thấy {tourCount} tour phù hợp — tour khớp nhất đạt {topScore}.{weatherNote ?? ""}"
         : $"Based on your preferences and travel party, we found {tourCount} matching tour(s) — best fit {topScore}.{weatherNote ?? ""}";
+
+    public string SummaryFoundRelaxed(int personaCount, int tourCount, string topScore, string? weatherNote) => _vi
+        ? $"Chúng tôi không tìm thấy tour khớp 100% yêu cầu cứng. Nhưng đừng lo, AI đã tự động nới lỏng ngân sách/địa điểm và tìm ra {tourCount} tour xuất sắc thay thế — tour khớp nhất đạt {topScore}.{weatherNote ?? ""}"
+        : $"We couldn't find exact matches for your strict constraints. However, we automatically relaxed the budget/city and found {tourCount} excellent alternatives — best fit {topScore}.{weatherNote ?? ""}";
 
     public string TipFairnessModel => _vi
         ? "Gợi ý cân bằng sở thích của mọi người trong nhóm — không ai bị bỏ qua hoàn toàn."
@@ -273,13 +277,13 @@ public sealed class AiLocalizedCopy : IAiLocalizedCopy
         ? $"Hiện chưa có tour nào tại {city} khớp yêu cầu. Bạn thử đổi ngân sách, số ngày hoặc hỏi gợi ý tour khác."
         : $"No tours in {city} match your request yet. Try adjusting budget, duration, or ask for other suggestions.";
 
-    public string ChatPersonalizedLoggedIn => T(
-        "Here are personalized tours based on your wishlist, booking history, and our ML models.",
-        "Đây là các tour được gợi ý cá nhân hóa dựa trên wishlist, lịch sử đặt tour và mô hình ML nội bộ.");
+    public string ChatRecommendFound(int count) => _vi
+        ? $"Dựa trên yêu cầu của bạn, tôi gợi ý {count} tour phù hợp."
+        : $"Based on your request, here are {count} matching tour suggestion(s).";
 
-    public string ChatPersonalizedAnonymous => T(
-        "Sign in for better personalization. For now, suggestions use popularity and relevance.",
-        "Đăng nhập để nhận gợi ý cá nhân hóa tốt hơn. Hiện tại tôi gợi ý theo độ phổ biến và mức độ liên quan.");
+    public string ChatRecommendNone => T(
+        "I could not find tours matching your request. Try adjusting city, budget, or travel dates.",
+        "Chưa tìm thấy tour khớp yêu cầu. Thử đổi thành phố, ngân sách hoặc ngày đi.");
 
     public string ChatCultureNoData => T(
         "I don't have authoritative reference data for that question. Try asking about a specific city.",
@@ -397,13 +401,13 @@ public sealed class AiLocalizedCopy : IAiLocalizedCopy
         ? $"Khởi hành {departure:dd/MM/yyyy} — muộn hơn {days} ngày (xa hơn một chút so với khoảng bạn chọn)."
         : $"Departs {departure:yyyy-MM-dd} — {days} day(s) later (a bit beyond your preferred window).";
 
-    public string ReasonWishlistHistory => T(
-        "Based on wishlist/booking history and personal preferences.",
-        "Dựa trên lịch sử wishlist/đặt tour và sở thích cá nhân.");
+    public string ReasonQueryMatch => T(
+        "Matches your stated preferences (semantic content-based retrieval).",
+        "Khớp sở thích/điều kiện bạn cung cấp (tìm kiếm ngữ nghĩa theo nội dung tour).");
 
-    public string ReasonPopularTour => T(
-        "Popular tour with strong ratings in the current catalog.",
-        "Tour phổ biến, đánh giá cao trong catalog hiện tại.");
+    public string ReasonCatalogQuality => T(
+        "Strong catalog quality signal (rating and review volume).",
+        "Tour có chất lượng tốt trong catalog (đánh giá và số review).");
 
     public string ReasonSimilarTour(string tourName) => _vi
         ? $"Tương tự tour \"{tourName}\" (content-based ML)."

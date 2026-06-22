@@ -140,18 +140,6 @@ internal static class Program
             });
         }
 
-        foreach (var row in seed.Interactions)
-        {
-            db.UserTourInteractions.Add(new UserTourInteraction
-            {
-                TourId = row.TourId,
-                InteractionType = row.InteractionType,
-                Weight = row.Weight,
-                SessionId = row.SessionId,
-                CreatedAt = DateTime.UtcNow
-            });
-        }
-
         await db.SaveChangesAsync();
     }
 

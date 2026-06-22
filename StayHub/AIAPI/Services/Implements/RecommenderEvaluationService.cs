@@ -52,14 +52,13 @@ public class RecommenderEvaluationService : IRecommenderEvaluationService
                 Key = b.Key,
                 Name = b.Name,
                 Description = b.Description,
-                IsProposed = b.Key == AggregationStrategies.CafhrFair
+                IsProposed = b.Key == ScoringModelSpec.ProductionStrategyKey
             })
             .ToList(),
         LabelingModes =
         [
             GroundTruthModes.Proxy,
             GroundTruthModes.Hybrid,
-            GroundTruthModes.InteractionAugmented,
             GroundTruthModes.Expert
         ]
     };
@@ -144,7 +143,6 @@ public class RecommenderEvaluationService : IRecommenderEvaluationService
         }
 
         var totalExpert = await _db.TourRelevanceJudgments.CountAsync(cancellationToken);
-        var totalInteractions = await _db.UserTourInteractions.CountAsync(cancellationToken);
 
         var baselineResults = perStrategyMetrics.Values
             .Select(a => a.ToDto(profiles.Count))
@@ -242,8 +240,7 @@ public class RecommenderEvaluationService : IRecommenderEvaluationService
 
         var labelingDescription = request.LabelingMode switch
         {
-            GroundTruthModes.Hybrid => "Hybrid: expert judgments override proxy; interaction boost when no expert label",
-            GroundTruthModes.InteractionAugmented => "Proxy labels augmented by UserTourInteractions popularity",
+            GroundTruthModes.Hybrid => ScoringModelSpec.EvaluationProtocol.HybridGroundTruth,
             GroundTruthModes.Expert => "Expert judgments only (TourRelevanceJudgments table)",
             _ => ScoringModelSpec.EvaluationProtocol.RelevanceProxy
         };
@@ -261,7 +258,6 @@ public class RecommenderEvaluationService : IRecommenderEvaluationService
             {
                 Mode = request.LabelingMode,
                 TotalExpertJudgmentsInDb = totalExpert,
-                TotalInteractionSignals = totalInteractions,
                 AvgRelevantToursPerProfile = profiles.Count == 0 ? 0f : relevantSum / (float)profiles.Count,
                 ProfilesWithExpertLabels = profilesWithExpert
             },
@@ -330,8 +326,8 @@ public class RecommenderEvaluationService : IRecommenderEvaluationService
                         profile.PreferredCity,
                         profile.TravelInterests,
                         profile.NationalityType == TravelerNationalityTypes.Foreigner,
-                        profile.HasElderly,
-                        profile.HasChildren,
+                        profile.ElderlyCount > 0,
+                        profile.ChildrenCount > 0,
                         topK: 8);
                     if (hits.Any(h => h.Chunk.CityKeys.Any(k =>
                             VietnameseTextNormalizer.CityEquals(profile.PreferredCity, k))))
@@ -369,31 +365,20 @@ public class RecommenderEvaluationService : IRecommenderEvaluationService
         return Math.Min(1f, corpusSize / 75f * 0.864f);
     }
 
-    private async Task<Dictionary<int, float>> BuildPopularityScoresAsync(
+    private Task<Dictionary<int, float>> BuildPopularityScoresAsync(
         IReadOnlyList<Models.Catalog.TourCatalogItem> catalog,
         CancellationToken cancellationToken)
     {
-        var tourIds = catalog.Select(t => t.Id).ToHashSet();
-        var interactions = await _db.UserTourInteractions
-            .AsNoTracking()
-            .Where(i => tourIds.Contains(i.TourId))
-            .ToListAsync(cancellationToken);
+        var scores = catalog.ToDictionary(
+            t => t.Id,
+            t =>
+            {
+                var ratingPart = (float)((t.AverageStar ?? 3.0) / 5.0);
+                var reviewPart = Math.Min(t.ReviewCount / 20f, 1f);
+                return ratingPart * 0.6f + reviewPart * 0.4f;
+            });
 
-        var weights = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["booking"] = 5f,
-            ["book"] = 5f,
-            ["wishlist"] = 4f,
-            ["click"] = 2f,
-            ["view"] = 1f,
-            ["search"] = 0.5f
-        };
-
-        return interactions
-            .GroupBy(i => i.TourId)
-            .ToDictionary(
-                g => g.Key,
-                g => (float)g.Sum(i => weights.GetValueOrDefault(i.InteractionType, 1f) * i.Weight));
+        return Task.FromResult(scores);
     }
 
     private static EvaluationProfileSplit ParseProfileSplit(string? split) =>

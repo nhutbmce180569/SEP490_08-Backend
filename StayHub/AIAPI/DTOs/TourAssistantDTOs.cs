@@ -64,21 +64,6 @@ public class TourConsultationRequestDTO
     public int Top { get; set; } = 8;
 }
 
-public class LogInteractionRequestDTO
-{
-    [Required]
-    [Range(1, int.MaxValue)]
-    public int TourId { get; set; }
-
-    [Required]
-    [RegularExpression("^(view|click|wishlist|booking|chat_recommend)$",
-        ErrorMessage = "InteractionType must be view, click, wishlist, booking, or chat_recommend.")]
-    public string InteractionType { get; set; } = null!;
-
-    [StringLength(64)]
-    public string? SessionId { get; set; }
-}
-
 public class TourRecommendationItemDTO
 {
     public int TourId { get; set; }
@@ -173,7 +158,8 @@ public class ModelTrainingStatusDTO
     public DateTime? LastTrainedAt { get; set; }
     public int TourCatalogCount { get; set; }
     public int TourismKnowledgeCount { get; set; }
-    public int InteractionCount { get; set; }
+    public bool ProfileMatchReady { get; set; }
+    public int ProfileMatchTrainingSamples { get; set; }
     public double? IntentModelAccuracy { get; set; }
     public List<ModelTrainingRunDTO> RecentRuns { get; set; } = new();
 }
@@ -185,7 +171,6 @@ public class ModelTrainingRunDTO
     public string Status { get; set; } = "";
     public int TourCount { get; set; }
     public int TourismCount { get; set; }
-    public int InteractionCount { get; set; }
     public double? IntentAccuracy { get; set; }
     public string? Message { get; set; }
     public DateTime StartedAt { get; set; }
