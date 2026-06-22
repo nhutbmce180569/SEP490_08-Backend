@@ -33,7 +33,10 @@ namespace ContentAPI.Repositories.Implements
         {
             return await _context.TicketTypes.FirstOrDefaultAsync(t => t.Id == id);
         }
-
+        public async Task<TicketType?> GetByName(string name)
+        {
+            return await _context.TicketTypes.FirstOrDefaultAsync(t => t.Name.ToLower().Equals(name.ToLower()));
+        }
         public async Task<TicketType> Add(TicketType ticketType)
         {
             _context.TicketTypes.Add(ticketType);

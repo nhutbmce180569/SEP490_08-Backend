@@ -62,6 +62,10 @@ namespace ContentAPI.Services.Implements
 
         public async Task<ReadTicketTypeDTO> CreateTicketType(CreateTicketTypeDTO dto)
         {
+            if (_ticketTypeRepository.GetByName(dto.Name) != null)
+            {
+                throw new Exception("Ticket Type Name exist! Please check again!");
+            }
             var ticketType = new TicketType
             {
                 Name = dto.Name,
@@ -77,6 +81,11 @@ namespace ContentAPI.Services.Implements
 
         public async Task<bool> UpdateTicketType(int id, UpdateTicketTypeDTO dto)
         {
+            var existingTicketName = await _ticketTypeRepository.GetByName(dto.Name);
+            if (existingTicketName != null && existingTicketName.Id != id)
+            {
+                throw new Exception("Ticket Type Name exist! Please check again!");
+            }
             var existingTicketType = await _ticketTypeRepository.GetById(id);
             if (existingTicketType == null) return false;
 
