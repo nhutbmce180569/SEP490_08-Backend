@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using AuthAPI.DTOs;
 using AuthAPI.Models;
 using AuthAPI.Repositories;
@@ -432,6 +432,13 @@ namespace AuthAPI.Services.Implements
                 ByAgeGroup = BuildLabelCounts(customers, total, c => GetAgeGroup(c.DateOfBirth)),
                 RegistrationTrend = BuildRegistrationTrend(customers, periodFrom, periodTo, granularity)
             };
+        }
+
+        public async Task<List<ReadUserDTO>> GetCustomersByBirthdayMonthAsync(int month)
+        {
+            var customers = await _userRepository.GetAllCustomersAsync();
+            var birthdayCustomers = customers.Where(c => c.DateOfBirth.HasValue && c.DateOfBirth.Value.Month == month).ToList();
+            return _mapper.Map<List<ReadUserDTO>>(birthdayCustomers);
         }
 
         public async Task<CustomerListAnalyticsDTO> GetCustomersForAnalyticsAsync(string? search, int page, int pageSize)
