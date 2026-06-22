@@ -11,12 +11,12 @@ namespace SocialAPI.Hubs
     public class ChatHub : Hub
     {
         private readonly IChatService _chatService;
-        private readonly IHubContext<NotificationHub> _globalHubContext;
+        private readonly IChatNotificationService _chatNotificationService;
 
-        public ChatHub(IChatService chatService, IHubContext<NotificationHub> globalHubContext)
+        public ChatHub(IChatService chatService, IChatNotificationService chatNotificationService)
         {
             _chatService = chatService;
-            _globalHubContext = globalHubContext;
+            _chatNotificationService = chatNotificationService;
         }
 
         public async Task JoinRoom(int roomId)
@@ -50,14 +50,7 @@ namespace SocialAPI.Hubs
 
             await Clients.Group(chatRoomId.ToString()).SendAsync("ReceiveMessage", savedMessage);
 
-            var members = await _chatService.GetRoomMembersAsync(chatRoomId);
-            foreach (var member in members)
-            {
-                if (member.Id != senderId)
-                {
-                    await _globalHubContext.Clients.User(member.Id.ToString()).SendAsync("ReceiveGlobalNotification", savedMessage);
-                }
-            }
+            await _chatNotificationService.NotifyNewMessageAsync(savedMessage, senderId);
         }
     }
 }
