@@ -17,7 +17,14 @@ public class UserValidationService : IUserValidationService
     public async Task<(bool Exists, string? FullName, string? Email, string? Status)> ValidateUserAsync(int userId)
     {
         var gatewayUrl = _configuration["Gateway:BaseUrl"] ?? "https://localhost:7010";
-        var response = await _httpClient.GetAsync($"{gatewayUrl}/api/users/{userId}");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{gatewayUrl}/api/internal/users/{userId}");
+        var internalKey = _configuration["InternalService:Key"];
+        if (!string.IsNullOrEmpty(internalKey))
+        {
+            request.Headers.Add("X-Service-Key", internalKey);
+        }
+
+        var response = await _httpClient.SendAsync(request);
 
         if (!response.IsSuccessStatusCode)
         {

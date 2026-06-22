@@ -18,6 +18,23 @@ public class InternalUsersController : ControllerBase
         _configuration = configuration;
     }
 
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetUserById(int id)
+    {
+        if (!IsValidServiceKey())
+        {
+            return Unauthorized(new { message = "Invalid service key" });
+        }
+
+        var user = await _userService.GetUserById(id);
+        if (user == null)
+        {
+            return NotFound(new { message = "User not found" });
+        }
+
+        return Ok(new { message = "User retrieved successfully", data = user });
+    }
+
     [HttpGet("birthdays")]
     public async Task<IActionResult> GetUsersByBirthdayMonth([FromQuery] int month)
     {
@@ -37,11 +54,17 @@ public class InternalUsersController : ControllerBase
 
     private bool IsValidServiceKey()
     {
-        var expectedKey = _configuration["InternalApi:SecretKey"];
-        if (string.IsNullOrWhiteSpace(expectedKey)) return false;
-        
         if (!Request.Headers.TryGetValue("X-Service-Key", out var providedKey)) return false;
-        
-        return string.Equals(expectedKey, providedKey.ToString(), StringComparison.Ordinal);
+
+        var key1 = _configuration["InternalApi:SecretKey"];
+        var key2 = _configuration["InternalService:Key"];
+
+        if (!string.IsNullOrWhiteSpace(key1) && string.Equals(key1, providedKey.ToString(), StringComparison.Ordinal))
+            return true;
+
+        if (!string.IsNullOrWhiteSpace(key2) && string.Equals(key2, providedKey.ToString(), StringComparison.Ordinal))
+            return true;
+
+        return false;
     }
 }
