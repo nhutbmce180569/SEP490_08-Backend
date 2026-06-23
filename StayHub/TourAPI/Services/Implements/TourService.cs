@@ -307,8 +307,6 @@ namespace TourAPI.Services.Implements
                 pageSize,
                 searchTerm);
             var list = _mapper.Map<List<ReadTourDTO>>(result.Tours);
-
-            // Manager này chắc chắn có quyền Edit vì đây là tour của họ
             foreach (var tour in list)
             {
                 tour.CanEdit = true;

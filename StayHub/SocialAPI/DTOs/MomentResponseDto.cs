@@ -15,11 +15,16 @@ public class MomentResponseDto
     public DateTime? CreatedAt { get; set; }
     public string Privacy { get; set; } = null!;
 
-    // Khôi phục lại 2 trường bị thiếu
+    // ✅ Số lượt thích. Tên field PHẢI khớp với Flutter (reactionCount).
+    //    Giữ TotalLikes để không phá vỡ code/web cũ; thêm ReactionCount cho app.
     public int TotalLikes { get; set; }
+    public int ReactionCount { get; set; }
+
+    // ✅ THÊM: trạng thái đã-thích-bởi-người-đang-đăng-nhập (set trong MomentService)
+    public bool IsLikedByMe { get; set; }
+
     public List<CommentResponseDto> Comments { get; set; } = new();
 
-    // Các trường object chứa dữ liệu User và Reaction
     public MomentUserDto User { get; set; } = new MomentUserDto();
     public List<ReactionRequestDto> MomentReactions { get; set; } = new();
 }
