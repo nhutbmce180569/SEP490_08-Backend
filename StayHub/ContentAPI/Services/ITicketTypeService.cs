@@ -9,6 +9,6 @@ namespace ContentAPI.Services
         Task<ReadTicketTypeDTO?> GetTicketTypeById(int id);
         Task<ReadTicketTypeDTO> CreateTicketType(CreateTicketTypeDTO dto);
         Task<bool> UpdateTicketType(int id, UpdateTicketTypeDTO dto);
-        Task<bool> ChangeTicketTypeStatus(int id, bool isActive);
+        Task<ReadTicketTypeDTO?> ChangeTicketTypeStatus(int id);
     }
 }
