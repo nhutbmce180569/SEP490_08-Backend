@@ -23,7 +23,8 @@ namespace TourAPI.Controllers
             ITourAccessService tourAccessService,
             IStringLocalizer<Messages> localizer)
             : base(localizer)
-        {_service = service;
+        {
+            _service = service;
             _scheduleService = scheduleService;
             _tourAccessService = tourAccessService;
         }
@@ -101,38 +102,16 @@ namespace TourAPI.Controllers
             }
         }
 
-        [HttpPatch("{id}/activate")]
+        [HttpPatch("{id}/change-status")]
         [Authorize(Roles = "Manager, Admin")]
-        public async Task<ActionResult<ReadTourScheduleTicketDTO>> Activate(int id)
+        public async Task<ActionResult<ReadTourScheduleTicketDTO>> ChangeStatus(int id)
         {
             try
             {
                 var existing = await _service.GetById(id);
                 if (existing == null) return NotFound();
                 if (!await CanEditSchedule(existing.ScheduleId)) return Forbid();
-                var result = await _service.Activate(id);
-                return Ok(result);
-            }
-            catch (Exception ex) when (ex.Message == "TourScheduleTicket not found")
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
-
-        [HttpPatch("{id}/deactivate")]
-        [Authorize(Roles = "Manager, Admin")]
-        public async Task<ActionResult<ReadTourScheduleTicketDTO>> Deactivate(int id)
-        {
-            try
-            {
-                var existing = await _service.GetById(id);
-                if (existing == null) return NotFound();
-                if (!await CanEditSchedule(existing.ScheduleId)) return Forbid();
-                var result = await _service.Deactivate(id);
+                var result = await _service.ChangeStatus(id);
                 return Ok(result);
             }
             catch (Exception ex) when (ex.Message == "TourScheduleTicket not found")
