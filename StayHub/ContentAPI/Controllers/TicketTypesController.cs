@@ -101,32 +101,21 @@ namespace ContentAPI.Controllers
 
         }
 
-        // PATCH: api/TicketTypes/5/activate
-        [HttpPatch("{id}/activate")]
+        // PATCH: api/TicketTypes/5/change-status
+        [HttpPatch("{id}/change-status")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Activate(int id)
+        public async Task<IActionResult> ChangeStatus(int id)
         {
-            var result = await _ticketTypeService.ChangeTicketTypeStatus(id, true);
-            if (!result)
+            var result = await _ticketTypeService.ChangeTicketTypeStatus(id);
+            if (result == null)
             {
                 return NotFound(new { message = M("TicketTypeNotFound") });
             }
 
-            return Ok(new { message = M("TicketTypeActivatedSuccessfully") });
-        }
-
-        // PATCH: api/TicketTypes/5/deactivate
-        [HttpPatch("{id}/deactivate")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Deactivate(int id)
-        {
-            var result = await _ticketTypeService.ChangeTicketTypeStatus(id, false);
-            if (!result)
-            {
-                return NotFound(new { message = M("TicketTypeNotFound") });
-            }
-
-            return Ok(new { message = M("TicketTypeDeactivatedSuccessfully") });
+            var message = (result.IsActive ?? true)
+                ? M("TicketTypeActivatedSuccessfully")
+                : M("TicketTypeDeactivatedSuccessfully");
+            return Ok(new { message });
         }
     }
 }
