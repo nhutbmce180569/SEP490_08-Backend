@@ -55,6 +55,8 @@ public class Program
         builder.Services.AddScoped<IVoucherService, VoucherService>();
         builder.Services.AddScoped<ICustomerVoucherService, CustomerVoucherService>();
         builder.Services.AddScoped<IPlatformAnalyticsService, PlatformAnalyticsService>();
+        builder.Services.AddScoped<IEmailService, EmailService>();
+        builder.Services.AddHttpClient<INotificationInternalService, NotificationInternalService>();
 
         builder.Services.AddControllers().AddStayHubDataAnnotationsLocalization();
         builder.Services.AddStayHubLocalization();

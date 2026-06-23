@@ -37,8 +37,14 @@ namespace BookingAPI.DTOs
 
         public int? TicketTypeId { get; set; }
 
+        [Required(ErrorMessage = "Attendee name is required.")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Attendee name must be between 2 and 100 characters.")]
+        [RegularExpression(@"^[a-zA-Z\s'.]+$", ErrorMessage = "Attendee name contains invalid characters.")]
         public string AttendeeName { get; set; } = null!;
 
+        [Required(ErrorMessage = "ID or Passport number is required.")]
+        [StringLength(20, MinimumLength = 5, ErrorMessage = "ID/Passport must be between 5 and 20 characters.")]
+        [RegularExpression(@"^[A-Za-z0-9\-]+$", ErrorMessage = "ID/Passport can only contain alphanumeric characters and hyphens.")]
         public string IdCard { get; set; } = null!;
 
         public DateOnly? DateOfBirth { get; set; }
