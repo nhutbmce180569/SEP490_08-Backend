@@ -510,9 +510,9 @@ namespace SocialAPI.Services.Implements
             var member = room.ChatMembers?.FirstOrDefault(cm => cm.UserId == userId);
             if (member == null) throw new UnauthorizedAccessException("You are not a member of this chat room.");
 
-            member.LastReadAt = DateTime.UtcNow;
+            var latestMessageTime = await _chatRepository.GetLatestMessageSentAtAsync(roomId);
+            member.LastReadAt = latestMessageTime ?? DateTime.UtcNow;
 
-            // 💡 LƯU Ý: Repository cần có sẵn hàm UpdateMemberAsync để gọi `DbContext.Update(member)` và `SaveChangesAsync()`
             await _chatRepository.UpdateMemberAsync(member);
         }
     }

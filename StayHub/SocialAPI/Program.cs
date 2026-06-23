@@ -1,5 +1,7 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.OData;
 using Microsoft.AspNetCore.SignalR;
@@ -42,6 +44,7 @@ namespace SocialAPI
 
             builder.Services.AddScoped<IChatRepository, ChatRepository>();
             builder.Services.AddScoped<IChatService, ChatService>();
+            builder.Services.AddScoped<IChatNotificationService, ChatNotificationService>();
 
             builder.Services.AddFluentValidationAutoValidation();
             builder.Services.AddFluentValidationClientsideAdapters();
@@ -120,8 +123,10 @@ namespace SocialAPI
             // ============================================================
             // 🚨 SỬA LỖI DI CRASH: Đăng ký IAuthApiClient vào Container
             // ============================================================
-            // Lưu ý: Nếu lớp triển khai của bạn tên khác (ví dụ: AuthApiClient), hãy đổi tên cho khớp nhé
-            builder.Services.AddScoped<IAuthApiClient, AuthApiClient>();
+            builder.Services.AddHttpClient<IAuthApiClient, AuthApiClient>(client =>
+            {
+                client.BaseAddress = new Uri(builder.Configuration["AuthApi:BaseUrl"] ?? "https://localhost:7001/");
+            });
 
             // Cấu hình Cloudinary & Redis
             builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
@@ -157,6 +162,14 @@ namespace SocialAPI
             });
 
             var app = builder.Build();
+
+            if (FirebaseApp.DefaultInstance == null)
+            {
+                FirebaseApp.Create(new AppOptions
+                {
+                    Credential = GoogleCredential.FromFile("google-services.json")
+                });
+            }
 
             if (app.Environment.IsDevelopment())
             {
