@@ -28,12 +28,27 @@ public class OpenMeteoWeatherService : IWeatherService
         string city,
         DateTime startDate,
         DateTime? endDate,
+        double? latitude = null,
+        double? longitude = null,
         CancellationToken cancellationToken = default)
     {
-        var geo = VietnamCityGeoResolver.Resolve(city);
-        if (geo == null)
+        double lat;
+        double lng;
+
+        if (latitude.HasValue && longitude.HasValue)
         {
-            return null;
+            lat = latitude.Value;
+            lng = longitude.Value;
+        }
+        else
+        {
+            var geo = VietnamCityGeoResolver.Resolve(city);
+            if (geo == null)
+            {
+                return null;
+            }
+            lat = geo.Latitude;
+            lng = geo.Longitude;
         }
 
         var periodStart = startDate.Date;
@@ -55,8 +70,8 @@ public class OpenMeteoWeatherService : IWeatherService
             dataSource = "forecast";
             payload = await FetchDailyAsync(
                 _settings.OpenMeteoForecastUrl,
-                geo.Latitude,
-                geo.Longitude,
+                lat,
+                lng,
                 periodStart,
                 periodEnd,
                 cancellationToken);
@@ -68,8 +83,8 @@ public class OpenMeteoWeatherService : IWeatherService
             var historicalEnd = periodEnd.AddYears(-1);
             payload = await FetchDailyAsync(
                 _settings.OpenMeteoArchiveUrl,
-                geo.Latitude,
-                geo.Longitude,
+                lat,
+                lng,
                 historicalStart,
                 historicalEnd,
                 cancellationToken);
@@ -87,14 +102,14 @@ public class OpenMeteoWeatherService : IWeatherService
         var rainyDays = payload.Daily.PrecipitationSum.Count(p => p >= 5);
 
         var summary = dataSource == "forecast"
-            ? _text.WeatherForecastSummary(geo.DisplayName, avgMin, avgMax, totalRain, payload.Daily.Time.Count)
-            : _text.WeatherHistoricalSummary(geo.DisplayName, avgMin, avgMax, totalRain);
+            ? _text.WeatherForecastSummary(city, avgMin, avgMax, totalRain, payload.Daily.Time.Count)
+            : _text.WeatherHistoricalSummary(city, avgMin, avgMax, totalRain);
 
         var impact = BuildImpact(totalRain, rainyDays, avgMax, payload.Daily.Time.Count);
 
         var advice = new WeatherAdviceDTO
         {
-            City = geo.DisplayName,
+            City = city,
             DataSource = dataSource,
             PeriodStart = periodStart,
             PeriodEnd = periodEnd,
