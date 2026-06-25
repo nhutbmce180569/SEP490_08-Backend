@@ -77,6 +77,7 @@ public class OpenMeteoWeatherService : IWeatherService
 
         if (payload?.Daily == null || payload.Daily.Time.Count == 0)
         {
+            Console.WriteLine($"[OpenMeteo Return] Null payload.Daily for {city}");
             return null;
         }
 
@@ -91,7 +92,7 @@ public class OpenMeteoWeatherService : IWeatherService
 
         var impact = BuildImpact(totalRain, rainyDays, avgMax, payload.Daily.Time.Count);
 
-        return new WeatherAdviceDTO
+        var advice = new WeatherAdviceDTO
         {
             City = geo.DisplayName,
             DataSource = dataSource,
@@ -103,6 +104,9 @@ public class OpenMeteoWeatherService : IWeatherService
             Summary = summary,
             ImpactOnTours = impact
         };
+        
+        Console.WriteLine($"[OpenMeteo Return] City={advice.City}, AvgMax={advice.AvgMaxTempC}");
+        return advice;
     }
 
     private async Task<OpenMeteoDailyResponse?> FetchDailyAsync(
@@ -123,10 +127,23 @@ public class OpenMeteoWeatherService : IWeatherService
         var response = await _httpClient.GetAsync(url, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
+            var err = await response.Content.ReadAsStringAsync(cancellationToken);
+            Console.WriteLine($"[OpenMeteo Error] Status: {response.StatusCode}, Url: {url}, Response: {err}");
             return null;
         }
 
-        return await response.Content.ReadFromJsonAsync<OpenMeteoDailyResponse>(cancellationToken);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+        Console.WriteLine($"[OpenMeteo Success] Url: {url}, Response: {json}");
+        
+        try 
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<OpenMeteoDailyResponse>(json);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[OpenMeteo Exception] {ex.Message}");
+            return null;
+        }
     }
 
     private string BuildImpact(double totalRain, int rainyDays, double avgMax, int dayCount)

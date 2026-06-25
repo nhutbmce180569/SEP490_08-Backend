@@ -230,6 +230,9 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         var weatherByCity = weatherResults
             .Where(x => x.Advice != null)
             .ToDictionary(x => x.City!, x => x.Advice!, StringComparer.OrdinalIgnoreCase);
+            
+        var missingCities = allCities.Where(c => !weatherByCity.ContainsKey(c)).ToList();
+        var debugMissing = string.Join(", ", missingCities);
 
         WeatherAdviceDTO? weather = null;
 
@@ -452,6 +455,13 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             _dimensionWeights,
             _text);
 
+        var mappedWeather = weatherByCity.GetValueOrDefault(display.City ?? string.Empty);
+        if (mappedWeather == null) {
+            Console.WriteLine($"[MapTour] display.City='{display.City}' NOT FOUND in weatherByCity (Count={weatherByCity.Count})");
+        } else {
+            Console.WriteLine($"[MapTour] display.City='{display.City}' FOUND! weather.City='{mappedWeather.City}'");
+        }
+
         return new TourRecommendationItemDTO
         {
             TourId = publicId,
@@ -468,7 +478,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             NextDeparture = display.NextDeparture,
             MatchesPreferredDates = matchesDates,
             ScheduleNote = scheduleNote,
-            DestinationWeather = weatherByCity.GetValueOrDefault(display.City ?? string.Empty),
+            DestinationWeather = mappedWeather,
             ScoreBreakdown = new TourScoreBreakdownDTO
             {
                 FairnessScore = scoring.FairnessScore,
