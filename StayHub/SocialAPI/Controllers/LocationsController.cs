@@ -1,4 +1,4 @@
-﻿﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using StayHub.Common.Controllers;
@@ -20,7 +20,8 @@ namespace SocialAPI.Controllers
 
         public LocationsController(ILocationService locationService, IStringLocalizer<Messages> localizer)
             : base(localizer)
-        {_locationService = locationService;
+        {
+            _locationService = locationService;
         }
 
         private int GetCurrentUserId()
@@ -111,6 +112,23 @@ namespace SocialAPI.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = M("AnErrorOccurredWhileRetrievingLocation"), details = ex.Message });
+            }
+        }
+
+        // GET /api/locations/footprints
+        // Tra ve toan bo dau chan (LocationLogs) cua nguoi dung -> "cao map" tu di chuyen.
+        [HttpGet("footprints")]
+        public async Task<IActionResult> GetMyFootprints()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var data = await _locationService.GetMyFootprintsAsync(userId);
+                return Ok(new { message = M("FootprintsRetrievedSuccessfully"), data });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileRetrievingFootprints"), details = ex.Message });
             }
         }
 

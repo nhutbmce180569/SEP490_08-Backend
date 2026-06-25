@@ -103,21 +103,12 @@ namespace TourAPI.Services.Implements
             return _mapper.Map<ReadTourScheduleTicketDTO>(entity);
         }
 
-        public async Task<ReadTourScheduleTicketDTO> Activate(int id)
+        public async Task<ReadTourScheduleTicketDTO> ChangeStatus(int id)
         {
             var entity = await _repository.GetByIdAsync(id);
             if (entity == null) throw new Exception("TourScheduleTicket not found");
 
-            await _repository.SetActiveAsync(entity, true);
-            return _mapper.Map<ReadTourScheduleTicketDTO>(entity);
-        }
-
-        public async Task<ReadTourScheduleTicketDTO> Deactivate(int id)
-        {
-            var entity = await _repository.GetByIdAsync(id);
-            if (entity == null) throw new Exception("TourScheduleTicket not found");
-
-            await _repository.SetActiveAsync(entity, false);
+            await _repository.SetActiveAsync(entity, !(entity.IsActive ?? true));
             return _mapper.Map<ReadTourScheduleTicketDTO>(entity);
         }
 
