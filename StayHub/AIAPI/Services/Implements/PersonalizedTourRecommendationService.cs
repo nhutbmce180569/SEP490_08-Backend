@@ -212,14 +212,26 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             : profile.SessionId;
 
         var personas = TravelPartyDecomposer.Decompose(profile, _text);
-        var weatherCity = profile.PreferredCity ?? InferCityFromInterests(profile.TravelInterests);
+
+        var allCities = _catalogStore.Tours
+            .Select(t => t.City)
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .Distinct()
+            .ToList();
+
+        var weatherTasks = allCities.Select(async city => 
+        {
+            var advice = await _weatherService.GetTravelWeatherAdviceAsync(
+                city!, profile.PreferredStartDate, profile.PreferredEndDate, cancellationToken);
+            return (City: city, Advice: advice);
+        });
+
+        var weatherResults = await Task.WhenAll(weatherTasks);
+        var weatherByCity = weatherResults
+            .Where(x => x.Advice != null)
+            .ToDictionary(x => x.City!, x => x.Advice!, StringComparer.OrdinalIgnoreCase);
 
         WeatherAdviceDTO? weather = null;
-        if (!string.IsNullOrWhiteSpace(weatherCity))
-        {
-            weather = await _weatherService.GetTravelWeatherAdviceAsync(
-                weatherCity, profile.PreferredStartDate, profile.PreferredEndDate, cancellationToken);
-        }
 
         var interestQuery = InterestMatchHelper.BuildSearchQuery(profile.TravelInterests);
         var semanticCacheKey = $"semantic_{interestQuery.GetHashCode()}";
@@ -252,7 +264,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
                 _catalogStore.Tours.ToList(),
                 activeProfile,
                 hybridRetrievalScores,
-                weather,
+                weatherByCity,
                 ScoringModelSpec.ProductionStrategyKey);
 
             var rankedDistinct = ranked
@@ -266,9 +278,9 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
                     var scoringToUse = x.Scoring;
                     if (isRelaxed)
                     {
-                        scoringToUse = _tourRanker.ScoreTour(x.Tour, profile, hybridRetrievalScores, weather);
+                        scoringToUse = _tourRanker.ScoreTour(x.Tour, profile, hybridRetrievalScores, weatherByCity);
                     }
-                    return MapTour(x.Tour, scoringToUse, profile, windowStart, windowEnd);
+                    return MapTour(x.Tour, scoringToUse, profile, windowStart, windowEnd, weatherByCity);
                 })
                 .ToList();
 
@@ -425,7 +437,8 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         TourScoringResult scoring,
         TourPreferenceQuestionnaireDTO profile,
         DateTime windowStart,
-        DateTime windowEnd)
+        DateTime windowEnd,
+        IReadOnlyDictionary<string, WeatherAdviceDTO> weatherByCity)
     {
         var publicId = CatalogTourIds.ResolveBaseTourId(tour.Id);
         var display = _catalogStore.Tours.FirstOrDefault(t => t.Id == publicId) ?? tour;
@@ -455,6 +468,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             NextDeparture = display.NextDeparture,
             MatchesPreferredDates = matchesDates,
             ScheduleNote = scheduleNote,
+            DestinationWeather = weatherByCity.GetValueOrDefault(display.City ?? string.Empty),
             ScoreBreakdown = new TourScoreBreakdownDTO
             {
                 FairnessScore = scoring.FairnessScore,
