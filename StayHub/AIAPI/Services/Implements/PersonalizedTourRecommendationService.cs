@@ -214,16 +214,17 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         var personas = TravelPartyDecomposer.Decompose(profile, _text);
 
         var allCities = _catalogStore.Tours
-            .Select(t => t.City)
-            .Where(c => !string.IsNullOrWhiteSpace(c))
-            .Distinct()
+            .Where(t => !string.IsNullOrWhiteSpace(t.City))
+            .GroupBy(t => t.City!)
+            .Select(g => g.First())
             .ToList();
 
-        var weatherTasks = allCities.Select(async city => 
+        var weatherTasks = allCities.Select(async tour => 
         {
+            Console.WriteLine($"[Weather Fetch] City={tour.City}, Lat={tour.Latitude}, Lng={tour.Longitude}");
             var advice = await _weatherService.GetTravelWeatherAdviceAsync(
-                city!, profile.PreferredStartDate, profile.PreferredEndDate, cancellationToken);
-            return (City: city, Advice: advice);
+                tour.City!, profile.PreferredStartDate, profile.PreferredEndDate, tour.Latitude, tour.Longitude, cancellationToken);
+            return (City: tour.City, Advice: advice);
         });
 
         var weatherResults = await Task.WhenAll(weatherTasks);
@@ -231,7 +232,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             .Where(x => x.Advice != null)
             .ToDictionary(x => x.City!, x => x.Advice!, StringComparer.OrdinalIgnoreCase);
             
-        var missingCities = allCities.Where(c => !weatherByCity.ContainsKey(c)).ToList();
+        var missingCities = allCities.Select(t => t.City!).Where(c => !weatherByCity.ContainsKey(c)).ToList();
         var debugMissing = string.Join(", ", missingCities);
 
         WeatherAdviceDTO? weather = null;
