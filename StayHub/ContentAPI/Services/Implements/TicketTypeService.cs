@@ -98,16 +98,16 @@ namespace ContentAPI.Services.Implements
             return true;
         }
 
-        public async Task<bool> ChangeTicketTypeStatus(int id, bool isActive)
+        public async Task<ReadTicketTypeDTO?> ChangeTicketTypeStatus(int id)
         {
             var existingTicketType = await _ticketTypeRepository.GetById(id);
-            if (existingTicketType == null) return false;
+            if (existingTicketType == null) return null;
 
-            existingTicketType.IsActive = isActive;
+            existingTicketType.IsActive = !(existingTicketType.IsActive ?? true);
             existingTicketType.UpdatedAt = DateTime.Now;
 
             await _ticketTypeRepository.Update(existingTicketType);
-            return true;
+            return _mapper.Map<ReadTicketTypeDTO>(existingTicketType);
         }
     }
 }
