@@ -12,6 +12,8 @@ public class VoucherService : IVoucherService
     private readonly ITourValidationService _tourValidationService;
     private readonly IUserValidationService _userValidationService;
     private readonly IBookingAnalyticsClient _bookingAnalyticsClient;
+    private readonly IEmailService _emailService;
+    private readonly INotificationInternalService _notificationInternalService;
     private readonly IMapper _mapper;
 
     public VoucherService(
@@ -20,6 +22,8 @@ public class VoucherService : IVoucherService
         ITourValidationService tourValidationService,
         IUserValidationService userValidationService,
         IBookingAnalyticsClient bookingAnalyticsClient,
+        IEmailService emailService,
+        INotificationInternalService notificationInternalService,
         IMapper mapper)
     {
         _voucherRepository = voucherRepository;
@@ -27,6 +31,8 @@ public class VoucherService : IVoucherService
         _tourValidationService = tourValidationService;
         _userValidationService = userValidationService;
         _bookingAnalyticsClient = bookingAnalyticsClient;
+        _emailService = emailService;
+        _notificationInternalService = notificationInternalService;
         _mapper = mapper;
     }
 
@@ -37,7 +43,10 @@ public class VoucherService : IVoucherService
         int? tourId,
         string? discountType,
         string? status,
-        bool? isActive)
+        bool? isActive,
+        bool? createdByMe,
+        int currentUserId,
+        string? voucherType)
     {
         if (page <= 0) page = 1;
         if (pageSize <= 0) pageSize = 10;
@@ -52,6 +61,11 @@ public class VoucherService : IVoucherService
             list.Add(dto);
         }
 
+        if (createdByMe == true)
+        {
+            list = list.Where(v => v.CreatorId == currentUserId).ToList();
+        }
+
         if (!string.IsNullOrWhiteSpace(search))
         {
             var keyword = search.Trim().ToUpperInvariant();
@@ -64,6 +78,18 @@ public class VoucherService : IVoucherService
         if (tourId.HasValue)
         {
             list = list.Where(v => v.TourId == tourId.Value).ToList();
+        }
+
+        if (!string.IsNullOrWhiteSpace(voucherType))
+        {
+            if (voucherType.Equals("birthday", StringComparison.OrdinalIgnoreCase))
+            {
+                list = list.Where(v => v.Code.StartsWith("BDAY_", StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+            else if (voucherType.Equals("tour", StringComparison.OrdinalIgnoreCase))
+            {
+                list = list.Where(v => !v.Code.StartsWith("BDAY_", StringComparison.OrdinalIgnoreCase)).ToList();
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(discountType))
@@ -120,12 +146,17 @@ public class VoucherService : IVoucherService
         return dto;
     }
 
-    public async Task<ReadVoucherDetailDTO> Create(CreateVoucherDTO dto, int creatorId)
+    public async Task<ReadVoucherDetailDTO> Create(CreateVoucherDTO dto, int creatorId, bool isAdmin)
     {
         dto.Code = dto.Code.Trim().ToUpperInvariant();
         ValidateDateRange(dto.StartDate, dto.EndDate);
         ValidateDiscount(dto.DiscountType, dto.DiscountValue);
         ValidateMaxDiscountAmount(dto.DiscountType, dto.MaxDiscountAmount);
+
+        if (!isAdmin && !dto.TourId.HasValue)
+        {
+            throw new Exception("Managers can only create vouchers for their own tours, but TourId was not provided");
+        }
 
         if (await _voucherRepository.CodeExistsAsync(dto.Code))
         {
@@ -143,6 +174,11 @@ public class VoucherService : IVoucherService
             if (tour.Status != null && !tour.Status.Equals("Active", StringComparison.OrdinalIgnoreCase))
             {
                 throw new Exception($"Tour with Id {dto.TourId.Value} is not active");
+            }
+
+            if (!isAdmin && tour.CreatedBy != creatorId)
+            {
+                throw new Exception("You do not have permission to create a voucher for a tour you did not create");
             }
         }
 
@@ -182,7 +218,7 @@ public class VoucherService : IVoucherService
         return (await GetById(entity.Id))!;
     }
 
-    public async Task<ReadVoucherDetailDTO> Update(int id, UpdateVoucherDTO dto)
+    public async Task<ReadVoucherDetailDTO> Update(int id, UpdateVoucherDTO dto, int currentUserId, bool isAdmin)
     {
         var entity = await _voucherRepository.GetByIdWithUserVouchersAsync(id);
         if (entity == null)
@@ -190,9 +226,9 @@ public class VoucherService : IVoucherService
             throw new Exception("Voucher not found");
         }
 
-        if (!entity.IsActive)
+        if (!isAdmin && entity.CreatorId != currentUserId)
         {
-            throw new Exception("Cannot update a deactivated voucher");
+            throw new Exception("You can only edit vouchers that you created");
         }
 
         var newStartDate = dto.StartDate ?? entity.StartDate;
@@ -233,6 +269,11 @@ public class VoucherService : IVoucherService
             if (tour.Status != null && !tour.Status.Equals("Active", StringComparison.OrdinalIgnoreCase))
             {
                 throw new Exception($"Tour with Id {dto.TourId.Value} is not active");
+            }
+
+            if (!isAdmin && tour.CreatedBy != currentUserId)
+            {
+                throw new Exception("You do not have permission to assign this voucher to a tour you did not create");
             }
 
             entity.TourId = dto.TourId;
@@ -331,12 +372,17 @@ public class VoucherService : IVoucherService
         return (await GetById(entity.Id))!;
     }
 
-    public async Task<ReadVoucherDTO> Activate(int id)
+    public async Task<ReadVoucherDTO> Activate(int id, int currentUserId, bool isAdmin)
     {
         var entity = await _voucherRepository.GetByIdAsync(id);
         if (entity == null)
         {
             throw new Exception("Voucher not found");
+        }
+
+        if (!isAdmin && entity.CreatorId != currentUserId)
+        {
+            throw new Exception("You can only activate vouchers that you created");
         }
 
         if (entity.IsActive)
@@ -375,12 +421,17 @@ public class VoucherService : IVoucherService
         return dto;
     }
 
-    public async Task<ReadVoucherDTO> Deactivate(int id)
+    public async Task<ReadVoucherDTO> Deactivate(int id, int currentUserId, bool isAdmin)
     {
         var entity = await _voucherRepository.GetByIdAsync(id);
         if (entity == null)
         {
             throw new Exception("Voucher not found");
+        }
+
+        if (!isAdmin && entity.CreatorId != currentUserId)
+        {
+            throw new Exception("You can only deactivate vouchers that you created");
         }
 
         if (!entity.IsActive)
@@ -586,5 +637,120 @@ public class VoucherService : IVoucherService
         {
             entity.MaxDiscountAmount = null;
         }
+    }
+
+    public async Task<bool> CheckBirthdayVoucherDistributedAsync(int month, int year)
+    {
+        var voucherCode = $"BDAY_{year}_{month:D2}";
+        return await _voucherRepository.CodeExistsAsync(voucherCode);
+    }
+
+    public async Task<object> DistributeBirthdayVoucherAsync(int month, int currentAdminId)
+    {
+        var now = DateTime.Now;
+        var year = now.Year;
+        var voucherCode = $"BDAY_{year}_{month:D2}";
+
+        if (await CheckBirthdayVoucherDistributedAsync(month, year))
+        {
+            throw new Exception($"Birthday voucher for month {month}/{year} has already been distributed (Code: {voucherCode}).");
+        }
+
+        var customers = await _userValidationService.GetCustomersByBirthdayMonthAsync(month);
+        
+        var activeCustomers = customers.Where(c => string.Equals(c.Status, "Active", StringComparison.OrdinalIgnoreCase)).ToList();
+
+        if (activeCustomers.Count == 0)
+        {
+            throw new Exception($"No active customers found with a birthday in month {month}.");
+        }
+
+        var voucherDto = new CreateVoucherDTO
+        {
+            Code = voucherCode,
+            DiscountType = "Percent",
+            DiscountValue = 10,
+            MaxDiscountAmount = 500000,
+            AvailableCount = activeCustomers.Count,
+            StartDate = new DateTime(year, month, 1),
+            EndDate = new DateTime(year, month, DateTime.DaysInMonth(year, month)).AddDays(30), // Valid for 30 days after the end of the month
+            Description = $"Happy Birthday! Enjoy 10% off (up to 500,000 VND) on any tour booking. Valid for month {month}.",
+            TourId = null, // Global voucher
+            CustomerAssignments = activeCustomers.Select(c => new CreateUserVoucherAssignmentDTO
+            {
+                UserId = c.Id,
+                Quantity = 1
+            }).ToList()
+        };
+
+        var result = await Create(voucherDto, currentAdminId, true);
+
+        // Send Emails
+        int emailsSent = 0;
+        foreach (var customer in activeCustomers)
+        {
+            try
+            {
+                var notifyTitle = "🎁 Happy Birthday from StayHub!";
+                var notifyContent = $"We have sent a 10% discount voucher (Code: {voucherCode}) to your account. Enjoy your trip!";
+                await _notificationInternalService.NotifyUserAsync(customer.Id, notifyTitle, notifyContent);
+            }
+            catch
+            {
+                // Ignore notification failure
+            }
+
+            if (!string.IsNullOrWhiteSpace(customer.Email))
+            {
+                try
+                {
+                    var subject = "Happy Birthday from StayHub!";
+                    var body = $@"
+                        <h3>Happy Birthday, {customer.FullName}!</h3>
+                        <p>We are excited to celebrate your birthday month with you!</p>
+                        <p>Here is a special gift: a 10% discount voucher (up to 500,000 VND) for your next tour booking.</p>
+                        <p><strong>Your Voucher Code:</strong> {voucherCode}</p>
+                        <p>This voucher has already been saved to your account. Enjoy your trip!</p>";
+
+                    await _emailService.SendEmailAsync(customer.Email, subject, body);
+                    emailsSent++;
+                }
+                catch
+                {
+                    // Ignore email sending failures for individual customers
+                }
+            }
+        }
+
+        // Notify Admin
+        var adminInfo = await _userValidationService.ValidateUserAsync(currentAdminId);
+        if (adminInfo.Exists && !string.IsNullOrWhiteSpace(adminInfo.Email))
+        {
+            try
+            {
+                var adminSubject = $"[StayHub Admin] Birthday Vouchers Distributed - {month}/{year}";
+                var adminBody = $@"
+                    <h3>Birthday Vouchers Report</h3>
+                    <p>The birthday vouchers for {month}/{year} have been successfully distributed.</p>
+                    <p><strong>Voucher Code:</strong> {voucherCode}</p>
+                    <p><strong>Total Eligible Customers:</strong> {activeCustomers.Count}</p>
+                    <p><strong>Total Emails Sent:</strong> {emailsSent}</p>
+                    <p>Action performed by Admin ID: {currentAdminId}</p>";
+
+                await _emailService.SendEmailAsync(adminInfo.Email, adminSubject, adminBody);
+            }
+            catch
+            {
+                // Ignore admin email error
+            }
+        }
+
+        return new
+        {
+            VoucherCode = voucherCode,
+            TotalEligibleCustomers = activeCustomers.Count,
+            EmailsSent = emailsSent,
+            Message = "Birthday vouchers distributed successfully."
+        };
     }
 }

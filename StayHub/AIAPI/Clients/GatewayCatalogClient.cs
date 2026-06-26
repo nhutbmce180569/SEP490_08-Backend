@@ -140,6 +140,15 @@ public class GatewayCatalogClient : IGatewayCatalogClient
                 string.Join(" ", itineraryTitles)
             }.Where(s => !string.IsNullOrWhiteSpace(s)));
 
+        var firstValidLocation = tour.TourItineraries?.FirstOrDefault(i => i.LocationLat.HasValue && i.LocationLng.HasValue);
+        double? latitude = firstValidLocation?.LocationLat;
+        double? longitude = firstValidLocation?.LocationLng;
+
+        if (tour.City == "Dong Hai")
+        {
+            Console.WriteLine($"[Gateway Mapping] Tour='{tour.Name}', ItinerariesCount={tour.TourItineraries?.Count}, FirstValidLat={latitude}");
+        }
+
         return new TourCatalogItem
         {
             Id = tour.Id,
@@ -148,6 +157,8 @@ public class GatewayCatalogClient : IGatewayCatalogClient
             Description = tour.Description,
             Country = tour.Country,
             City = tour.City,
+            Latitude = latitude,
+            Longitude = longitude,
             Address = tour.Address,
             ImageUrl = tour.ImageUrl,
             SourceName = tour.SourceName,

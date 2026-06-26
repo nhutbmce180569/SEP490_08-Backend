@@ -17,7 +17,14 @@ public class UserValidationService : IUserValidationService
     public async Task<(bool Exists, string? FullName, string? Email, string? Status)> ValidateUserAsync(int userId)
     {
         var gatewayUrl = _configuration["Gateway:BaseUrl"] ?? "https://localhost:7010";
-        var response = await _httpClient.GetAsync($"{gatewayUrl}/api/users/{userId}");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{gatewayUrl}/api/internal/users/{userId}");
+        var internalKey = _configuration["InternalService:Key"];
+        if (!string.IsNullOrEmpty(internalKey))
+        {
+            request.Headers.Add("X-Service-Key", internalKey);
+        }
+
+        var response = await _httpClient.SendAsync(request);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -30,5 +37,27 @@ public class UserValidationService : IUserValidationService
             wrapper?.Data?.FullName,
             wrapper?.Data?.Email,
             wrapper?.Data?.Status);
+    }
+
+    public async Task<List<ReadUserApiDTO>> GetCustomersByBirthdayMonthAsync(int month)
+    {
+        var gatewayUrl = _configuration["Gateway:BaseUrl"] ?? "https://localhost:7010";
+        
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{gatewayUrl}/api/internal/users/birthdays?month={month}");
+        var internalKey = _configuration["InternalService:Key"];
+        if (!string.IsNullOrEmpty(internalKey))
+        {
+            request.Headers.Add("X-Service-Key", internalKey);
+        }
+
+        var response = await _httpClient.SendAsync(request);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return new List<ReadUserApiDTO>();
+        }
+
+        var users = await response.Content.ReadFromJsonAsync<List<ReadUserApiDTO>>();
+        return users ?? new List<ReadUserApiDTO>();
     }
 }
