@@ -45,7 +45,7 @@ namespace BookingAPI.Controllers
 
 
         [HttpPut("check-in")]
-        [Authorize(Roles = "Staff,Manager,Admin")]
+        [Authorize(Roles = "Staff")]
         public async Task<IActionResult> CheckIn([FromBody] CheckInRequestDTO request)
         {
             try
