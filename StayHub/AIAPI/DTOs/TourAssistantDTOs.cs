@@ -81,6 +81,7 @@ public class TourRecommendationItemDTO
     public DateTime? NextDeparture { get; set; }
     public bool MatchesPreferredDates { get; set; }
     public string? ScheduleNote { get; set; }
+    public WeatherAdviceDTO? DestinationWeather { get; set; }
 }
 
 public class ScoreDimensionExplanationDTO

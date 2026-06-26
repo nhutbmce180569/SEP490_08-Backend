@@ -47,7 +47,7 @@ public class TourScoringEngine
         TourPreferenceQuestionnaireDTO profile,
         IReadOnlyList<TravelPersona> personas,
         Dictionary<int, float> semanticScores,
-        WeatherAdviceDTO? weather,
+        IReadOnlyDictionary<string, WeatherAdviceDTO> weatherByCity,
         bool includeKnowledgeDimensions = true)
     {
         var result = new TourScoringResult { PassesHardConstraints = PassesHardConstraints(tour, profile) };
@@ -56,6 +56,7 @@ public class TourScoringEngine
             return result;
         }
 
+        var weather = weatherByCity.GetValueOrDefault(tour.City ?? string.Empty);
         var dimensionScores = ComputeSharedDimensions(tour, profile, semanticScores, weather, includeKnowledgeDimensions);
         result.DimensionScores = dimensionScores;
 
