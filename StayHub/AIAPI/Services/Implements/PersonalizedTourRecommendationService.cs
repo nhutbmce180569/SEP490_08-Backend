@@ -49,9 +49,16 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         _cache = cache;
     }
 
-    public StandardQuestionnaireDTO GetStandardQuestionnaire() => new()
+    public StandardQuestionnaireDTO GetStandardQuestionnaire()
     {
-        Version = "2.1",
+        if (!_catalogStore.IsReady)
+        {
+            throw new InvalidOperationException("AI models are not ready.");
+        }
+
+        return new StandardQuestionnaireDTO
+        {
+            Version = "2.1",
         Questions =
         [
             new QuestionnaireFieldDTO
@@ -143,7 +150,8 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
                 Options = GetDynamicCityOptions()
             }
         ]
-    };
+        };
+    }
 
     private List<QuestionnaireOptionDTO> GetDynamicCityOptions()
     {
