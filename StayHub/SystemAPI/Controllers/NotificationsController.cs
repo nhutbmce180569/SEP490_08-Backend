@@ -110,18 +110,5 @@ namespace SystemAPI.Controllers
                 return BadRequest(new { message = ex.Message });
             }
         }
-
-        [HttpPost("test-push/{userId}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> TestPush(int userId)
-        {
-            await _notificationService.CreateAndSendNotificationAsync(new CreateNotificationDTO
-            {
-                UserId = userId,
-                Title = "Test Push",
-                Content = "Thông báo test từ StayHub 🎉"
-            });
-            return Ok();
-        }
     }
 }
