@@ -57,9 +57,6 @@ public class TourConsultationRequestValidator : AbstractValidator<TourConsultati
 
 public class TourPreferenceQuestionnaireValidator : AbstractValidator<TourPreferenceQuestionnaireDTO>
 {
-    private static readonly string[] ValidInterests =
-        ["beach", "culture", "nature", "food", "adventure", "relax", "photography", "city", "river"];
-
     public TourPreferenceQuestionnaireValidator(ValidationLocalizer v)
     {
         RuleFor(x => x.CompanionType)
@@ -80,8 +77,7 @@ public class TourPreferenceQuestionnaireValidator : AbstractValidator<TourPrefer
 
         RuleFor(x => x.TravelInterests)
             .NotEmpty()
-            .Must(list => list.All(i => ValidInterests.Contains(i, StringComparer.OrdinalIgnoreCase)))
-            .WithMessage(v.Get("TravelInterests contains invalid value."));
+            .WithMessage(v.Get("TravelInterests cannot be empty."));
 
         RuleFor(x => x.Top).InclusiveBetween(1, 30).WithMessage(v.Get("Top must be between 1 and 30."));
 
