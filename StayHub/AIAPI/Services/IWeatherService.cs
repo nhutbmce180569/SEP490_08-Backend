@@ -8,5 +8,7 @@ public interface IWeatherService
         string city,
         DateTime startDate,
         DateTime? endDate,
+        double? latitude = null,
+        double? longitude = null,
         CancellationToken cancellationToken = default);
 }
