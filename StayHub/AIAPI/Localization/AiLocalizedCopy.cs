@@ -134,29 +134,29 @@ public sealed class AiLocalizedCopy : IAiLocalizedCopy
     public string OptionCouple => T("Couple", "Couple / đôi");
     public string OptionFamily => T("Family", "Gia đình");
     public string OptionGroup => T("Friends group", "Nhóm bạn");
-    public string QuestionStartDate => T("When are we taking off? ✈️", "Bao giờ xách balo lên và đi? ✈️");
+    public string QuestionStartDate => T("Departure date?", "Ngày khởi hành?");
     public string QuestionStartDateHint => T(
-        "≤14 days: Open-Meteo forecast. Further out: historical data.",
-        "Đi sớm (≤14 ngày) AI sẽ soi dự báo thời tiết xịn xò cho bạn nha.");
-    public string QuestionEndDate => T("When are we back?", "Dự kiến ngày về?");
-    public string QuestionBudget => T("Budget per person? 💸", "Ví bạn đang dày cỡ nào? (VND) 💸");
+        "For dates ≤14 days, you'll receive accurate weather forecasts.",
+        "Đi sớm (≤14 ngày) hệ thống sẽ cung cấp dự báo thời tiết chi tiết.");
+    public string QuestionEndDate => T("Return date?", "Ngày kết thúc?");
+    public string QuestionBudget => T("Max budget per person (VND)?", "Ngân sách tối đa/người (VND)?");
     public string QuestionHasElderly => T("Any elderly travelers?", "Có người cao tuổi đi cùng không?");
     public string QuestionHasChildren => T("Any children traveling?", "Có trẻ em đi cùng không?");
-    public string QuestionInterests => T("What's your travel vibe? 🎒", "Travel Vibe của bạn là gì? 🎒");
-    public string OptionBeach => T("Vitamin Sea 🌊", "Vitamin Sea / Đảo 🌊");
-    public string OptionCulture => T("Culture & Heritage 🏛️", "Thăm thú văn hóa 🏛️");
-    public string OptionNature => T("Nature & Chill 🌲", "Về với thiên nhiên 🌲");
-    public string OptionFood => T("Food Tour 🍜", "Phá đảo ẩm thực 🍜");
-    public string OptionAdventure => T("Adventure & Thrills 🧗", "Bạo hiểm / Trekking 🧗");
-    public string OptionRelax => T("Healing / Resort 🧘‍♀️", "Healing / Nghỉ dưỡng 🧘‍♀️");
-    public string OptionPhotography => T("Instagrammable spots 📸", "Sống ảo / Chụp choẹt 📸");
-    public string OptionCity => T("City Life 🏙️", "Khám phá thành phố 🏙️");
-    public string OptionRiver => T("River / Mekong 🛶", "Chèo xuồng miền Tây 🛶");
-    public string QuestionNationality => T("Are you a local or international guest? 🌍", "Bạn là khách nội địa hay quốc tế? 🌍");
-    public string OptionVietnamese => T("Local (Vietnamese)", "Người Việt Nam");
+    public string QuestionInterests => T("What are your travel interests?", "Sở thích du lịch của bạn là gì?");
+    public string OptionBeach => T("Beach / Islands", "Biển / Đảo");
+    public string OptionCulture => T("Culture & Heritage", "Văn hóa & Di sản");
+    public string OptionNature => T("Nature & Mountains", "Thiên nhiên & Đồi núi");
+    public string OptionFood => T("Food Tour", "Khám phá ẩm thực");
+    public string OptionAdventure => T("Adventure & Trekking", "Mạo hiểm / Trekking");
+    public string OptionRelax => T("Healing / Resort", "Nghỉ dưỡng / Resort");
+    public string OptionPhotography => T("Sightseeing / Photography", "Tham quan / Chụp ảnh");
+    public string OptionCity => T("City Exploration", "Khám phá thành phố");
+    public string OptionRiver => T("River / Floating Markets", "Sông nước / Chợ nổi");
+    public string QuestionNationality => T("Are you a local or international guest?", "Bạn là khách nội địa hay quốc tế?");
+    public string OptionVietnamese => T("Local (Vietnamese)", "Khách nội địa (Việt Nam)");
     public string OptionForeigner => T("International guest", "Khách quốc tế");
-    public string QuestionPreferredCity => T("Any specific destination? 🗺️", "Chốt sổ địa điểm nào chưa? 🗺️");
-    public string QuestionPreferredCityHint => T("Skip if you want us to surprise you!", "Cứ bỏ qua nếu muốn AI tự 'flex' gợi ý nhé!");
+    public string QuestionPreferredCity => T("Preferred destination?", "Điểm đến mong muốn?");
+    public string QuestionPreferredCityHint => T("Skip if you want us to surprise you!", "Bỏ qua nếu bạn muốn nhận gợi ý ngẫu nhiên!");
 
     public string PersonaPrimary => T("Primary traveler", "Du khách chính");
     public string PersonaElderly => T("Elderly companion", "Người cao tuổi đi cùng");
@@ -167,50 +167,50 @@ public sealed class AiLocalizedCopy : IAiLocalizedCopy
     public string PersonaGroup => T("Group vibe", "Không khí nhóm");
 
     public string ReasonElderlyGood(string persona, float score) => _vi
-        ? "Lịch trình siêu êm ái, người lớn tuổi đi bao khỏe! 🍵"
+        ? "Lịch trình nhẹ nhàng, phù hợp cho người cao tuổi."
         : "A relaxed pace that works perfectly for elderly travelers.";
 
     public string ReasonElderlyPoor(string persona) => _vi
-        ? "Hoạt động hơi 'bào', các bác lớn tuổi đi có thể bị mệt."
+        ? "Lịch trình có nhiều hoạt động thể lực, cần cân nhắc cho người cao tuổi."
         : "May be tiring for elderly travelers (lots of walking or strenuous activities).";
 
     public string ReasonChildGood(string persona, float score) => _vi
-        ? "Nhiều hoạt động giải trí thú vị, các bé đi là mê tít! 🧸"
+        ? "Có nhiều hoạt động giải trí phù hợp cho trẻ em."
         : "Includes activities that kids will absolutely love.";
 
     public string ReasonChildPoor(string persona) => _vi
-        ? "Lịch trình hơi thử thách, cân nhắc xíu nếu dắt theo em bé nha."
+        ? "Lịch trình khá dài và nhiều di chuyển, cần cân nhắc khi có trẻ nhỏ."
         : "Worth a closer look if traveling with young kids (long days or adventure-heavy).";
 
     public string ReasonInternationalGood(string persona) => _vi
-        ? "Dễ tham gia và tìm hiểu văn hóa — phù hợp khách quốc tế."
+        ? "Dễ dàng tham gia và tìm hiểu văn hóa bản địa."
         : "Easy to follow and explore local culture — good for international visitors.";
 
     public string ReasonInterestMatch(string persona, IEnumerable<string> interests)
     {
         return _vi
-            ? "Đúng gu du lịch bạn đang tìm kiếm."
+            ? "Phù hợp với sở thích du lịch bạn đã chọn."
             : "Matches your selected travel vibe.";
     }
 
     public string ReasonLocationMatch(string city) => _vi
-        ? $"Đúng khu vực bạn muốn đến: {city}."
+        ? $"Nằm trong khu vực bạn mong muốn: {city}."
         : $"In the area you asked for: {city}.";
 
     public string ReasonBudgetFit => _vi
-        ? "Mức giá cực kỳ ưng bụng, không lo lạm chi đâu nhé! 💸"
+        ? "Mức giá phù hợp với ngân sách của bạn."
         : "Priced perfectly within the budget you shared.";
 
     public string ReasonInterestStrong => _vi
-        ? "Vibe tour này sinh ra là dành cho bạn! ✨"
+        ? "Đặc điểm tour rất sát với mong muốn của bạn."
         : "Tour vibe matches perfectly with what you love.";
 
     public string ReasonScheduleFit => _vi
-        ? "Chuyến đi khởi hành đúng vào mấy ngày bạn rảnh luôn nè! 🗓️"
+        ? "Có lịch khởi hành phù hợp với thời gian bạn chọn."
         : "Has a departure date that fits exactly in your travel window.";
 
     public string ReasonGoodRating => _vi
-        ? "Tour xịn xò được khách đi trước review 5 sao ầm ầm! ⭐"
+        ? "Được đánh giá cao bởi các du khách trước đó."
         : "Highly rated by travelers who joined before.";
 
     public string SummaryNoTours => T(
