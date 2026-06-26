@@ -90,7 +90,7 @@ namespace BookingAPI.Services.Implements
                 RequestedAt = DateTime.UtcNow
             };
 
-            order.Status = "Request to Cancelled";
+            order.Status = "Request to Cancel";
 
             await _repository.CreateCancellationRequestAsync(cancellationRequest);
 
