@@ -212,14 +212,30 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             : profile.SessionId;
 
         var personas = TravelPartyDecomposer.Decompose(profile, _text);
-        var weatherCity = profile.PreferredCity ?? InferCityFromInterests(profile.TravelInterests);
+
+        var allCities = _catalogStore.Tours
+            .Where(t => !string.IsNullOrWhiteSpace(t.City))
+            .GroupBy(t => t.City!)
+            .Select(g => g.First())
+            .ToList();
+
+        var weatherTasks = allCities.Select(async tour => 
+        {
+            Console.WriteLine($"[Weather Fetch] City={tour.City}, Lat={tour.Latitude}, Lng={tour.Longitude}");
+            var advice = await _weatherService.GetTravelWeatherAdviceAsync(
+                tour.City!, profile.PreferredStartDate, profile.PreferredEndDate, tour.Latitude, tour.Longitude, cancellationToken);
+            return (City: tour.City, Advice: advice);
+        });
+
+        var weatherResults = await Task.WhenAll(weatherTasks);
+        var weatherByCity = weatherResults
+            .Where(x => x.Advice != null)
+            .ToDictionary(x => x.City!, x => x.Advice!, StringComparer.OrdinalIgnoreCase);
+            
+        var missingCities = allCities.Select(t => t.City!).Where(c => !weatherByCity.ContainsKey(c)).ToList();
+        var debugMissing = string.Join(", ", missingCities);
 
         WeatherAdviceDTO? weather = null;
-        if (!string.IsNullOrWhiteSpace(weatherCity))
-        {
-            weather = await _weatherService.GetTravelWeatherAdviceAsync(
-                weatherCity, profile.PreferredStartDate, profile.PreferredEndDate, cancellationToken);
-        }
 
         var interestQuery = InterestMatchHelper.BuildSearchQuery(profile.TravelInterests);
         var semanticCacheKey = $"semantic_{interestQuery.GetHashCode()}";
@@ -252,7 +268,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
                 _catalogStore.Tours.ToList(),
                 activeProfile,
                 hybridRetrievalScores,
-                weather,
+                weatherByCity,
                 ScoringModelSpec.ProductionStrategyKey);
 
             var rankedDistinct = ranked
@@ -266,9 +282,9 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
                     var scoringToUse = x.Scoring;
                     if (isRelaxed)
                     {
-                        scoringToUse = _tourRanker.ScoreTour(x.Tour, profile, hybridRetrievalScores, weather);
+                        scoringToUse = _tourRanker.ScoreTour(x.Tour, profile, hybridRetrievalScores, weatherByCity);
                     }
-                    return MapTour(x.Tour, scoringToUse, profile, windowStart, windowEnd);
+                    return MapTour(x.Tour, scoringToUse, profile, windowStart, windowEnd, weatherByCity);
                 })
                 .ToList();
 
@@ -425,7 +441,8 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         TourScoringResult scoring,
         TourPreferenceQuestionnaireDTO profile,
         DateTime windowStart,
-        DateTime windowEnd)
+        DateTime windowEnd,
+        IReadOnlyDictionary<string, WeatherAdviceDTO> weatherByCity)
     {
         var publicId = CatalogTourIds.ResolveBaseTourId(tour.Id);
         var display = _catalogStore.Tours.FirstOrDefault(t => t.Id == publicId) ?? tour;
@@ -438,6 +455,13 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             scoring.DimensionScores,
             _dimensionWeights,
             _text);
+
+        var mappedWeather = weatherByCity.GetValueOrDefault(display.City ?? string.Empty);
+        if (mappedWeather == null) {
+            Console.WriteLine($"[MapTour] display.City='{display.City}' NOT FOUND in weatherByCity (Count={weatherByCity.Count})");
+        } else {
+            Console.WriteLine($"[MapTour] display.City='{display.City}' FOUND! weather.City='{mappedWeather.City}'");
+        }
 
         return new TourRecommendationItemDTO
         {
@@ -455,6 +479,7 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             NextDeparture = display.NextDeparture,
             MatchesPreferredDates = matchesDates,
             ScheduleNote = scheduleNote,
+            DestinationWeather = mappedWeather,
             ScoreBreakdown = new TourScoreBreakdownDTO
             {
                 FairnessScore = scoring.FairnessScore,

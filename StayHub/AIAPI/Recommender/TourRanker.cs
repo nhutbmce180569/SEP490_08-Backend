@@ -26,10 +26,10 @@ public class TourRanker
         TourCatalogItem tour,
         TourPreferenceQuestionnaireDTO profile,
         Dictionary<int, float>? semanticScores,
-        WeatherAdviceDTO? weather)
+        IReadOnlyDictionary<string, WeatherAdviceDTO> weatherByCity)
     {
         var personas = TravelPartyDecomposer.Decompose(profile, _text);
-        var scoring = _scoringEngine.ScoreTour(tour, profile, personas, semanticScores ?? new Dictionary<int, float>(), weather, includeKnowledgeDimensions: true);
+        var scoring = _scoringEngine.ScoreTour(tour, profile, personas, semanticScores ?? new Dictionary<int, float>(), weatherByCity, includeKnowledgeDimensions: true);
         
         // Re-calculate FairnessScore based on ProductionStrategy (CafhrFair)
         scoring.FairnessScore = ComputeAggregateUtility(
@@ -45,19 +45,19 @@ public class TourRanker
         IReadOnlyList<TourCatalogItem> catalog,
         TourPreferenceQuestionnaireDTO profile,
         Dictionary<int, float> semanticScores,
-        WeatherAdviceDTO? weather,
+        IReadOnlyDictionary<string, WeatherAdviceDTO> weatherByCity,
         string aggregationStrategy,
         float? fairnessAlphaOverride = null,
         IReadOnlyDictionary<int, float>? popularityScores = null)
     {
         if (aggregationStrategy == AggregationStrategies.ContentOnly)
         {
-            return RankContentOnly(catalog, profile, semanticScores, weather);
+            return RankContentOnly(catalog, profile, semanticScores, weatherByCity);
         }
 
         if (aggregationStrategy == AggregationStrategies.PopularityWeighted)
         {
-            return RankPopularityWeighted(catalog, profile, semanticScores, weather, popularityScores);
+            return RankPopularityWeighted(catalog, profile, semanticScores, weatherByCity, popularityScores);
         }
 
         var personas = TravelPartyDecomposer.Decompose(profile, _text);
@@ -68,7 +68,7 @@ public class TourRanker
             .Select(tour =>
             {
                 var scoring = _scoringEngine.ScoreTour(
-                    tour, profile, personas, semanticScores, weather, includeKnowledge);
+                    tour, profile, personas, semanticScores, weatherByCity, includeKnowledge);
                 return (tour, scoring);
             })
             .Where(x => x.scoring.PassesHardConstraints)
@@ -106,7 +106,7 @@ public class TourRanker
         IReadOnlyList<TourCatalogItem> catalog,
         TourPreferenceQuestionnaireDTO profile,
         Dictionary<int, float> semanticScores,
-        WeatherAdviceDTO? weather)
+        IReadOnlyDictionary<string, WeatherAdviceDTO> weatherByCity)
     {
         var personas = TravelPartyDecomposer.Decompose(profile, _text);
         var primaryType = ScoringModelSpec.PersonaTypes.Primary;
@@ -115,7 +115,7 @@ public class TourRanker
             .Select(tour =>
             {
                 var scoring = _scoringEngine.ScoreTour(
-                    tour, profile, personas, semanticScores, weather, includeKnowledgeDimensions: true);
+                    tour, profile, personas, semanticScores, weatherByCity, includeKnowledgeDimensions: true);
 
                 if (!scoring.PassesHardConstraints)
                 {
@@ -143,7 +143,7 @@ public class TourRanker
         IReadOnlyList<TourCatalogItem> catalog,
         TourPreferenceQuestionnaireDTO profile,
         Dictionary<int, float> semanticScores,
-        WeatherAdviceDTO? weather,
+        IReadOnlyDictionary<string, WeatherAdviceDTO> weatherByCity,
         IReadOnlyDictionary<int, float>? popularityScores)
     {
         var personas = TravelPartyDecomposer.Decompose(profile, _text);
@@ -156,7 +156,7 @@ public class TourRanker
             .Select(tour =>
             {
                 var scoring = _scoringEngine.ScoreTour(
-                    tour, profile, personas, semanticScores, weather, includeKnowledgeDimensions: true);
+                    tour, profile, personas, semanticScores, weatherByCity, includeKnowledgeDimensions: true);
 
                 if (!scoring.PassesHardConstraints)
                 {
