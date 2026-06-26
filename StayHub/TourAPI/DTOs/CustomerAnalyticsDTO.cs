@@ -10,7 +10,7 @@ namespace TourAPI.DTOs
         [RegularExpression("^(day|week|month)$", ErrorMessage = "Granularity must be day, week, or month.")]
         public string Granularity { get; set; } = "day";
 
-        [Range(1, 50, ErrorMessage = "Top must be between 1 and 50.")]
+        [Range(1, 1000, ErrorMessage = "Top must be between 1 and 1000.")]
         public int Top { get; set; } = 10;
     }
 

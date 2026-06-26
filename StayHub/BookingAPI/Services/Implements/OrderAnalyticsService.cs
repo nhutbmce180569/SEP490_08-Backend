@@ -61,9 +61,9 @@ namespace BookingAPI.Services.Implements
             DateTime? to)
         {
             ValidateDateRange(from, to);
-            if (top <= 0 || top > 50)
+            if (top <= 0 || top > 1000)
             {
-                throw new ArgumentException("Top must be between 1 and 50.");
+                throw new ArgumentException("Top must be between 1 and 1000.");
             }
 
             return await _orderRepository.GetTopCustomersAsync(top, from, to);
@@ -95,7 +95,7 @@ namespace BookingAPI.Services.Implements
         public (DateTime From, DateTime To) ResolveDateRange(DateTime? from, DateTime? to)
         {
             var resolvedTo = to ?? DateTime.UtcNow;
-            var resolvedFrom = from ?? resolvedTo.AddDays(-30);
+            var resolvedFrom = from ?? resolvedTo.AddYears(-10);
             ValidateDateRange(resolvedFrom, resolvedTo);
             return (resolvedFrom, resolvedTo);
         }
@@ -107,9 +107,9 @@ namespace BookingAPI.Services.Implements
                 throw new ArgumentException("Start date must be before or equal to end date.");
             }
 
-            if (from.HasValue && to.HasValue && (to.Value - from.Value).TotalDays > 366)
+            if (from.HasValue && to.HasValue && (to.Value - from.Value).TotalDays > 3650)
             {
-                throw new ArgumentException("Date range cannot exceed 366 days.");
+                throw new ArgumentException("Date range cannot exceed 10 years.");
             }
         }
 

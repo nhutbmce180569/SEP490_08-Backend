@@ -42,9 +42,9 @@ namespace ContentAPI.DTOs
         [MaxLength(100, ErrorMessage = "Country cannot exceed 100 characters.")]
         public string? Country { get; set; }
 
-        public double? Latitude { get; set; }
+        public string? Latitude { get; set; }
 
-        public double? Longitude { get; set; }
+        public string? Longitude { get; set; }
 
         [Required(ErrorMessage = "Image is required.")]
         public IFormFile ImageFile { get; set; } = null!;
@@ -76,9 +76,9 @@ namespace ContentAPI.DTOs
         [MaxLength(100, ErrorMessage = "Country cannot exceed 100 characters.")]
         public string? Country { get; set; }
 
-        public double? Latitude { get; set; }
+        public string? Latitude { get; set; }
 
-        public double? Longitude { get; set; }
+        public string? Longitude { get; set; }
 
         public IFormFile? ImageFile { get; set; }
 
