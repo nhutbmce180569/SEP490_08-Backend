@@ -12,5 +12,6 @@ namespace SocialAPI.Services
         Task<string> GenerateTrackingTokenAsync(int currentUserId);
         Task<FriendLocationResponseDto> GetLocationByTrackingTokenAsync(string token);
         Task<IEnumerable<HeatPointDto>> GetHeatmapDataAsync(int? scheduleId, int days);
+        Task<IEnumerable<FootprintDto>> GetMyFootprintsAsync(int userId);
     }
 }

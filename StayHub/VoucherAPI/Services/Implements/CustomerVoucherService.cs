@@ -36,6 +36,11 @@ public class CustomerVoucherService : ICustomerVoucherService
 
         ValidateVoucherEligibility(voucher);
 
+        if (voucher.UserVouchers.Any())
+        {
+            throw new Exception("This voucher is exclusive to selected customers and cannot be saved manually");
+        }
+
         if (await _userVoucherRepository.ExistsForUserAsync(voucher.Id, userId))
         {
             throw new Exception("You have already saved this voucher");

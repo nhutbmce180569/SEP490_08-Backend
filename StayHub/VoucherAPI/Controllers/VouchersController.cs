@@ -11,7 +11,7 @@ namespace VoucherAPI.Controllers;
 
 [Route("api/vouchers")]
 [ApiController]
-[Authorize(Roles = "Manager")]
+[Authorize(Roles = "Manager,Admin")]
 public class VouchersController : LocalizedControllerBase
 {
     private readonly IVoucherService _voucherService;
@@ -29,9 +29,11 @@ public class VouchersController : LocalizedControllerBase
         [FromQuery] int? tourId = null,
         [FromQuery] string? discountType = null,
         [FromQuery] string? status = null,
-        [FromQuery] bool? isActive = null)
+        [FromQuery] bool? isActive = null,
+        [FromQuery] bool? createdByMe = null,
+        [FromQuery] string? voucherType = null)
     {
-        var result = await _voucherService.GetAll(page, pageSize, search, tourId, discountType, status, isActive);
+        var result = await _voucherService.GetAll(page, pageSize, search, tourId, discountType, status, isActive, createdByMe, GetCurrentUserId() ?? 0, voucherType);
         return Ok(result);
     }
 
@@ -65,7 +67,8 @@ public class VouchersController : LocalizedControllerBase
 
         try
         {
-            var result = await _voucherService.Create(dto, creatorId.Value);
+            var isAdmin = User.IsInRole("Admin");
+            var result = await _voucherService.Create(dto, creatorId.Value, isAdmin);
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
         catch (Exception ex)
@@ -82,9 +85,16 @@ public class VouchersController : LocalizedControllerBase
             return BadRequest(ModelState);
         }
 
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null)
+        {
+            return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
+        }
+
         try
         {
-            var result = await _voucherService.Update(id, dto);
+            var isAdmin = User.IsInRole("Admin");
+            var result = await _voucherService.Update(id, dto, currentUserId.Value, isAdmin);
             return Ok(result);
         }
         catch (Exception ex) when (ex.Message == "Voucher not found")
@@ -100,9 +110,16 @@ public class VouchersController : LocalizedControllerBase
     [HttpPatch("{id}/activate")]
     public async Task<ActionResult<ReadVoucherDTO>> Activate(int id)
     {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null)
+        {
+            return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
+        }
+
         try
         {
-            var result = await _voucherService.Activate(id);
+            var isAdmin = User.IsInRole("Admin");
+            var result = await _voucherService.Activate(id, currentUserId.Value, isAdmin);
             return Ok(result);
         }
         catch (Exception ex) when (ex.Message == "Voucher not found")
@@ -118,14 +135,59 @@ public class VouchersController : LocalizedControllerBase
     [HttpPatch("{id}/deactivate")]
     public async Task<ActionResult<ReadVoucherDTO>> Deactivate(int id)
     {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null)
+        {
+            return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
+        }
+
         try
         {
-            var result = await _voucherService.Deactivate(id);
+            var isAdmin = User.IsInRole("Admin");
+            var result = await _voucherService.Deactivate(id, currentUserId.Value, isAdmin);
             return Ok(result);
         }
         catch (Exception ex) when (ex.Message == "Voucher not found")
         {
             return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("birthday-distribute/status")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> CheckBirthdayVoucherStatus([FromQuery] int month, [FromQuery] int year)
+    {
+        try
+        {
+            var isDistributed = await _voucherService.CheckBirthdayVoucherDistributedAsync(month, year);
+            return Ok(new { isDistributed });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("birthday-distribute")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DistributeBirthdayVoucher([FromQuery] int? month = null)
+    {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null)
+        {
+            return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
+        }
+
+        var targetMonth = month ?? DateTime.Now.Month;
+
+        try
+        {
+            var result = await _voucherService.DistributeBirthdayVoucherAsync(targetMonth, currentUserId.Value);
+            return Ok(result);
         }
         catch (Exception ex)
         {

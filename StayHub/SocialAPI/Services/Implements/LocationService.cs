@@ -328,7 +328,7 @@ namespace SocialAPI.Services.Implements
                 return new FriendLocationResponseDto
                 {
                     UserId = userId,
-                    FullName = "Anonymous user", 
+                    FullName = "Anonymous user",
                     AvatarUrl = null,
                     Lat = lat,
                     Lng = lng,
@@ -345,16 +345,26 @@ namespace SocialAPI.Services.Implements
         {
             try
             {
+                // Gom diem theo luoi de "cao map" nhe hon (4 chu so ~ 11m).
+                // Tranh tra ve hang ngan diem ping trung nhau khi di chuyen lau.
+                const int precision = 4;
+
                 var footprints = await _context.LocationLogs
                     .AsNoTracking()
                     .Where(x => x.UserId == userId)
-                    .OrderBy(x => x.Timestamp)
-                    .Select(x => new FootprintDto
+                    .GroupBy(x => new
                     {
-                        Lat = x.Lat,
-                        Lng = x.Lng,
-                        Timestamp = x.Timestamp
+                        LatBucket = Math.Round(x.Lat, precision),
+                        LngBucket = Math.Round(x.Lng, precision)
                     })
+                    .Select(g => new FootprintDto
+                    {
+                        Lat = g.Key.LatBucket,
+                        Lng = g.Key.LngBucket,
+                        // Lan cuoi cung di qua o luoi nay (de sap xep theo thoi gian neu can).
+                        Timestamp = g.Max(p => p.Timestamp)
+                    })
+                    .OrderBy(f => f.Timestamp)
                     .ToListAsync();
 
                 return footprints;
