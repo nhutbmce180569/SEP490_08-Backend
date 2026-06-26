@@ -6239,3 +6239,162 @@ GO
 PRINT '=======================================================';
 PRINT 'INSERT SAMPLE DATA CHO STAYHUB THANH CONG!';
 PRINT '=======================================================';
+
+-- KHAI BÁO CÁC BIẾN ĐỂ LƯU TRỮ ID TỰ ĐỘNG TĂNG TỪ DATABASE
+DECLARE @NewTourId INT, @NewScheduleId INT, @NewScheduleTicketId INT;
+DECLARE @OrderId_12 INT, @OrderId_14 INT, @OrderId_15 INT, @OrderId_9 INT;
+DECLARE @OrderDetailId_12 INT, @OrderDetailId_14 INT, @OrderDetailId_15 INT, @OrderDetailId_9 INT;
+DECLARE @MomentId_12 INT, @MomentId_14 INT, @MomentId_15 INT, @MomentId_9 INT;
+
+/* =========================================================
+   1. THÊM DỮ LIỆU VÀO CATALOG DB
+   ========================================================= */
+USE StayHub_CatalogDb;
+
+INSERT INTO Tours (CategoryId, CreatedBy, Name, Description, Country, City, Address, ImageUrl, SourceName, SourceUrl, Status)
+VALUES (2, 2, N'Ha Giang - Sapa Epic Loop 7D6N', N'Conquer the breathtaking Ha Giang Loop and the majestic Sapa peaks. A true adventure for nature lovers.', N'Vietnam', N'Ha Giang', N'Ha Giang City', 'https://picsum.photos/seed/stayhub-hagiang-tour/1000/700', N'Vietnam National Administration of Tourism', N'https://vietnamtourism.gov.vn/en', 'Active');
+
+-- Lấy TourId vừa được tự động sinh ra
+SET @NewTourId = SCOPE_IDENTITY();
+
+INSERT INTO TourItineraries (TourId, DayNumber, Title, Description, StartDuration, EndDuration, LocationName, LocationLat, LocationLng, TourismInfoId) VALUES
+(@NewTourId, 1, N'Hanoi to Ha Giang', N'Depart from Hanoi to Ha Giang City, rest and prepare for the loop.', '08:00', '16:00', N'Ha Giang', 22.8233, 104.9836, 38),
+(@NewTourId, 2, N'Ha Giang to Dong Van', N'Drive through Quan Ba, Yen Minh to reach the rocky plateau of Dong Van.', '08:00', '17:00', N'Dong Van', 23.2783, 105.3610, 39),
+(@NewTourId, 3, N'Ma Pi Leng Pass & Meo Vac', N'Conquer Ma Pi Leng Pass, boat ride on Nho Que river.', '08:00', '16:00', N'Ma Pi Leng', 23.2185, 105.4124, 39),
+(@NewTourId, 4, N'Meo Vac to Sapa', N'Long drive moving from Ha Giang territory to Lao Cai (Sapa).', '07:00', '18:00', N'Sapa', 22.3364, 103.8438, 11),
+(@NewTourId, 5, N'Trek Cat Cat Village', N'Visit Cat Cat Village, learn about Hmong culture.', '09:00', '15:00', N'Cat Cat Village', 22.3264, 103.8391, 12),
+(@NewTourId, 6, N'Conquer Fansipan Peak', N'Take the cable car to Fansipan, the Roof of Indochina.', '08:00', '13:00', N'Fansipan', 22.3033, 103.7750, 11),
+(@NewTourId, 7, N'Sapa free time & back to Hanoi', N'Shopping in Sapa market and return trip to Hanoi.', '09:00', '16:00', N'Hanoi', 21.0333, 105.8500, 43);
+
+INSERT INTO TourSchedules (TourId, DepartureDate, ReturnDate, Note)
+VALUES (@NewTourId, '2026-06-24 08:00:00', '2026-06-30 18:00:00', N'Epic Northwest journey end of June.');
+
+-- Lấy ScheduleId vừa được tự động sinh ra
+SET @NewScheduleId = SCOPE_IDENTITY();
+
+INSERT INTO TourScheduleItineraries (ScheduleId, DayNumber, ItineraryDate, Title, Description, StartDuration, EndDuration, LocationName, LocationLat, LocationLng, TourismInfoId) VALUES
+(@NewScheduleId, 1, '2026-06-24', N'Hanoi to Ha Giang', N'Depart from Hanoi to Ha Giang.', '08:00', '16:00', N'Ha Giang', 22.8233, 104.9836, 38),
+(@NewScheduleId, 2, '2026-06-25', N'Dong Van Karst Plateau', N'Scenic drive to Dong Van.', '08:00', '17:00', N'Dong Van', 23.2783, 105.3610, 39),
+(@NewScheduleId, 3, '2026-06-26', N'Ma Pi Leng & Nho Que', N'Conquer the pass and river.', '08:00', '16:00', N'Ma Pi Leng', 23.2185, 105.4124, 39),
+(@NewScheduleId, 4, '2026-06-27', N'Meo Vac to Sapa', N'Transfer to Sapa town.', '07:00', '18:00', N'Sapa', 22.3364, 103.8438, 11),
+(@NewScheduleId, 5, '2026-06-28', N'Cat Cat Village', N'Trek the ethnic village.', '09:00', '15:00', N'Cat Cat Village', 22.3264, 103.8391, 12),
+(@NewScheduleId, 6, '2026-06-29', N'Fansipan Cable Car', N'Visit the Roof of Indochina.', '08:00', '13:00', N'Fansipan', 22.3033, 103.7750, 11),
+(@NewScheduleId, 7, '2026-06-30', N'Sapa to Hanoi', N'Return to the capital.', '09:00', '16:00', N'Hanoi', 21.0333, 105.8500, 43);
+
+INSERT INTO TourScheduleStaffs (ScheduleId, StaffId, AssignedRole)
+VALUES (@NewScheduleId, 4, N'Lead Tour Guide');
+
+INSERT INTO TourScheduleTickets (ScheduleId, TicketTypeId, Price, Quantity, SoldQuantity, AvailableQuantity, IsActive, Note)
+VALUES (@NewScheduleId, 1, 8500000, 15, 6, 9, 1, N'Standard adult fare for 7D6N.');
+
+-- Lấy ScheduleTicketId vừa sinh
+SET @NewScheduleTicketId = SCOPE_IDENTITY();
+
+
+/* =========================================================
+   2. THÊM DỮ LIỆU ĐẶT VÉ (BOOKING DB)
+   ========================================================= */
+USE StayHub_BookingDb;
+
+-- Đơn hàng User 12 (Hương Giang) - 2 vé
+INSERT INTO Orders (CustomerId, ScheduleId, TotalQuantity, DiscountValue, TotalAmount, FinalAmount, Note, Status, OrderedAt, InviteToken)
+VALUES (12, @NewScheduleId, 2, 0, 17000000, 17000000, N'Háo hức đi Hà Giang', 'Paid', '2026-05-10 10:00:00', CONVERT(VARCHAR(50), NEWID()));
+SET @OrderId_12 = SCOPE_IDENTITY();
+
+INSERT INTO OrderDetails (OrderId, TicketTypeId, TourScheduleTicketId, Quantity, UnitPrice, TotalPrice)
+VALUES (@OrderId_12, 1, @NewScheduleTicketId, 2, 8500000, 17000000);
+SET @OrderDetailId_12 = SCOPE_IDENTITY();
+
+INSERT INTO Tickets (OrderDetailId, UserId, TicketTypeId, AttendeeName, IdCard, DateOfBirth, Gender, Nationality, QrCode, CheckInStatus) VALUES
+(@OrderDetailId_12, 12, 1, N'Vo Huong Giang', '079200000028', '2001-01-19', 'Female', N'Vietnam', CONVERT(VARCHAR(50), NEWID()), 'CheckedIn'),
+(@OrderDetailId_12, NULL, 1, N'Tran Tuan Anh', '079200000029', '2000-02-15', 'Male', N'Vietnam', CONVERT(VARCHAR(50), NEWID()), 'CheckedIn');
+
+-- Đơn hàng User 14 (Khánh Lan) - 1 vé
+INSERT INTO Orders (CustomerId, ScheduleId, TotalQuantity, DiscountValue, TotalAmount, FinalAmount, Note, Status, OrderedAt, InviteToken)
+VALUES (14, @NewScheduleId, 1, 0, 8500000, 8500000, NULL, 'Paid', '2026-05-12 14:30:00', CONVERT(VARCHAR(50), NEWID()));
+SET @OrderId_14 = SCOPE_IDENTITY();
+
+INSERT INTO OrderDetails (OrderId, TicketTypeId, TourScheduleTicketId, Quantity, UnitPrice, TotalPrice)
+VALUES (@OrderId_14, 1, @NewScheduleTicketId, 1, 8500000, 8500000);
+SET @OrderDetailId_14 = SCOPE_IDENTITY();
+
+INSERT INTO Tickets (OrderDetailId, UserId, TicketTypeId, AttendeeName, IdCard, DateOfBirth, Gender, Nationality, QrCode, CheckInStatus) VALUES
+(@OrderDetailId_14, 14, 1, N'Le Khanh Lan', '079200000030', '2003-04-01', 'Female', N'Vietnam', CONVERT(VARCHAR(50), NEWID()), 'CheckedIn');
+
+-- Đơn hàng User 15 (Nhật Minh) - 2 vé
+INSERT INTO Orders (CustomerId, ScheduleId, TotalQuantity, DiscountValue, TotalAmount, FinalAmount, Note, Status, OrderedAt, InviteToken)
+VALUES (15, @NewScheduleId, 2, 0, 17000000, 17000000, N'Có bạn ăn chay', 'Paid', '2026-05-15 09:15:00', CONVERT(VARCHAR(50), NEWID()));
+SET @OrderId_15 = SCOPE_IDENTITY();
+
+INSERT INTO OrderDetails (OrderId, TicketTypeId, TourScheduleTicketId, Quantity, UnitPrice, TotalPrice)
+VALUES (@OrderId_15, 1, @NewScheduleTicketId, 2, 8500000, 17000000);
+SET @OrderDetailId_15 = SCOPE_IDENTITY();
+
+INSERT INTO Tickets (OrderDetailId, UserId, TicketTypeId, AttendeeName, IdCard, DateOfBirth, Gender, Nationality, QrCode, CheckInStatus) VALUES
+(@OrderDetailId_15, 15, 1, N'Tran Nhat Minh', '079200000031', '1997-09-17', 'Male', N'Vietnam', CONVERT(VARCHAR(50), NEWID()), 'CheckedIn'),
+(@OrderDetailId_15, NULL, 1, N'Pham Thanh Lam', '079200000032', '1998-05-10', 'Female', N'Vietnam', CONVERT(VARCHAR(50), NEWID()), 'CheckedIn');
+
+-- Đơn hàng User 9 (Quốc Bảo) - 1 vé
+INSERT INTO Orders (CustomerId, ScheduleId, TotalQuantity, DiscountValue, TotalAmount, FinalAmount, Note, Status, OrderedAt, InviteToken)
+VALUES (9, @NewScheduleId, 1, 0, 8500000, 8500000, N'Đi một mình trải nghiệm', 'Paid', '2026-05-16 11:00:00', CONVERT(VARCHAR(50), NEWID()));
+SET @OrderId_9 = SCOPE_IDENTITY();
+
+INSERT INTO OrderDetails (OrderId, TicketTypeId, TourScheduleTicketId, Quantity, UnitPrice, TotalPrice)
+VALUES (@OrderId_9, 1, @NewScheduleTicketId, 1, 8500000, 8500000);
+SET @OrderDetailId_9 = SCOPE_IDENTITY();
+
+INSERT INTO Tickets (OrderDetailId, UserId, TicketTypeId, AttendeeName, IdCard, DateOfBirth, Gender, Nationality, QrCode, CheckInStatus) VALUES
+(@OrderDetailId_9, 9, 1, N'Ngo Quoc Bao', '079200000099', '2000-07-22', 'Male', N'Vietnam', CONVERT(VARCHAR(50), NEWID()), 'CheckedIn');
+
+
+/* =========================================================
+   3. THANH TOÁN (PAYMENT DB)
+   ========================================================= */
+USE StayHub_PaymentDb;
+
+INSERT INTO Transactions (OrderId, Amount, Provider, ProviderTxnId, Status) VALUES
+(@OrderId_12, 17000000, 'VNPay', CONVERT(VARCHAR(50), NEWID()), 'Success'),
+(@OrderId_14, 8500000, 'MoMo', CONVERT(VARCHAR(50), NEWID()), 'Success'),
+(@OrderId_15, 17000000, 'PayOS', CONVERT(VARCHAR(50), NEWID()), 'Success'),
+(@OrderId_9, 8500000, 'VNPay', CONVERT(VARCHAR(50), NEWID()), 'Success');
+
+
+/* =========================================================
+   4. TƯƠNG TÁC MẠNG XÃ HỘI (SOCIAL DB)
+   ========================================================= */
+USE StayHub_SocialDb;
+
+-- Khoảnh khắc 1: Hương Giang
+INSERT INTO TourMoments (ScheduleId, UserId, ImageUrl, Caption, Lat, Lng, CreatedAt)
+VALUES (@NewScheduleId, 12, 'https://picsum.photos/seed/stayhub-moment-11/800/800', N'Bắt đầu hành trình chinh phục Hà Giang! Đèo dốc quanh co nhưng cảnh quá hùng vĩ.', 22.8233, 104.9836, '2026-06-24 14:30:00');
+SET @MomentId_12 = SCOPE_IDENTITY();
+
+-- Khoảnh khắc 2: Khánh Lan
+INSERT INTO TourMoments (ScheduleId, UserId, ImageUrl, Caption, Lat, Lng, CreatedAt)
+VALUES (@NewScheduleId, 14, 'https://picsum.photos/seed/stayhub-moment-12/800/800', N'Đồng Văn mùa này đẹp nao lòng. Khí hậu mát mẻ, cà phê phố cổ cực chill ☕', 23.2783, 105.3610, '2026-06-25 19:15:00');
+SET @MomentId_14 = SCOPE_IDENTITY();
+
+-- Khoảnh khắc 3: Nhật Minh
+INSERT INTO TourMoments (ScheduleId, UserId, ImageUrl, Caption, Lat, Lng, CreatedAt)
+VALUES (@NewScheduleId, 15, 'https://picsum.photos/seed/stayhub-moment-13/800/800', N'Mã Pí Lèng - một trong tứ đại đỉnh đèo! Phía dưới là dòng Nho Quế xanh ngắt. Quá tuyệt vời!', 23.2185, 105.4124, '2026-06-26 10:45:00');
+SET @MomentId_15 = SCOPE_IDENTITY();
+
+-- Khoảnh khắc 4: Quốc Bảo
+INSERT INTO TourMoments (ScheduleId, UserId, ImageUrl, Caption, Lat, Lng, CreatedAt)
+VALUES (@NewScheduleId, 9,  'https://picsum.photos/seed/stayhub-moment-14/800/800', N'Lần đầu tiên đặt chân đến cao nguyên đá. Phong cảnh không thể diễn tả bằng lời!', 23.2783, 105.3610, '2026-06-25 10:20:00');
+SET @MomentId_9 = SCOPE_IDENTITY();
+
+-- Lượt thích chéo nhau
+INSERT INTO MomentReactions (MomentId, UserId, IsLike) VALUES
+(@MomentId_12, 14, 1), (@MomentId_12, 15, 1), (@MomentId_12, 9, 1), 
+(@MomentId_14, 12, 1), 
+(@MomentId_15, 12, 1), (@MomentId_15, 14, 1), (@MomentId_15, 9, 1), 
+(@MomentId_9, 12, 1), (@MomentId_9, 15, 1); 
+
+-- Bình luận
+INSERT INTO MomentComments (MomentId, UserId, Comment, Timestamp) VALUES
+(@MomentId_12, 15, N'Đi đường cẩn thận nha bạn ơi, đèo khá dốc đó!', '2026-06-24 15:00:00'),
+(@MomentId_14, 12, N'Tối nay rủ nhau ra phố cổ làm ly trà gừng đi Lan ơi.', '2026-06-25 19:30:00'),
+(@MomentId_15, 14, N'Góc chụp xịn quá Minh! Lát gửi mình xin tấm này nha.', '2026-06-26 11:00:00'),
+(@MomentId_9, 12, N'Cảnh đẹp xỉu luôn Bảo ơi!', '2026-06-25 10:35:00'),
+(@MomentId_15, 9,  N'Đứng từ trên này nhìn xuống sông Nho Quế choáng ngợp thật sự.', '2026-06-26 11:15:00');
