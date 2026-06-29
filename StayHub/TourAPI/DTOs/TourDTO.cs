@@ -66,11 +66,10 @@ namespace TourAPI.DTOs
         public int CategoryId { get; set; }
 
         [Required(ErrorMessage = "Name is required")]
-        [StringLength(200, MinimumLength = 5, ErrorMessage = "Name must be between 5 and 200 characters")]
+        [StringLength(100, MinimumLength = 5, ErrorMessage = "Name must be between 5 and 200 characters")]
         public string Name { get; set; } = null!;
 
         [Required(ErrorMessage = "Description is required")]
-        [StringLength(2000, MinimumLength = 20, ErrorMessage = "Description must be between 20 and 2000 characters")]
         public string? Description { get; set; }
 
         [Required(ErrorMessage = "Country is required")]
