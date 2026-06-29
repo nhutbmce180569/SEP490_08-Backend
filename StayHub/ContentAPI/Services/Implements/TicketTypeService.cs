@@ -62,7 +62,7 @@ namespace ContentAPI.Services.Implements
 
         public async Task<ReadTicketTypeDTO> CreateTicketType(CreateTicketTypeDTO dto)
         {
-            if (_ticketTypeRepository.GetByName(dto.Name) != null)
+            if (await _ticketTypeRepository.GetByName(dto.Name) != null)
             {
                 throw new Exception("Ticket Type Name exist! Please check again!");
             }
