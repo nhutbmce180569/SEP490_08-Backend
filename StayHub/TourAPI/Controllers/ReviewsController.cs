@@ -173,8 +173,6 @@ namespace TourAPI.Controllers
                 if (pageSize < 1) pageSize = 5;
 
                 var currentUserId = GetCurrentUserId();
-                //if (!await _tourAccessService.CanEditAsync(tourId, currentUserId, isAdmin: false))
-                //    return Forbid();
 
                 var result = await _reviewService.GetReviewsByManagerAsync(
                     currentUserId, tourId, page, pageSize, rating, sortOrder);

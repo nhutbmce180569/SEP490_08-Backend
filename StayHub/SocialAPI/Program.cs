@@ -141,7 +141,11 @@ namespace SocialAPI
             builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
             builder.Services.AddScoped<IFriendshipService, FriendshipService>();
             builder.Services.AddScoped<IPlatformAnalyticsService, PlatformAnalyticsService>();
-
+            builder.Services.AddHttpClient<IBookingApiClient, BookingApiClient>(client =>
+            {
+                client.BaseAddress = new Uri(builder.Configuration["BookingApi:BaseUrl"]
+                    ?? "https://localhost:7002/");
+            });
             builder.Services.AddAutoMapper(cfg =>
             {
                 cfg.AddProfile<MappingProfile>();

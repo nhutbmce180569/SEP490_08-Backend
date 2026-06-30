@@ -678,6 +678,17 @@ namespace BookingAPI.Repositories.Implements
                 PendingCancellationRequests = periodCancellations.Count(c => c.Status == "Pending")
             };
         }
+
+        public async Task<List<int>> GetCustomerIdsByScheduleIdAsync(int scheduleId)
+        {
+            return await _context.Orders
+                .AsNoTracking()
+                .Where(o => o.ScheduleId == scheduleId
+                         && o.Status == "Paid")
+                .Select(o => o.CustomerId)
+                .Distinct()
+                .ToListAsync();
+        }
     }
     
 }

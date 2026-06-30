@@ -214,6 +214,17 @@ namespace BookingAPI.Controllers
             });
         }
 
+        [HttpGet("schedules/{scheduleId}/customer-ids")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetCustomerIdsByScheduleId(int scheduleId)
+        {
+            if (scheduleId <= 0)
+                return BadRequest(new { message = "Invalid scheduleId." });
+
+            var customerIds = await _orderService.GetCustomerIdsByScheduleIdAsync(scheduleId);
+            return Ok(new { data = customerIds });
+        }
+
         private static bool KeysMatch(string? configuredKey, string? providedKey)
         {
             if (string.IsNullOrWhiteSpace(configuredKey) ||
