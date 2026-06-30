@@ -14,5 +14,6 @@ namespace BookingAPI.Services
         Task<PaginationDTO<ReadOrderDTO>> GetOrdersByUserIdAsync(int userId, int page, int pageSize, string? status = null);
         Task<bool> MarkOrderPaidAsync(int orderId, string customerEmail);
         Task<bool> CancelOrderAsync(int orderId);
+        Task<List<int>> GetCustomerIdsByScheduleIdAsync(int scheduleId);
     }
 }

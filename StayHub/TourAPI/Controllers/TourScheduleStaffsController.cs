@@ -33,7 +33,7 @@ namespace TourAPI.Controllers
       [FromQuery] int page = 1,
       [FromQuery] int pageSize = 10,
       [FromQuery] bool upcomingOnly = false,
-      [FromQuery] string? tourName = null) // ✅ thêm param
+      [FromQuery] string? tourName = null) 
         {
             try
             {

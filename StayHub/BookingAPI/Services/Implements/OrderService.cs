@@ -233,6 +233,12 @@ namespace BookingAPI.Services.Implements
             return await Task.WhenAll(orderDtos);
         }
 
+        public async Task<List<int>> GetCustomerIdsByScheduleIdAsync(int scheduleId)
+        {
+            if (scheduleId <= 0) return new List<int>();
+            return await _orderRepository.GetCustomerIdsByScheduleIdAsync(scheduleId);
+        }
+
         public async Task<IEnumerable<ScheduleCustomerDTO>> GetScheduleCustomersAsync(int scheduleId, string? attendeeName = null) // thêm param search
         {
             if (scheduleId <= 0)

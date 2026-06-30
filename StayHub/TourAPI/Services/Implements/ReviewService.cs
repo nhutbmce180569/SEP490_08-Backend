@@ -68,7 +68,6 @@ namespace TourAPI.Services.Implements
             if (existingReview != null)
                 throw new Exception("You can only review this tour once.");
 
-            // ✅ Lấy tất cả scheduleIds của tour này
             var schedules = await _tourScheduleRepository.GetByTourIdAsync(model.TourId);
             if (schedules == null || !schedules.Any())
                 throw new Exception("This tour has no schedules.");
