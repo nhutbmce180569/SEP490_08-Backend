@@ -12,10 +12,7 @@ namespace TourAPI.DTOs
         public int DayNumber { get; set; }
         public string? Title { get; set; }
         public string? Description { get; set; }
-        [Required(ErrorMessage = "StartDuration is required")]
         public TimeOnly? StartDuration { get; set; }
-
-        [Required(ErrorMessage = "EndDuration is required")]
         public TimeOnly? EndDuration { get; set; }
         public string? LocationName { get; set; }
         public double? LocationLat { get; set; }
