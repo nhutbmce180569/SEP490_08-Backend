@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TourAPI.Models;
 
 namespace TourAPI.Repositories.Implements
@@ -234,6 +234,7 @@ namespace TourAPI.Repositories.Implements
                 .Include(t => t.TourItineraries)
                 .Include(t => t.TourSchedules)
                     .ThenInclude(t => t.TourScheduleTickets)
+                        .ThenInclude(t => t.Promotions)
                 .Include(t => t.Reviews)
                     .ThenInclude(r => r.ReviewReplies)
                 .AsSplitQuery()
@@ -250,6 +251,7 @@ namespace TourAPI.Repositories.Implements
                     .Include(t => t.TourItineraries.OrderBy(x => x.DayNumber))
                     .Include(t => t.TourSchedules)
                         .ThenInclude(t => t.TourScheduleTickets)
+                            .ThenInclude(t => t.Promotions)
                     .Include(t => t.Reviews)
                         .ThenInclude(r => r.ReviewReplies)
                     .AsSplitQuery()

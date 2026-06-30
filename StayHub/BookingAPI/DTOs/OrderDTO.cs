@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace BookingAPI.DTOs
@@ -83,6 +83,7 @@ namespace BookingAPI.DTOs
         public int AvailableQuantity { get; set; }
         public bool? IsActive { get; set; }
         public string? Note { get; set; }
+        public ReadPromotionDTO? Promotion { get; set; }
     }
 
     public class ReadOrderScheduleItineraryDTO
