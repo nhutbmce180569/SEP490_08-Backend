@@ -9,10 +9,7 @@ namespace TourAPI.DTOs
         public int DayNumber { get; set; }
         public string? Title { get; set; }
         public string? Description { get; set; }
-        [Required(ErrorMessage = "StartDuration is required")]
         public TimeOnly? StartDuration { get; set; }
-
-        [Required(ErrorMessage = "EndDuration is required")]
         public TimeOnly? EndDuration { get; set; }
         public string? LocationName { get; set; }
         public double? LocationLat { get; set; }
@@ -35,7 +32,6 @@ namespace TourAPI.DTOs
         public string? Title { get; set; }
 
         [Required(ErrorMessage = "Description is required")]
-        [StringLength(2000, MinimumLength = 10, ErrorMessage = "Description must be between 10 and 2000 characters")]
         public string? Description { get; set; }
 
         [Required(ErrorMessage = "StartDuration is required")]
