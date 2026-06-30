@@ -1,4 +1,5 @@
 using AIAPI.Models.Catalog;
+using AIAPI.Clients;
 
 namespace AIAPI.Services.Implements;
 
@@ -7,6 +8,7 @@ public class CatalogStore : ICatalogStore
     private readonly object _lock = new();
     private List<TourCatalogItem> _tours = new();
     private List<TourismKnowledgeItem> _tourism = new();
+    private List<ExternalCategoryDTO> _categories = new();
     private readonly ILocalEmbeddingService _embeddingService;
 
     public CatalogStore(ILocalEmbeddingService embeddingService)
@@ -24,6 +26,11 @@ public class CatalogStore : ICatalogStore
         get { lock (_lock) { return _tourism; } }
     }
 
+    public IReadOnlyList<ExternalCategoryDTO> Categories
+    {
+        get { lock (_lock) { return _categories; } }
+    }
+
     public CatalogStoreStats? Stats { get; private set; }
     public DateTime? LastSyncedAt { get; private set; }
     public bool IsReady { get; private set; }
@@ -31,6 +38,7 @@ public class CatalogStore : ICatalogStore
     public void Update(
         IReadOnlyList<TourCatalogItem> tours,
         IReadOnlyList<TourismKnowledgeItem> tourismItems,
+        IReadOnlyList<ExternalCategoryDTO> categories,
         CatalogStoreStats? stats = null)
     {
         var processedTours = tours.ToList();
@@ -48,6 +56,7 @@ public class CatalogStore : ICatalogStore
         {
             _tours = processedTours;
             _tourism = tourismItems.ToList();
+            _categories = categories.ToList();
             Stats = stats;
             LastSyncedAt = DateTime.UtcNow;
             IsReady = _tours.Count > 0;

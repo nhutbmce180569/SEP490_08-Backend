@@ -20,6 +20,7 @@ namespace SocialAPI.Services.Implements
         private readonly IConnectionMultiplexer _redis;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IHubContext<FriendshipHub> _hubContext;
+        private readonly IBookingApiClient _bookingApiClient;
         private readonly IHubContext<TrackingHub> _trackingHubContext;
         private readonly IAuthApiClient _authApiClient;
 
@@ -29,7 +30,8 @@ namespace SocialAPI.Services.Implements
             IHttpClientFactory httpClientFactory,
             IHubContext<FriendshipHub> hubContext,
             IHubContext<TrackingHub> trackingHubContext,
-            IAuthApiClient authApiClient)
+            IAuthApiClient authApiClient,
+            IBookingApiClient bookingApiClient)
         {
             _context = context;
             _redis = redis;
@@ -37,6 +39,7 @@ namespace SocialAPI.Services.Implements
             _hubContext = hubContext;
             _trackingHubContext = trackingHubContext;
             _authApiClient = authApiClient;
+            _bookingApiClient = bookingApiClient;
         }
 
         public async Task PingLocationAsync(int currentUserId, LocationPingDto dto)
@@ -137,50 +140,57 @@ namespace SocialAPI.Services.Implements
             }
         }
 
-        public async Task<IEnumerable<LiveScheduleMemberLocationDto>> GetLiveScheduleLocationsAsync(
-              int scheduleId)
+        public async Task<IEnumerable<LiveScheduleMemberLocationDto>> GetLiveScheduleLocationsAsync(int scheduleId)
         {
             if (scheduleId <= 0) return [];
 
             var db = _redis.GetDatabase();
-            var members = await db.SetMembersAsync($"schedule_live_{scheduleId}");
-            if (members is not { Length: > 0 }) return [];
 
-            var onlineUserIds = members
+            // Lấy từ cả 2 nguồn: Redis Set (đang ping) + BookingAPI (đã order)
+            var redisMembers = await db.SetMembersAsync($"schedule_live_{scheduleId}");
+            var redisUserIds = redisMembers
                 .Select(m => int.TryParse(m.ToString(), out var id) ? id : -1)
                 .Where(id => id > 0)
+                .ToHashSet();
+
+            // Lấy thêm danh sách customer từ BookingAPI
+            var bookedCustomerIds = await _bookingApiClient.GetCustomerIdsByScheduleAsync(scheduleId);
+
+            // Merge — ưu tiên ai đang ping (Redis) nhưng cũng include ai đã book
+            var allUserIds = redisUserIds
+                .Union(bookedCustomerIds)
                 .ToList();
 
-            if (!onlineUserIds.Any()) return [];
+            if (!allUserIds.Any()) return [];
 
-            // ✅ Batch lấy tất cả tọa độ từ Redis song song
-            var redisKeys = onlineUserIds
+            // Batch lấy tọa độ từ Redis
+            var redisKeys = allUserIds
                 .Select(id => (RedisKey)$"live_loc_{id}")
                 .ToArray();
             var redisValues = await db.StringGetAsync(redisKeys);
 
             var liveLocations = new List<LiveScheduleMemberLocationDto>();
-            for (var i = 0; i < onlineUserIds.Count; i++)
+            for (var i = 0; i < allUserIds.Count; i++)
             {
-                if (!redisValues[i].HasValue) continue;
+                if (!redisValues[i].HasValue) continue; // chưa ping thì bỏ qua
                 try
                 {
                     using var doc = JsonDocument.Parse(redisValues[i].ToString());
                     var root = doc.RootElement;
                     liveLocations.Add(new LiveScheduleMemberLocationDto
                     {
-                        UserId = onlineUserIds[i],
+                        UserId = allUserIds[i],
                         Lat = root.GetProperty("lat").GetDouble(),
                         Lng = root.GetProperty("lng").GetDouble(),
                         LastUpdated = root.GetProperty("lastUpdated").GetDateTime()
                     });
                 }
-                catch { /* bỏ qua dữ liệu lỗi */ }
+                catch { }
             }
 
             if (!liveLocations.Any()) return [];
 
-            // ✅ Gọi AuthApiClient
+            // Lấy profile từ AuthAPI
             var userProfiles = await _authApiClient.GetUserProfilesAsync(
                 liveLocations.Select(l => l.UserId));
 

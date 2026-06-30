@@ -118,11 +118,15 @@ public class TopCustomerVoucherAssignmentDTO
     public int Top { get; set; }
 
     [Required(ErrorMessage = "RevenuePeriod is required")]
-    [RegularExpression(@"^(Month|Year|AllTime)$", ErrorMessage = "RevenuePeriod must be 'Month', 'Year', or 'AllTime'")]
+    [RegularExpression(@"^(Month|Year|AllTime|Custom)$", ErrorMessage = "RevenuePeriod must be 'Month', 'Year', 'AllTime', or 'Custom'")]
     public string RevenuePeriod { get; set; } = null!;
 
     [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1")]
     public int Quantity { get; set; } = 1;
+
+    public DateTime? FromDate { get; set; }
+
+    public DateTime? ToDate { get; set; }
 }
 
 public class UpdateVoucherDTO

@@ -332,16 +332,16 @@ namespace TourAPI.Services.Implements
         private static (DateTime From, DateTime To) ResolveDateRange(DateTime? from, DateTime? to)
         {
             var resolvedTo = to ?? DateTime.UtcNow;
-            var resolvedFrom = from ?? resolvedTo.AddDays(-30);
+            var resolvedFrom = from ?? resolvedTo.AddYears(-10);
 
             if (resolvedFrom > resolvedTo)
             {
                 throw new ArgumentException("Start date must be before or equal to end date.");
             }
 
-            if ((resolvedTo - resolvedFrom).TotalDays > 366)
+            if ((resolvedTo - resolvedFrom).TotalDays > 3650)
             {
-                throw new ArgumentException("Date range cannot exceed 366 days.");
+                throw new ArgumentException("Date range cannot exceed 10 years.");
             }
 
             return (resolvedFrom, resolvedTo);
@@ -349,9 +349,9 @@ namespace TourAPI.Services.Implements
 
         private static void ValidateTop(int top)
         {
-            if (top <= 0 || top > 50)
+            if (top <= 0 || top > 1000)
             {
-                throw new ArgumentException("Top must be between 1 and 50.");
+                throw new ArgumentException("Top must be between 1 and 1000.");
             }
         }
 

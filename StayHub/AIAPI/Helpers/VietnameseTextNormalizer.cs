@@ -22,7 +22,10 @@ public static class VietnameseTextNormalizer
             }
         }
 
-        return builder.ToString().Normalize(NormalizationForm.FormC).Replace(" ", "", StringComparison.Ordinal);
+        var result = builder.ToString().Normalize(NormalizationForm.FormC).Replace(" ", "", StringComparison.Ordinal);
+        result = result.Replace("tp.", "").Replace("thanhpho", "").Replace("city", "").Replace("-", "");
+        if (result == "saigon") return "hochiminh";
+        return result;
     }
 
     public static bool ContainsNormalized(string haystack, string needle)

@@ -35,6 +35,7 @@ public class CatalogSyncService : ICatalogSyncService
     {
         var baseTours = (await _gatewayClient.FetchActiveToursAsync(cancellationToken)).ToList();
         var tourism = await _gatewayClient.FetchActiveTourismAsync(cancellationToken);
+        var categories = await _gatewayClient.FetchActiveCategoriesAsync(cancellationToken);
 
         CatalogAugmentationResult? augmentation = null;
         var catalogTours = baseTours;
@@ -63,7 +64,7 @@ public class CatalogSyncService : ICatalogSyncService
             AugmentationEnabled = aug.Enabled
         };
 
-        _catalogStore.Update(catalogTours, tourism, stats);
+        _catalogStore.Update(catalogTours, tourism, categories, stats);
 
         if (_modelRegistry.Status.IsReady)
         {

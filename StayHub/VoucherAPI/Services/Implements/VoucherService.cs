@@ -505,7 +505,7 @@ public class VoucherService : IVoucherService
         }
 
         ValidateTopCustomerAssignment(topCustomerAssignment!);
-        var (from, to) = ResolveRevenuePeriod(topCustomerAssignment!.RevenuePeriod);
+        var (from, to) = ResolveRevenuePeriod(topCustomerAssignment!);
         var topCustomers = await _bookingAnalyticsClient.GetTopCustomersAsync(
             topCustomerAssignment.Top,
             from,
@@ -539,32 +539,50 @@ public class VoucherService : IVoucherService
 
         if (!assignment.RevenuePeriod.Equals("Month", StringComparison.OrdinalIgnoreCase)
             && !assignment.RevenuePeriod.Equals("Year", StringComparison.OrdinalIgnoreCase)
-            && !assignment.RevenuePeriod.Equals("AllTime", StringComparison.OrdinalIgnoreCase))
+            && !assignment.RevenuePeriod.Equals("AllTime", StringComparison.OrdinalIgnoreCase)
+            && !assignment.RevenuePeriod.Equals("Custom", StringComparison.OrdinalIgnoreCase))
         {
-            throw new Exception("RevenuePeriod must be 'Month', 'Year', or 'AllTime'");
+            throw new Exception("RevenuePeriod must be 'Month', 'Year', 'AllTime', or 'Custom'");
+        }
+
+        if (assignment.RevenuePeriod.Equals("Custom", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!assignment.FromDate.HasValue || !assignment.ToDate.HasValue)
+            {
+                throw new Exception("FromDate and ToDate are required for Custom RevenuePeriod");
+            }
+            if (assignment.FromDate.Value > assignment.ToDate.Value)
+            {
+                throw new Exception("FromDate must be before or equal to ToDate");
+            }
         }
     }
 
-    private static (DateTime? From, DateTime? To) ResolveRevenuePeriod(string revenuePeriod)
+    private static (DateTime? From, DateTime? To) ResolveRevenuePeriod(TopCustomerVoucherAssignmentDTO assignment)
     {
         var now = DateTime.UtcNow;
 
-        if (revenuePeriod.Equals("Month", StringComparison.OrdinalIgnoreCase))
+        if (assignment.RevenuePeriod.Equals("Month", StringComparison.OrdinalIgnoreCase))
         {
             return (new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc), now);
         }
 
-        if (revenuePeriod.Equals("Year", StringComparison.OrdinalIgnoreCase))
+        if (assignment.RevenuePeriod.Equals("Year", StringComparison.OrdinalIgnoreCase))
         {
             return (new DateTime(now.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc), now);
         }
 
-        if (revenuePeriod.Equals("AllTime", StringComparison.OrdinalIgnoreCase))
+        if (assignment.RevenuePeriod.Equals("AllTime", StringComparison.OrdinalIgnoreCase))
         {
             return (null, null);
         }
 
-        throw new Exception("RevenuePeriod must be 'Month', 'Year', or 'AllTime'");
+        if (assignment.RevenuePeriod.Equals("Custom", StringComparison.OrdinalIgnoreCase))
+        {
+            return (assignment.FromDate, assignment.ToDate);
+        }
+
+        throw new Exception("RevenuePeriod must be 'Month', 'Year', 'AllTime', or 'Custom'");
     }
 
     private static void ValidateCustomerAssignments(IEnumerable<CreateUserVoucherAssignmentDTO> assignments)
