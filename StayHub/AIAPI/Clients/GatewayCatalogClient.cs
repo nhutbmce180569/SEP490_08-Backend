@@ -84,6 +84,38 @@ public class GatewayCatalogClient : IGatewayCatalogClient
         return all;
     }
 
+    public async Task<IReadOnlyList<ExternalCategoryDTO>> FetchActiveCategoriesAsync(CancellationToken cancellationToken = default)
+    {
+        var all = new List<ExternalCategoryDTO>();
+        const int pageSize = 100;
+        var page = 1;
+        var totalPages = 1;
+
+        while (page <= totalPages)
+        {
+            var response = await _httpClient.GetAsync(
+                $"api/categories/active?page={page}&pageSize={pageSize}",
+                cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                break;
+            }
+
+            var payload = await response.Content.ReadFromJsonAsync<PaginationResponse<ExternalCategoryDTO>>(JsonOptions, cancellationToken);
+            if (payload?.Data == null || payload.Data.Count == 0)
+            {
+                break;
+            }
+
+            all.AddRange(payload.Data);
+            totalPages = Math.Max(1, payload.TotalPages);
+            page++;
+        }
+
+        return all;
+    }
+
     private static TourCatalogItem MapTour(ExternalTourDTO tour)
     {
         var itineraryTitles = tour.TourItineraries?

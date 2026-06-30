@@ -66,7 +66,7 @@ public class TourPreferenceQuestionnaireDTO
     public string? PreferredCountry { get; set; }
 
     [Range(1, 30)]
-    public int Top { get; set; } = 8;
+    public int Top { get; set; } = 10;
 
     [StringLength(64)]
     public string? SessionId { get; set; }

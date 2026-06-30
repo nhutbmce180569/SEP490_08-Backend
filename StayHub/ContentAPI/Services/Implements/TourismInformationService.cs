@@ -59,7 +59,8 @@ namespace ContentAPI.Services.Implements
         public async Task<ReadTourismInformationDTO> CreateAsync(CreateTourismInformationDTO dto)
         {
             ValidateType(dto.Type);
-            ValidateCoordinates(dto.Latitude, dto.Longitude);
+            var (parsedLat, parsedLng) = ParseCoordinates(dto.Latitude, dto.Longitude);
+            ValidateCoordinates(parsedLat, parsedLng);
             ValidateSourceUrl(dto.SourceUrl);
 
             var imageUrl = await UploadImageAsync(dto.ImageFile);
@@ -74,8 +75,8 @@ namespace ContentAPI.Services.Implements
                 Country = string.IsNullOrWhiteSpace(dto.Country)
                     ? TourismInformationConstants.DefaultCountry
                     : dto.Country.Trim(),
-                Latitude = dto.Latitude,
-                Longitude = dto.Longitude,
+                Latitude = parsedLat,
+                Longitude = parsedLng,
                 ImageUrl = imageUrl,
                 SourceName = dto.SourceName?.Trim(),
                 SourceUrl = dto.SourceUrl?.Trim(),
@@ -94,7 +95,8 @@ namespace ContentAPI.Services.Implements
             if (entity == null) return false;
 
             ValidateType(dto.Type);
-            ValidateCoordinates(dto.Latitude, dto.Longitude);
+            var (parsedLat, parsedLng) = ParseCoordinates(dto.Latitude, dto.Longitude);
+            ValidateCoordinates(parsedLat, parsedLng);
             ValidateSourceUrl(dto.SourceUrl);
 
             if (dto.ImageFile != null && dto.ImageFile.Length > 0)
@@ -111,8 +113,8 @@ namespace ContentAPI.Services.Implements
             entity.Country = string.IsNullOrWhiteSpace(dto.Country)
                 ? TourismInformationConstants.DefaultCountry
                 : dto.Country.Trim();
-            entity.Latitude = dto.Latitude;
-            entity.Longitude = dto.Longitude;
+            entity.Latitude = parsedLat;
+            entity.Longitude = parsedLng;
             entity.SourceName = dto.SourceName?.Trim();
             entity.SourceUrl = dto.SourceUrl?.Trim();
             entity.UpdatedAt = DateTime.Now;
@@ -221,6 +223,19 @@ namespace ContentAPI.Services.Implements
             {
                 throw new InvalidOperationException("Longitude must be between -180 and 180.");
             }
+        }
+
+        private static (double? Latitude, double? Longitude) ParseCoordinates(string? latStr, string? lngStr)
+        {
+            double? parsedLat = !string.IsNullOrWhiteSpace(latStr)
+                && double.TryParse(latStr.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double lat)
+                ? lat : null;
+
+            double? parsedLng = !string.IsNullOrWhiteSpace(lngStr)
+                && double.TryParse(lngStr.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double lng)
+                ? lng : null;
+
+            return (parsedLat, parsedLng);
         }
 
         private static void ValidateSourceUrl(string? sourceUrl)

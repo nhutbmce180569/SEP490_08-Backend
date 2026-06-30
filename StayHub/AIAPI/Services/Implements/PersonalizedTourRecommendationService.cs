@@ -49,9 +49,16 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         _cache = cache;
     }
 
-    public StandardQuestionnaireDTO GetStandardQuestionnaire() => new()
+    public StandardQuestionnaireDTO GetStandardQuestionnaire()
     {
-        Version = "2.1",
+        if (!_catalogStore.IsReady)
+        {
+            throw new InvalidOperationException("AI models are not ready.");
+        }
+
+        return new StandardQuestionnaireDTO
+        {
+            Version = "2.1",
         Questions =
         [
             new QuestionnaireFieldDTO
@@ -79,35 +86,35 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             new QuestionnaireFieldDTO
             {
                 FieldKey = "adultCount",
-                Label = "Bao nhiêu người lớn?",
+                Label = "Số lượng người lớn",
                 InputType = "number",
                 Required = true
             },
             new QuestionnaireFieldDTO
             {
                 FieldKey = "childrenCount",
-                Label = "Có \"búp măng non\" đi cùng không? (trẻ em)",
+                Label = "Số lượng trẻ em (Dưới 12 tuổi)",
                 InputType = "number",
                 Required = true
             },
             new QuestionnaireFieldDTO
             {
                 FieldKey = "elderlyCount",
-                Label = "Có \"bậc thầy dưỡng sinh\" đi cùng không? (người cao tuổi)",
+                Label = "Số lượng người cao tuổi (Trên 60 tuổi)",
                 InputType = "number",
                 Required = true
             },
             new QuestionnaireFieldDTO
             {
                 FieldKey = "travelPace",
-                Label = "Pace chuyến đi (Nhịp độ)",
+                Label = "Nhịp độ chuyến đi",
                 InputType = "single_select",
                 Required = true,
                 Options =
                 [
-                    new() { Value = TravelPaceTypes.Relaxed, Label = "Chill chill lướt sóng 🍃" },
-                    new() { Value = TravelPaceTypes.Moderate, Label = "Balance (Nghỉ + Chơi) ⚖️" },
-                    new() { Value = TravelPaceTypes.Packed, Label = "Bào tour không bỏ sót! 🔥" }
+                    new() { Value = TravelPaceTypes.Relaxed, Label = "Thư giãn, nhẹ nhàng" },
+                    new() { Value = TravelPaceTypes.Moderate, Label = "Cân bằng (Khám phá và nghỉ dưỡng)" },
+                    new() { Value = TravelPaceTypes.Packed, Label = "Lịch trình dày, khám phá tối đa" }
                 ]
             },
             new QuestionnaireFieldDTO
@@ -116,18 +123,10 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
                 Label = _text.QuestionInterests,
                 InputType = "multi_select",
                 Required = true,
-                Options =
-                [
-                    new() { Value = "beach", Label = _text.OptionBeach },
-                    new() { Value = "culture", Label = _text.OptionCulture },
-                    new() { Value = "nature", Label = _text.OptionNature },
-                    new() { Value = "food", Label = _text.OptionFood },
-                    new() { Value = "adventure", Label = _text.OptionAdventure },
-                    new() { Value = "relax", Label = _text.OptionRelax },
-                    new() { Value = "photography", Label = _text.OptionPhotography },
-                    new() { Value = "city", Label = _text.OptionCity },
-                    new() { Value = "river", Label = _text.OptionRiver }
-                ]
+                Options = _catalogStore.Categories
+                    .Where(c => c.IsActive == true)
+                    .Select(c => new QuestionnaireOptionDTO { Value = c.Slug, Label = c.Name })
+                    .ToList()
             },
             new QuestionnaireFieldDTO
             {
@@ -148,20 +147,37 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
                 InputType = "single_select",
                 Required = false,
                 Hint = _text.QuestionPreferredCityHint,
-                Options =
-                [
-                    new() { Value = "", Label = "Bất kỳ đâu (Surprise me!)" },
-                    new() { Value = "Phu Quoc", Label = "Phú Quốc" },
-                    new() { Value = "Da Nang", Label = "Đà Nẵng" },
-                    new() { Value = "Da Lat", Label = "Đà Lạt" },
-                    new() { Value = "Nha Trang", Label = "Nha Trang" },
-                    new() { Value = "Ha Noi", Label = "Hà Nội" },
-                    new() { Value = "Ho Chi Minh", Label = "TP. HCM" },
-                    new() { Value = "Can Tho", Label = "Cần Thơ" }
-                ]
+                Options = GetDynamicCityOptions()
             }
         ]
-    };
+        };
+    }
+
+    private List<QuestionnaireOptionDTO> GetDynamicCityOptions()
+    {
+        var options = new List<QuestionnaireOptionDTO>
+        {
+            new() { Value = "", Label = _text.IsVietnamese ? "Bất kỳ đâu (Surprise me!)" : "Anywhere (Surprise me!)" }
+        };
+
+        var cities = _catalogStore.Tours
+            .Select(t => t.City)
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(c => c)
+            .ToList();
+
+        foreach (var city in cities)
+        {
+            options.Add(new QuestionnaireOptionDTO
+            {
+                Value = city!,
+                Label = _knowledgeLocalizer.LocalizeCityDisplay(city)
+            });
+        }
+
+        return options;
+    }
 
     public ScoringModelDocumentationDTO GetScoringDocumentation() => new()
     {
