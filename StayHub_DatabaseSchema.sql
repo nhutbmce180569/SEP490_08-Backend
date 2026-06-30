@@ -255,6 +255,44 @@ CREATE TABLE TourScheduleTickets (
 
     FOREIGN KEY (ScheduleId) REFERENCES TourSchedules(Id)
 );
+
+CREATE TABLE Promotions
+(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+
+    Code NVARCHAR(50) NOT NULL,
+    Name NVARCHAR(200) NOT NULL,
+    Description NVARCHAR(1000) NULL,
+
+    -- Percentage, FixedAmount
+    DiscountType NVARCHAR(50) NOT NULL,
+
+    DiscountValue DECIMAL(18,2) NOT NULL,
+    MaxDiscountAmount DECIMAL(18,2) NULL,
+
+    StartDate DATETIME2 NOT NULL,
+    EndDate DATETIME2 NOT NULL,
+
+    Status NVARCHAR(50) NOT NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+);
+GO
+
+CREATE TABLE PromotionTickets
+(
+    PromotionId INT NOT NULL,
+    TourScheduleTicketId INT NOT NULL,
+
+    PRIMARY KEY (PromotionId, TourScheduleTicketId),
+
+    FOREIGN KEY (PromotionId)
+        REFERENCES Promotions(Id),
+
+    FOREIGN KEY (TourScheduleTicketId)
+        REFERENCES TourScheduleTickets(Id)
+);
+GO
+
 CREATE TABLE Wishlists (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     CustomerId INT NOT NULL, -- Logical FK -> IdentityDb.Users

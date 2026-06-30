@@ -1,4 +1,4 @@
-﻿using CloudinaryDotNet;
+using CloudinaryDotNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -54,6 +54,7 @@ namespace TourAPI
                 cfg.AddProfile<ReviewProfile>();
                 cfg.AddProfile<ReviewReplyProfile>();
                 cfg.AddProfile<WishlistProfile>();
+                cfg.AddProfile<PromotionProfile>();
             });
 
             builder.Services.AddScoped<CloudinaryService>();
@@ -84,6 +85,7 @@ namespace TourAPI
             builder.Services.AddScoped<ITourScheduleTicketService, TourScheduleTicketService>();
             builder.Services.AddScoped<ITourScheduleItineraryService, TourScheduleItineraryService>();
             builder.Services.AddScoped<IWishlistService, WishlistService>();
+            builder.Services.AddScoped<IPromotionService, PromotionService>();
             builder.Services.AddScoped<ITourRepository, TourRepository>();
             builder.Services.AddScoped<ITourItineraryRepository, TourItineraryRepository>();
             builder.Services.AddScoped<ITourScheduleRepository, TourScheduleRepository>();
@@ -91,6 +93,7 @@ namespace TourAPI
             builder.Services.AddScoped<ITourScheduleTicketRepository, TourScheduleTicketRepository>();
             builder.Services.AddScoped<ITourScheduleItineraryRepository, TourScheduleItineraryRepository>();
             builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
+            builder.Services.AddScoped<IPromotionRepository, PromotionRepository>();
             builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
             builder.Services.AddScoped<IReviewReplyRepository, ReviewReplyRepository>();
             builder.Services.AddScoped<ICustomerEngagementRepository, CustomerEngagementRepository>();

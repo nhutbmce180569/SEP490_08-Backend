@@ -10,7 +10,8 @@ namespace TourAPI.Mappers
         {
             CreateMap<CreateTourScheduleTicketDTO, TourScheduleTicket>();
             CreateMap<UpdateTourScheduleTicketDTO, TourScheduleTicket>();
-            CreateMap<TourScheduleTicket, ReadTourScheduleTicketDTO>();
+            CreateMap<TourScheduleTicket, ReadTourScheduleTicketDTO>()
+                .ForMember(dest => dest.Promotion, opt => opt.MapFrom(src => src.Promotions.FirstOrDefault()));
         }
     }
 }

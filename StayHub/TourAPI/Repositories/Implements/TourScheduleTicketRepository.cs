@@ -15,6 +15,7 @@ namespace TourAPI.Repositories.Implements
         public async Task<IEnumerable<TourScheduleTicket>> GetAllAsync()
         {
             return await _context.TourScheduleTickets
+                .Include(x => x.Promotions)
                 .OrderBy(x => x.Id)
                 .ToListAsync();
         }
@@ -22,6 +23,7 @@ namespace TourAPI.Repositories.Implements
         public async Task<IEnumerable<TourScheduleTicket>> GetByScheduleIdAsync(int scheduleId)
         {
             return await _context.TourScheduleTickets
+                .Include(x => x.Promotions)
                 .Where(x => x.ScheduleId == scheduleId)
                 .OrderBy(x => x.Id)
                 .ToListAsync();
@@ -29,7 +31,9 @@ namespace TourAPI.Repositories.Implements
 
         public async Task<TourScheduleTicket?> GetByIdAsync(int id)
         {
-            return await _context.TourScheduleTickets.FindAsync(id);
+            return await _context.TourScheduleTickets
+                .Include(x => x.Promotions)
+                .FirstOrDefaultAsync(x => x.Id == id);
         }
 
         public async Task AddAsync(TourScheduleTicket entity)
