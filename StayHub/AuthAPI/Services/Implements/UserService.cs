@@ -3,9 +3,7 @@ using AuthAPI.DTOs;
 using AuthAPI.Models;
 using AuthAPI.Repositories;
 using AuthAPI.Helpers;
-using StackExchange.Redis;
 using System.Security.Cryptography;
-using System.Net;
 
 namespace AuthAPI.Services.Implements
 {
@@ -17,7 +15,8 @@ namespace AuthAPI.Services.Implements
         private readonly IPasswordHelper _passwordHelper;
         private readonly IMapper _mapper;
         private readonly ICloudinaryService _cloudinaryService;
-        private readonly IConnectionMultiplexer _redis;
+        private readonly IOtpCacheService _otpCacheService;
+        private readonly IEmailTemplateService _emailTemplateService;
         private readonly IEmailService _emailService;
         private readonly ILogger<UserService> _logger;
 
@@ -28,7 +27,8 @@ namespace AuthAPI.Services.Implements
             IPasswordHelper passwordHelper,
             IMapper mapper,
             ICloudinaryService cloudinaryService,
-            IConnectionMultiplexer redis,
+            IOtpCacheService otpCacheService,
+            IEmailTemplateService emailTemplateService,
             IEmailService emailService,
             ILogger<UserService> logger)
         {
@@ -38,7 +38,8 @@ namespace AuthAPI.Services.Implements
             _passwordHelper = passwordHelper;
             _mapper = mapper;
             _cloudinaryService = cloudinaryService;
-            _redis = redis;
+            _otpCacheService = otpCacheService;
+            _emailTemplateService = emailTemplateService;
             _emailService = emailService;
             _logger = logger;
         }
@@ -152,25 +153,8 @@ namespace AuthAPI.Services.Implements
             string fullName,
             string temporaryPassword)
         {
-            var safeEmail = WebUtility.HtmlEncode(email);
-            var safeFullName = WebUtility.HtmlEncode(fullName);
-            var safePassword = WebUtility.HtmlEncode(temporaryPassword);
             const string subject = "Your StayHub account has been created";
-
-            var body = $@"
-<div style='font-family: Arial, sans-serif; background: #f4f6f8; padding: 32px 16px; color: #1f2937;'>
-  <div style='max-width: 600px; margin: 0 auto; background: #ffffff; padding: 32px; border-radius: 12px;'>
-    <h2 style='margin-top: 0; color: #0f172a;'>Welcome to StayHub</h2>
-    <p>Hello <strong>{safeFullName}</strong>,</p>
-    <p>An administrator has created a StayHub account for you.</p>
-    <div style='margin: 24px 0; padding: 20px; background: #f8fafc; border-radius: 8px;'>
-      <p style='margin: 0 0 12px;'><strong>Email:</strong> {safeEmail}</p>
-      <p style='margin: 0;'><strong>Temporary password:</strong> <span style='font-family: monospace; font-size: 18px;'>{safePassword}</span></p>
-    </div>
-    <p style='color: #b45309;'><strong>For security, you must change this temporary password when you first sign in.</strong></p>
-    <p>Do not share this password with anyone.</p>
-  </div>
-</div>";
+            var body = _emailTemplateService.GenerateTemporaryCredentialsEmailBody(fullName, email, temporaryPassword);
 
             return _emailService.SendEmailAsync(email, subject, body);
         }
@@ -202,6 +186,11 @@ namespace AuthAPI.Services.Implements
         {
             var existingUser = await _userRepository.GetById(id);
             if (existingUser == null) return false;
+
+            if (existingUser.Roles.Any(r => r.Name == "Customer"))
+            {
+                throw new InvalidOperationException("Cannot edit Customer accounts.");
+            }
 
             if (updateUserDto.Status == "Blocked" && existingUser.Roles.Any(r => r.Name == "Admin"))
             {
@@ -247,11 +236,7 @@ namespace AuthAPI.Services.Implements
 
             if (updateUserDto.Status == "Blocked")
             {
-                var db = _redis.GetDatabase();
-                long currentUnixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                string redisKey = $"revoke_user_{id}";
-
-                await db.StringSetAsync(redisKey, currentUnixTimestamp, TimeSpan.FromMinutes(60));
+                await _otpCacheService.RevokeUserSessionAsync(id, TimeSpan.FromMinutes(60));
             }
 
             await _userRepository.Update(id, existingUser);
@@ -263,13 +248,7 @@ namespace AuthAPI.Services.Implements
 
         public async Task<bool> DeleteUser(int id)
         {
-            var existingUser = await _userRepository.GetById(id);
-            if (existingUser == null) return false;
-
-            await _refreshTokenRepository.DeleteAllByUserId(id);
-            await _userRepository.Delete(id);
-
-            return true;
+            throw new InvalidOperationException("Deleting user accounts is not allowed by business rules. Please block the account instead.");
         }
 
         public async Task<PaginationDTO<UserSearchResultDto>> SearchUsersAsync(string query, int page, int pageSize, string? role = null)
@@ -358,11 +337,7 @@ namespace AuthAPI.Services.Implements
 
                 await _refreshTokenRepository.DeleteAllByUserId(id);
 
-                var db = _redis.GetDatabase();
-                long currentUnixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                string redisKey = $"revoke_user_{id}";
-
-                await db.StringSetAsync(redisKey, currentUnixTimestamp, TimeSpan.FromMinutes(60));
+                await _otpCacheService.RevokeUserSessionAsync(id, TimeSpan.FromMinutes(60));
             }
 
             await _userRepository.Update(id, user);

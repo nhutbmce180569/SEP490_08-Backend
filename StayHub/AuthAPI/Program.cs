@@ -1,4 +1,4 @@
-﻿using AuthAPI.BackgroundServices;
+using AuthAPI.BackgroundServices;
 using AuthAPI.DTOs;
 using AuthAPI.Helpers;
 using AuthAPI.Helpers.Implements;
@@ -221,6 +221,9 @@ namespace AuthAPI
             builder.Services.AddScoped<IRoleService, RoleService>();
             builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
             builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddScoped<ISocialAuthService, SocialAuthService>();
+            builder.Services.AddScoped<IOtpCacheService, OtpCacheService>();
+            builder.Services.AddScoped<IEmailTemplateService, EmailTemplateService>();
 
             var app = builder.Build();
 
