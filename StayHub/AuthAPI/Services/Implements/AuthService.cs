@@ -1,12 +1,12 @@
-﻿using AuthAPI.DTOs;
+using AuthAPI.DTOs;
 using AuthAPI.Helpers;
 using AuthAPI.Models;
 using AuthAPI.Repositories;
 using AutoMapper;
-using Google.Apis.Auth;
-using Newtonsoft.Json.Linq;
+using System;
+using System.Collections.Generic;
 using System.Security.Cryptography;
-using StackExchange.Redis;
+using System.Threading.Tasks;
 using Role = AuthAPI.Models.Role;
 
 namespace AuthAPI.Services.Implements
@@ -19,11 +19,11 @@ namespace AuthAPI.Services.Implements
         private readonly IPasswordHelper _passwordHelper;
         private readonly IJwtHelper _jwtHelper;
         private readonly IMapper _mapper;
-        private readonly IConfiguration _configuration;
-        private readonly IHttpClientFactory _httpClientFactory;
-        private readonly IConnectionMultiplexer _redis;
         private readonly ICloudinaryService _cloudinaryService;
         private readonly IEmailService _emailService;
+        private readonly ISocialAuthService _socialAuthService;
+        private readonly IOtpCacheService _otpCacheService;
+        private readonly IEmailTemplateService _emailTemplateService;
 
         public AuthService(
             IUserRepository userRepository,
@@ -32,11 +32,11 @@ namespace AuthAPI.Services.Implements
             IPasswordHelper passwordHelper,
             IJwtHelper jwtHelper,
             IMapper mapper,
-            IConfiguration configuration,
-            IHttpClientFactory httpClientFactory,
-            IConnectionMultiplexer redis,
             ICloudinaryService cloudinaryService,
-            IEmailService emailService)
+            IEmailService emailService,
+            ISocialAuthService socialAuthService,
+            IOtpCacheService otpCacheService,
+            IEmailTemplateService emailTemplateService)
         {
             _userRepository = userRepository;
             _roleRepository = roleRepository;
@@ -44,11 +44,11 @@ namespace AuthAPI.Services.Implements
             _passwordHelper = passwordHelper;
             _jwtHelper = jwtHelper;
             _mapper = mapper;
-            _configuration = configuration;
-            _httpClientFactory = httpClientFactory;
-            _redis = redis;
             _cloudinaryService = cloudinaryService;
             _emailService = emailService;
+            _socialAuthService = socialAuthService;
+            _otpCacheService = otpCacheService;
+            _emailTemplateService = emailTemplateService;
         }
 
         // 1. ĐĂNG NHẬP TRUYỀN THỐNG (LOCAL)
@@ -92,6 +92,7 @@ namespace AuthAPI.Services.Implements
             return await GenerateLoginResponse(user);
         }
 
+        // 3. ĐĂNG KÝ
         public async Task<UserResponseDTO?> Register(RegisterDTO registerDTO)
         {
             if (await _userRepository.GetByEmail(registerDTO.Email) != null)
@@ -121,44 +122,24 @@ namespace AuthAPI.Services.Implements
         // 4. ĐĂNG NHẬP GOOGLE
         public async Task<LoginResponseDTO?> GoogleLogin(GoogleLoginDTO googleLoginDTO)
         {
-            GoogleJsonWebSignature.Payload payload;
-            try
-            {
-                var settings = new GoogleJsonWebSignature.ValidationSettings
-                {
-                    Audience = new List<string> { _configuration["Google:ClientId"]! }
-                };
-                payload = await GoogleJsonWebSignature.ValidateAsync(googleLoginDTO.IdToken, settings);
-            }
-            catch (InvalidJwtException)
-            {
+            var result = await _socialAuthService.ValidateGoogleTokenAsync(googleLoginDTO.IdToken);
+            if (result == null)
                 return null;
-            }
 
-            return await ProcessSocialLogin(payload.Email, payload.Name, payload.Picture, "Google");
+            return await ProcessSocialLogin(result.Email, result.Name, result.AvatarUrl, "Google");
         }
 
+        // 5. ĐĂNG NHẬP FACEBOOK
         public async Task<LoginResponseDTO?> FacebookLogin(string accessToken)
         {
-            var httpClient = _httpClientFactory.CreateClient();
-            var response = await httpClient.GetAsync($"https://graph.facebook.com/me?fields=id,email,name,picture.type(large)&access_token={accessToken}");
-
-            if (!response.IsSuccessStatusCode)
+            var result = await _socialAuthService.ValidateFacebookTokenAsync(accessToken);
+            if (result == null)
                 return null;
 
-            var content = await response.Content.ReadAsStringAsync();
-            var fbData = JObject.Parse(content);
-
-            string? email = fbData["email"]?.ToString();
-            if (string.IsNullOrEmpty(email))
-                return null;
-
-            string? name = fbData["name"]?.ToString();
-            string? avatarUrl = fbData["picture"]?["data"]?["url"]?.ToString();
-
-            return await ProcessSocialLogin(email, name ?? "Facebook User", avatarUrl, "Facebook");
+            return await ProcessSocialLogin(result.Email, result.Name, result.AvatarUrl, "Facebook");
         }
 
+        // 6. ĐĂNG XUẤT
         public async Task Logout(string refreshToken)
         {
             var token = await _refreshTokenRepository.GetByToken(refreshToken);
@@ -170,6 +151,7 @@ namespace AuthAPI.Services.Implements
             }
         }
 
+        // 7. ĐỔI MẬT KHẨU
         public async Task<LoginResponseDTO?> ChangePassword(int userId, ChangePasswordDTO changePasswordDTO)
         {
             var user = await _userRepository.GetById(userId);
@@ -189,31 +171,24 @@ namespace AuthAPI.Services.Implements
 
             await _refreshTokenRepository.DeleteAllByUserId(user.Id);
 
-            var db = _redis.GetDatabase();
-            long currentUnixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            string redisKey = $"revoke_user_{userId}";
-
-            await db.StringSetAsync(redisKey, currentUnixTimestamp, TimeSpan.FromMinutes(60));
+            await _otpCacheService.RevokeUserSessionAsync(user.Id, TimeSpan.FromMinutes(60));
 
             return await GenerateLoginResponse(user);
         }
 
-
+        // 8. QUÊN MẬT KHẨU
         public async Task<ForgotPasswordResultDTO> ForgotPassword(ForgotPasswordDTO dto)
         {
             const int cooldownSeconds = 60;
             var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
-            var db = _redis.GetDatabase();
-            var cooldownKey = $"forgot_pwd_cooldown_{normalizedEmail}";
-            var acquiredCooldown = await db.StringSetAsync(
-                cooldownKey,
-                "1",
-                TimeSpan.FromSeconds(cooldownSeconds),
-                When.NotExists);
+
+            var acquiredCooldown = await _otpCacheService.TrySetForgotPasswordCooldownAsync(
+                normalizedEmail,
+                TimeSpan.FromSeconds(cooldownSeconds));
 
             if (!acquiredCooldown)
             {
-                var remaining = await db.KeyTimeToLiveAsync(cooldownKey);
+                var remaining = await _otpCacheService.GetForgotPasswordCooldownRemainingAsync(normalizedEmail);
                 return new ForgotPasswordResultDTO
                 {
                     IsRateLimited = true,
@@ -230,41 +205,10 @@ namespace AuthAPI.Services.Implements
 
             string otp = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
 
-            string redisKey = $"forgot_pwd_otp_{normalizedEmail}";
-            await db.StringSetAsync(redisKey, otp, TimeSpan.FromMinutes(5));
+            await _otpCacheService.SetForgotPasswordOtpAsync(normalizedEmail, otp, TimeSpan.FromMinutes(5));
 
             string subject = "Your Password Reset Verification Code";
-
-            string emailBody = $@"
-    <div style='font-family: ""Helvetica Neue"", Helvetica, Arial, sans-serif; background-color: #f4f5f7; padding: 40px 20px; color: #333333;'>
-        <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);'>
-            
-            <h2 style='color: #2c3e50; text-align: center; border-bottom: 2px solid #f0f2f5; padding-bottom: 20px; margin-top: 0;'>Password Reset Request</h2>
-            
-            <p style='font-size: 16px; line-height: 1.6; margin-top: 20px;'>Hello <strong>{user.FullName}</strong>,</p>
-            
-            <p style='font-size: 16px; line-height: 1.6;'>We received a request to reset the password for your account associated with this email address. Please use the verification code below to proceed:</p>
-            
-            <div style='text-align: center; margin: 35px 0;'>
-                <span style='font-size: 32px; font-weight: bold; color: #0056b3; letter-spacing: 8px; padding: 15px 30px; background-color: #f8f9fa; border-radius: 8px; border: 2px dashed #0056b3; display: inline-block;'>{otp}</span>
-            </div>
-            
-            <p style='font-size: 15px; color: #e74c3c; text-align: center; font-weight: bold; margin-bottom: 30px;'>
-                ⏱️ This code is valid for exactly 5 minutes.
-            </p>
-            
-            <p style='font-size: 14px; line-height: 1.6; color: #666666;'>
-                If you did not request a password reset, you can safely ignore this email. Your password will remain unchanged, and your account is secure.
-            </p>
-            
-            <hr style='border: none; border-top: 1px solid #eeeeee; margin: 30px 0;' />
-            
-            <p style='font-size: 13px; color: #999999; text-align: center; margin-bottom: 0;'>
-                Best regards,<br>
-                <strong>The StayHub Team</strong>
-            </p>
-        </div>
-    </div>";
+            string emailBody = _emailTemplateService.GenerateForgotPasswordEmailBody(user.FullName, otp);
 
             try
             {
@@ -272,23 +216,24 @@ namespace AuthAPI.Services.Implements
             }
             catch
             {
-                await db.KeyDeleteAsync(new RedisKey[] { redisKey, cooldownKey });
+                await _otpCacheService.DeleteForgotPasswordOtpAsync(normalizedEmail);
+                await _otpCacheService.DeleteForgotPasswordCooldownAsync(normalizedEmail);
                 throw;
             }
 
             return new ForgotPasswordResultDTO();
         }
 
+        // 9. ĐẶT LẠI MẬT KHẨU
         public async Task<bool> ResetPassword(ResetPasswordDTO dto)
         {
-            var db = _redis.GetDatabase();
-            string redisKey = $"forgot_pwd_otp_{dto.Email.Trim().ToLowerInvariant()}";
-            var storedOtp = await db.StringGetAsync(redisKey);
+            var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
+            var storedOtp = await _otpCacheService.GetForgotPasswordOtpAsync(normalizedEmail);
 
-            if (storedOtp.IsNullOrEmpty || storedOtp.ToString() != dto.Code)
+            if (string.IsNullOrEmpty(storedOtp) || storedOtp != dto.Code)
                 return false;
 
-            var user = await _userRepository.GetByEmail(dto.Email);
+            var user = await _userRepository.GetByEmail(normalizedEmail);
             if (user == null || user.Provider != "Local" || user.Status != "Active")
                 return false;
 
@@ -301,15 +246,13 @@ namespace AuthAPI.Services.Implements
 
             await _refreshTokenRepository.DeleteAllByUserId(user.Id);
 
-            long currentUnixTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            string revokeRedisKey = $"revoke_user_{user.Id}";
-            await db.StringSetAsync(revokeRedisKey, currentUnixTimestamp, TimeSpan.FromMinutes(60));
-
-            await db.KeyDeleteAsync(redisKey);
+            await _otpCacheService.RevokeUserSessionAsync(user.Id, TimeSpan.FromMinutes(60));
+            await _otpCacheService.DeleteForgotPasswordOtpAsync(normalizedEmail);
 
             return true;
         }
 
+        // 10. LẤY HỒ SƠ CÁ NHÂN
         public async Task<UserResponseDTO?> GetProfileAsync(int userId)
         {
             var user = await _userRepository.GetById(userId);
@@ -320,6 +263,7 @@ namespace AuthAPI.Services.Implements
             return _mapper.Map<UserResponseDTO>(user);
         }
 
+        // 11. CẬP NHẬT HỒ SƠ
         public async Task<LoginResponseDTO?> UpdateProfileAsync(int userId, UpdateProfileDTO dto)
         {
             var user = await _userRepository.GetById(userId);
@@ -352,7 +296,6 @@ namespace AuthAPI.Services.Implements
 
             return await GenerateLoginResponse(user);
         }
-
 
         private async Task<LoginResponseDTO?> ProcessSocialLogin(string email, string name, string? avatarUrl, string provider)
         {
