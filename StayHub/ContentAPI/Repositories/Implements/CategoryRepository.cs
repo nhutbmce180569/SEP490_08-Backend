@@ -1,4 +1,4 @@
-﻿using ContentAPI.Models;
+using ContentAPI.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace ContentAPI.Repositories.Implements
@@ -72,6 +72,13 @@ namespace ContentAPI.Repositories.Implements
             return await _context.Categories
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Slug == slug);
+        }
+
+        public async Task<Category?> GetByName(string name)
+        {
+            return await _context.Categories
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Name == name);
         }
 
         public async Task Add(Category model)
