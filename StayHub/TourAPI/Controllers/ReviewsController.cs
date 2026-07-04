@@ -21,16 +21,13 @@ namespace TourAPI.Controllers
     public class ReviewsController : LocalizedControllerBase
     {
         private readonly IReviewService _reviewService;
-        private readonly ITourAccessService _tourAccessService;
 
         public ReviewsController(
             IReviewService reviewService,
-            ITourAccessService tourAccessService,
             IStringLocalizer<Messages> localizer)
             : base(localizer)
         {
             _reviewService = reviewService;
-            _tourAccessService = tourAccessService;
         }
 
         private int GetCurrentUserId()
