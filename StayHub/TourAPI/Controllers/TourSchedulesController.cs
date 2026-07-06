@@ -16,18 +16,15 @@ namespace TourAPI.Controllers
     public class TourSchedulesController : LocalizedControllerBase
     {
         private readonly ITourScheduleService _scheduleService;
-        private readonly ITourScheduleStaffService _staffService;
         private readonly ITourAccessService _tourAccessService;
 
         public TourSchedulesController(
             ITourScheduleService scheduleService,
-            ITourScheduleStaffService staffService,
             ITourAccessService tourAccessService,
             IStringLocalizer<Messages> localizer)
             : base(localizer)
         {
             _scheduleService = scheduleService;
-            _staffService = staffService;
             _tourAccessService = tourAccessService;
         }
         [HttpGet]
