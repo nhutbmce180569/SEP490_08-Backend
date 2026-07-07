@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using AIAPI.DTOs;
+using AIAPI.Localization;
 using AIAPI.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -16,6 +17,7 @@ public class IntelligentChatService : IIntelligentChatService
     private readonly ITourSemanticSearchService _searchService;
     private readonly IWeatherService _weatherService;
     private readonly ILogger<IntelligentChatService> _logger;
+    private readonly IAiCultureAccessor _cultureAccessor;
 
     public IntelligentChatService(
         IConfiguration configuration,
@@ -23,7 +25,8 @@ public class IntelligentChatService : IIntelligentChatService
         IPersonalizedTourRecommendationService personalizedService,
         ITourSemanticSearchService searchService,
         IWeatherService weatherService,
-        ILogger<IntelligentChatService> logger)
+        ILogger<IntelligentChatService> logger,
+        IAiCultureAccessor cultureAccessor)
     {
         _configuration = configuration;
         _httpClient = httpClient;
@@ -31,6 +34,7 @@ public class IntelligentChatService : IIntelligentChatService
         _searchService = searchService;
         _weatherService = weatherService;
         _logger = logger;
+        _cultureAccessor = cultureAccessor;
     }
 
     public async Task<IntelligentChatResponseDTO> ChatAsync(
