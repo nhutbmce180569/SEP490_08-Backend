@@ -2,8 +2,25 @@
 set -euo pipefail
 
 DOTNET="/home/kiuthi/.dotnet/dotnet"
-ROOT="/home/kiuthi/Projects/Backend/SEP490_08-Backend/StayHub"
+ROOT="/home/kiuthi/Storage/Projects/Backend/SEP490_08-Backend/StayHub"
 LOGS_DIR="$ROOT/logs"
+
+if [ -f .env ]; then
+  while IFS= read -r line || [ -n "$line" ]; do
+    if [[ "$line" =~ ^[[:space:]]*# ]] || [[ -z "$line" ]]; then
+      continue
+    fi
+    if [[ "$line" =~ ^GEMINI_API_KEY= ]]; then
+      key_val="${line#*=}"
+      key_val="${key_val%\"}"
+      key_val="${key_val#\"}"
+      key_val="${key_val%\'}"
+      key_val="${key_val#\'}"
+      export Gemini__ApiKey="$key_val"
+      echo "Successfully loaded Gemini API key from environment."
+    fi
+  done < .env
+fi
 
 mkdir -p "$LOGS_DIR"
 
@@ -31,7 +48,7 @@ fi
 echo "Starting StayHub backend microservices..."
 for service in "${services[@]}"; do
   echo "Launching $service..."
-  nohup "$DOTNET" run --project "$ROOT/$service/$service.csproj" --launch-profile https > "$LOGS_DIR/$service.log" 2>&1 &
+  nohup "$DOTNET" run --project "$ROOT/$service/$service.csproj" --no-build --launch-profile https > "$LOGS_DIR/$service.log" 2>&1 &
   # Small delay to prevent resource contention
   sleep 2
 done
