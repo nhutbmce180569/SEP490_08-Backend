@@ -74,6 +74,7 @@ builder.Services.AddScoped<IModelTrainingService, ModelTrainingService>();
 builder.Services.AddScoped<ITourSemanticSearchService, TourSemanticSearchService>();
 builder.Services.AddScoped<ITourRecommendationService, TourRecommendationService>();
 builder.Services.AddScoped<ITourAssistantService, TourAssistantService>();
+builder.Services.AddScoped<IIntelligentChatService, IntelligentChatService>();
 builder.Services.AddScoped<ICulturalKnowledgeService, CulturalKnowledgeService>();
 builder.Services.AddScoped<IPersonalizedTourRecommendationService, PersonalizedTourRecommendationService>();
 builder.Services.AddScoped<IRecommenderEvaluationService, RecommenderEvaluationService>();

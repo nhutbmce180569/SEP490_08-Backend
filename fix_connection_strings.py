@@ -2,7 +2,7 @@ import os
 import json
 import re
 
-root_dir = "/home/kiuthi/Projects/Backend/SEP490_08-Backend/StayHub"
+root_dir = "/home/kiuthi/Storage/Projects/Backend/SEP490_08-Backend/StayHub"
 
 for folder in os.listdir(root_dir):
     folder_path = os.path.join(root_dir, folder)
@@ -24,7 +24,7 @@ for folder in os.listdir(root_dir):
             db_match = re.search(r"Database=([^;]+)", conn, re.IGNORECASE)
             if db_match:
                 db_name = db_match.group(1)
-                new_conn = f"Server=localhost;Database={db_name};User Id=sa;Password=YourStrong@Pass123;TrustServerCertificate=True;Encrypt=False;"
+                new_conn = f"Server=localhost;Database={db_name};User Id=sa;Password=admin;TrustServerCertificate=True;Encrypt=False;"
                 data["ConnectionStrings"]["DefaultConnection"] = new_conn
                 
                 with open(appsettings_path, "w", encoding="utf-8") as f:

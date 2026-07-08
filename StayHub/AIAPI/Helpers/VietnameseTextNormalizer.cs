@@ -23,7 +23,7 @@ public static class VietnameseTextNormalizer
         }
 
         var result = builder.ToString().Normalize(NormalizationForm.FormC).Replace(" ", "", StringComparison.Ordinal);
-        result = result.Replace("tp.", "").Replace("thanhpho", "").Replace("city", "").Replace("-", "");
+        result = result.Replace("đ", "d").Replace("tp.", "").Replace("thanhpho", "").Replace("city", "").Replace("-", "");
         if (result == "saigon") return "hochiminh";
         return result;
     }
