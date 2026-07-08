@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -140,7 +140,7 @@ namespace SocialAPI.Services.Implements
             }
         }
 
-        public async Task<IEnumerable<LiveScheduleMemberLocationDto>> GetLiveScheduleLocationsAsync(int scheduleId)
+        public async Task<IEnumerable<ScheduleMemberLocationDTO>> GetLiveScheduleLocationsAsync(int scheduleId)
         {
             if (scheduleId <= 0) return [];
 
@@ -169,7 +169,7 @@ namespace SocialAPI.Services.Implements
                 .ToArray();
             var redisValues = await db.StringGetAsync(redisKeys);
 
-            var liveLocations = new List<LiveScheduleMemberLocationDto>();
+            var liveLocations = new List<ScheduleMemberLocationDTO>();
             for (var i = 0; i < allUserIds.Count; i++)
             {
                 if (!redisValues[i].HasValue) continue; // chưa ping thì bỏ qua
@@ -177,7 +177,7 @@ namespace SocialAPI.Services.Implements
                 {
                     using var doc = JsonDocument.Parse(redisValues[i].ToString());
                     var root = doc.RootElement;
-                    liveLocations.Add(new LiveScheduleMemberLocationDto
+                    liveLocations.Add(new ScheduleMemberLocationDTO
                     {
                         UserId = allUserIds[i],
                         Lat = root.GetProperty("lat").GetDouble(),
@@ -384,43 +384,103 @@ namespace SocialAPI.Services.Implements
                 return new List<FootprintDto>();
             }
         }
-        public async Task<IEnumerable<HeatPointDto>> GetHeatmapDataAsync(int? scheduleId, int days)
+        public async Task<IEnumerable<HeatPointDto>> GetHeatmapDataAsync(int? scheduleId, string type, int days)
         {
             try
             {
-                // Độ "thô" của lưới gom điểm:
-                //   3 chữ số ~ 111m  | 2 chữ số ~ 1.1km (gom rộng hơn, ít điểm hơn)
                 const int precision = 3;
 
-                if (days <= 0) days = 90;
-                var since = DateTime.UtcNow.AddDays(-days);
-
-                var query = _context.LocationLogs
-                    .AsNoTracking()
-                    .Where(x => x.Timestamp >= since);
-
-                if (scheduleId.HasValue && scheduleId.Value > 0)
+                if (type == "moments")
                 {
-                    query = query.Where(x => x.ScheduleId == scheduleId.Value);
+                    var momentsQuery = _context.TourMoments
+                        .AsNoTracking()
+                        .Where(x => x.Lat.HasValue && x.Lng.HasValue);
+
+                    if (scheduleId.HasValue && scheduleId.Value > 0)
+                    {
+                        momentsQuery = momentsQuery.Where(x => x.ScheduleId == scheduleId.Value);
+                    }
+
+                    var moments = await momentsQuery
+                        .GroupBy(x => new
+                        {
+                            LatBucket = Math.Round(x.Lat.Value, precision),
+                            LngBucket = Math.Round(x.Lng.Value, precision)
+                        })
+                        .Select(g => new HeatPointDto
+                        {
+                            Lat = g.Key.LatBucket,
+                            Lng = g.Key.LngBucket,
+                            Weight = g.Sum(x => 1 + x.MomentReactions.Count(r => r.IsLike == true) + x.MomentComments.Count * 2)
+                        })
+                        .ToListAsync();
+
+                    return moments;
                 }
+                else
+                {
+                    // Online users: latest position per active user within last 30 minutes
+                    var since = DateTime.UtcNow.AddMinutes(-30);
+                    var query = _context.LocationLogs
+                        .AsNoTracking()
+                        .Where(x => x.Timestamp >= since);
 
-                // GROUP BY ROUND(Lat,3), ROUND(Lng,3) -> COUNT(*)
-                // EF Core dịch Math.Round(double,int) thành ROUND() của SQL Server.
-                var points = await query
-                    .GroupBy(x => new
+                    if (scheduleId.HasValue && scheduleId.Value > 0)
                     {
-                        LatBucket = Math.Round(x.Lat, precision),
-                        LngBucket = Math.Round(x.Lng, precision)
-                    })
-                    .Select(g => new HeatPointDto
-                    {
-                        Lat = g.Key.LatBucket,
-                        Lng = g.Key.LngBucket,
-                        Weight = g.Count()
-                    })
-                    .ToListAsync();
+                        query = query.Where(x => x.ScheduleId == scheduleId.Value);
+                    }
 
-                return points;
+                    var logs = await query.ToListAsync();
+
+                    var points = logs
+                        .Where(x => x != null)
+                        .GroupBy(x => x.UserId)
+                        .Select(g => g.OrderByDescending(x => x.Timestamp).First())
+                        .GroupBy(x => new
+                        {
+                            LatBucket = Math.Round(x.Lat, precision),
+                            LngBucket = Math.Round(x.Lng, precision)
+                        })
+                        .Select(g => new HeatPointDto
+                        {
+                            Lat = g.Key.LatBucket,
+                            Lng = g.Key.LngBucket,
+                            Weight = g.Count()
+                        })
+                        .ToList();
+
+                    // Fallback to historic location logs if no users are online
+                    if (!points.Any())
+                    {
+                        if (days <= 0) days = 90;
+                        var fallbackSince = DateTime.UtcNow.AddDays(-days);
+
+                        var fallbackQuery = _context.LocationLogs
+                            .AsNoTracking()
+                            .Where(x => x.Timestamp >= fallbackSince);
+
+                        if (scheduleId.HasValue && scheduleId.Value > 0)
+                        {
+                            fallbackQuery = fallbackQuery.Where(x => x.ScheduleId == scheduleId.Value);
+                        }
+
+                        points = await fallbackQuery
+                            .GroupBy(x => new
+                            {
+                                LatBucket = Math.Round(x.Lat, precision),
+                                LngBucket = Math.Round(x.Lng, precision)
+                            })
+                            .Select(g => new HeatPointDto
+                            {
+                                Lat = g.Key.LatBucket,
+                                Lng = g.Key.LngBucket,
+                                Weight = g.Count()
+                            })
+                            .ToListAsync();
+                    }
+
+                    return points;
+                }
             }
             catch (Exception)
             {

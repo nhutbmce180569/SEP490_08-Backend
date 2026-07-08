@@ -139,4 +139,23 @@ public class FriendshipsController : LocalizedControllerBase
             return StatusCode(500, new { message = M("AnErrorOccurredWhileRetrievingFriendList"), details = ex.Message });
         }
     }
+
+    [HttpGet("status/{targetUserId}")]
+    public async Task<IActionResult> GetFriendshipStatus(int targetUserId)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var status = await _friendshipService.GetFriendshipStatusAsync(userId, targetUserId);
+            if (status == null)
+            {
+                return Ok(new { status = "None" });
+            }
+            return Ok(status);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

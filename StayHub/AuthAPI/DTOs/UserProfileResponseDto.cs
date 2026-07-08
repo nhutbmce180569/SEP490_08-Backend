@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace AuthAPI.DTOs
 {
@@ -10,5 +10,6 @@ namespace AuthAPI.DTOs
         public string? Gender { get; set; }
         public DateOnly? DateOfBirth { get; set; }
         public DateTime? CreatedAt { get; set; }
+        public List<string> Roles { get; set; } = new List<string>();
     }
 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using StayHub.Common.Controllers;
@@ -68,6 +68,7 @@ namespace SocialAPI.Controllers
         }
 
         [HttpGet("schedules/{scheduleId}/live")]
+        [Authorize(Roles = "Staff")]
         public async Task<IActionResult> GetLiveScheduleLocations(int scheduleId)
         {
             try
@@ -132,13 +133,13 @@ namespace SocialAPI.Controllers
             }
         }
 
-        // GET /api/locations/heatmap?scheduleId=&days=90
+        // GET /api/locations/heatmap?scheduleId=&type=online&days=90
         [HttpGet("heatmap")]
-        public async Task<IActionResult> GetHeatmap([FromQuery] int? scheduleId, [FromQuery] int days = 90)
+        public async Task<IActionResult> GetHeatmap([FromQuery] int? scheduleId, [FromQuery] string type = "online", [FromQuery] int days = 90)
         {
             try
             {
-                var data = await _locationService.GetHeatmapDataAsync(scheduleId, days);
+                var data = await _locationService.GetHeatmapDataAsync(scheduleId, type, days);
                 return Ok(new { message = M("HeatmapDataRetrievedSuccessfully"), data });
             }
             catch (Exception ex)
