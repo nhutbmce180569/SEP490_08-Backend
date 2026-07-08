@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using SocialAPI.DTOs;
 using SocialAPI.Services;
@@ -46,11 +46,18 @@ namespace SocialAPI.Hubs
                 Content = content
             };
 
-            var savedMessage = await _chatService.SaveMessageAsync(senderId, dto);
+            try
+            {
+                var savedMessage = await _chatService.SaveMessageAsync(senderId, dto);
 
-            await Clients.Group(chatRoomId.ToString()).SendAsync("ReceiveMessage", savedMessage);
+                await Clients.Group(chatRoomId.ToString()).SendAsync("ReceiveMessage", savedMessage);
 
-            await _chatNotificationService.NotifyNewMessageAsync(savedMessage, senderId);
+                await _chatNotificationService.NotifyNewMessageAsync(savedMessage, senderId);
+            }
+            catch (Exception ex)
+            {
+                throw new HubException(ex.Message);
+            }
         }
     }
 }

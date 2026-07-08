@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,6 +30,8 @@ public partial class StayHubSocialDbContext : DbContext
     public virtual DbSet<MomentReaction> MomentReactions { get; set; }
 
     public virtual DbSet<TourMoment> TourMoments { get; set; }
+
+    public virtual DbSet<ContentReport> ContentReports { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -91,6 +93,11 @@ public partial class StayHubSocialDbContext : DbContext
 
             entity.Property(e => e.Timestamp).HasDefaultValueSql("(getdate())");
 
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValue("Approved");
+
             entity.HasOne(d => d.Moment).WithMany(p => p.MomentComments)
                 .HasForeignKey(d => d.MomentId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -118,6 +125,26 @@ public partial class StayHubSocialDbContext : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false)
                 .HasDefaultValue("Public");
+
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValue("Approved");
+        });
+
+        modelBuilder.Entity<ContentReport>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ContentType)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValue("Pending");
+            entity.Property(e => e.Reason).HasMaxLength(255);
+            entity.Property(e => e.Details).HasMaxLength(500);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
         });
 
         OnModelCreatingPartial(modelBuilder);
