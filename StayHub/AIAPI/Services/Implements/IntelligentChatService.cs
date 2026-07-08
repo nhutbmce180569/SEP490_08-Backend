@@ -85,22 +85,35 @@ public class IntelligentChatService : IIntelligentChatService
         var tools = GetToolsDefinition();
 
         // 3. Define system instruction
+        var promptText = _cultureAccessor.IsVietnamese
+            ? "Bạn là trợ lý du lịch thông minh StayHub AI Agent. " +
+              "Nhiệm vụ của bạn là trò chuyện tự nhiên, tư vấn du lịch và giúp người dùng tìm kiếm, đề xuất các tour phù hợp. " +
+              "Khi người dùng muốn lên kế hoạch hoặc tìm kiếm tour, bạn hãy chủ động hỏi han hoặc dùng các Tool có sẵn để gợi ý. " +
+              "Các Tool có sẵn bao gồm: " +
+              "1. recommend_tours_from_profile: Dùng khi người dùng muốn nhận gợi ý tour cá nhân hóa và bạn đã biết các thông tin cơ bản: loại bạn đồng hành (cá nhân/gia đình/cặp đôi/nhóm), ngày đi dự kiến, các sở thích du lịch và thành phố muốn đi (bắt buộc phải có các thông tin này). Nếu thiếu, hãy lịch sự hỏi thăm người dùng thay vì gọi hàm với dữ liệu giả. " +
+              "2. search_tours: Dùng khi người dùng tìm kiếm tour cụ thể bằng từ khóa (ví dụ: tour trekking, tour vịnh hạ long). " +
+              "3. search_tourism_insights: Dùng khi người dùng hỏi về ẩm thực, đặc sản, văn hóa, danh lam thắng cảnh ở một thành phố nào đó. " +
+              "4. get_weather_forecast: Dùng khi người dùng hỏi về thời tiết của một thành phố cụ thể. " +
+              $"Hôm nay là ngày {DateTime.Today:yyyy-MM-dd}. Nếu người dùng hỏi về các khoảng thời gian tương đối như 'tuần tới', 'hôm nay', 'ngày mai', hãy tự tính toán ngày cụ thể dựa trên hôm nay để gọi Tool. " +
+              "Hãy phản hồi bằng tiếng Việt thân thiện, lịch sự, chuyên nghiệp."
+            : "You are a smart travel assistant named StayHub AI Agent. " +
+              "Your task is to chat naturally, consult on travel, and help users search and recommend suitable tours. " +
+              "When the user wants to plan a trip or search for tours, proactively ask them or use the available tools to suggest. " +
+              "The available tools include: " +
+              "1. recommend_tours_from_profile: Use when the user wants to get personalized tour recommendations and you already know basic information: companion type (solo/family/couple/group), preferred start date, travel interests, and preferred city (these are required). If any are missing, politely ask the user instead of calling the function with fake data. " +
+              "2. search_tours: Use when the user searches for a specific tour by keywords (e.g., trekking tour, halong bay tour). " +
+              "3. search_tourism_insights: Use when the user asks about local food, specialties, culture, or attractions in a city. " +
+              "4. get_weather_forecast: Use when the user asks about the weather of a specific city. " +
+              $"Today is {DateTime.Today:yyyy-MM-dd}. If the user asks about relative times like 'next week', 'today', 'tomorrow', calculate the specific date based on today to call the Tool. " +
+              "Please respond in a friendly, polite, and professional manner in English.";
+
         var systemInstruction = new JsonObject
         {
             ["parts"] = new JsonArray
             {
                 new JsonObject
                 {
-                    ["text"] = "Bạn là trợ lý du lịch thông minh StayHub AI Agent. " +
-                               "Nhiệm vụ của bạn là trò chuyện tự nhiên, tư vấn du lịch và giúp người dùng tìm kiếm, đề xuất các tour phù hợp. " +
-                               "Khi người dùng muốn lên kế hoạch hoặc tìm kiếm tour, bạn hãy chủ động hỏi han hoặc dùng các Tool có sẵn để gợi ý. " +
-                               "Các Tool có sẵn bao gồm: " +
-                               "1. recommend_tours_from_profile: Dùng khi người dùng muốn nhận gợi ý tour cá nhân hóa và bạn đã biết các thông tin cơ bản: loại bạn đồng hành (cá nhân/gia đình/cặp đôi/nhóm), ngày đi dự kiến, các sở thích du lịch và thành phố muốn đi (bắt buộc phải có các thông tin này). Nếu thiếu, hãy lịch sự hỏi thăm người dùng thay vì gọi hàm với dữ liệu giả. " +
-                               "2. search_tours: Dùng khi người dùng tìm kiếm tour cụ thể bằng từ khóa (ví dụ: tour trekking, tour vịnh hạ long). " +
-                               "3. search_tourism_insights: Dùng khi người dùng hỏi về ẩm thực, đặc sản, văn hóa, danh lam thắng cảnh ở một thành phố nào đó. " +
-                               "4. get_weather_forecast: Dùng khi người dùng hỏi về thời tiết của một thành phố cụ thể. " +
-                               $"Hôm nay là ngày {DateTime.Today:yyyy-MM-dd}. Nếu người dùng hỏi về các khoảng thời gian tương đối như 'tuần tới', 'hôm nay', 'ngày mai', hãy tự tính toán ngày cụ thể dựa trên hôm nay để gọi Tool. " +
-                               "Hãy phản hồi bằng tiếng Việt thân thiện, lịch sự, chuyên nghiệp."
+                    ["text"] = promptText
                 }
             }
         };
@@ -273,12 +286,19 @@ public class IntelligentChatService : IIntelligentChatService
         }
 
         // 4. Generate suggested questions dynamically (optional fallback)
-        var suggestedQuestions = new List<string>
-        {
-            "Có những tour du lịch nào đang hot?",
-            "Thời tiết Đà Lạt tuần tới thế nào?",
-            "Tôi muốn đặt tour đi Nha Trang"
-        };
+        var suggestedQuestions = _cultureAccessor.IsVietnamese
+            ? new List<string>
+              {
+                  "Có những tour du lịch nào đang hot?",
+                  "Thời tiết Đà Lạt tuần tới thế nào?",
+                  "Tôi muốn đặt tour đi Nha Trang"
+              }
+            : new List<string>
+              {
+                  "What are some trending tours?",
+                  "How is the weather in Da Lat next week?",
+                  "I want to book a tour to Nha Trang"
+              };
 
         return new IntelligentChatResponseDTO
         {
