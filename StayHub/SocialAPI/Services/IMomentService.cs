@@ -1,4 +1,5 @@
 using SocialAPI.DTOs;
+using SocialAPI.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -24,4 +25,9 @@ public interface IMomentService
     Task<IEnumerable<MomentResponseDto>> GetMomentFeedWithUsersAsync(int? scheduleId, int currentUserId, int skip, int top);
     Task<IEnumerable<FootprintDto>> GetMyFootprintsAsync(int userId);
     Task<IEnumerable<UserMomentResponseDto>> GetUserMomentsAsync(int targetUserId, int currentUserId);
+    
+    // Kiểm duyệt nội dung
+    Task ReportContentAsync(int reporterId, string contentType, int targetId, string reason, string? details);
+    Task<IEnumerable<ContentReport>> GetPendingReportsAsync();
+    Task ResolveReportAsync(int reportId, string action, int resolvedBy);
 }

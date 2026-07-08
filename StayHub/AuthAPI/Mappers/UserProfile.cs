@@ -1,4 +1,4 @@
-﻿using AuthAPI.DTOs;
+using AuthAPI.DTOs;
 using AuthAPI.Models;
 using AutoMapper;
 
@@ -32,8 +32,8 @@ namespace AuthAPI.Mappers
                 .ForMember(dest => dest.RoleNames, opt => opt.MapFrom(src => src.Roles.Select(r => r.Name).ToList()));
             CreateMap<User, UserProfileDto>();
             CreateMap<UpdateProfileDTO, User>();;
-            CreateMap<User, UserProfileResponseDto>();
-
+            CreateMap<User, UserProfileResponseDto>()
+                .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.Roles.Select(r => r.Name).ToList()));
         }
     }
 }
