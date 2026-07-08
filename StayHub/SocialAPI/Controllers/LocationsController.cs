@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using StayHub.Common.Controllers;
@@ -68,6 +68,7 @@ namespace SocialAPI.Controllers
         }
 
         [HttpGet("schedules/{scheduleId}/live")]
+        [Authorize(Roles = "Staff")]
         public async Task<IActionResult> GetLiveScheduleLocations(int scheduleId)
         {
             try

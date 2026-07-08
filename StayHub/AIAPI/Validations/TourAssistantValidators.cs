@@ -83,3 +83,15 @@ public class TourPreferenceQuestionnaireValidator : AbstractValidator<TourPrefer
 
     }
 }
+
+public class IntelligentChatRequestValidator : AbstractValidator<IntelligentChatRequestDTO>
+{
+    public IntelligentChatRequestValidator(ValidationLocalizer v)
+    {
+        RuleFor(x => x.Message)
+            .NotEmpty().WithMessage(v.Get("Message is required."))
+            .MinimumLength(1).WithMessage(v.Get("Message must be at least 1 character."))
+            .MaximumLength(2000).WithMessage(v.Get("Message cannot exceed 2000 characters."));
+    }
+}
+

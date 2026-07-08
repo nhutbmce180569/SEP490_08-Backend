@@ -86,35 +86,35 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             new QuestionnaireFieldDTO
             {
                 FieldKey = "adultCount",
-                Label = "Số lượng người lớn",
+                Label = _text.QuestionAdultCount,
                 InputType = "number",
                 Required = true
             },
             new QuestionnaireFieldDTO
             {
                 FieldKey = "childrenCount",
-                Label = "Số lượng trẻ em (Dưới 12 tuổi)",
+                Label = _text.QuestionChildrenCount,
                 InputType = "number",
                 Required = true
             },
             new QuestionnaireFieldDTO
             {
                 FieldKey = "elderlyCount",
-                Label = "Số lượng người cao tuổi (Trên 60 tuổi)",
+                Label = _text.QuestionElderlyCount,
                 InputType = "number",
                 Required = true
             },
             new QuestionnaireFieldDTO
             {
                 FieldKey = "travelPace",
-                Label = "Nhịp độ chuyến đi",
+                Label = _text.QuestionTravelPace,
                 InputType = "single_select",
                 Required = true,
                 Options =
                 [
-                    new() { Value = TravelPaceTypes.Relaxed, Label = "Thư giãn, nhẹ nhàng" },
-                    new() { Value = TravelPaceTypes.Moderate, Label = "Cân bằng (Khám phá và nghỉ dưỡng)" },
-                    new() { Value = TravelPaceTypes.Packed, Label = "Lịch trình dày, khám phá tối đa" }
+                    new() { Value = TravelPaceTypes.Relaxed, Label = _text.OptionPaceRelaxed },
+                    new() { Value = TravelPaceTypes.Moderate, Label = _text.OptionPaceModerate },
+                    new() { Value = TravelPaceTypes.Packed, Label = _text.OptionPacePacked }
                 ]
             },
             new QuestionnaireFieldDTO
