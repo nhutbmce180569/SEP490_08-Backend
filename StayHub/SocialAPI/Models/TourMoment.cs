@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace SocialAPI.Models;
@@ -22,6 +22,8 @@ public partial class TourMoment
     public DateTime? CreatedAt { get; set; }
 
     public string? Privacy { get; set; }
+
+    public string Status { get; set; } = "Approved";
 
     public virtual ICollection<MomentComment> MomentComments { get; set; } = new List<MomentComment>();
 

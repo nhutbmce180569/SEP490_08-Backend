@@ -218,4 +218,43 @@ public class FriendshipService : IFriendshipService
             Total = total
         };
     }
+
+    public async Task<FriendshipResponseDto?> GetFriendshipStatusAsync(int userId, int targetUserId)
+    {
+        var friendship = await _friendshipRepository.GetFriendshipBetweenUsersAsync(userId, targetUserId);
+        if (friendship == null) return null;
+
+        var dto = _mapper.Map<FriendshipResponseDto>(friendship, opt => {
+            opt.Items["CurrentUserId"] = userId;
+        });
+
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("https://localhost:7001/api/users/batch", new List<int> { dto.FriendId });
+            if (response.IsSuccessStatusCode)
+            {
+                var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
+                var userProfile = apiResult?.Data?.FirstOrDefault();
+                if (userProfile != null)
+                {
+                    dto.FullName = userProfile.FullName ?? "Anonymous user";
+                    dto.AvatarUrl = userProfile.AvatarUrl;
+                }
+                else
+                {
+                    dto.FullName = "Anonymous user";
+                }
+            }
+            else
+            {
+                dto.FullName = "Anonymous user";
+            }
+        }
+        catch
+        {
+            dto.FullName = "Anonymous user";
+        }
+
+        return dto;
+    }
 }
