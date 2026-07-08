@@ -696,6 +696,42 @@ ALTER TABLE ChatMembers ADD IsPinned BIT DEFAULT 0;
 ALTER TABLE ChatMembers ADD IsMuted BIT DEFAULT 0;
 GO
 -- Xong! Trả về database Master để hoàn tất.
+USE StayHub_SocialDb;
+GO
+
+-- 1. Bổ sung cột Status cho TourMoments với giá trị mặc định là 'Approved'
+IF COL_LENGTH('TourMoments', 'Status') IS NULL
+BEGIN
+    ALTER TABLE TourMoments ADD Status VARCHAR(20) NOT NULL DEFAULT 'Approved';
+    ALTER TABLE TourMoments ADD CONSTRAINT CHK_TourMoments_Status CHECK (Status IN ('Approved', 'Pending', 'Flagged', 'Rejected'));
+END
+GO
+
+-- 2. Bổ sung cột Status cho MomentComments với giá trị mặc định là 'Approved'
+IF COL_LENGTH('MomentComments', 'Status') IS NULL
+BEGIN
+    ALTER TABLE MomentComments ADD Status VARCHAR(20) NOT NULL DEFAULT 'Approved';
+    ALTER TABLE MomentComments ADD CONSTRAINT CHK_MomentComments_Status CHECK (Status IN ('Approved', 'Pending', 'Flagged', 'Rejected'));
+END
+GO
+
+-- 3. Tạo bảng quản lý người dùng Báo cáo vi phạm (Report)
+IF OBJECT_ID('ContentReports', 'U') IS NULL
+BEGIN
+    CREATE TABLE ContentReports (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        ReporterId INT NOT NULL, -- Người báo cáo
+        ContentType VARCHAR(20) NOT NULL, -- 'Moment' hoặc 'Comment'
+        TargetId INT NOT NULL, -- ID của Moment hoặc Comment bị báo cáo
+        Reason NVARCHAR(255) NOT NULL, -- Lý do (Spam, Bạo lực, Ngôn từ kích động...)
+        Details NVARCHAR(500) NULL,
+        Status VARCHAR(20) DEFAULT 'Pending', -- Pending, Resolved, Dismissed
+        CreatedAt DATETIME2 DEFAULT GETDATE(),
+        ResolvedBy INT NULL, -- Staff/Manager xử lý duyệt
+        ResolvedAt DATETIME2 NULL
+    );
+END
+GO
 USE master;
 GO
 PRINT '=======================================================';
