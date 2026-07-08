@@ -94,6 +94,10 @@ namespace SocialAPI.Controllers
                 var room = await _chatService.CreateOrGetChatRoomAsync(userId, request.FriendId);
                 return Ok(room);
             }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = M("AnErrorOccurredWhileCreatingTheChatRoom"), error = ex.Message });

@@ -88,4 +88,12 @@ public class FriendshipRepository : IFriendshipRepository
             ((f.RequesterId == userId1 && f.ReceiverId == userId2) ||
              (f.RequesterId == userId2 && f.ReceiverId == userId1)));
     }
+
+    public async Task<Friendship?> GetFriendshipBetweenUsersAsync(int user1, int user2)
+    {
+        return await _context.Friendships
+            .FirstOrDefaultAsync(f =>
+                (f.RequesterId == user1 && f.ReceiverId == user2) ||
+                (f.RequesterId == user2 && f.ReceiverId == user1));
+    }
 }

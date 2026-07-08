@@ -30,8 +30,9 @@ public class MomentRepository : IMomentRepository
         var query = _context.TourMoments
             .AsNoTracking()
             .AsSplitQuery()
-            .Include(m => m.MomentComments)
+            .Include(m => m.MomentComments.Where(c => c.Status == "Approved"))
             .Include(m => m.MomentReactions)
+            .Where(m => m.Status == "Approved")
             .AsQueryable();
 
         if (scheduleId.HasValue && scheduleId.Value > 0)
@@ -55,8 +56,9 @@ public class MomentRepository : IMomentRepository
         var query = _context.TourMoments
             .AsNoTracking()
             .AsSplitQuery()
-            .Include(m => m.MomentComments)
+            .Include(m => m.MomentComments.Where(c => c.Status == "Approved"))
             .Include(m => m.MomentReactions)
+            .Where(m => m.Status == "Approved")
             .AsQueryable();
 
         if (scheduleId.HasValue && scheduleId.Value > 0)
@@ -79,7 +81,7 @@ public class MomentRepository : IMomentRepository
     }
     public IQueryable<TourMoment> GetMomentsAsQueryable()
     {
-        return _context.TourMoments.AsQueryable();
+        return _context.TourMoments.Where(m => m.Status == "Approved").AsQueryable();
     }
 
     public async Task<TourMoment?> GetMomentByIdAsync(int id)
@@ -131,7 +133,7 @@ public class MomentRepository : IMomentRepository
     {
         return await _context.TourMoments
             .AsNoTracking()
-            .Where(m => m.UserId == userId && m.Lat.HasValue && m.Lng.HasValue)
+            .Where(m => m.UserId == userId && m.Lat.HasValue && m.Lng.HasValue && m.Status == "Approved")
             // Project to DTO, rounding coordinates to 3 decimal places for grouping nearby points.
             .Select(m => new FootprintDto
             {
@@ -147,7 +149,7 @@ public class MomentRepository : IMomentRepository
     {
         var query = _context.TourMoments
             .AsNoTracking()
-            .Where(m => m.UserId == targetUserId);
+            .Where(m => m.UserId == targetUserId && m.Status == "Approved");
 
         if (currentUserId != targetUserId)
         {
