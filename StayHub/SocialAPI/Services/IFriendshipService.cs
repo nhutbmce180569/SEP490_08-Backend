@@ -12,4 +12,5 @@ public interface IFriendshipService
     Task UpdateRequestStatusAsync(int userId, FriendRequestUpdateDto updateDto);
     Task DeleteFriendshipAsync(int userId, int friendshipId);
     Task<PaginationDTO<FriendshipResponseDto>> GetFriendListAsync(int userId, int page, int pageSize);
+    Task<FriendshipResponseDto?> GetFriendshipStatusAsync(int userId, int targetUserId);
 }

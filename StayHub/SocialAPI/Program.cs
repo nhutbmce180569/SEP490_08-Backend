@@ -19,6 +19,7 @@ using SocialAPI.Repositories;
 using SocialAPI.Repositories.Implements;
 using SocialAPI.Services;
 using SocialAPI.Services.Implements;
+using SocialAPI.Helpers;
 using StayHub.Common.Localization;
 using StackExchange.Redis;
 using System.Text;
@@ -137,6 +138,7 @@ namespace SocialAPI
             builder.Services.AddScoped<ILocationService, LocationService>();
             builder.Services.AddScoped<IMomentRepository, MomentRepository>();
             builder.Services.AddScoped<ICloudStorageService, CloudStorageService>();
+            builder.Services.AddScoped<IContentModerator, ContentModerator>();
             builder.Services.AddScoped<IMomentService, MomentService>();
             builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
             builder.Services.AddScoped<IFriendshipService, FriendshipService>();

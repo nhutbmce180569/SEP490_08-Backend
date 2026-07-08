@@ -122,6 +122,10 @@ public class MomentsController : LocalizedControllerBase
         {
             return NotFound(new { message = ex.Message });
         }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
         catch (Exception ex)
         {
             return StatusCode(500, new { message = M("AnErrorOccurredWhileAddingTheComment"), details = ex.Message });
