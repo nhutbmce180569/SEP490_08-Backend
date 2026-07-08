@@ -55,16 +55,15 @@ namespace TourAPI.Repositories.Implements
                 .AsQueryable();
 
             if (upcomingOnly)
-                query = query.Where(x => x.Schedule.DepartureDate >= now);
+                query = query.Where(x => x.Schedule.ReturnDate >= now);
 
             // ✅ Filter theo tên tour
             if (!string.IsNullOrWhiteSpace(tourName))
                 query = query.Where(x => x.Schedule.Tour != null &&
                                          x.Schedule.Tour.Name.Contains(tourName.Trim()));
 
-            query = upcomingOnly
-                ? query.OrderBy(x => x.Schedule.DepartureDate)
-                : query.OrderByDescending(x => x.Schedule.DepartureDate);
+            // Luôn sắp xếp cũ nhất/gần nhất lên đầu theo yêu cầu
+            query = query.OrderBy(x => x.Schedule.DepartureDate);
 
             var total = await query.CountAsync();
 
