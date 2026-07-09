@@ -67,6 +67,34 @@ public class ContentModerator : IContentModerator
         {
             // Fallback silently to default memory words
         }
+
+        // Tải thêm file vn_offensive_words.txt mới từ Data
+        try
+        {
+            var filePath = Path.Combine(AppContext.BaseDirectory, "vn_offensive_words.txt");
+            if (!File.Exists(filePath))
+            {
+                filePath = Path.Combine(Directory.GetCurrentDirectory(), "vn_offensive_words.txt");
+            }
+
+            if (File.Exists(filePath))
+            {
+                var lines = File.ReadAllLines(filePath);
+                foreach (var line in lines)
+                {
+                    var word = line.Trim();
+                    // Loại bỏ các dòng comment (#) và dòng trống
+                    if (!string.IsNullOrEmpty(word) && !word.StartsWith("#"))
+                    {
+                        _blacklist.Add(word);
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Bỏ qua nếu có lỗi đọc file
+        }
     }
 
     public async Task<string> ModerateTextAsync(string content)
