@@ -80,6 +80,11 @@ namespace TourAPI.Controllers
                 {
                     return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
                 }
+                var existingTour = await _tourService.GetById(id);
+                if (existingTour == null)
+                {
+                    return NotFound(new { message = M("TourNotFound") });
+                }
 
                 await _tourService.ChangeManagerAsync(id, request.ManagerId, userId.Value);
 
