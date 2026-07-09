@@ -1,5 +1,6 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Humanizer;
+using Microsoft.Extensions.Configuration;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,14 +20,16 @@ namespace TourAPI.Services.Implements
 
         private readonly CloudinaryService _cloudinary;
         private readonly HttpClient _httpClient;
+        private readonly IConfiguration _configuration;
         IMapper _mapper;
 
-        public TourService(IOrderService bookingService, ICategoryService categoryService, ITourRepository repository, IMapper mapper, CloudinaryService cloudinary, HttpClient httpClient)
+        public TourService(IOrderService bookingService, ICategoryService categoryService, ITourRepository repository, IMapper mapper, CloudinaryService cloudinary, HttpClient httpClient, IConfiguration configuration)
         {
             _repository = repository;
             _mapper = mapper;
             _cloudinary = cloudinary;
             _httpClient = httpClient;
+            _configuration = configuration;
             _categoryService = categoryService;
             _bookingService = bookingService;
         }
@@ -285,9 +288,9 @@ namespace TourAPI.Services.Implements
             await _repository.SaveChangesAsync();
         }
 
-        public async Task<PaginationDTO<ReadTourDTO>> GetByAdmin(int page, int pageSize, string? searchTerm = null)
+        public async Task<PaginationDTO<ReadTourDTO>> GetByAdmin(int page, int pageSize, string? searchTerm = null, int? managerId = null)
         {
-            var result = await _repository.GetByAdmin(page, pageSize, searchTerm);
+            var result = await _repository.GetByAdmin(page, pageSize, searchTerm, managerId);
             var list = _mapper.Map<List<ReadTourDTO>>(result.Tours);
             var allReviews = list.Where(t => t.Reviews != null).SelectMany(t => t.Reviews!).ToList();
             if (allReviews.Any())
@@ -475,5 +478,39 @@ namespace TourAPI.Services.Implements
             }
         }
 
+        public async Task ChangeManagerAsync(int tourId, int newManagerId, int updatedBy)
+        {
+            var tour = await _repository.GetById(tourId);
+            if (tour == null)
+            {
+                throw new Exception("Tour not found.");
+            }
+
+            var gatewayUrl = _configuration.GetValue<string>("GatewayApi:BaseUrl") ?? "https://localhost:7010";
+            
+            var response = await _httpClient.GetAsync($"{gatewayUrl}/api/users/{newManagerId}");
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Exception("User not found or you don't have permission to access this user.");
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<UserApiResponse>();
+            if (result?.Data == null)
+            {
+                throw new Exception("Invalid response from Auth API.");
+            }
+
+            if (result.Data.Roles == null || !result.Data.Roles.Contains("Manager"))
+            {
+                throw new Exception("Selected user is not a Manager.");
+            }
+
+            tour.CreatedBy = newManagerId;
+            tour.UpdatedBy = updatedBy;
+            tour.UpdatedAt = DateTime.UtcNow;
+
+            _repository.Update(tour);
+            await _repository.SaveChangesAsync();
+        }
     }
 }
