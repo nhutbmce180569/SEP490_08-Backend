@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TourAPI.Models;
 
 namespace TourAPI.Repositories.Implements
@@ -174,9 +174,17 @@ namespace TourAPI.Repositories.Implements
         public async Task<(List<Tour> Tours, int Total)> GetByAdmin(
             int page,
             int pageSize,
-            string? searchTerm = null)
+            string? searchTerm = null,
+            int? managerId = null)
         {
-            var query = ApplySearch(_context.Tours.AsNoTracking(), searchTerm)
+            var query = _context.Tours.AsNoTracking();
+
+            if (managerId.HasValue)
+            {
+                query = query.Where(t => t.CreatedBy == managerId.Value);
+            }
+
+            query = ApplySearch(query, searchTerm)
                 .OrderByDescending(t => t.Id);
 
             return await GetPagedTours(query, page, pageSize);
