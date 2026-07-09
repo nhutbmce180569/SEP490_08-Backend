@@ -8,7 +8,7 @@ namespace SocialAPI.Services
     {
         Task PingLocationAsync(int currentUserId, LocationPingDto dto);
         Task<IEnumerable<FriendLocationResponseDto>> GetLiveFriendsLocationsAsync(int currentUserId);
-        Task<IEnumerable<ScheduleMemberLocationDTO>> GetLiveScheduleLocationsAsync(int scheduleId);
+        Task<IEnumerable<LiveScheduleMemberLocationDto>> GetLiveScheduleLocationsAsync(int scheduleId);
         Task<string> GenerateTrackingTokenAsync(int currentUserId);
         Task<FriendLocationResponseDto> GetLocationByTrackingTokenAsync(string token);
         Task<IEnumerable<HeatPointDto>> GetHeatmapDataAsync(int? scheduleId, string type, int days);
