@@ -1,4 +1,4 @@
-﻿﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -37,11 +37,11 @@ namespace TourAPI.Controllers
         // GET: api/Tours/admin
         [HttpGet("admin")]
         [Authorize(Roles = "Admin")]
-        public async Task<ActionResult> GetAllToursForAdmin([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchTerm = null)
+        public async Task<ActionResult> GetAllToursForAdmin([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchTerm = null, [FromQuery] int? managerId = null)
         {
             try
             {
-                var list = await _tourService.GetByAdmin(page, pageSize, searchTerm);
+                var list = await _tourService.GetByAdmin(page, pageSize, searchTerm, managerId);
                 return Ok(list);
             }
             catch (Exception ex)
@@ -61,6 +61,29 @@ namespace TourAPI.Controllers
                 await _tourService.UpdateTourStatusAsync(id, request.Status);
 
                 return Ok(new { message = $"Tour status successfully updated to {request.Status}" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        // PUT: api/Tours/{id}/manager
+        [HttpPut("{id}/manager")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ChangeTourManager(int id, [FromBody] ChangeTourManagerRequest request)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (userId == null)
+                {
+                    return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
+                }
+
+                await _tourService.ChangeManagerAsync(id, request.ManagerId, userId.Value);
+
+                return Ok(new { message = "Tour manager successfully changed." });
             }
             catch (Exception ex)
             {
