@@ -54,10 +54,11 @@ public class IntelligentChatService : IIntelligentChatService
         // 1. Build initial contents history
         var contents = new JsonArray();
 
-        // Add history if present
+        // Add history if present (limit to last 6 messages to avoid hitting token limits)
         if (request.History != null && request.History.Count > 0)
         {
-            foreach (var h in request.History)
+            var historyToKeep = request.History.TakeLast(6).ToList();
+            foreach (var h in historyToKeep)
             {
                 var role = h.Role == "assistant" ? "model" : h.Role;
                 contents.Add(new JsonObject
