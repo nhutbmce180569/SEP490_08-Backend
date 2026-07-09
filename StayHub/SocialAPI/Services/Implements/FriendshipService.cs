@@ -142,6 +142,51 @@ public class FriendshipService : IFriendshipService
         }).ToList();
     }
 
+    public async Task<IEnumerable<FriendshipResponseDto>> GetSentRequestsAsync(int userId)
+    {
+        var requests = await _friendshipRepository.GetSentRequestsAsync(userId);
+        if (!requests.Any()) return new List<FriendshipResponseDto>();
+
+        var receiverIds = requests.Select(r => r.ReceiverId).Distinct().ToList();
+        var usersDict = new Dictionary<int, UserProfileShortDto>();
+
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("https://localhost:7001/api/users/batch", receiverIds);
+            if (response.IsSuccessStatusCode)
+            {
+                var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
+                if (apiResult?.Data != null)
+                {
+                    usersDict = apiResult.Data.ToDictionary(u => u.Id, u => u);
+                }
+            }
+        }
+        catch
+        {
+            // Intentionally swallowed
+        }
+
+        return requests.Select(f =>
+        {
+            var dto = _mapper.Map<FriendshipResponseDto>(f, opt => {
+                opt.Items["CurrentUserId"] = userId;
+            });
+
+            if (usersDict.TryGetValue(f.ReceiverId, out var userProfile))
+            {
+                dto.FullName = userProfile.FullName ?? "Anonymous user";
+                dto.AvatarUrl = userProfile.AvatarUrl;
+            }
+            else
+            {
+                dto.FullName = "Anonymous user";
+            }
+
+            return dto;
+        }).ToList();
+    }
+
     public async Task UpdateRequestStatusAsync(int userId, FriendRequestUpdateDto updateDto)
     {
         var friendship = await _friendshipRepository.GetByIdAsync(updateDto.RequestId);
