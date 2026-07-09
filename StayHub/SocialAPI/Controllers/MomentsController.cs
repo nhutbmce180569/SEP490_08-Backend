@@ -222,4 +222,30 @@ public class MomentsController : LocalizedControllerBase
             return StatusCode(500, new { message = M("AnErrorOccurredWhileFetchingUserMoments"), details = ex.Message });
         }
     }
+
+    [Authorize]
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetMomentById(int id)
+    {
+        try
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                              ?? User.FindFirst("sub")?.Value
+                              ?? User.FindFirst("id")?.Value;
+
+            if (!int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized(new { message = M("UserIDNotFoundInToken") });
+            }
+
+            var result = await _momentService.GetMomentByIdAsync(id, userId);
+            if (result == null) return NotFound(new { message = "Moment not found." });
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = M("AnErrorOccurredWhileFetchingMoments"), details = ex.Message });
+        }
+    }
 }
