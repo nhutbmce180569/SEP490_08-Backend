@@ -700,18 +700,31 @@ USE StayHub_SocialDb;
 GO
 
 -- 1. Bổ sung cột Status cho TourMoments với giá trị mặc định là 'Approved'
+-- FIX: Tách ADD COLUMN và ADD CONSTRAINT thành 2 batch riêng (dùng EXEC + GO)
+-- để tránh lỗi "Invalid column name 'Status'" do SQL Server compile cả block
+-- IF...BEGIN...END như 1 batch duy nhất, chưa kịp "thấy" cột vừa thêm.
 IF COL_LENGTH('TourMoments', 'Status') IS NULL
 BEGIN
-    ALTER TABLE TourMoments ADD Status VARCHAR(20) NOT NULL DEFAULT 'Approved';
-    ALTER TABLE TourMoments ADD CONSTRAINT CHK_TourMoments_Status CHECK (Status IN ('Approved', 'Pending', 'Flagged', 'Rejected'));
+    EXEC('ALTER TABLE TourMoments ADD Status VARCHAR(20) NOT NULL DEFAULT ''Approved''');
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CHK_TourMoments_Status')
+BEGIN
+    EXEC('ALTER TABLE TourMoments ADD CONSTRAINT CHK_TourMoments_Status CHECK (Status IN (''Approved'', ''Pending'', ''Flagged'', ''Rejected''))');
 END
 GO
 
 -- 2. Bổ sung cột Status cho MomentComments với giá trị mặc định là 'Approved'
 IF COL_LENGTH('MomentComments', 'Status') IS NULL
 BEGIN
-    ALTER TABLE MomentComments ADD Status VARCHAR(20) NOT NULL DEFAULT 'Approved';
-    ALTER TABLE MomentComments ADD CONSTRAINT CHK_MomentComments_Status CHECK (Status IN ('Approved', 'Pending', 'Flagged', 'Rejected'));
+    EXEC('ALTER TABLE MomentComments ADD Status VARCHAR(20) NOT NULL DEFAULT ''Approved''');
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CHK_MomentComments_Status')
+BEGIN
+    EXEC('ALTER TABLE MomentComments ADD CONSTRAINT CHK_MomentComments_Status CHECK (Status IN (''Approved'', ''Pending'', ''Flagged'', ''Rejected''))');
 END
 GO
 
