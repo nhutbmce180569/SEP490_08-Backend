@@ -25,6 +25,7 @@ public interface IMomentService
     Task<IEnumerable<MomentResponseDto>> GetMomentFeedWithUsersAsync(int? scheduleId, int currentUserId, int skip, int top);
     Task<IEnumerable<FootprintDto>> GetMyFootprintsAsync(int userId);
     Task<IEnumerable<UserMomentResponseDto>> GetUserMomentsAsync(int targetUserId, int currentUserId);
+    Task<MomentResponseDto?> GetMomentByIdAsync(int momentId, int currentUserId);
     
     // Kiểm duyệt nội dung
     Task ReportContentAsync(int reporterId, string contentType, int targetId, string reason, string? details);

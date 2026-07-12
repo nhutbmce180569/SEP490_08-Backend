@@ -140,7 +140,7 @@ namespace SocialAPI.Services.Implements
             }
         }
 
-        public async Task<IEnumerable<ScheduleMemberLocationDTO>> GetLiveScheduleLocationsAsync(int scheduleId)
+        public async Task<IEnumerable<LiveScheduleMemberLocationDto>> GetLiveScheduleLocationsAsync(int scheduleId)
         {
             if (scheduleId <= 0) return [];
 
@@ -169,7 +169,7 @@ namespace SocialAPI.Services.Implements
                 .ToArray();
             var redisValues = await db.StringGetAsync(redisKeys);
 
-            var liveLocations = new List<ScheduleMemberLocationDTO>();
+            var liveLocations = new List<LiveScheduleMemberLocationDto>();
             for (var i = 0; i < allUserIds.Count; i++)
             {
                 if (!redisValues[i].HasValue) continue; // chưa ping thì bỏ qua
@@ -177,7 +177,7 @@ namespace SocialAPI.Services.Implements
                 {
                     using var doc = JsonDocument.Parse(redisValues[i].ToString());
                     var root = doc.RootElement;
-                    liveLocations.Add(new ScheduleMemberLocationDTO
+                    liveLocations.Add(new LiveScheduleMemberLocationDto
                     {
                         UserId = allUserIds[i],
                         Lat = root.GetProperty("lat").GetDouble(),
