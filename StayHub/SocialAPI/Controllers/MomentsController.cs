@@ -14,6 +14,7 @@ namespace SocialAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class MomentsController : LocalizedControllerBase
 {
     private readonly IMomentService _momentService;
@@ -23,11 +24,26 @@ public class MomentsController : LocalizedControllerBase
         {_momentService = momentService;
     }
 
+    private int? GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                          ?? User.FindFirst("sub")?.Value
+                          ?? User.FindFirst("id")?.Value;
+
+        return int.TryParse(userIdClaim, out int userId) ? userId : null;
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateMoment([FromForm] MomentCreateDto dto)
     {
         try
         {
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue)
+            {
+                return Unauthorized(new { message = M("UserIDNotFoundInToken") });
+            }
+            dto.UserId = userId.Value;
             var result = await _momentService.CreateMomentAsync(dto);
             return StatusCode(201, result);
         }
@@ -41,24 +57,20 @@ public class MomentsController : LocalizedControllerBase
         }
     }
 
-    [Authorize]
     [HttpGet]
     // 💡 SỬA TẠI ĐÂY: Đổi int scheduleId thành int? scheduleId
     public async Task<IActionResult> GetMomentFeed([FromQuery] int? scheduleId, [FromQuery(Name = "$skip")] int skip = 0, [FromQuery(Name = "$top")] int top = 5)
     {
         try
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                              ?? User.FindFirst("sub")?.Value
-                              ?? User.FindFirst("id")?.Value;
-
-            if (!int.TryParse(userIdClaim, out int userId))
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue)
             {
                 return Unauthorized(new { message = M("UserIDNotFoundInToken") });
             }
 
             // Truyền scheduleId (nullable) xuống Service
-            var result = await _momentService.GetMomentFeedWithUsersAsync(scheduleId, userId, skip, top);
+            var result = await _momentService.GetMomentFeedWithUsersAsync(scheduleId, userId.Value, skip, top);
 
             Response.Headers.Add("Cache-Control", "no-store, no-cache, must-revalidate, post-check=0, pre-check=0");
             Response.Headers.Add("Pragma", "no-cache");
@@ -71,19 +83,18 @@ public class MomentsController : LocalizedControllerBase
         }
     }
 
-    [Authorize]
     [HttpGet("my-footprints")]
     public async Task<IActionResult> GetMyFootprints()
     {
         try
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!int.TryParse(userIdClaim, out int userId))
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue)
             {
                 return Unauthorized(new { message = M("UserIDNotFoundInToken") });
             }
 
-            var result = await _momentService.GetMyFootprintsAsync(userId);
+            var result = await _momentService.GetMyFootprintsAsync(userId.Value);
             return Ok(new { message = M("FootprintsRetrievedSuccessfully"), data = result });
         }
         catch (Exception ex)
@@ -97,6 +108,12 @@ public class MomentsController : LocalizedControllerBase
     {
         try
         {
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue)
+            {
+                return Unauthorized(new { message = M("UserIDNotFoundInToken") });
+            }
+            dto.UserId = userId.Value;
             await _momentService.ToggleReactionAsync(id, dto);
             return Ok(new { message = M("ReactionToggledSuccessfully") });
         }
@@ -115,6 +132,12 @@ public class MomentsController : LocalizedControllerBase
     {
         try
         {
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue)
+            {
+                return Unauthorized(new { message = M("UserIDNotFoundInToken") });
+            }
+            dto.UserId = userId.Value;
             var result = await _momentService.AddCommentAsync(id, dto);
             return StatusCode(201, result);
         }
@@ -137,6 +160,12 @@ public class MomentsController : LocalizedControllerBase
     {
         try
         {
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue)
+            {
+                return Unauthorized(new { message = M("UserIDNotFoundInToken") });
+            }
+            dto.UserId = userId.Value;
             var result = await _momentService.UpdateCommentAsync(cId, dto);
             return Ok(result);
         }
@@ -155,11 +184,16 @@ public class MomentsController : LocalizedControllerBase
     }
 
     [HttpDelete("comments/{cId}")]
-    public async Task<IActionResult> DeleteComment(int cId, [FromQuery] int userId)
+    public async Task<IActionResult> DeleteComment(int cId)
     {
         try
         {
-            await _momentService.DeleteCommentAsync(cId, userId);
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue)
+            {
+                return Unauthorized(new { message = M("UserIDNotFoundInToken") });
+            }
+            await _momentService.DeleteCommentAsync(cId, userId.Value);
             return Ok(new { message = M("CommentDeletedSuccessfully") });
         }
         catch (KeyNotFoundException ex)
@@ -177,11 +211,16 @@ public class MomentsController : LocalizedControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteMoment(int id, [FromQuery] int userId)
+    public async Task<IActionResult> DeleteMoment(int id)
     {
         try
         {
-            await _momentService.DeleteMomentAsync(id, userId);
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue)
+            {
+                return Unauthorized(new { message = M("UserIDNotFoundInToken") });
+            }
+            await _momentService.DeleteMomentAsync(id, userId.Value);
             return Ok(new { message = M("MomentDeletedSuccessfully") });
         }
         catch (KeyNotFoundException ex)
@@ -198,22 +237,18 @@ public class MomentsController : LocalizedControllerBase
         }
     }
 
-    [Authorize]
     [HttpGet("user/{targetUserId}")]
     public async Task<IActionResult> GetUserMoments(int targetUserId)
     {
         try
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                              ?? User.FindFirst("sub")?.Value
-                              ?? User.FindFirst("id")?.Value;
-
-            if (!int.TryParse(userIdClaim, out int currentUserId))
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue)
             {
                 return Unauthorized(new { message = M("UserIDNotFoundInToken") });
             }
 
-            var result = await _momentService.GetUserMomentsAsync(targetUserId, currentUserId);
+            var result = await _momentService.GetUserMomentsAsync(targetUserId, userId.Value);
 
             return Ok(new { message = M("UserMomentsRetrievedSuccessfully"), data = result });
         }
@@ -223,22 +258,18 @@ public class MomentsController : LocalizedControllerBase
         }
     }
 
-    [Authorize]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetMomentById(int id)
     {
         try
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                              ?? User.FindFirst("sub")?.Value
-                              ?? User.FindFirst("id")?.Value;
-
-            if (!int.TryParse(userIdClaim, out int userId))
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue)
             {
                 return Unauthorized(new { message = M("UserIDNotFoundInToken") });
             }
 
-            var result = await _momentService.GetMomentByIdAsync(id, userId);
+            var result = await _momentService.GetMomentByIdAsync(id, userId.Value);
             if (result == null) return NotFound(new { message = "Moment not found." });
 
             return Ok(result);
