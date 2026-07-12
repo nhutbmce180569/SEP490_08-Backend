@@ -17,6 +17,28 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StayHub.Common.Localization;
+// Load local environment variables from .env if present
+var currentDir = new System.IO.DirectoryInfo(AppContext.BaseDirectory);
+while (currentDir != null)
+{
+    var envPath = System.IO.Path.Combine(currentDir.FullName, ".env");
+    if (System.IO.File.Exists(envPath))
+    {
+        foreach (var line in System.IO.File.ReadAllLines(envPath))
+        {
+            if (string.IsNullOrWhiteSpace(line) || line.TrimStart().StartsWith("#")) continue;
+            var parts = line.Split('=', 2);
+            if (parts.Length == 2)
+            {
+                var key = parts[0].Trim();
+                var val = parts[1].Trim().Trim('"', '\'');
+                Environment.SetEnvironmentVariable(key, val);
+            }
+        }
+        break;
+    }
+    currentDir = currentDir.Parent;
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,16 +96,28 @@ builder.Services.AddScoped<IModelTrainingService, ModelTrainingService>();
 builder.Services.AddScoped<ITourSemanticSearchService, TourSemanticSearchService>();
 builder.Services.AddScoped<ITourRecommendationService, TourRecommendationService>();
 builder.Services.AddScoped<ITourAssistantService, TourAssistantService>();
-builder.Services.AddScoped<IIntelligentChatService, IntelligentChatService>();
-builder.Services.AddScoped<ICulturalKnowledgeService, CulturalKnowledgeService>();
-builder.Services.AddScoped<IPersonalizedTourRecommendationService, PersonalizedTourRecommendationService>();
-builder.Services.AddScoped<IRecommenderEvaluationService, RecommenderEvaluationService>();
-builder.Services.AddScoped<IGroundTruthLabelService, GroundTruthLabelService>();
-builder.Services.AddScoped<IUserStudyService, UserStudyService>();
-builder.Services.AddScoped<IUserStudyPilotSeeder, UserStudyPilotSeeder>();
-builder.Services.AddScoped<IPaperExportService, PaperExportService>();
-builder.Services.AddScoped<IInterRaterAgreementService, InterRaterAgreementService>();
-builder.Services.AddSingleton<IEvaluationResultsExporter, EvaluationResultsExporter>();
+        builder.Services.AddHttpClient();
+        builder.Services.AddScoped<AIAPI.Services.IntelligentChat.Prompts.IPromptBuilder, AIAPI.Services.IntelligentChat.Prompts.PromptBuilder>();
+        builder.Services.AddScoped<AIAPI.Services.IntelligentChat.Tools.ToolDefinitionFactory>();
+        builder.Services.AddScoped<AIAPI.Services.IntelligentChat.Providers.GeminiChatProvider>();
+        builder.Services.AddScoped<AIAPI.Services.IntelligentChat.Providers.HuggingFaceChatProvider>();
+        builder.Services.AddScoped<AIAPI.Services.IntelligentChat.Providers.IChatProviderFactory, AIAPI.Services.IntelligentChat.Providers.ChatProviderFactory>();
+
+        builder.Services.AddScoped<AIAPI.Services.IntelligentChat.Tools.IToolExecutor, AIAPI.Services.IntelligentChat.Tools.RecommendToursExecutor>();
+        builder.Services.AddScoped<AIAPI.Services.IntelligentChat.Tools.IToolExecutor, AIAPI.Services.IntelligentChat.Tools.SearchToursExecutor>();
+        builder.Services.AddScoped<AIAPI.Services.IntelligentChat.Tools.IToolExecutor, AIAPI.Services.IntelligentChat.Tools.GetTourismInsightsExecutor>();
+        builder.Services.AddScoped<AIAPI.Services.IntelligentChat.Tools.IToolExecutor, AIAPI.Services.IntelligentChat.Tools.GetWeatherForecastExecutor>();
+
+        builder.Services.AddScoped<IIntelligentChatService, IntelligentChatService>();
+        builder.Services.AddScoped<ICulturalKnowledgeService, CulturalKnowledgeService>();
+        builder.Services.AddScoped<IPersonalizedTourRecommendationService, PersonalizedTourRecommendationService>();
+        builder.Services.AddScoped<IRecommenderEvaluationService, RecommenderEvaluationService>();
+        builder.Services.AddScoped<IGroundTruthLabelService, GroundTruthLabelService>();
+        builder.Services.AddScoped<IUserStudyService, UserStudyService>();
+        builder.Services.AddScoped<IUserStudyPilotSeeder, UserStudyPilotSeeder>();
+        builder.Services.AddScoped<IPaperExportService, PaperExportService>();
+        builder.Services.AddScoped<IInterRaterAgreementService, InterRaterAgreementService>();
+        builder.Services.AddSingleton<IEvaluationResultsExporter, EvaluationResultsExporter>();
 
 builder.Services.Configure<HostOptions>(options =>
 {
