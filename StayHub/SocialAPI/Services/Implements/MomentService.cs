@@ -169,7 +169,7 @@ public class MomentService : IMomentService
         var moment = await _momentRepository.GetMomentByIdAsync(momentId);
         if (moment == null) throw new KeyNotFoundException("Moment not found.");
 
-        if (moment.UserId != userId) throw new UnauthorizedAccessException("You do not have the right to delete this comment.");
+        if (moment.UserId != userId) throw new UnauthorizedAccessException("You do not have the right to delete this moment.");
 
         await _momentRepository.DeleteMomentAsync(moment);
     }
@@ -457,5 +457,68 @@ public class MomentService : IMomentService
         }
 
         await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task<MomentResponseDto?> GetMomentByIdAsync(int momentId, int currentUserId)
+    {
+        var moment = await _momentRepository.GetMomentByIdAsync(momentId);
+        if (moment == null) return null;
+
+        // Xác thực quyền riêng tư dựa trên loại Privacy
+        if (moment.Privacy.Equals("Private", StringComparison.OrdinalIgnoreCase) && moment.UserId != currentUserId)
+        {
+            return null; 
+        }
+        if (moment.Privacy.Equals("Friend", StringComparison.OrdinalIgnoreCase) && moment.UserId != currentUserId)
+        {
+            var isFriend = await _friendshipRepository.CheckAreFriendsAsync(moment.UserId, currentUserId);
+            if (!isFriend)
+            {
+                return null;
+            }
+        }
+
+        var dto = _mapper.Map<MomentResponseDto>(moment);
+        
+        // Đánh dấu IsLikedByMe
+        dto.IsLikedByMe = moment.MomentReactions.Any(r => r.UserId == currentUserId && r.IsLike == true);
+
+        // Gom danh sách userIds để batch fetch thông tin
+        var userIds = new List<int> { dto.UserId };
+        userIds.AddRange(dto.Comments.Select(c => c.UserId));
+        userIds = userIds.Distinct().ToList();
+
+        var userProfiles = await FetchUserProfilesAsync(userIds);
+
+        // Gán thông tin tác giả moment
+        if (userProfiles.TryGetValue(dto.UserId, out var author))
+        {
+            dto.User = new MomentUserDto
+            {
+                Id = author.Id,
+                FullName = author.FullName ?? "Anonymous user",
+                AvatarUrl = author.AvatarUrl
+            };
+        }
+        else if (dto.User != null)
+        {
+            dto.User.FullName = "Anonymous user";
+        }
+
+        // Gán thông tin người bình luận
+        foreach (var c in dto.Comments)
+        {
+            if (userProfiles.TryGetValue(c.UserId, out var cu))
+            {
+                c.UserName = cu.FullName ?? "Anonymous user";
+                c.AvatarUrl = cu.AvatarUrl;
+            }
+            else
+            {
+                c.UserName = "Anonymous user";
+            }
+        }
+
+        return dto;
     }
 }

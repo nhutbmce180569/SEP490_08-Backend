@@ -101,6 +101,8 @@ namespace TourAPI.DTOs
     {
         public string FullName { get; set; } = null!;
         public string? AvatarUrl { get; set; }
+        public int Id { get; set; }
+        public List<string> Roles { get; set; } = new List<string>();
 
     }
 

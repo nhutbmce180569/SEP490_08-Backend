@@ -65,6 +65,14 @@ public class FriendshipsController : LocalizedControllerBase
         return Ok(requests);
     }
 
+    [HttpGet("sent")]
+    public async Task<IActionResult> GetSentRequests()
+    {
+        var userId = GetCurrentUserId();
+        var requests = await _friendshipService.GetSentRequestsAsync(userId);
+        return Ok(requests);
+    }
+
     [HttpPut("respond")]
     public async Task<IActionResult> RespondToRequest([FromBody] FriendRequestUpdateDto updateDto)
     {
