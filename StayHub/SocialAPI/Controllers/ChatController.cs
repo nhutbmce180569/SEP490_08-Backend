@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Localization;
 using StayHub.Common.Controllers;
 using StayHub.Common.Resources;
@@ -17,11 +18,23 @@ namespace SocialAPI.Controllers
     public class ChatController : LocalizedControllerBase
     {
         private readonly IChatService _chatService;
+        private readonly IConfiguration _configuration;
 
-        public ChatController(IChatService chatService, IStringLocalizer<Messages> localizer)
+        public ChatController(IChatService chatService, IConfiguration configuration, IStringLocalizer<Messages> localizer)
             : base(localizer)
         {
             _chatService = chatService;
+            _configuration = configuration;
+        }
+
+        private bool IsAuthorizedInternalRequest()
+        {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                return true;
+            }
+            var internalKey = Request.Headers["X-Internal-Key"].ToString();
+            return !string.IsNullOrEmpty(internalKey) && internalKey == _configuration["InternalApi:SecretKey"];
         }
 
         private int GetUserId()
@@ -231,6 +244,10 @@ namespace SocialAPI.Controllers
         {
             try
             {
+                if (!IsAuthorizedInternalRequest())
+                {
+                    return Unauthorized(new { message = "Internal authorization required." });
+                }
                 if (request == null)
                 {
                     return BadRequest(new { message = "Request body cannot be null." });
@@ -273,6 +290,10 @@ namespace SocialAPI.Controllers
         {
             try
             {
+                if (!IsAuthorizedInternalRequest())
+                {
+                    return Unauthorized(new { message = "Internal authorization required." });
+                }
                 if (request == null)
                 {
                     return BadRequest(new { message = "Request body cannot be null." });
