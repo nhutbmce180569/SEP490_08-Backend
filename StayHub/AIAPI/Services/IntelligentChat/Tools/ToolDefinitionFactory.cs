@@ -171,6 +171,28 @@ namespace AIAPI.Services.IntelligentChat.Tools
                                 },
                                 ["required"] = new JsonArray { "city" }
                             }
+                        },
+                        new JsonObject
+                        {
+                            ["name"] = "predict_hot_tours",
+                            ["description"] = "Dự đoán các tour du lịch có thể hot (nhiều người đặt) trong tương lai dựa trên dữ liệu tương tác người dùng, đánh giá và tính thời vụ. Cung cấp gợi ý tour cụ thể và loại tour tiềm năng cho Manager.",
+                            ["parameters"] = new JsonObject
+                            {
+                                ["type"] = "OBJECT",
+                                ["properties"] = new JsonObject
+                                {
+                                    ["targetMonth"] = new JsonObject
+                                    {
+                                        ["type"] = "INTEGER",
+                                        ["description"] = "Tháng dự đoán (1-12). Nếu không cung cấp, mặc định là tháng hiện tại hoặc tháng tới."
+                                    },
+                                    ["targetYear"] = new JsonObject
+                                    {
+                                        ["type"] = "INTEGER",
+                                        ["description"] = "Năm dự đoán. Ví dụ: 2024, 2025."
+                                    }
+                                }
+                            }
                         }
                     }
                 }
