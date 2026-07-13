@@ -107,6 +107,7 @@ builder.Services.AddScoped<ITourAssistantService, TourAssistantService>();
         builder.Services.AddScoped<AIAPI.Services.IntelligentChat.Tools.IToolExecutor, AIAPI.Services.IntelligentChat.Tools.SearchToursExecutor>();
         builder.Services.AddScoped<AIAPI.Services.IntelligentChat.Tools.IToolExecutor, AIAPI.Services.IntelligentChat.Tools.GetTourismInsightsExecutor>();
         builder.Services.AddScoped<AIAPI.Services.IntelligentChat.Tools.IToolExecutor, AIAPI.Services.IntelligentChat.Tools.GetWeatherForecastExecutor>();
+        builder.Services.AddScoped<AIAPI.Services.IntelligentChat.Tools.IToolExecutor, AIAPI.Services.IntelligentChat.Tools.PredictHotToursExecutor>();
 
         builder.Services.AddScoped<IIntelligentChatService, IntelligentChatService>();
         builder.Services.AddScoped<ICulturalKnowledgeService, CulturalKnowledgeService>();
