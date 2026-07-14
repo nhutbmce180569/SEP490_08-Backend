@@ -198,6 +198,7 @@ namespace AuthAPI.Controllers
             {
                 if (page <= 0) page = 1;
                 if (pageSize <= 0) pageSize = 10;
+                if (pageSize > 50) pageSize = 50; // Giới hạn tối đa để tránh DoS
 
                 if (string.IsNullOrWhiteSpace(query))
                 {
@@ -209,6 +210,17 @@ namespace AuthAPI.Controllers
                 }
 
                 var paginationResult = await _userService.SearchUsersAsync(query, page, pageSize, role);
+
+                var isStaffOrHigher = User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Staff");
+                if (!isStaffOrHigher && paginationResult.Data != null)
+                {
+                    foreach (var u in paginationResult.Data)
+                    {
+                        u.Email = string.Empty;
+                        u.PhoneNumber = null;
+                        u.Status = string.Empty;
+                    }
+                }
 
                 if (paginationResult.Total == 0)
                 {

@@ -23,6 +23,7 @@ namespace SocialAPI.Services.Implements
         private readonly IBookingApiClient _bookingApiClient;
         private readonly IHubContext<TrackingHub> _trackingHubContext;
         private readonly IAuthApiClient _authApiClient;
+        private readonly ITourApiClient _tourApiClient;
 
         public LocationService(
             StayHubSocialDbContext context,
@@ -31,7 +32,8 @@ namespace SocialAPI.Services.Implements
             IHubContext<FriendshipHub> hubContext,
             IHubContext<TrackingHub> trackingHubContext,
             IAuthApiClient authApiClient,
-            IBookingApiClient bookingApiClient)
+            IBookingApiClient bookingApiClient,
+            ITourApiClient tourApiClient)
         {
             _context = context;
             _redis = redis;
@@ -40,23 +42,36 @@ namespace SocialAPI.Services.Implements
             _trackingHubContext = trackingHubContext;
             _authApiClient = authApiClient;
             _bookingApiClient = bookingApiClient;
+            _tourApiClient = tourApiClient;
         }
 
-        public async Task PingLocationAsync(int currentUserId, LocationPingDto dto)
+        public async Task PingLocationAsync(int currentUserId, LocationPingDto dto, string userRole = "Customer")
         {
-            // 1. Lưu tọa độ vào DB
+            // Rate limit: 1 ping / giây / user (chống các client gọi liên tục)
+            var db = _redis.GetDatabase();
+            var rateLimitKey = $"ping_rl_{currentUserId}";
+            if (!await db.StringSetAsync(rateLimitKey, 1, TimeSpan.FromSeconds(1), When.NotExists))
+            {
+                return; // Bỏ qua ping nếu đã ping trong 1 giây vừa rồi
+            }
+
+            // 1. Lưu tọa độ vào DB (giới hạn tần suất ghi DB: tối đa 1 lần mỗi 30 giây cho mỗi user)
             try
             {
-                var locationLog = new LocationLog
+                var dbLogLimitKey = $"db_log_rl_{currentUserId}";
+                if (await db.StringSetAsync(dbLogLimitKey, 1, TimeSpan.FromSeconds(30), When.NotExists))
                 {
-                    UserId = currentUserId,
-                    Lat = dto.Lat,
-                    Lng = dto.Lng,
-                    ScheduleId = dto.ScheduleId ?? 0,
-                    Timestamp = DateTime.UtcNow
-                };
-                await _context.LocationLogs.AddAsync(locationLog);
-                await _context.SaveChangesAsync();
+                    var locationLog = new LocationLog
+                    {
+                        UserId = currentUserId,
+                        Lat = dto.Lat,
+                        Lng = dto.Lng,
+                        ScheduleId = dto.ScheduleId ?? 0,
+                        Timestamp = DateTime.UtcNow
+                    };
+                    await _context.LocationLogs.AddAsync(locationLog);
+                    await _context.SaveChangesAsync();
+                }
             }
             catch (Exception)
             {
@@ -64,7 +79,6 @@ namespace SocialAPI.Services.Implements
             }
 
             // 2. Lưu tọa độ mới nhất vào Redis (TTL 30 phút)
-            var db = _redis.GetDatabase();
             var redisKey = $"live_loc_{currentUserId}";
             var locData = new { lat = dto.Lat, lng = dto.Lng, lastUpdated = DateTime.UtcNow };
             var jsonLoc = JsonSerializer.Serialize(locData);
@@ -85,20 +99,14 @@ namespace SocialAPI.Services.Implements
 
             if (!friendIds.Any()) return;
 
-            // 4. Lấy Profile của currentUserId từ AuthAPI
+            // 4. Lấy Profile của currentUserId từ AuthAPI (dùng abstraction thay vì hardcode URL)
             var userProfile = new UserProfileShortDto { Id = currentUserId, FullName = "Anonymous", AvatarUrl = null };
             try
             {
-                using var client = _httpClientFactory.CreateClient();
-                var response = await client.PostAsJsonAsync("https://localhost:7001/api/users/batch", new List<int> { currentUserId });
-                if (response.IsSuccessStatusCode)
+                var profiles = await _authApiClient.GetUserProfilesAsync(new List<int> { currentUserId });
+                if (profiles.TryGetValue(currentUserId, out var profile))
                 {
-                    var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                    var profile = apiResult?.Data?.FirstOrDefault();
-                    if (profile != null)
-                    {
-                        userProfile = profile;
-                    }
+                    userProfile = profile;
                 }
             }
             catch
@@ -114,7 +122,8 @@ namespace SocialAPI.Services.Implements
                 AvatarUrl = userProfile.AvatarUrl,
                 Lat = dto.Lat,
                 Lng = dto.Lng,
-                LastUpdated = locData.lastUpdated
+                LastUpdated = locData.lastUpdated,
+                Role = userRole
             };
 
             foreach (var friendId in friendIds)
@@ -140,25 +149,63 @@ namespace SocialAPI.Services.Implements
             }
         }
 
-        public async Task<IEnumerable<LiveScheduleMemberLocationDto>> GetLiveScheduleLocationsAsync(int scheduleId)
+        public async Task<IEnumerable<LiveScheduleMemberLocationDto>> GetLiveScheduleLocationsAsync(int scheduleId, int userId, string userRole, string? bearerToken)
         {
             if (scheduleId <= 0) return [];
 
+            // 1. Lấy thông tin schedule từ TourAPI (staff & manager)
+            var metadata = await _tourApiClient.GetScheduleMetadataAsync(scheduleId, bearerToken);
+            if (metadata == null) return [];
+
+            // 2. Lấy danh sách customer đã đặt mua từ BookingAPI
+            var bookedCustomerIds = await _bookingApiClient.GetCustomerIdsByScheduleAsync(scheduleId);
+
+            // 3. Phân quyền và xác định đối tượng được phép hiển thị
+            bool isAuthorized = false;
+            var allowedUserIds = new HashSet<int>();
+
+            if (userRole == "Admin")
+            {
+                throw new UnauthorizedAccessException("Admin does not have map viewing capability.");
+            }
+            else if (metadata.TourCreatedBy == userId)
+            {
+                isAuthorized = true;
+                allowedUserIds.UnionWith(metadata.StaffIds); // Manager only sees Staff
+            }
+            else if (metadata.StaffIds.Contains(userId))
+            {
+                isAuthorized = true;
+                allowedUserIds.UnionWith(bookedCustomerIds); // Staff sees Customers
+                allowedUserIds.UnionWith(metadata.StaffIds); // ...and other Staff members
+            }
+            else if (bookedCustomerIds.Contains(userId))
+            {
+                isAuthorized = true;
+                allowedUserIds.UnionWith(metadata.StaffIds); // Customer sees Staff
+                allowedUserIds.UnionWith(bookedCustomerIds); // ...and other Customers on the tour
+                allowedUserIds.Add(userId);
+            }
+
+            if (!isAuthorized)
+            {
+                throw new UnauthorizedAccessException("You are not authorized to view live locations for this schedule.");
+            }
+
             var db = _redis.GetDatabase();
 
-            // Lấy từ cả 2 nguồn: Redis Set (đang ping) + BookingAPI (đã order)
+            // Lấy từ nguồn: Redis Set (đang ping trong schedule)
             var redisMembers = await db.SetMembersAsync($"schedule_live_{scheduleId}");
             var redisUserIds = redisMembers
                 .Select(m => int.TryParse(m.ToString(), out var id) ? id : -1)
                 .Where(id => id > 0)
                 .ToHashSet();
 
-            // Lấy thêm danh sách customer từ BookingAPI
-            var bookedCustomerIds = await _bookingApiClient.GetCustomerIdsByScheduleAsync(scheduleId);
-
-            // Merge — ưu tiên ai đang ping (Redis) nhưng cũng include ai đã book
+            // Merge — ưu tiên ai đang ping (Redis), include ai đã book và staff được phân công
             var allUserIds = redisUserIds
                 .Union(bookedCustomerIds)
+                .Union(metadata.StaffIds)
+                .Where(id => allowedUserIds.Contains(id))
                 .ToList();
 
             if (!allUserIds.Any()) return [];
@@ -200,6 +247,7 @@ namespace SocialAPI.Services.Implements
                     ? p.FullName ?? "Anonymous"
                     : "Anonymous";
                 loc.AvatarUrl = userProfiles.GetValueOrDefault(loc.UserId)?.AvatarUrl;
+                loc.Role = metadata.StaffIds.Contains(loc.UserId) ? "Staff" : "Customer";
             }
 
             return liveLocations;
@@ -254,20 +302,11 @@ namespace SocialAPI.Services.Implements
 
             if (!onlineFriendIds.Any()) return new List<FriendLocationResponseDto>();
 
-            // 3. Lấy Profile từ AuthAPI
+            // 3. Lấy Profile từ AuthAPI (dùng abstraction thay vì hardcode URL)
             var userProfiles = new Dictionary<int, UserProfileShortDto>();
             try
             {
-                using var client = _httpClientFactory.CreateClient();
-                var response = await client.PostAsJsonAsync("https://localhost:7001/api/users/batch", onlineFriendIds);
-                if (response.IsSuccessStatusCode)
-                {
-                    var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                    if (apiResult?.Data != null)
-                    {
-                        userProfiles = apiResult.Data.ToDictionary(u => u.Id, u => u);
-                    }
-                }
+                userProfiles = await _authApiClient.GetUserProfilesAsync(onlineFriendIds);
             }
             catch
             {

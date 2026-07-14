@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace SocialAPI.DTOs
 {
@@ -10,6 +10,7 @@ namespace SocialAPI.DTOs
         public double Lat { get; set; }
         public double Lng { get; set; }
         public DateTime LastUpdated { get; set; }
+        public string Role { get; set; } = "Customer";
     }
 
     public class LiveScheduleMemberLocationDto
@@ -20,6 +21,7 @@ namespace SocialAPI.DTOs
         public double Lat { get; set; }
         public double Lng { get; set; }
         public DateTime LastUpdated { get; set; }
+        public string Role { get; set; } = "Customer";
     }
 
     public class ScheduleMemberLocationDTO

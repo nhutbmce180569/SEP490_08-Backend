@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using AutoMapper;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Configuration;
 using SocialAPI.Hubs;
 using SocialAPI.DTOs;
 using SocialAPI.Models;
@@ -19,13 +20,15 @@ public class FriendshipService : IFriendshipService
     private readonly IMapper _mapper;
     private readonly HttpClient _httpClient;
     private readonly IHubContext<FriendshipHub> _hubContext;
+    private readonly string _authApiBase;
 
-    public FriendshipService(IFriendshipRepository friendshipRepository, IMapper mapper, HttpClient httpClient, IHubContext<FriendshipHub> hubContext)
+    public FriendshipService(IFriendshipRepository friendshipRepository, IMapper mapper, HttpClient httpClient, IHubContext<FriendshipHub> hubContext, IConfiguration configuration)
     {
         _friendshipRepository = friendshipRepository;
         _mapper = mapper;
         _httpClient = httpClient;
         _hubContext = hubContext;
+        _authApiBase = configuration["InternalApi:AuthApiBaseUrl"] ?? "https://localhost:7001";
     }
 
     public async Task<FriendshipResponseDto> SendRequestAsync(int requesterId, FriendRequestDto requestDto)
@@ -63,7 +66,7 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync("https://localhost:7001/api/users/batch", friendIds);
+            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch", friendIds);
             if (response.IsSuccessStatusCode)
             {
                 var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
@@ -107,7 +110,7 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync("https://localhost:7001/api/users/batch", requesterIds);
+            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch", requesterIds);
             if (response.IsSuccessStatusCode)
             {
                 var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
@@ -152,7 +155,7 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync("https://localhost:7001/api/users/batch", receiverIds);
+            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch", receiverIds);
             if (response.IsSuccessStatusCode)
             {
                 var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
@@ -196,6 +199,11 @@ public class FriendshipService : IFriendshipService
         if (friendship.ReceiverId != userId)
             throw new UnauthorizedAccessException("Only the receiver can accept or reject the friend request.");
 
+        // Whitelist guard: chỉ cho phép các giá trị hợp lệ, đề phòng pipeline bypass validator
+        var allowedStatuses = new[] { "Accepted", "Declined" };
+        if (!allowedStatuses.Contains(updateDto.Status, StringComparer.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Invalid status value. Allowed: 'Accepted', 'Declined'.");
+
         friendship.Status = updateDto.Status;
         await _friendshipRepository.UpdateAsync(friendship);
 
@@ -226,17 +234,23 @@ public class FriendshipService : IFriendshipService
 
         var friendIds = friends.Select(f => f.RequesterId == userId ? f.ReceiverId : f.RequesterId).Distinct().ToList();
 
-        var authApiUrl = "https://localhost:7001/api/users/batch"; 
-        var response = await _httpClient.PostAsJsonAsync(authApiUrl, friendIds);
-    
-        var userProfiles = new Dictionary<int, UserProfileShortDto>(); 
-        if (response.IsSuccessStatusCode)
+        var authApiUrl = $"{_authApiBase}/api/users/batch";
+        var userProfiles = new Dictionary<int, UserProfileShortDto>();
+        try
         {
-            var result = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-            if (result?.Data != null)
+            var response = await _httpClient.PostAsJsonAsync(authApiUrl, friendIds);
+            if (response.IsSuccessStatusCode)
             {
-                userProfiles = result.Data.ToDictionary(u => u.Id, u => u);
+                var result = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
+                if (result?.Data != null)
+                {
+                    userProfiles = result.Data.ToDictionary(u => u.Id, u => u);
+                }
             }
+        }
+        catch
+        {
+            // Intentionally swallowed: return friend list without profile names if AuthAPI is unavailable
         }
 
         var friendDtos = _mapper.Map<List<FriendshipResponseDto>>(friends, opt => 
@@ -275,7 +289,7 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync("https://localhost:7001/api/users/batch", new List<int> { dto.FriendId });
+            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch", new List<int> { dto.FriendId });
             if (response.IsSuccessStatusCode)
             {
                 var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();

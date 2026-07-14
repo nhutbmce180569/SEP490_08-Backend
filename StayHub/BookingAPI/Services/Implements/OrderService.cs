@@ -454,7 +454,9 @@ namespace BookingAPI.Services.Implements
                         $"Tour schedule ticket {detail.TourScheduleTicketId} is inactive.");
                 }
 
-                if (detail.UnitPrice.HasValue && detail.UnitPrice.Value != scheduleTicket.Price)
+                var effectivePrice = GetEffectivePrice(scheduleTicket.Price, scheduleTicket.Promotion);
+
+                if (detail.UnitPrice.HasValue && detail.UnitPrice.Value != effectivePrice)
                 {
                     throw new BookingValidationException(
                         "Ticket price has changed. Please return to the tour detail page to update the latest price.");
@@ -488,13 +490,42 @@ namespace BookingAPI.Services.Implements
                     TourScheduleTicketId = scheduleTicket.Id,
                     TicketTypeId = scheduleTicket.TicketTypeId,
                     Quantity = quantity,
-                    UnitPrice = scheduleTicket.Price,
-                    TotalPrice = scheduleTicket.Price * quantity,
+                    UnitPrice = effectivePrice,
+                    TotalPrice = effectivePrice * quantity,
                     Tickets = detail.Tickets
                 });
             }
 
             return result;
+        }
+
+        private long GetEffectivePrice(long basePrice, ReadPromotionDTO? promo)
+        {
+            if (promo == null || promo.Status != "Active")
+                return basePrice;
+
+            var now = DateTime.Now;
+            if (promo.StartDate > now || promo.EndDate < now)
+                return basePrice;
+
+            if (promo.DiscountValue <= 0)
+                return basePrice;
+
+            decimal discountAmount = 0;
+            if (promo.DiscountType == "PERCENTAGE")
+            {
+                discountAmount = basePrice * (promo.DiscountValue / 100);
+                if (promo.MaxDiscountAmount.HasValue && discountAmount > promo.MaxDiscountAmount.Value)
+                {
+                    discountAmount = promo.MaxDiscountAmount.Value;
+                }
+            }
+            else
+            {
+                discountAmount = promo.DiscountValue;
+            }
+
+            return Math.Max(0, basePrice - (long)discountAmount);
         }
 
         private async Task ReleaseOrderTicketsAsync(Order order)

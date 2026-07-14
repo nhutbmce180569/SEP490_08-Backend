@@ -87,7 +87,7 @@ public class MomentRepository : IMomentRepository
     public async Task<TourMoment?> GetMomentByIdAsync(int id)
     {
         return await _context.TourMoments
-            .Include(m => m.MomentComments)
+            .Include(m => m.MomentComments.Where(c => c.Status == "Approved"))
             .Include(m => m.MomentReactions)
             .FirstOrDefaultAsync(m => m.Id == id);
     }
@@ -113,6 +113,12 @@ public class MomentRepository : IMomentRepository
     public async Task RemoveReactionAsync(MomentReaction reaction)
     {
         _context.MomentReactions.Remove(reaction);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task UpdateReactionAsync(MomentReaction reaction)
+    {
+        _context.MomentReactions.Update(reaction);
         await _context.SaveChangesAsync();
     }
 
