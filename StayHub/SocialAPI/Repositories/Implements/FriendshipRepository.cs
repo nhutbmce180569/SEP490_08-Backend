@@ -96,4 +96,11 @@ public class FriendshipRepository : IFriendshipRepository
                 (f.RequesterId == user1 && f.ReceiverId == user2) ||
                 (f.RequesterId == user2 && f.ReceiverId == user1));
     }
+
+    public async Task<IEnumerable<Friendship>> GetSentRequestsAsync(int userId)
+    {
+        return await _context.Friendships
+            .Where(f => f.RequesterId == userId && f.Status == "Pending")
+            .ToListAsync();
+    }
 }

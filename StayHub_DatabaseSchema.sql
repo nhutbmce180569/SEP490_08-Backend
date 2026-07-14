@@ -509,7 +509,10 @@ CREATE TABLE ChatMembers (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     ChatRoomId INT NOT NULL FOREIGN KEY REFERENCES ChatRooms(Id),
     UserId INT NOT NULL, -- Logical FK -> IdentityDb.Users
-    JoinedAt DATETIME2 DEFAULT GETDATE()
+    JoinedAt DATETIME2 DEFAULT GETDATE(),
+    LastReadAt DATETIME2 NULL,
+    IsPinned BIT DEFAULT 0,
+    IsMuted BIT DEFAULT 0
 );
 
 CREATE TABLE ChatMessages (
@@ -530,6 +533,8 @@ CREATE TABLE TourMoments (
     Caption NVARCHAR(MAX),
     Lat FLOAT,
     Lng FLOAT,
+    Privacy VARCHAR(20) NOT NULL DEFAULT 'Public' CONSTRAINT CHK_MomentPrivacy CHECK (Privacy IN ('Public', 'Private', 'Friend')),
+    Status VARCHAR(20) NOT NULL DEFAULT 'Approved' CONSTRAINT CHK_TourMoments_Status CHECK (Status IN ('Approved', 'Pending', 'Flagged', 'Rejected')),
     CreatedAt DATETIME2 DEFAULT GETDATE()
 );
 
@@ -545,7 +550,21 @@ CREATE TABLE MomentComments (
     MomentId INT NOT NULL FOREIGN KEY REFERENCES TourMoments(Id),
     UserId INT NOT NULL, -- Logical FK -> IdentityDb.Users
     Comment NVARCHAR(MAX) NOT NULL,
+    Status VARCHAR(20) NOT NULL DEFAULT 'Approved' CONSTRAINT CHK_MomentComments_Status CHECK (Status IN ('Approved', 'Pending', 'Flagged', 'Rejected')),
     Timestamp DATETIME2 DEFAULT GETDATE()
+);
+
+CREATE TABLE ContentReports (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    ReporterId INT NOT NULL, -- Người báo cáo
+    ContentType VARCHAR(20) NOT NULL, -- 'Moment' hoặc 'Comment'
+    TargetId INT NOT NULL, -- ID của Moment hoặc Comment bị báo cáo
+    Reason NVARCHAR(255) NOT NULL, -- Lý do (Spam, Bạo lực, Ngôn từ kích động...)
+    Details NVARCHAR(500) NULL,
+    Status VARCHAR(20) DEFAULT 'Pending', -- Pending, Resolved, Dismissed
+    CreatedAt DATETIME2 DEFAULT GETDATE(),
+    ResolvedBy INT NULL, -- Staff/Manager xử lý duyệt
+    ResolvedAt DATETIME2 NULL
 );
 
 CREATE TABLE LocationLogs (
@@ -663,87 +682,6 @@ CREATE TABLE UserStudyResponses (
     CONSTRAINT UQ_UserStudyResponses_Session_Scenario UNIQUE (SessionId, ScenarioId),
     CONSTRAINT FK_UserStudyResponses_Assignment FOREIGN KEY (AssignmentId) REFERENCES UserStudyAssignments(Id)
 );
-GO
-USE StayHub_SocialDb;
-GO
-
--- Thêm cột Privacy với giá trị mặc định là 'Public'
-ALTER TABLE TourMoments
-ADD Privacy VARCHAR(20) DEFAULT 'Public';
-GO
-
--- (Tùy chọn) Thêm Ràng buộc (Constraint) để dữ liệu luôn chuẩn xác
-ALTER TABLE TourMoments
-ADD CONSTRAINT CHK_MomentPrivacy CHECK (Privacy IN ('Public', 'Private', 'Friend'));
-GO
-USE StayHub_SocialDb;
-GO
-USE StayHub_SocialDb;
-GO
-
--- Thêm cột lưu vết thời gian đọc tin nhắn cuối cùng
-ALTER TABLE ChatMembers 
-ADD LastReadAt DATETIME2 NULL;
-GO
-
--- Cập nhật dữ liệu cũ mặc định là thời điểm hiện tại để không bị lỗi null
-UPDATE ChatMembers 
-SET LastReadAt = GETUTCDATE() 
-WHERE LastReadAt IS NULL;
-GO
--- Thêm cột IsPinned và IsMuted cho bảng ChatMembers
-ALTER TABLE ChatMembers ADD IsPinned BIT DEFAULT 0;
-ALTER TABLE ChatMembers ADD IsMuted BIT DEFAULT 0;
-GO
--- Xong! Trả về database Master để hoàn tất.
-USE StayHub_SocialDb;
-GO
-
--- 1. Bổ sung cột Status cho TourMoments với giá trị mặc định là 'Approved'
--- FIX: Tách ADD COLUMN và ADD CONSTRAINT thành 2 batch riêng (dùng EXEC + GO)
--- để tránh lỗi "Invalid column name 'Status'" do SQL Server compile cả block
--- IF...BEGIN...END như 1 batch duy nhất, chưa kịp "thấy" cột vừa thêm.
-IF COL_LENGTH('TourMoments', 'Status') IS NULL
-BEGIN
-    EXEC('ALTER TABLE TourMoments ADD Status VARCHAR(20) NOT NULL DEFAULT ''Approved''');
-END
-GO
-
-IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CHK_TourMoments_Status')
-BEGIN
-    EXEC('ALTER TABLE TourMoments ADD CONSTRAINT CHK_TourMoments_Status CHECK (Status IN (''Approved'', ''Pending'', ''Flagged'', ''Rejected''))');
-END
-GO
-
--- 2. Bổ sung cột Status cho MomentComments với giá trị mặc định là 'Approved'
-IF COL_LENGTH('MomentComments', 'Status') IS NULL
-BEGIN
-    EXEC('ALTER TABLE MomentComments ADD Status VARCHAR(20) NOT NULL DEFAULT ''Approved''');
-END
-GO
-
-IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CHK_MomentComments_Status')
-BEGIN
-    EXEC('ALTER TABLE MomentComments ADD CONSTRAINT CHK_MomentComments_Status CHECK (Status IN (''Approved'', ''Pending'', ''Flagged'', ''Rejected''))');
-END
-GO
-
--- 3. Tạo bảng quản lý người dùng Báo cáo vi phạm (Report)
-IF OBJECT_ID('ContentReports', 'U') IS NULL
-BEGIN
-    CREATE TABLE ContentReports (
-        Id INT IDENTITY(1,1) PRIMARY KEY,
-        ReporterId INT NOT NULL, -- Người báo cáo
-        ContentType VARCHAR(20) NOT NULL, -- 'Moment' hoặc 'Comment'
-        TargetId INT NOT NULL, -- ID của Moment hoặc Comment bị báo cáo
-        Reason NVARCHAR(255) NOT NULL, -- Lý do (Spam, Bạo lực, Ngôn từ kích động...)
-        Details NVARCHAR(500) NULL,
-        Status VARCHAR(20) DEFAULT 'Pending', -- Pending, Resolved, Dismissed
-        CreatedAt DATETIME2 DEFAULT GETDATE(),
-        ResolvedBy INT NULL, -- Staff/Manager xử lý duyệt
-        ResolvedAt DATETIME2 NULL
-    );
-END
 GO
 USE master;
 GO
