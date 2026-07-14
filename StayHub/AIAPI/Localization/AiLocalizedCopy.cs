@@ -19,6 +19,13 @@ public interface IAiLocalizedCopy
     string QuestionBudget { get; }
     string QuestionHasElderly { get; }
     string QuestionHasChildren { get; }
+    string QuestionAdultCount { get; }
+    string QuestionChildrenCount { get; }
+    string QuestionElderlyCount { get; }
+    string QuestionTravelPace { get; }
+    string OptionPaceRelaxed { get; }
+    string OptionPaceModerate { get; }
+    string OptionPacePacked { get; }
     string QuestionInterests { get; }
     string OptionBeach { get; }
     string OptionCulture { get; }
@@ -142,6 +149,13 @@ public sealed class AiLocalizedCopy : IAiLocalizedCopy
     public string QuestionBudget => T("Max budget per person (VND)?", "Ngân sách tối đa/người (VND)?");
     public string QuestionHasElderly => T("Any elderly travelers?", "Có người cao tuổi đi cùng không?");
     public string QuestionHasChildren => T("Any children traveling?", "Có trẻ em đi cùng không?");
+    public string QuestionAdultCount => T("Number of adults", "Số lượng người lớn");
+    public string QuestionChildrenCount => T("Number of children (Under 12 years old)", "Số lượng trẻ em (Dưới 12 tuổi)");
+    public string QuestionElderlyCount => T("Number of elderly (Over 60 years old)", "Số lượng người cao tuổi (Trên 60 tuổi)");
+    public string QuestionTravelPace => T("Travel pace", "Nhịp độ chuyến đi");
+    public string OptionPaceRelaxed => T("Relaxed, gentle", "Thư giãn, nhẹ nhàng");
+    public string OptionPaceModerate => T("Balanced (Exploration & leisure)", "Cân bằng (Khám phá và nghỉ dưỡng)");
+    public string OptionPacePacked => T("Fast-paced, maximum exploration", "Lịch trình dày, khám phá tối đa");
     public string QuestionInterests => T("What are your travel interests?", "Sở thích du lịch của bạn là gì?");
     public string OptionBeach => T("Beach / Islands", "Biển / Đảo");
     public string OptionCulture => T("Culture & Heritage", "Văn hóa & Di sản");

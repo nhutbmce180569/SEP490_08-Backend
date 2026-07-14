@@ -1,4 +1,4 @@
-﻿
+
 using ContentAPI.DTOs;
 using ContentAPI.Helpers;
 using ContentAPI.Helpers.Implements;
@@ -28,6 +28,7 @@ namespace ContentAPI
 
             builder.Services.AddControllers().AddStayHubDataAnnotationsLocalization();
             builder.Services.AddStayHubLocalization();
+            builder.Services.AddSignalR();
 
 
             builder.Services.AddDbContext<StayHubContentDbContext>(options =>
@@ -134,6 +135,7 @@ namespace ContentAPI
 
 
             app.MapControllers();
+            app.MapHub<ContentAPI.Hubs.CategoryHub>("/hubs/categories");
 
             app.Run();
         }

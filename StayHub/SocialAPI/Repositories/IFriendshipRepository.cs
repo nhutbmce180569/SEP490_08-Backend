@@ -8,6 +8,7 @@ public interface IFriendshipRepository
 {
     Task<IEnumerable<Friendship>> GetFriendshipsByUserIdAsync(int userId);
     Task<IEnumerable<Friendship>> GetPendingRequestsAsync(int userId);
+    Task<IEnumerable<Friendship>> GetSentRequestsAsync(int userId);
     Task<Friendship> AddAsync(Friendship friendship);
     Task UpdateAsync(Friendship friendship);
     Task DeleteAsync(int id);
@@ -15,4 +16,5 @@ public interface IFriendshipRepository
     Task<Friendship?> GetByIdAsync(int id);
     Task<(List<Friendship> Friends, int Total)> GetFriendListPagedAsync(int userId, int page, int pageSize);
     Task<bool> CheckAreFriendsAsync(int userId1, int userId2);
+    Task<Friendship?> GetFriendshipBetweenUsersAsync(int user1, int user2);
 }

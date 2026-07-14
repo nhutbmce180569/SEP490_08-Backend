@@ -19,6 +19,7 @@ using SocialAPI.Repositories;
 using SocialAPI.Repositories.Implements;
 using SocialAPI.Services;
 using SocialAPI.Services.Implements;
+using SocialAPI.Helpers;
 using StayHub.Common.Localization;
 using StackExchange.Redis;
 using System.Text;
@@ -137,11 +138,21 @@ namespace SocialAPI
             builder.Services.AddScoped<ILocationService, LocationService>();
             builder.Services.AddScoped<IMomentRepository, MomentRepository>();
             builder.Services.AddScoped<ICloudStorageService, CloudStorageService>();
+            builder.Services.AddScoped<IContentModerator, ContentModerator>();
             builder.Services.AddScoped<IMomentService, MomentService>();
             builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
             builder.Services.AddScoped<IFriendshipService, FriendshipService>();
             builder.Services.AddScoped<IPlatformAnalyticsService, PlatformAnalyticsService>();
-
+            builder.Services.AddHttpClient<IBookingApiClient, BookingApiClient>(client =>
+            {
+                client.BaseAddress = new Uri(builder.Configuration["BookingApi:BaseUrl"]
+                    ?? "https://localhost:7002/");
+            });
+            builder.Services.AddHttpClient<ITourApiClient, TourApiClient>(client =>
+            {
+                client.BaseAddress = new Uri(builder.Configuration["TourApi:BaseUrl"]
+                    ?? "https://localhost:7005/");
+            });
             builder.Services.AddAutoMapper(cfg =>
             {
                 cfg.AddProfile<MappingProfile>();

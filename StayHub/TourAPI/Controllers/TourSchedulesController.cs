@@ -1,5 +1,7 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using TourAPI.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
@@ -16,18 +18,15 @@ namespace TourAPI.Controllers
     public class TourSchedulesController : LocalizedControllerBase
     {
         private readonly ITourScheduleService _scheduleService;
-        private readonly ITourScheduleStaffService _staffService;
         private readonly ITourAccessService _tourAccessService;
 
         public TourSchedulesController(
             ITourScheduleService scheduleService,
-            ITourScheduleStaffService staffService,
             ITourAccessService tourAccessService,
             IStringLocalizer<Messages> localizer)
             : base(localizer)
         {
             _scheduleService = scheduleService;
-            _staffService = staffService;
             _tourAccessService = tourAccessService;
         }
         [HttpGet]
@@ -217,6 +216,36 @@ namespace TourAPI.Controllers
             {
                 var result = await _scheduleService.GetSchedulesByIdsAsync(scheduleIds);
                 return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("{id}/internal-metadata")]
+        [Authorize(Roles = "Customer,Staff,Manager,Admin")]
+        public async Task<IActionResult> GetInternalScheduleMetadata(int id, [FromServices] StayHubCatalogDbContext context)
+        {
+            try
+            {
+                var schedule = await context.TourSchedules
+                    .Include(x => x.Tour)
+                    .Include(x => x.TourScheduleStaffs)
+                    .FirstOrDefaultAsync(x => x.Id == id);
+
+                if (schedule == null)
+                    return NotFound(new { message = "Schedule not found." });
+
+                var staffIds = schedule.TourScheduleStaffs?.Select(s => s.StaffId).ToList() ?? new List<int>();
+
+                return Ok(new
+                {
+                    ScheduleId = id,
+                    TourId = schedule.TourId,
+                    TourCreatedBy = schedule.Tour.CreatedBy,
+                    StaffIds = staffIds
+                });
             }
             catch (Exception ex)
             {

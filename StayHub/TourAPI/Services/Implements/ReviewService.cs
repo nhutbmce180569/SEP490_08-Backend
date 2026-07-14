@@ -28,7 +28,6 @@ namespace TourAPI.Services.Implements
         private readonly IMapper _mapper;
         private readonly HttpClient _httpClient;
         private readonly string _gatewayUrl;
-        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public ReviewService(
             IReviewRepository reviewRepository,
@@ -50,7 +49,6 @@ namespace TourAPI.Services.Implements
             _notificationInternalService = notificationInternalService;
             _mapper = mapper;
             _httpClient = httpClient;
-            _httpContextAccessor = httpContextAccessor;
             _gatewayUrl = configuration.GetValue<string>("GatewayApi:BaseUrl") ?? "https://localhost:7010";
             _httpClient.BaseAddress = new Uri(_gatewayUrl);
         }
@@ -68,7 +66,6 @@ namespace TourAPI.Services.Implements
             if (existingReview != null)
                 throw new Exception("You can only review this tour once.");
 
-            // ✅ Lấy tất cả scheduleIds của tour này
             var schedules = await _tourScheduleRepository.GetByTourIdAsync(model.TourId);
             if (schedules == null || !schedules.Any())
                 throw new Exception("This tour has no schedules.");

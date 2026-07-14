@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using StayHub.Common.Controllers;
@@ -43,7 +43,10 @@ namespace SocialAPI.Controllers
             try
             {
                 var userId = GetCurrentUserId();
-                await _locationService.PingLocationAsync(userId, dto);
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value
+                               ?? User.FindFirst("role")?.Value
+                               ?? (User.IsInRole("Admin") ? "Admin" : User.IsInRole("Manager") ? "Manager" : User.IsInRole("Staff") ? "Staff" : "Customer");
+                await _locationService.PingLocationAsync(userId, dto, userRole);
                 return Ok(new { message = M("LocationPingedSuccessfully") });
             }
             catch (Exception ex)
@@ -68,12 +71,24 @@ namespace SocialAPI.Controllers
         }
 
         [HttpGet("schedules/{scheduleId}/live")]
+        [Authorize(Roles = "Customer,Staff,Manager,Admin")]
         public async Task<IActionResult> GetLiveScheduleLocations(int scheduleId)
         {
             try
             {
-                var liveLocations = await _locationService.GetLiveScheduleLocationsAsync(scheduleId);
+                var userId = GetCurrentUserId();
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value
+                               ?? User.FindFirst("role")?.Value
+                               ?? (User.IsInRole("Admin") ? "Admin" : User.IsInRole("Manager") ? "Manager" : User.IsInRole("Staff") ? "Staff" : "Customer");
+
+                var bearerToken = Request.Headers["Authorization"].ToString();
+
+                var liveLocations = await _locationService.GetLiveScheduleLocationsAsync(scheduleId, userId, userRole, bearerToken);
                 return Ok(new { message = M("LiveScheduleLocationsRetrievedSuccessfully"), data = liveLocations });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { message = ex.Message });
             }
             catch (Exception ex)
             {
@@ -132,13 +147,13 @@ namespace SocialAPI.Controllers
             }
         }
 
-        // GET /api/locations/heatmap?scheduleId=&days=90
+        // GET /api/locations/heatmap?scheduleId=&type=online&days=90
         [HttpGet("heatmap")]
-        public async Task<IActionResult> GetHeatmap([FromQuery] int? scheduleId, [FromQuery] int days = 90)
+        public async Task<IActionResult> GetHeatmap([FromQuery] int? scheduleId, [FromQuery] string type = "online", [FromQuery] int days = 90)
         {
             try
             {
-                var data = await _locationService.GetHeatmapDataAsync(scheduleId, days);
+                var data = await _locationService.GetHeatmapDataAsync(scheduleId, type, days);
                 return Ok(new { message = M("HeatmapDataRetrievedSuccessfully"), data });
             }
             catch (Exception ex)

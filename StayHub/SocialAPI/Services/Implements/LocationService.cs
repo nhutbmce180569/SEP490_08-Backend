@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -20,8 +20,10 @@ namespace SocialAPI.Services.Implements
         private readonly IConnectionMultiplexer _redis;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IHubContext<FriendshipHub> _hubContext;
+        private readonly IBookingApiClient _bookingApiClient;
         private readonly IHubContext<TrackingHub> _trackingHubContext;
         private readonly IAuthApiClient _authApiClient;
+        private readonly ITourApiClient _tourApiClient;
 
         public LocationService(
             StayHubSocialDbContext context,
@@ -29,7 +31,9 @@ namespace SocialAPI.Services.Implements
             IHttpClientFactory httpClientFactory,
             IHubContext<FriendshipHub> hubContext,
             IHubContext<TrackingHub> trackingHubContext,
-            IAuthApiClient authApiClient)
+            IAuthApiClient authApiClient,
+            IBookingApiClient bookingApiClient,
+            ITourApiClient tourApiClient)
         {
             _context = context;
             _redis = redis;
@@ -37,23 +41,37 @@ namespace SocialAPI.Services.Implements
             _hubContext = hubContext;
             _trackingHubContext = trackingHubContext;
             _authApiClient = authApiClient;
+            _bookingApiClient = bookingApiClient;
+            _tourApiClient = tourApiClient;
         }
 
-        public async Task PingLocationAsync(int currentUserId, LocationPingDto dto)
+        public async Task PingLocationAsync(int currentUserId, LocationPingDto dto, string userRole = "Customer")
         {
-            // 1. Lưu tọa độ vào DB
+            // Rate limit: 1 ping / giây / user (chống các client gọi liên tục)
+            var db = _redis.GetDatabase();
+            var rateLimitKey = $"ping_rl_{currentUserId}";
+            if (!await db.StringSetAsync(rateLimitKey, 1, TimeSpan.FromSeconds(1), When.NotExists))
+            {
+                return; // Bỏ qua ping nếu đã ping trong 1 giây vừa rồi
+            }
+
+            // 1. Lưu tọa độ vào DB (giới hạn tần suất ghi DB: tối đa 1 lần mỗi 30 giây cho mỗi user)
             try
             {
-                var locationLog = new LocationLog
+                var dbLogLimitKey = $"db_log_rl_{currentUserId}";
+                if (await db.StringSetAsync(dbLogLimitKey, 1, TimeSpan.FromSeconds(30), When.NotExists))
                 {
-                    UserId = currentUserId,
-                    Lat = dto.Lat,
-                    Lng = dto.Lng,
-                    ScheduleId = dto.ScheduleId ?? 0,
-                    Timestamp = DateTime.UtcNow
-                };
-                await _context.LocationLogs.AddAsync(locationLog);
-                await _context.SaveChangesAsync();
+                    var locationLog = new LocationLog
+                    {
+                        UserId = currentUserId,
+                        Lat = dto.Lat,
+                        Lng = dto.Lng,
+                        ScheduleId = dto.ScheduleId ?? 0,
+                        Timestamp = DateTime.UtcNow
+                    };
+                    await _context.LocationLogs.AddAsync(locationLog);
+                    await _context.SaveChangesAsync();
+                }
             }
             catch (Exception)
             {
@@ -61,7 +79,6 @@ namespace SocialAPI.Services.Implements
             }
 
             // 2. Lưu tọa độ mới nhất vào Redis (TTL 30 phút)
-            var db = _redis.GetDatabase();
             var redisKey = $"live_loc_{currentUserId}";
             var locData = new { lat = dto.Lat, lng = dto.Lng, lastUpdated = DateTime.UtcNow };
             var jsonLoc = JsonSerializer.Serialize(locData);
@@ -82,20 +99,14 @@ namespace SocialAPI.Services.Implements
 
             if (!friendIds.Any()) return;
 
-            // 4. Lấy Profile của currentUserId từ AuthAPI
+            // 4. Lấy Profile của currentUserId từ AuthAPI (dùng abstraction thay vì hardcode URL)
             var userProfile = new UserProfileShortDto { Id = currentUserId, FullName = "Anonymous", AvatarUrl = null };
             try
             {
-                using var client = _httpClientFactory.CreateClient();
-                var response = await client.PostAsJsonAsync("https://localhost:7001/api/users/batch", new List<int> { currentUserId });
-                if (response.IsSuccessStatusCode)
+                var profiles = await _authApiClient.GetUserProfilesAsync(new List<int> { currentUserId });
+                if (profiles.TryGetValue(currentUserId, out var profile))
                 {
-                    var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                    var profile = apiResult?.Data?.FirstOrDefault();
-                    if (profile != null)
-                    {
-                        userProfile = profile;
-                    }
+                    userProfile = profile;
                 }
             }
             catch
@@ -111,7 +122,8 @@ namespace SocialAPI.Services.Implements
                 AvatarUrl = userProfile.AvatarUrl,
                 Lat = dto.Lat,
                 Lng = dto.Lng,
-                LastUpdated = locData.lastUpdated
+                LastUpdated = locData.lastUpdated,
+                Role = userRole
             };
 
             foreach (var friendId in friendIds)
@@ -137,50 +149,95 @@ namespace SocialAPI.Services.Implements
             }
         }
 
-        public async Task<IEnumerable<LiveScheduleMemberLocationDto>> GetLiveScheduleLocationsAsync(
-              int scheduleId)
+        public async Task<IEnumerable<LiveScheduleMemberLocationDto>> GetLiveScheduleLocationsAsync(int scheduleId, int userId, string userRole, string? bearerToken)
         {
             if (scheduleId <= 0) return [];
 
-            var db = _redis.GetDatabase();
-            var members = await db.SetMembersAsync($"schedule_live_{scheduleId}");
-            if (members is not { Length: > 0 }) return [];
+            // 1. Lấy thông tin schedule từ TourAPI (staff & manager)
+            var metadata = await _tourApiClient.GetScheduleMetadataAsync(scheduleId, bearerToken);
+            if (metadata == null) return [];
 
-            var onlineUserIds = members
+            // 2. Lấy danh sách customer đã đặt mua từ BookingAPI
+            var bookedCustomerIds = await _bookingApiClient.GetCustomerIdsByScheduleAsync(scheduleId);
+
+            // 3. Phân quyền và xác định đối tượng được phép hiển thị
+            bool isAuthorized = false;
+            var allowedUserIds = new HashSet<int>();
+
+            if (userRole == "Admin")
+            {
+                throw new UnauthorizedAccessException("Admin does not have map viewing capability.");
+            }
+            else if (metadata.TourCreatedBy == userId)
+            {
+                isAuthorized = true;
+                allowedUserIds.UnionWith(metadata.StaffIds); // Manager only sees Staff
+            }
+            else if (metadata.StaffIds.Contains(userId))
+            {
+                isAuthorized = true;
+                allowedUserIds.UnionWith(bookedCustomerIds); // Staff sees Customers
+                allowedUserIds.UnionWith(metadata.StaffIds); // ...and other Staff members
+            }
+            else if (bookedCustomerIds.Contains(userId))
+            {
+                isAuthorized = true;
+                allowedUserIds.UnionWith(metadata.StaffIds); // Customer sees Staff
+                allowedUserIds.UnionWith(bookedCustomerIds); // ...and other Customers on the tour
+                allowedUserIds.Add(userId);
+            }
+
+            if (!isAuthorized)
+            {
+                throw new UnauthorizedAccessException("You are not authorized to view live locations for this schedule.");
+            }
+
+            var db = _redis.GetDatabase();
+
+            // Lấy từ nguồn: Redis Set (đang ping trong schedule)
+            var redisMembers = await db.SetMembersAsync($"schedule_live_{scheduleId}");
+            var redisUserIds = redisMembers
                 .Select(m => int.TryParse(m.ToString(), out var id) ? id : -1)
                 .Where(id => id > 0)
+                .ToHashSet();
+
+            // Merge — ưu tiên ai đang ping (Redis), include ai đã book và staff được phân công
+            var allUserIds = redisUserIds
+                .Union(bookedCustomerIds)
+                .Union(metadata.StaffIds)
+                .Where(id => allowedUserIds.Contains(id))
                 .ToList();
 
-            if (!onlineUserIds.Any()) return [];
+            if (!allUserIds.Any()) return [];
 
-            // ✅ Batch lấy tất cả tọa độ từ Redis song song
-            var redisKeys = onlineUserIds
+            // Batch lấy tọa độ từ Redis
+            var redisKeys = allUserIds
                 .Select(id => (RedisKey)$"live_loc_{id}")
                 .ToArray();
             var redisValues = await db.StringGetAsync(redisKeys);
 
             var liveLocations = new List<LiveScheduleMemberLocationDto>();
-            for (var i = 0; i < onlineUserIds.Count; i++)
+            for (var i = 0; i < allUserIds.Count; i++)
             {
-                if (!redisValues[i].HasValue) continue;
+                if (!redisValues[i].HasValue) continue; // chưa ping thì bỏ qua
                 try
                 {
                     using var doc = JsonDocument.Parse(redisValues[i].ToString());
                     var root = doc.RootElement;
                     liveLocations.Add(new LiveScheduleMemberLocationDto
                     {
-                        UserId = onlineUserIds[i],
+                        UserId = allUserIds[i],
                         Lat = root.GetProperty("lat").GetDouble(),
                         Lng = root.GetProperty("lng").GetDouble(),
                         LastUpdated = root.GetProperty("lastUpdated").GetDateTime()
                     });
                 }
-                catch { /* bỏ qua dữ liệu lỗi */ }
+                catch { }
             }
 
             if (!liveLocations.Any()) return [];
 
-            // ✅ Gọi AuthApiClient
+            // Lấy profile từ AuthAPI
             var userProfiles = await _authApiClient.GetUserProfilesAsync(
                 liveLocations.Select(l => l.UserId));
 
@@ -190,6 +247,7 @@ namespace SocialAPI.Services.Implements
                     ? p.FullName ?? "Anonymous"
                     : "Anonymous";
                 loc.AvatarUrl = userProfiles.GetValueOrDefault(loc.UserId)?.AvatarUrl;
+                loc.Role = metadata.StaffIds.Contains(loc.UserId) ? "Staff" : "Customer";
             }
 
             return liveLocations;
@@ -244,20 +302,11 @@ namespace SocialAPI.Services.Implements
 
             if (!onlineFriendIds.Any()) return new List<FriendLocationResponseDto>();
 
-            // 3. Lấy Profile từ AuthAPI
+            // 3. Lấy Profile từ AuthAPI (dùng abstraction thay vì hardcode URL)
             var userProfiles = new Dictionary<int, UserProfileShortDto>();
             try
             {
-                using var client = _httpClientFactory.CreateClient();
-                var response = await client.PostAsJsonAsync("https://localhost:7001/api/users/batch", onlineFriendIds);
-                if (response.IsSuccessStatusCode)
-                {
-                    var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                    if (apiResult?.Data != null)
-                    {
-                        userProfiles = apiResult.Data.ToDictionary(u => u.Id, u => u);
-                    }
-                }
+                userProfiles = await _authApiClient.GetUserProfilesAsync(onlineFriendIds);
             }
             catch
             {
@@ -374,43 +423,103 @@ namespace SocialAPI.Services.Implements
                 return new List<FootprintDto>();
             }
         }
-        public async Task<IEnumerable<HeatPointDto>> GetHeatmapDataAsync(int? scheduleId, int days)
+        public async Task<IEnumerable<HeatPointDto>> GetHeatmapDataAsync(int? scheduleId, string type, int days)
         {
             try
             {
-                // Độ "thô" của lưới gom điểm:
-                //   3 chữ số ~ 111m  | 2 chữ số ~ 1.1km (gom rộng hơn, ít điểm hơn)
                 const int precision = 3;
 
-                if (days <= 0) days = 90;
-                var since = DateTime.UtcNow.AddDays(-days);
-
-                var query = _context.LocationLogs
-                    .AsNoTracking()
-                    .Where(x => x.Timestamp >= since);
-
-                if (scheduleId.HasValue && scheduleId.Value > 0)
+                if (type == "moments")
                 {
-                    query = query.Where(x => x.ScheduleId == scheduleId.Value);
+                    var momentsQuery = _context.TourMoments
+                        .AsNoTracking()
+                        .Where(x => x.Lat.HasValue && x.Lng.HasValue);
+
+                    if (scheduleId.HasValue && scheduleId.Value > 0)
+                    {
+                        momentsQuery = momentsQuery.Where(x => x.ScheduleId == scheduleId.Value);
+                    }
+
+                    var moments = await momentsQuery
+                        .GroupBy(x => new
+                        {
+                            LatBucket = Math.Round(x.Lat.Value, precision),
+                            LngBucket = Math.Round(x.Lng.Value, precision)
+                        })
+                        .Select(g => new HeatPointDto
+                        {
+                            Lat = g.Key.LatBucket,
+                            Lng = g.Key.LngBucket,
+                            Weight = g.Sum(x => 1 + x.MomentReactions.Count(r => r.IsLike == true) + x.MomentComments.Count * 2)
+                        })
+                        .ToListAsync();
+
+                    return moments;
                 }
+                else
+                {
+                    // Online users: latest position per active user within last 30 minutes
+                    var since = DateTime.UtcNow.AddMinutes(-30);
+                    var query = _context.LocationLogs
+                        .AsNoTracking()
+                        .Where(x => x.Timestamp >= since);
 
-                // GROUP BY ROUND(Lat,3), ROUND(Lng,3) -> COUNT(*)
-                // EF Core dịch Math.Round(double,int) thành ROUND() của SQL Server.
-                var points = await query
-                    .GroupBy(x => new
+                    if (scheduleId.HasValue && scheduleId.Value > 0)
                     {
-                        LatBucket = Math.Round(x.Lat, precision),
-                        LngBucket = Math.Round(x.Lng, precision)
-                    })
-                    .Select(g => new HeatPointDto
-                    {
-                        Lat = g.Key.LatBucket,
-                        Lng = g.Key.LngBucket,
-                        Weight = g.Count()
-                    })
-                    .ToListAsync();
+                        query = query.Where(x => x.ScheduleId == scheduleId.Value);
+                    }
 
-                return points;
+                    var logs = await query.ToListAsync();
+
+                    var points = logs
+                        .Where(x => x != null)
+                        .GroupBy(x => x.UserId)
+                        .Select(g => g.OrderByDescending(x => x.Timestamp).First())
+                        .GroupBy(x => new
+                        {
+                            LatBucket = Math.Round(x.Lat, precision),
+                            LngBucket = Math.Round(x.Lng, precision)
+                        })
+                        .Select(g => new HeatPointDto
+                        {
+                            Lat = g.Key.LatBucket,
+                            Lng = g.Key.LngBucket,
+                            Weight = g.Count()
+                        })
+                        .ToList();
+
+                    // Fallback to historic location logs if no users are online
+                    if (!points.Any())
+                    {
+                        if (days <= 0) days = 90;
+                        var fallbackSince = DateTime.UtcNow.AddDays(-days);
+
+                        var fallbackQuery = _context.LocationLogs
+                            .AsNoTracking()
+                            .Where(x => x.Timestamp >= fallbackSince);
+
+                        if (scheduleId.HasValue && scheduleId.Value > 0)
+                        {
+                            fallbackQuery = fallbackQuery.Where(x => x.ScheduleId == scheduleId.Value);
+                        }
+
+                        points = await fallbackQuery
+                            .GroupBy(x => new
+                            {
+                                LatBucket = Math.Round(x.Lat, precision),
+                                LngBucket = Math.Round(x.Lng, precision)
+                            })
+                            .Select(g => new HeatPointDto
+                            {
+                                Lat = g.Key.LatBucket,
+                                Lng = g.Key.LngBucket,
+                                Weight = g.Count()
+                            })
+                            .ToListAsync();
+                    }
+
+                    return points;
+                }
             }
             catch (Exception)
             {

@@ -21,16 +21,13 @@ namespace TourAPI.Controllers
     public class ReviewsController : LocalizedControllerBase
     {
         private readonly IReviewService _reviewService;
-        private readonly ITourAccessService _tourAccessService;
 
         public ReviewsController(
             IReviewService reviewService,
-            ITourAccessService tourAccessService,
             IStringLocalizer<Messages> localizer)
             : base(localizer)
         {
             _reviewService = reviewService;
-            _tourAccessService = tourAccessService;
         }
 
         private int GetCurrentUserId()
@@ -173,8 +170,6 @@ namespace TourAPI.Controllers
                 if (pageSize < 1) pageSize = 5;
 
                 var currentUserId = GetCurrentUserId();
-                //if (!await _tourAccessService.CanEditAsync(tourId, currentUserId, isAdmin: false))
-                //    return Forbid();
 
                 var result = await _reviewService.GetReviewsByManagerAsync(
                     currentUserId, tourId, page, pageSize, rating, sortOrder);
