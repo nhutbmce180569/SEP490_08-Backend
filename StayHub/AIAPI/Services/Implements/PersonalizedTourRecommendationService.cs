@@ -235,12 +235,32 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             .Select(g => g.First())
             .ToList();
 
+        if (!string.IsNullOrWhiteSpace(profile.PreferredCity))
+        {
+            var matchedCities = allCities
+                .Where(c => VietnameseTextNormalizer.CityEquals(c.City, profile.PreferredCity))
+                .ToList();
+            if (matchedCities.Count > 0)
+            {
+                allCities = matchedCities;
+            }
+        }
+
+        var semaphore = new SemaphoreSlim(4);
         var weatherTasks = allCities.Select(async tour => 
         {
-            Console.WriteLine($"[Weather Fetch] City={tour.City}, Lat={tour.Latitude}, Lng={tour.Longitude}");
-            var advice = await _weatherService.GetTravelWeatherAdviceAsync(
-                tour.City!, profile.PreferredStartDate, profile.PreferredEndDate, tour.Latitude, tour.Longitude, cancellationToken);
-            return (City: tour.City, Advice: advice);
+            await semaphore.WaitAsync(cancellationToken);
+            try
+            {
+                Console.WriteLine($"[Weather Fetch] City={tour.City}, Lat={tour.Latitude}, Lng={tour.Longitude}");
+                var advice = await _weatherService.GetTravelWeatherAdviceAsync(
+                    tour.City!, profile.PreferredStartDate, profile.PreferredEndDate, tour.Latitude, tour.Longitude, cancellationToken);
+                return (City: tour.City, Advice: advice);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
         });
 
         var weatherResults = await Task.WhenAll(weatherTasks);
