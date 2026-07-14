@@ -54,7 +54,7 @@ builder.Services.AddDbContext<StayHubAiDbContext>(options =>
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddTransient<AuthorizationHeaderHandler>();
-
+builder.Services.AddHttpClient<IReviewAnalysisService, ReviewAnalysisService>();
 builder.Services.AddHttpClient<IGatewayCatalogClient, GatewayCatalogClient>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(30);
