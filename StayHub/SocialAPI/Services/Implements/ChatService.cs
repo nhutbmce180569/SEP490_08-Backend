@@ -18,19 +18,24 @@ namespace SocialAPI.Services.Implements
         private readonly IChatRepository _chatRepository;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IHubContext<ChatHub> _hubContext;
-        private readonly ILogger<ChatService> _logger; // 💡 ĐÃ BỔ SUNG: Khai báo trường logger
+        private readonly ILogger<ChatService> _logger;
+        private readonly IAuthApiClient _authApiClient;
+        private readonly IFriendshipRepository _friendshipRepository;
 
-        // 💡 ĐÃ CẬP NHẬT: Tiêm ILogger<ChatService> vào Constructor
         public ChatService(
             IChatRepository chatRepository,
             IHttpClientFactory httpClientFactory,
             IHubContext<ChatHub> hubContext,
-            ILogger<ChatService> logger)
+            ILogger<ChatService> logger,
+            IAuthApiClient authApiClient,
+            IFriendshipRepository friendshipRepository)
         {
             _chatRepository = chatRepository;
             _httpClientFactory = httpClientFactory;
             _hubContext = hubContext;
             _logger = logger;
+            _authApiClient = authApiClient;
+            _friendshipRepository = friendshipRepository;
         }
 
         public async Task<List<ChatRoomDto>> GetUserChatRoomsAsync(int userId)
@@ -190,6 +195,38 @@ namespace SocialAPI.Services.Implements
                 throw new UnauthorizedAccessException("Sender is not a member of this chat room.");
             }
 
+            var chatRoom = await _chatRepository.GetChatRoomByIdAsync(dto.ChatRoomId);
+            if (chatRoom != null && (chatRoom.IsGroupChat == false || chatRoom.IsGroupChat == null))
+            {
+                var otherMember = chatRoom.ChatMembers.FirstOrDefault(m => m.UserId != senderId);
+                if (otherMember != null)
+                {
+                    int otherUserId = otherMember.UserId;
+                    bool areFriends = await _friendshipRepository.CheckAreFriendsAsync(senderId, otherUserId);
+                    if (!areFriends)
+                    {
+                        var profiles = await _authApiClient.GetUserProfilesAsync(new List<int> { senderId, otherUserId });
+                        bool isAllowed = false;
+
+                        if (profiles.TryGetValue(senderId, out var currentProfile) &&
+                            (currentProfile.RoleNames.Contains("Admin") || currentProfile.RoleNames.Contains("Manager") || currentProfile.RoleNames.Contains("Staff")))
+                        {
+                            isAllowed = true;
+                        }
+                        else if (profiles.TryGetValue(otherUserId, out var otherProfile) &&
+                            (otherProfile.RoleNames.Contains("Admin") || otherProfile.RoleNames.Contains("Manager") || otherProfile.RoleNames.Contains("Staff")))
+                        {
+                            isAllowed = true;
+                        }
+
+                        if (!isAllowed)
+                        {
+                            throw new InvalidOperationException("You can no longer chat with this user because you are not friends.");
+                        }
+                    }
+                }
+            }
+
             var chatMessage = new ChatMessage
             {
                 ChatRoomId = dto.ChatRoomId,
@@ -243,6 +280,29 @@ namespace SocialAPI.Services.Implements
 
             if (room == null)
             {
+                bool areFriends = await _friendshipRepository.CheckAreFriendsAsync(currentUserId, friendId);
+                if (!areFriends)
+                {
+                    var profiles = await _authApiClient.GetUserProfilesAsync(new List<int> { currentUserId, friendId });
+                    bool isAllowed = false;
+
+                    if (profiles.TryGetValue(currentUserId, out var currentProfile) &&
+                        (currentProfile.RoleNames.Contains("Admin") || currentProfile.RoleNames.Contains("Manager") || currentProfile.RoleNames.Contains("Staff")))
+                    {
+                        isAllowed = true;
+                    }
+                    else if (profiles.TryGetValue(friendId, out var friendProfile) &&
+                        (friendProfile.RoleNames.Contains("Admin") || friendProfile.RoleNames.Contains("Manager") || friendProfile.RoleNames.Contains("Staff")))
+                    {
+                        isAllowed = true;
+                    }
+
+                    if (!isAllowed)
+                    {
+                        throw new InvalidOperationException("You can only chat with friends, Staff, Managers, or Admins.");
+                    }
+                }
+
                 room = await _chatRepository.CreateDirectChatRoomAsync(currentUserId, friendId);
             }
 
@@ -514,6 +574,64 @@ namespace SocialAPI.Services.Implements
             member.LastReadAt = latestMessageTime ?? DateTime.UtcNow;
 
             await _chatRepository.UpdateMemberAsync(member);
+        }
+
+        public async Task<bool> RemoveMemberByScheduleAsync(int scheduleId, int userId)
+        {
+            try
+            {
+                var room = await _chatRepository.GetChatRoomByScheduleIdAsync(scheduleId);
+                if (room == null)
+                {
+                    return false;
+                }
+
+                var isMember = room.ChatMembers?.Any(cm => cm.UserId == userId) ?? false;
+                if (!isMember)
+                {
+                    isMember = await _chatRepository.IsUserInRoomAsync(room.Id, userId);
+                }
+
+                if (!isMember)
+                {
+                    return false;
+                }
+
+                await _chatRepository.LeaveRoomAsync(room.Id, userId);
+
+                var systemMessage = new ChatMessage
+                {
+                    ChatRoomId = room.Id,
+                    SenderId = 0,
+                    Content = "A member has been removed from the team.",
+                    IsRead = false,
+                    SentAt = DateTime.UtcNow
+                };
+
+                var savedMsg = await _chatRepository.SaveMessageAsync(systemMessage);
+
+                var savedMsgDto = new ChatMessageDto
+                {
+                    Id = savedMsg.Id,
+                    ChatRoomId = savedMsg.ChatRoomId,
+                    SenderId = savedMsg.SenderId,
+                    SenderName = "System",
+                    SenderAvatar = "https://cdn.stayhub.vn/avatars/system.png",
+                    Content = savedMsg.Content,
+                    IsRead = savedMsg.IsRead ?? false,
+                    SentAt = savedMsg.SentAt ?? DateTime.UtcNow
+                };
+
+                await _hubContext.Clients.Group(room.Id.ToString()).SendAsync("ReceiveMessage", savedMsgDto);
+                await _hubContext.Clients.User(userId.ToString()).SendAsync("RoomRemoved", room.Id);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error removing member {userId} from schedule chat room for schedule {scheduleId}");
+                return false;
+            }
         }
     }
 }

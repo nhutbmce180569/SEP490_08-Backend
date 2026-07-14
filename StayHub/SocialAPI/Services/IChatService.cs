@@ -19,5 +19,6 @@ namespace SocialAPI.Services
         Task<bool> AddMembersByScheduleAsync(int scheduleId, List<int> userIds);
         Task<List<UserProfileShortDto>> GetRoomMembersAsync(int roomId);
         Task MarkRoomAsReadAsync(int userId, int roomId);
+        Task<bool> RemoveMemberByScheduleAsync(int scheduleId, int userId);
     }
 }

@@ -46,26 +46,44 @@ public class TourAiWarmupBackgroundService : BackgroundService
         var systemKnowledge = scope.ServiceProvider.GetRequiredService<ISystemKnowledgeIndex>();
         systemKnowledge.Initialize();
 
-        try
-        {
-            await catalogSync.SyncCatalogAsync(stoppingToken);
+        int retryCount = 0;
+        int maxRetries = 12; // Try for 1 minute (12 * 5 seconds)
+        bool ready = false;
 
-            if (_settings.RetrainOnStartupIfMissing || !registry.Status.IsReady)
+        while (!ready && retryCount < maxRetries && !stoppingToken.IsCancellationRequested)
+        {
+            try
             {
-                _logger.LogInformation("Training ML.NET tour assistant models...");
-                await training.RetrainAsync(stoppingToken);
-                _logger.LogInformation("ML.NET tour assistant models are ready.");
+                await catalogSync.SyncCatalogAsync(stoppingToken);
+
+                if (_settings.RetrainOnStartupIfMissing || !registry.Status.IsReady)
+                {
+                    _logger.LogInformation("Training ML.NET tour assistant models...");
+                    await training.RetrainAsync(stoppingToken);
+                    _logger.LogInformation("ML.NET tour assistant models are ready.");
+                }
+                else
+                {
+                    var catalogStore = scope.ServiceProvider.GetRequiredService<ICatalogStore>();
+                    registry.AttachCatalogVectors(catalogStore.Tours, catalogStore.TourismItems);
+                    _logger.LogInformation("Loaded ML models from disk and attached catalog vectors.");
+                }
+                ready = true;
             }
-            else
+            catch (Exception ex)
             {
-                var catalogStore = scope.ServiceProvider.GetRequiredService<ICatalogStore>();
-                registry.AttachCatalogVectors(catalogStore.Tours, catalogStore.TourismItems);
-                _logger.LogInformation("Loaded ML models from disk and attached catalog vectors.");
+                retryCount++;
+                _logger.LogWarning(ex, "Initial AI warmup failed (attempt {RetryCount}/{MaxRetries}). Retrying in 5 seconds...", retryCount, maxRetries);
+                if (retryCount < maxRetries)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                }
             }
         }
-        catch (Exception ex)
+
+        if (!ready)
         {
-            _logger.LogWarning(ex, "Initial AI warmup failed. Service will retry on next sync interval.");
+            _logger.LogError("Initial AI warmup failed completely after {MaxRetries} attempts. Catalog sync will resume periodically.", maxRetries);
         }
 
         while (!stoppingToken.IsCancellationRequested)

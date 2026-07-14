@@ -28,7 +28,8 @@ namespace TourAPI.Repositories
         Task<(List<Tour> Tours, int Total)> GetByAdmin(
             int page,
             int pageSize,
-            string? searchTerm = null);
+            string? searchTerm = null,
+            int? managerId = null);
         Task<(List<Tour> Tours, int Total)> GetByManager(
             int managerId,
             int page,

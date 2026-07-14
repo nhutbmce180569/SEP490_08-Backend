@@ -1,4 +1,4 @@
-﻿using AuthAPI.DTOs;
+using AuthAPI.DTOs;
 using AuthAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -101,14 +101,21 @@ namespace AuthAPI.Controllers
                 return BadRequest(new { message = M("InvalidInputData") });
             }
 
-            var isSuccess = await _userService.UpdateUserProfile(id, updateUserDTO);
-
-            if (!isSuccess)
+            try
             {
-                return NotFound(new { message = M("UserNotFound") });
-            }
+                var isSuccess = await _userService.UpdateUserProfile(id, updateUserDTO);
 
-            return Ok(new { message = M("UserUpdatedSuccessfullyExistingSessionsForThisUserHaveBeen") });
+                if (!isSuccess)
+                {
+                    return NotFound(new { message = M("UserNotFound") });
+                }
+
+                return Ok(new { message = M("UserUpdatedSuccessfullyExistingSessionsForThisUserHaveBeen") });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         // DELETE: api/users/{id}
@@ -116,14 +123,21 @@ namespace AuthAPI.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            var isSuccess = await _userService.DeleteUser(id);
-
-            if (!isSuccess)
+            try
             {
-                return NotFound(new { message = M("UserNotFound") });
-            }
+                var isSuccess = await _userService.DeleteUser(id);
 
-            return Ok(new { message = M("UserDeletedSuccessfully") });
+                if (!isSuccess)
+                {
+                    return NotFound(new { message = M("UserNotFound") });
+                }
+
+                return Ok(new { message = M("UserDeletedSuccessfully") });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         // POST: api/users/batch
@@ -184,6 +198,7 @@ namespace AuthAPI.Controllers
             {
                 if (page <= 0) page = 1;
                 if (pageSize <= 0) pageSize = 10;
+                if (pageSize > 50) pageSize = 50; // Giới hạn tối đa để tránh DoS
 
                 if (string.IsNullOrWhiteSpace(query))
                 {
@@ -195,6 +210,17 @@ namespace AuthAPI.Controllers
                 }
 
                 var paginationResult = await _userService.SearchUsersAsync(query, page, pageSize, role);
+
+                var isStaffOrHigher = User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Staff");
+                if (!isStaffOrHigher && paginationResult.Data != null)
+                {
+                    foreach (var u in paginationResult.Data)
+                    {
+                        u.Email = string.Empty;
+                        u.PhoneNumber = null;
+                        u.Status = string.Empty;
+                    }
+                }
 
                 if (paginationResult.Total == 0)
                 {
@@ -294,6 +320,7 @@ namespace AuthAPI.Controllers
 
         // GET: api/users/{id}/profile
         [HttpGet("{id}/profile")]
+        [Authorize]
         public async Task<IActionResult> GetUserProfile(int id)
         {
             var profile = await _userService.GetUserProfileAsync(id);

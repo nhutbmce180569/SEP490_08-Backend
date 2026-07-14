@@ -31,6 +31,34 @@ public class TourSemanticSearchService : ITourSemanticSearchService
 
         var parsed = _entityExtractor.Merge(_entityExtractor.Extract(request.Query, _catalogStore), request);
         var filter = BuildFilter(parsed);
+
+        Console.WriteLine($"[Debug SearchAsync] Query: '{request.Query}', City: '{request.City}', StartDate: '{request.StartDate}', EndDate: '{request.EndDate}', Top: {request.Top}");
+        Console.WriteLine($"[Debug SearchAsync] Parsed City: '{parsed.City}', StartDate: '{parsed.StartDate}', EndDate: '{parsed.EndDate}', MinPrice: '{parsed.MinPrice}', MaxPrice: '{parsed.MaxPrice}', DurationDays: '{parsed.DurationDays}'");
+        Console.WriteLine($"[Debug SearchAsync] Catalog tours count: {_catalogStore.Tours.Count}");
+
+        int matchingFilterCount = 0;
+        foreach (var tour in _catalogStore.Tours)
+        {
+            var categoryMatch = !parsed.CategoryId.HasValue || tour.CategoryId == parsed.CategoryId.Value;
+            var countryMatch = string.IsNullOrWhiteSpace(parsed.Country) || string.Equals(tour.Country, parsed.Country, StringComparison.OrdinalIgnoreCase);
+            var cityMatch = string.IsNullOrWhiteSpace(parsed.City) || VietnameseTextNormalizer.CityEquals(tour.City, parsed.City);
+            var priceMatch = (!parsed.MinPrice.HasValue || (tour.MaxPrice.HasValue && tour.MaxPrice.Value >= parsed.MinPrice.Value)) &&
+                             (!parsed.MaxPrice.HasValue || (tour.MinPrice.HasValue && tour.MinPrice.Value <= parsed.MaxPrice.Value));
+            var durationMatch = !parsed.DurationDays.HasValue || (tour.DurationDays.HasValue && tour.DurationDays.Value == parsed.DurationDays.Value);
+            var startMatch = !parsed.StartDate.HasValue || !tour.NextDeparture.HasValue || tour.NextDeparture.Value.Date >= parsed.StartDate.Value.Date;
+            var endMatch = !parsed.EndDate.HasValue || !tour.NextDeparture.HasValue || tour.NextDeparture.Value.Date <= parsed.EndDate.Value.Date;
+            
+            var pass = categoryMatch && countryMatch && cityMatch && priceMatch && durationMatch && startMatch && endMatch;
+            if (pass) matchingFilterCount++;
+            
+            if (tour.City != null && tour.City.Contains("Nha Trang", StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine($"[Debug Tour] TourId: {tour.Id}, Name: '{tour.Name}', City: '{tour.City}', MinPrice: {tour.MinPrice}, MaxPrice: {tour.MaxPrice}, NextDeparture: {tour.NextDeparture}");
+                Console.WriteLine($"  cityMatch: {cityMatch}, priceMatch: {priceMatch}, durationMatch: {durationMatch}, startMatch: {startMatch}, endMatch: {endMatch} -> Pass: {pass}");
+            }
+        }
+        Console.WriteLine($"[Debug SearchAsync] Total matching filter count: {matchingFilterCount}");
+
         var semanticMatches = _modelRegistry.SearchTours(request.Query, request.Top * 3, filter);
 
         var keywordMatches = KeywordFallback(request.Query, parsed, request.Top * 3);

@@ -55,8 +55,9 @@ public class FriendshipRepository : IFriendshipRepository
     public async Task<bool> CheckExistingFriendship(int user1, int user2)
     {
         return await _context.Friendships.AnyAsync(f =>
-            (f.RequesterId == user1 && f.ReceiverId == user2) ||
-            (f.RequesterId == user2 && f.ReceiverId == user1));
+            ((f.RequesterId == user1 && f.ReceiverId == user2) ||
+             (f.RequesterId == user2 && f.ReceiverId == user1)) &&
+            (f.Status == "Pending" || f.Status == "Accepted"));
     }
 
     public async Task<Friendship?> GetByIdAsync(int id)
@@ -87,5 +88,20 @@ public class FriendshipRepository : IFriendshipRepository
             f.Status == "Accepted" &&
             ((f.RequesterId == userId1 && f.ReceiverId == userId2) ||
              (f.RequesterId == userId2 && f.ReceiverId == userId1)));
+    }
+
+    public async Task<Friendship?> GetFriendshipBetweenUsersAsync(int user1, int user2)
+    {
+        return await _context.Friendships
+            .FirstOrDefaultAsync(f =>
+                (f.RequesterId == user1 && f.ReceiverId == user2) ||
+                (f.RequesterId == user2 && f.ReceiverId == user1));
+    }
+
+    public async Task<IEnumerable<Friendship>> GetSentRequestsAsync(int userId)
+    {
+        return await _context.Friendships
+            .Where(f => f.RequesterId == userId && f.Status == "Pending")
+            .ToListAsync();
     }
 }
