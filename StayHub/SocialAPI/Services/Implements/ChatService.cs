@@ -575,5 +575,63 @@ namespace SocialAPI.Services.Implements
 
             await _chatRepository.UpdateMemberAsync(member);
         }
+
+        public async Task<bool> RemoveMemberByScheduleAsync(int scheduleId, int userId)
+        {
+            try
+            {
+                var room = await _chatRepository.GetChatRoomByScheduleIdAsync(scheduleId);
+                if (room == null)
+                {
+                    return false;
+                }
+
+                var isMember = room.ChatMembers?.Any(cm => cm.UserId == userId) ?? false;
+                if (!isMember)
+                {
+                    isMember = await _chatRepository.IsUserInRoomAsync(room.Id, userId);
+                }
+
+                if (!isMember)
+                {
+                    return false;
+                }
+
+                await _chatRepository.LeaveRoomAsync(room.Id, userId);
+
+                var systemMessage = new ChatMessage
+                {
+                    ChatRoomId = room.Id,
+                    SenderId = 0,
+                    Content = "A member has been removed from the team.",
+                    IsRead = false,
+                    SentAt = DateTime.UtcNow
+                };
+
+                var savedMsg = await _chatRepository.SaveMessageAsync(systemMessage);
+
+                var savedMsgDto = new ChatMessageDto
+                {
+                    Id = savedMsg.Id,
+                    ChatRoomId = savedMsg.ChatRoomId,
+                    SenderId = savedMsg.SenderId,
+                    SenderName = "System",
+                    SenderAvatar = "https://cdn.stayhub.vn/avatars/system.png",
+                    Content = savedMsg.Content,
+                    IsRead = savedMsg.IsRead ?? false,
+                    SentAt = savedMsg.SentAt ?? DateTime.UtcNow
+                };
+
+                await _hubContext.Clients.Group(room.Id.ToString()).SendAsync("ReceiveMessage", savedMsgDto);
+                await _hubContext.Clients.User(userId.ToString()).SendAsync("RoomRemoved", room.Id);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error removing member {userId} from schedule chat room for schedule {scheduleId}");
+                return false;
+            }
+        }
     }
 }
