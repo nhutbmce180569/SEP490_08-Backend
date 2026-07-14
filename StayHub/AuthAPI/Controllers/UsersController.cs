@@ -308,6 +308,7 @@ namespace AuthAPI.Controllers
 
         // GET: api/users/{id}/profile
         [HttpGet("{id}/profile")]
+        [Authorize]
         public async Task<IActionResult> GetUserProfile(int id)
         {
             var profile = await _userService.GetUserProfileAsync(id);

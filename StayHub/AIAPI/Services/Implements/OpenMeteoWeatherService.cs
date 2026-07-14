@@ -5,6 +5,7 @@ using AIAPI.Helpers;
 using AIAPI.Localization;
 using AIAPI.Settings;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace AIAPI.Services.Implements;
 
@@ -13,15 +14,18 @@ public class OpenMeteoWeatherService : IWeatherService
     private readonly HttpClient _httpClient;
     private readonly WeatherSettings _settings;
     private readonly IAiLocalizedCopy _text;
+    private readonly IMemoryCache _cache;
 
     public OpenMeteoWeatherService(
         HttpClient httpClient,
         IOptions<WeatherSettings> settings,
-        IAiLocalizedCopy text)
+        IAiLocalizedCopy text,
+        IMemoryCache cache)
     {
         _httpClient = httpClient;
         _settings = settings.Value;
         _text = text;
+        _cache = cache;
     }
 
     public async Task<WeatherAdviceDTO?> GetTravelWeatherAdviceAsync(
@@ -32,6 +36,14 @@ public class OpenMeteoWeatherService : IWeatherService
         double? longitude = null,
         CancellationToken cancellationToken = default)
     {
+        var normalizedCity = (city ?? "").Trim().ToLowerInvariant();
+        var cacheKey = $"weather_{normalizedCity}_{startDate:yyyyMMdd}_{(endDate ?? startDate.AddDays(2)):yyyyMMdd}";
+        if (_cache.TryGetValue(cacheKey, out var cachedValue) && cachedValue is WeatherAdviceDTO cachedAdvice)
+        {
+            Console.WriteLine($"[Weather Cache Hit] City={city}");
+            return cachedAdvice;
+        }
+
         double lat;
         double lng;
 
@@ -121,6 +133,7 @@ public class OpenMeteoWeatherService : IWeatherService
         };
         
         Console.WriteLine($"[OpenMeteo Return] City={advice.City}, AvgMax={advice.AvgMaxTempC}");
+        _cache.Set(cacheKey, advice, TimeSpan.FromHours(2));
         return advice;
     }
 

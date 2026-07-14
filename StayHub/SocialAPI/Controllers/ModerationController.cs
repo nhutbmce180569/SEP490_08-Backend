@@ -46,7 +46,7 @@ public class ModerationController : LocalizedControllerBase
                         .Select(r => r.Value.ToLowerInvariant())
                         .ToList();
 
-        return roles.Contains("staff") || roles.Contains("tourmanager") || roles.Contains("admin");
+        return roles.Contains("staff") || roles.Contains("tourmanager") || roles.Contains("manager") || roles.Contains("admin");
     }
 
     [HttpPost("report")]

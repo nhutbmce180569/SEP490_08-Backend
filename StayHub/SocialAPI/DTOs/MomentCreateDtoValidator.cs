@@ -15,8 +15,7 @@ public class MomentCreateDtoValidator : AbstractValidator<MomentCreateDto>
             .Must(IsValidImage).WithMessage(v.Get("Only .jpg, .jpeg, .png, .gif, and .webp extensions are allowed."))
             .Must(IsUnder5MB).WithMessage(v.Get("Image size cannot exceed 5MB."));
 
-        RuleFor(x => x.UserId)
-            .GreaterThan(0).WithMessage(v.Get("UserId must be greater than 0."));
+
 
         RuleFor(x => x.ScheduleId)
             .GreaterThan(0).WithMessage(v.Get("ScheduleId must be greater than 0."));

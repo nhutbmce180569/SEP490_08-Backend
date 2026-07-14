@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using BookingAPI.DTOs;
 using BookingAPI.Exceptions;
 using BookingAPI.Models;
@@ -581,6 +581,7 @@ namespace BookingAPI.Services.Implements
                 };
 
                 using var client = _httpClientFactory.CreateClient("SocialApiClient");
+                client.DefaultRequestHeaders.Add("X-Internal-Key", "stayhub-internal-2025-xK9mP");
 
                 var response = await client.PostAsJsonAsync(
                     $"api/chat/rooms/schedule/{scheduleId}/members",
