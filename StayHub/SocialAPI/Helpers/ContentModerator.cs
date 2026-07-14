@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace SocialAPI.Helpers;
@@ -18,6 +19,7 @@ public interface IContentModerator
 public class ContentModerator : IContentModerator
 {
     private readonly HashSet<string> _blacklist = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<Regex> _blacklistRegexes = new();
     private readonly bool _enableCloudModeration;
     private readonly string? _openAiApiKey;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -95,6 +97,12 @@ public class ContentModerator : IContentModerator
         {
             // Bỏ qua nếu có lỗi đọc file
         }
+
+        foreach (var word in _blacklist)
+        {
+            var pattern = @"(?<=^|[^a-zA-Z0-9_\p{L}])" + Regex.Escape(word) + @"(?=$|[^a-zA-Z0-9_\p{L}])";
+            _blacklistRegexes.Add(new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled));
+        }
     }
 
     public async Task<string> ModerateTextAsync(string content)
@@ -105,9 +113,9 @@ public class ContentModerator : IContentModerator
         }
 
         // 1. Local Blacklist Check (Lớp 1: Lọc thô cục bộ)
-        foreach (var word in _blacklist)
+        foreach (var regex in _blacklistRegexes)
         {
-            if (content.Contains(word, StringComparison.OrdinalIgnoreCase))
+            if (regex.IsMatch(content))
             {
                 return "Rejected"; // Chặn ngay lập tức
             }

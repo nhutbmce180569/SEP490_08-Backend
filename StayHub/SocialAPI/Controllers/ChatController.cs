@@ -218,7 +218,7 @@ namespace SocialAPI.Controllers
         /// Accessible via Token Forwarding from Tour Manager
         /// </summary>
         [HttpPost("rooms/schedule")]
-        [Authorize] // Sử dụng Token Forwarding từ Manager tạo Tour
+        [Authorize(Roles = "Admin,Manager")] // Chỉ Manager/Admin mới được tạo phòng chat tour
         public async Task<IActionResult> CreateScheduleRoom([FromBody] CreateScheduleChatRoomRequest request)
         {
             try
@@ -343,6 +343,45 @@ namespace SocialAPI.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = M("AnErrorOccurredWhileRetrievingMembers"), error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Internal API: Remove a member from a schedule-based chat room via ScheduleId
+        /// Accessible by other internal services via API Gateway without user token validation
+        /// </summary>
+        [HttpDelete("rooms/schedule/{scheduleId}/members/{userId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> RemoveMemberFromScheduleRoom(int scheduleId, int userId)
+        {
+            try
+            {
+                if (!IsAuthorizedInternalRequest())
+                {
+                    return Unauthorized(new { message = "Internal authorization required." });
+                }
+
+                if (userId <= 0)
+                {
+                    return BadRequest(new { message = "UserId must be a positive integer." });
+                }
+
+                if (scheduleId <= 0)
+                {
+                    return BadRequest(new { message = "ScheduleId must be a positive integer." });
+                }
+
+                var success = await _chatService.RemoveMemberByScheduleAsync(scheduleId, userId);
+                if (!success)
+                {
+                    return NotFound(new { message = "Chat room corresponding to this tour schedule or member was not found." });
+                }
+
+                return Ok(new { message = "Member removed from schedule chat room successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
             }
         }
 
