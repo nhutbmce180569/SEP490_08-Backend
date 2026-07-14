@@ -21,7 +21,7 @@ public partial class Tour
 
     public string? ImageUrl { get; set; }
 
-    public string SourceName { get; set; } = "Vietnam National Administration of Tourism";
+    public string SourceName { get; set; } = null!;
 
     public string? SourceUrl { get; set; }
 

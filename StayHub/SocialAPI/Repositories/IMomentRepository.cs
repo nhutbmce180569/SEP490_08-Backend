@@ -16,6 +16,7 @@ public interface IMomentRepository
 
     Task<MomentReaction?> GetReactionAsync(int momentId, int userId);
     Task AddReactionAsync(MomentReaction reaction);
+    Task UpdateReactionAsync(MomentReaction reaction);
     Task RemoveReactionAsync(MomentReaction reaction);
 
     Task<MomentComment> AddCommentAsync(MomentComment comment);

@@ -10,17 +10,20 @@ namespace TourAPI.Services.Implements
         private readonly ITourScheduleTicketRepository _repository;
         private readonly ITourScheduleRepository _tourScheduleRepository;
         private readonly ITicketTypeApiClient _ticketTypeApiClient;
+        private readonly IPromotionRepository _promotionRepository;
         private readonly IMapper _mapper;
 
         public TourScheduleTicketService(
             ITourScheduleTicketRepository repository,
             ITourScheduleRepository tourScheduleRepository,
             ITicketTypeApiClient ticketTypeApiClient,
+            IPromotionRepository promotionRepository,
             IMapper mapper)
         {
             _repository = repository;
             _tourScheduleRepository = tourScheduleRepository;
             _ticketTypeApiClient = ticketTypeApiClient;
+            _promotionRepository = promotionRepository;
             _mapper = mapper;
         }
 
@@ -74,6 +77,15 @@ namespace TourAPI.Services.Implements
             var entity = _mapper.Map<TourScheduleTicket>(dto);
             ApplyComputedFields(entity, dto.Quantity, dto.SoldQuantity ?? 0, dto.IsActive);
 
+            if (dto.PromotionId.HasValue)
+            {
+                var promotion = await _promotionRepository.GetById(dto.PromotionId.Value);
+                if (promotion != null)
+                {
+                    entity.Promotions.Add(promotion);
+                }
+            }
+
             await _repository.AddAsync(entity);
             return _mapper.Map<ReadTourScheduleTicketDTO>(entity);
         }
@@ -98,6 +110,16 @@ namespace TourAPI.Services.Implements
 
             _mapper.Map(dto, entity);
             ApplyComputedFields(entity, dto.Quantity, soldQuantity, isActive);
+
+            entity.Promotions.Clear();
+            if (dto.PromotionId.HasValue)
+            {
+                var promotion = await _promotionRepository.GetById(dto.PromotionId.Value);
+                if (promotion != null)
+                {
+                    entity.Promotions.Add(promotion);
+                }
+            }
 
             await _repository.UpdateAsync(entity);
             return _mapper.Map<ReadTourScheduleTicketDTO>(entity);

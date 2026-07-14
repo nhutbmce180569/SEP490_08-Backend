@@ -55,8 +55,9 @@ public class FriendshipRepository : IFriendshipRepository
     public async Task<bool> CheckExistingFriendship(int user1, int user2)
     {
         return await _context.Friendships.AnyAsync(f =>
-            (f.RequesterId == user1 && f.ReceiverId == user2) ||
-            (f.RequesterId == user2 && f.ReceiverId == user1));
+            ((f.RequesterId == user1 && f.ReceiverId == user2) ||
+             (f.RequesterId == user2 && f.ReceiverId == user1)) &&
+            (f.Status == "Pending" || f.Status == "Accepted"));
     }
 
     public async Task<Friendship?> GetByIdAsync(int id)

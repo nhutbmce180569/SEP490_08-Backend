@@ -21,6 +21,8 @@ namespace TourAPI.DTOs
         public bool? IsActive { get; set; }
 
         public string? Note { get; set; }
+
+        public ReadPromotionDTO? Promotion { get; set; }
     }
 
     public abstract class BaseTourScheduleTicketDTO
@@ -47,6 +49,8 @@ namespace TourAPI.DTOs
         public bool? IsActive { get; set; }
 
         public string? Note { get; set; }
+
+        public int? PromotionId { get; set; }
     }
 
     public class CreateTourScheduleTicketDTO : BaseTourScheduleTicketDTO { }

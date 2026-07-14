@@ -96,6 +96,45 @@ namespace TourAPI.Services.Implements
             }
 
             await _staffRepository.RemoveStaffAsync(assignedStaff);
+
+            // ✨ LUỒNG TỰ ĐỘNG REMOVE STAFF KHỎI GROUP CHAT
+            try
+            {
+                await RemoveMemberFromChatRoomAsync(scheduleId, staffId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Failed to remove staff {staffId} from chat room for schedule {scheduleId}. Error: {ex.Message}");
+            }
+        }
+
+        private async Task RemoveMemberFromChatRoomAsync(int scheduleId, int userId)
+        {
+            try
+            {
+                var token = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].ToString();
+                if (string.IsNullOrWhiteSpace(token)) return;
+
+                using var client = _httpClientFactory.CreateClient();
+                client.DefaultRequestHeaders.Add("Authorization", token);
+
+                var response = await client.DeleteAsync(
+                    $"https://localhost:7010/api/chat/rooms/schedule/{scheduleId}/members/{userId}"
+                );
+
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation($"Staff {userId} automatically removed from chat room for schedule {scheduleId}");
+                }
+                else
+                {
+                    _logger.LogWarning($"Failed to automatically remove staff {userId} from chat room. Code: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error when sending HttpClient request to remove staff from chat room: {ex.Message}");
+            }
         }
 
         public async Task<List<ScheduleStaffDetailDto>> GetStaffByScheduleIdAsync(int scheduleId)
