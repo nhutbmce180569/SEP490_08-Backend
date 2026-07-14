@@ -24,4 +24,6 @@ public partial class TourScheduleTicket
     public string? Note { get; set; }
 
     public virtual TourSchedule Schedule { get; set; } = null!;
+
+    public virtual ICollection<Promotion> Promotions { get; set; } = new List<Promotion>();
 }
