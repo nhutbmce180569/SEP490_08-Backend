@@ -19,6 +19,15 @@ if [ -f .env ]; then
       export Gemini__ApiKey="$key_val"
       echo "Successfully loaded Gemini API key from environment."
     fi
+    if [[ "$line" =~ ^HF_API_KEY= ]]; then
+      key_val="${line#*=}"
+      key_val="${key_val%\"}"
+      key_val="${key_val#\"}"
+      key_val="${key_val%\'}"
+      key_val="${key_val#\'}"
+      export HF_API_KEY="$key_val"
+      echo "Successfully loaded Hugging Face API key from environment."
+    fi
   done < .env
 fi
 

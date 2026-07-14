@@ -169,7 +169,7 @@ public class MomentService : IMomentService
         var moment = await _momentRepository.GetMomentByIdAsync(momentId);
         if (moment == null) throw new KeyNotFoundException("Moment not found.");
 
-        if (moment.UserId != userId) throw new UnauthorizedAccessException("You do not have the right to delete this comment.");
+        if (moment.UserId != userId) throw new UnauthorizedAccessException("You do not have the right to delete this moment.");
 
         await _momentRepository.DeleteMomentAsync(moment);
     }

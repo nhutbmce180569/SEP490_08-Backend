@@ -68,7 +68,7 @@ namespace SocialAPI.Controllers
         }
 
         [HttpGet("schedules/{scheduleId}/live")]
-        [Authorize(Roles = "Staff")]
+        [Authorize(Roles = "Customer,Staff,Manager,Admin")]
         public async Task<IActionResult> GetLiveScheduleLocations(int scheduleId)
         {
             try
