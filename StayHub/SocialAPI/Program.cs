@@ -148,6 +148,11 @@ namespace SocialAPI
                 client.BaseAddress = new Uri(builder.Configuration["BookingApi:BaseUrl"]
                     ?? "https://localhost:7002/");
             });
+            builder.Services.AddHttpClient<ITourApiClient, TourApiClient>(client =>
+            {
+                client.BaseAddress = new Uri(builder.Configuration["TourApi:BaseUrl"]
+                    ?? "https://localhost:7005/");
+            });
             builder.Services.AddAutoMapper(cfg =>
             {
                 cfg.AddProfile<MappingProfile>();

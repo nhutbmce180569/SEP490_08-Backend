@@ -43,7 +43,10 @@ namespace SocialAPI.Controllers
             try
             {
                 var userId = GetCurrentUserId();
-                await _locationService.PingLocationAsync(userId, dto);
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value
+                               ?? User.FindFirst("role")?.Value
+                               ?? (User.IsInRole("Admin") ? "Admin" : User.IsInRole("Manager") ? "Manager" : User.IsInRole("Staff") ? "Staff" : "Customer");
+                await _locationService.PingLocationAsync(userId, dto, userRole);
                 return Ok(new { message = M("LocationPingedSuccessfully") });
             }
             catch (Exception ex)
@@ -73,8 +76,19 @@ namespace SocialAPI.Controllers
         {
             try
             {
-                var liveLocations = await _locationService.GetLiveScheduleLocationsAsync(scheduleId);
+                var userId = GetCurrentUserId();
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value
+                               ?? User.FindFirst("role")?.Value
+                               ?? (User.IsInRole("Admin") ? "Admin" : User.IsInRole("Manager") ? "Manager" : User.IsInRole("Staff") ? "Staff" : "Customer");
+
+                var bearerToken = Request.Headers["Authorization"].ToString();
+
+                var liveLocations = await _locationService.GetLiveScheduleLocationsAsync(scheduleId, userId, userRole, bearerToken);
                 return Ok(new { message = M("LiveScheduleLocationsRetrievedSuccessfully"), data = liveLocations });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { message = ex.Message });
             }
             catch (Exception ex)
             {
