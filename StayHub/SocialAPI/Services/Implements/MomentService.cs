@@ -95,11 +95,21 @@ public class MomentService : IMomentService
         var existingReaction = await _momentRepository.GetReactionAsync(momentId, dto.UserId);
         if (existingReaction != null)
         {
-            await _momentRepository.RemoveReactionAsync(existingReaction);
+            // Nếu click lại cùng loại reaction -> xóa (un-react)
+            // Nếu click khác loại -> cập nhật
+            if (existingReaction.IsLike == dto.IsLike)
+            {
+                await _momentRepository.RemoveReactionAsync(existingReaction);
+            }
+            else
+            {
+                existingReaction.IsLike = dto.IsLike;
+                await _momentRepository.UpdateReactionAsync(existingReaction);
+            }
         }
         else
         {
-            var reaction = new MomentReaction { MomentId = momentId, UserId = dto.UserId, IsLike = true };
+            var reaction = new MomentReaction { MomentId = momentId, UserId = dto.UserId, IsLike = dto.IsLike };
             await _momentRepository.AddReactionAsync(reaction);
         }
     }
@@ -148,7 +158,18 @@ public class MomentService : IMomentService
         if (comment == null) throw new KeyNotFoundException("Comment not found.");
         if (comment.UserId != dto.UserId) throw new UnauthorizedAccessException("You do not have permission to update this comment.");
 
+        string status = "Approved";
+        if (!string.IsNullOrEmpty(dto.Comment))
+        {
+            status = await _contentModerator.ModerateTextAsync(dto.Comment);
+            if (status.Equals("Rejected", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException("The comment contains inappropriate words that violate community guidelines.");
+            }
+        }
+
         comment.Comment = dto.Comment;
+        comment.Status = status;
         await _momentRepository.UpdateCommentAsync(comment);
 
         return _mapper.Map<CommentResponseDto>(comment);
@@ -282,15 +303,11 @@ public class MomentService : IMomentService
         {
             var moment = await _dbContext.TourMoments.FindAsync(targetId);
             if (moment == null) throw new KeyNotFoundException("Moment not found.");
-            moment.Status = "Pending";
-            _dbContext.TourMoments.Update(moment);
         }
         else if (contentType.Equals("Comment", StringComparison.OrdinalIgnoreCase))
         {
             var comment = await _dbContext.MomentComments.FindAsync(targetId);
             if (comment == null) throw new KeyNotFoundException("Comment not found.");
-            comment.Status = "Pending";
-            _dbContext.MomentComments.Update(comment);
         }
         else
         {
