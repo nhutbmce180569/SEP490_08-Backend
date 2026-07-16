@@ -1,0 +1,1 @@
+-- Empty data script for StayHub_CatalogDb
