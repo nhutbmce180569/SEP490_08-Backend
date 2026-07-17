@@ -59,7 +59,7 @@ GO
 CREATE TABLE Categories (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     Name NVARCHAR(255) NOT NULL,
-    Slug VARCHAR(255) UNIQUE NOT NULL,
+    Slug VARCHAR(255) UNIQUE NOT NULL CONSTRAINT CHK_Categories_Slug CHECK (Slug NOT LIKE '%[^a-z0-9-]%'),
     IconUrl NVARCHAR(MAX),
     Description NVARCHAR(MAX),
     IsActive BIT DEFAULT 1
@@ -82,8 +82,8 @@ CREATE TABLE TourismInformation (
     Address NVARCHAR(255),
     City NVARCHAR(100),
     Country NVARCHAR(100) DEFAULT N'Vietnam',
-    Latitude FLOAT,
-    Longitude FLOAT,
+    Latitude FLOAT CONSTRAINT CHK_TourismInformation_Lat CHECK (Latitude BETWEEN -90 AND 90),
+    Longitude FLOAT CONSTRAINT CHK_TourismInformation_Lng CHECK (Longitude BETWEEN -180 AND 180),
     ImageUrl NVARCHAR(MAX),
     SourceName NVARCHAR(255),
     SourceUrl NVARCHAR(MAX),
