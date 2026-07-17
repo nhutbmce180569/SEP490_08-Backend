@@ -186,12 +186,6 @@ namespace TourAPI.Services.Implements
 
             var list = _mapper.Map<List<ReadTourDTO>>(result.Tours);
 
-            var allReviews = list.Where(t => t.Reviews != null).SelectMany(t => t.Reviews!).ToList();
-            if (allReviews.Any())
-            {
-                await PopulateReviewerNamesAsync(allReviews);
-            }
-
             return CreatePagination(list, result.Total, page, pageSize);
         }
 
@@ -292,11 +286,6 @@ namespace TourAPI.Services.Implements
         {
             var result = await _repository.GetByAdmin(page, pageSize, searchTerm, managerId);
             var list = _mapper.Map<List<ReadTourDTO>>(result.Tours);
-            var allReviews = list.Where(t => t.Reviews != null).SelectMany(t => t.Reviews!).ToList();
-            if (allReviews.Any())
-            {
-                await PopulateReviewerNamesAsync(allReviews);
-            }
 
             return CreatePagination(list, result.Total, page, pageSize);
         }
@@ -313,12 +302,6 @@ namespace TourAPI.Services.Implements
             foreach (var tour in list)
             {
                 tour.CanEdit = true;
-            }
-
-            var allReviews = list.Where(t => t.Reviews != null).SelectMany(t => t.Reviews!).ToList();
-            if (allReviews.Any())
-            {
-                await PopulateReviewerNamesAsync(allReviews);
             }
 
             return CreatePagination(list, result.Total, page, pageSize);
@@ -428,6 +411,30 @@ namespace TourAPI.Services.Implements
                 }
             }
 
+            return _mapper.Map<List<ReadTourDTO>>(tours);
+        }
+
+        public async Task<IEnumerable<ReadTourDTO>> GetSaleTours(int limit = 6)
+        {
+            var tours = await _repository.GetSaleTours(limit);
+            return _mapper.Map<List<ReadTourDTO>>(tours);
+        }
+
+        public async Task<IEnumerable<ReadTourDTO>> GetHotTours(int limit = 5)
+        {
+            var tours = await _repository.GetHotTours(limit);
+            return _mapper.Map<List<ReadTourDTO>>(tours);
+        }
+
+        public async Task<IEnumerable<ReadTourDTO>> GetUpcomingTours(int limit = 6)
+        {
+            var tours = await _repository.GetUpcomingTours(limit);
+            return _mapper.Map<List<ReadTourDTO>>(tours);
+        }
+
+        public async Task<IEnumerable<ReadTourDTO>> GetToursByRegion(string region, int limit = 6)
+        {
+            var tours = await _repository.GetToursByRegion(region, limit);
             return _mapper.Map<List<ReadTourDTO>>(tours);
         }
 

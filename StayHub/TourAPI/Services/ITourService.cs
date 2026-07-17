@@ -21,6 +21,9 @@ namespace TourAPI.Services
         Task<int> CountToursByCategoryIdAsync(int categoryId);
         Task<List<ItineraryLocationDto>> GetItinerariesByTourIdAsync(int tourId);
         Task<IEnumerable<ReadTourDTO>> GetToursByIdsAsync(IEnumerable<int> tourIds);
-
+        Task<IEnumerable<ReadTourDTO>> GetSaleTours(int limit = 6);
+        Task<IEnumerable<ReadTourDTO>> GetHotTours(int limit = 5);
+        Task<IEnumerable<ReadTourDTO>> GetUpcomingTours(int limit = 6);
+        Task<IEnumerable<ReadTourDTO>> GetToursByRegion(string region, int limit = 6);
     }
 }
