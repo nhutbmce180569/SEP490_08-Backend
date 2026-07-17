@@ -5873,4 +5873,3 @@ INSERT INTO Notifications (Id, UserId, Title, Content, IsRead, CreatedAt) VALUES
 (5580, 558, N'Payment Success: Order #1993', N'We have successfully received your payment for "Forest Camping & Stargazing near Binh Phuoc". Your trip is good to go!', 1, '2026-06-29 22:00:00');
 SET IDENTITY_INSERT Notifications OFF;
 GO
-
