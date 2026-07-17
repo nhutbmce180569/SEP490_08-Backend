@@ -52,14 +52,7 @@ public class VoucherService : IVoucherService
         if (pageSize <= 0) pageSize = 10;
 
         var entities = await _voucherRepository.GetAllAsync();
-        var list = new List<ReadVoucherDTO>();
-
-        foreach (var entity in entities)
-        {
-            var dto = _mapper.Map<ReadVoucherDTO>(entity);
-            await EnrichVoucherAsync(dto, entity);
-            list.Add(dto);
-        }
+        var list = entities.ToList();
 
         if (createdByMe == true)
         {
@@ -107,20 +100,31 @@ public class VoucherService : IVoucherService
         if (!string.IsNullOrWhiteSpace(status))
         {
             list = list.Where(v =>
-                v.Status.Equals(status.Trim(), StringComparison.OrdinalIgnoreCase))
-                .ToList();
+            {
+                // To filter by status, we temporarily resolve it
+                var s = ResolveStatus(v);
+                return s.Equals(status.Trim(), StringComparison.OrdinalIgnoreCase);
+            }).ToList();
         }
 
         var total = list.Count;
-        var paged = list
+        var pagedEntities = list
             .OrderByDescending(v => v.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToList();
 
+        var pagedDtos = new List<ReadVoucherDTO>();
+        foreach (var entity in pagedEntities)
+        {
+            var dto = _mapper.Map<ReadVoucherDTO>(entity);
+            await EnrichVoucherAsync(dto, entity);
+            pagedDtos.Add(dto);
+        }
+
         return new PaginationDTO<ReadVoucherDTO>
         {
-            Data = paged,
+            Data = pagedDtos,
             Total = total,
             TotalPages = total == 0 ? 0 : (int)Math.Ceiling(total / (double)pageSize),
             CurrentPage = page,
@@ -770,5 +774,13 @@ public class VoucherService : IVoucherService
             EmailsSent = emailsSent,
             Message = "Birthday vouchers distributed successfully."
         };
+    }
+
+    private static string ResolveStatus(Voucher voucher)
+    {
+        var now = DateTime.Now;
+        if (now > voucher.EndDate) return "Expired";
+        if (!voucher.IsActive) return "Inactive";
+        return "Active";
     }
 }

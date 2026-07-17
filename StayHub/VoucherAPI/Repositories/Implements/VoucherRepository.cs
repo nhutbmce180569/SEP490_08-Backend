@@ -12,6 +12,11 @@ public class VoucherRepository : IVoucherRepository
         _context = context;
     }
 
+    public Task<IQueryable<Voucher>> GetQueryableAsync()
+    {
+        return Task.FromResult(_context.Vouchers.AsQueryable());
+    }
+
     public async Task<IEnumerable<Voucher>> GetAllAsync()
     {
         return await _context.Vouchers
