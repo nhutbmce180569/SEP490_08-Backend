@@ -139,6 +139,14 @@ namespace TourAPI.Controllers
             return Ok(list);
         }
 
+        [AllowAnonymous]
+        [HttpGet("public/region/{region}")]
+        public async Task<ActionResult> GetToursByRegion(string region, [FromQuery] int limit = 20)
+        {
+            var list = await _tourService.GetToursByRegion(region, limit);
+            return Ok(list);
+        }
+
 
         // GET: api/Tours
         [AllowAnonymous]
@@ -146,6 +154,30 @@ namespace TourAPI.Controllers
         public async Task<ActionResult> GetPublicTours(int page = 1, int pageSize = 10)
         {
             var list = await _tourService.GetActiveTours(page, pageSize);
+            return Ok(list);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("sale")]
+        public async Task<ActionResult> GetSaleTours([FromQuery] int limit = 6)
+        {
+            var list = await _tourService.GetSaleTours(limit);
+            return Ok(list);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("hot")]
+        public async Task<ActionResult> GetHotTours([FromQuery] int limit = 5)
+        {
+            var list = await _tourService.GetHotTours(limit);
+            return Ok(list);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("upcoming")]
+        public async Task<ActionResult> GetUpcomingTours([FromQuery] int limit = 6)
+        {
+            var list = await _tourService.GetUpcomingTours(limit);
             return Ok(list);
         }
 
