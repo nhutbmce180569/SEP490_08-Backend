@@ -4,6 +4,7 @@ namespace VoucherAPI.Repositories;
 
 public interface IVoucherRepository
 {
+    Task<IQueryable<Voucher>> GetQueryableAsync();
     Task<IEnumerable<Voucher>> GetAllAsync();
 
     Task<Voucher?> GetByIdAsync(int id);
