@@ -28,6 +28,10 @@ namespace ContentAPI.Controllers
             [FromQuery] int pageSize = 10,
             [FromQuery] string? searchTerm = null)
         {
+            if (page < 1 || pageSize < 1)
+            {
+                return BadRequest(new { message = "Page and PageSize must be greater than or equal to 1." });
+            }
             var ticketTypes = await _ticketTypeService.GetAllTicketTypes(page, pageSize, searchTerm);
             return Ok(ticketTypes);
         }
