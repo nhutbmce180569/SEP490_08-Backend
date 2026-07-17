@@ -93,6 +93,7 @@ public interface IAiLocalizedCopy
     IReadOnlyList<string> ChatSystemSuggestions { get; }
     string ChatFallbackHelp { get; }
     string ChatRagInsight(string fact);
+    string ChatUsedMemory(long budget);
 
     // Schedule
     string ScheduleExactMatch(DateTime departure);
@@ -346,6 +347,10 @@ public sealed class AiLocalizedCopy : IAiLocalizedCopy
     public string ChatRagInsight(string fact) => _vi
         ? $"📚 {fact}"
         : $"📚 {fact}";
+
+    public string ChatUsedMemory(long budget) => _vi
+        ? $"\n(💡 Gợi ý dựa trên mức ngân sách {budget:N0} VND từ lịch sử tìm kiếm trước đây của bạn)"
+        : $"\n(💡 Suggestions based on your past search budget of {budget:N0} VND)";
 
     public string ScheduleExactMatch(DateTime departure) => _vi
         ? $"Khởi hành {departure:dd/MM/yyyy} — nằm trong khoảng thời gian bạn chọn."

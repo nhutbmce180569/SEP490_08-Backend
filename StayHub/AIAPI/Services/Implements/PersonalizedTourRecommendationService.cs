@@ -5,10 +5,12 @@ using AIAPI.ML;
 using AIAPI.Models.Catalog;
 using AIAPI.Models.Knowledge;
 using AIAPI.Recommender;
-using AIAPI.Services;
 using AIAPI.Settings;
+using AIAPI.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Http;
 
 namespace AIAPI.Services.Implements;
 
@@ -24,6 +26,8 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
     private readonly IKnowledgeLocalizationService _knowledgeLocalizer;
     private readonly IDimensionWeightProvider _dimensionWeights;
     private readonly IMemoryCache _cache;
+    private readonly StayHubAiDbContext _dbContext;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public PersonalizedTourRecommendationService(
         ICatalogStore catalogStore,
@@ -35,7 +39,9 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         IAiLocalizedCopy text,
         IKnowledgeLocalizationService knowledgeLocalizer,
         IDimensionWeightProvider dimensionWeights,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        StayHubAiDbContext dbContext,
+        IHttpContextAccessor httpContextAccessor)
     {
         _catalogStore = catalogStore;
         _modelRegistry = modelRegistry;
@@ -47,6 +53,8 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
         _knowledgeLocalizer = knowledgeLocalizer;
         _dimensionWeights = dimensionWeights;
         _cache = cache;
+        _dbContext = dbContext;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public StandardQuestionnaireDTO GetStandardQuestionnaire()
@@ -354,6 +362,41 @@ public class PersonalizedTourRecommendationService : IPersonalizedTourRecommenda
             cancellationToken);
 
         var personaTypes = personas.Select(p => p.PersonaType).ToList();
+
+        int? userId = null;
+        var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("id")?.Value;
+        if (int.TryParse(userIdClaim, out var parsedId))
+        {
+            userId = parsedId;
+        }
+
+        if (userId.HasValue)
+        {
+            var pref = await _dbContext.UserPreferences.FirstOrDefaultAsync(x => x.UserId == userId.Value, cancellationToken);
+            if (pref == null)
+            {
+                pref = new UserPreference { UserId = userId.Value };
+                _dbContext.UserPreferences.Add(pref);
+            }
+            pref.InterestTags = string.Join(",", profile.TravelInterests);
+            pref.MaxBudget = profile.MaxBudgetPerPerson;
+            pref.UpdatedAt = DateTime.UtcNow;
+
+            foreach (var t in exactTours.Concat(nearbyTours))
+            {
+                _dbContext.UserTourInteractions.Add(new UserTourInteraction
+                {
+                    CustomerId = userId.Value,
+                    TourId = t.TourId,
+                    InteractionType = "chat_recommend",
+                    Weight = 0.5,
+                    SessionId = sessionId,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
 
         return new PersonalizedRecommendationResponseDTO
         {
