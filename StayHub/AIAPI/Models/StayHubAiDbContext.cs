@@ -12,6 +12,9 @@ public class StayHubAiDbContext : DbContext
     public DbSet<TourRelevanceJudgment> TourRelevanceJudgments => Set<TourRelevanceJudgment>();
     public DbSet<UserStudyAssignment> UserStudyAssignments => Set<UserStudyAssignment>();
     public DbSet<UserStudyResponse> UserStudyResponses => Set<UserStudyResponse>();
+    public DbSet<UserPreference> UserPreferences => Set<UserPreference>();
+    public DbSet<AILog> AILogs => Set<AILog>();
+    public DbSet<UserTourInteraction> UserTourInteractions => Set<UserTourInteraction>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -52,6 +55,11 @@ public class StayHubAiDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.AssignmentId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<UserTourInteraction>(entity =>
+        {
+            entity.HasIndex(e => new { e.CustomerId, e.TourId, e.InteractionType });
         });
     }
 }

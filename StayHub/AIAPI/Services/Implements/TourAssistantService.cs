@@ -2,8 +2,11 @@ using AIAPI.DTOs;
 using AIAPI.Helpers;
 using AIAPI.Localization;
 using AIAPI.ML;
+using AIAPI.Models;
 using AIAPI.Models.Knowledge;
 using AIAPI.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
 
 namespace AIAPI.Services.Implements;
 
@@ -18,6 +21,8 @@ public class TourAssistantService : ITourAssistantService
     private readonly IKnowledgeLocalizationService _knowledgeLocalization;
     private readonly QueryEntityExtractor _entityExtractor;
     private readonly IAiLocalizedCopy _text;
+    private readonly StayHubAiDbContext _dbContext;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public TourAssistantService(
         IMlModelRegistry modelRegistry,
@@ -28,7 +33,9 @@ public class TourAssistantService : ITourAssistantService
         ISystemKnowledgeIndex systemKnowledge,
         IKnowledgeLocalizationService knowledgeLocalization,
         QueryEntityExtractor entityExtractor,
-        IAiLocalizedCopy text)
+        IAiLocalizedCopy text,
+        StayHubAiDbContext dbContext,
+        IHttpContextAccessor httpContextAccessor)
     {
         _modelRegistry = modelRegistry;
         _catalogStore = catalogStore;
@@ -39,6 +46,8 @@ public class TourAssistantService : ITourAssistantService
         _knowledgeLocalization = knowledgeLocalization;
         _entityExtractor = entityExtractor;
         _text = text;
+        _dbContext = dbContext;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<ChatResponseDTO> ChatAsync(string message, string? sessionId, CancellationToken cancellationToken = default)
@@ -53,13 +62,35 @@ public class TourAssistantService : ITourAssistantService
         var intent = ChatIntentResolver.Resolve(message, mlIntent, confidence);
         var parsed = _entityExtractor.Extract(message, _catalogStore);
 
+        int? userId = null;
+        var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("id")?.Value;
+        if (int.TryParse(userIdClaim, out var parsedId))
+        {
+            userId = parsedId;
+        }
+
+        bool usedMemory = false;
+        if (userId.HasValue && !parsed.MaxPrice.HasValue)
+        {
+            var lastLog = await _dbContext.AILogs
+                .Where(x => x.UserId == userId.Value && x.Budget.HasValue)
+                .OrderByDescending(x => x.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+            
+            if (lastLog != null)
+            {
+                parsed.MaxPrice = lastLog.Budget;
+                usedMemory = true;
+            }
+        }
+
         var response = new ChatResponseDTO
         {
             SessionId = session,
             Intent = intent,
             IntentConfidence = confidence,
             ParsedQuery = parsed,
-            UsedPersonalization = false
+            UsedPersonalization = usedMemory
         };
 
         switch (intent)
@@ -92,6 +123,20 @@ public class TourAssistantService : ITourAssistantService
 
                 await HandleRecommendationAsync(response, message, parsed, cancellationToken);
                 break;
+        }
+
+        if (userId.HasValue)
+        {
+            var log = new AILog
+            {
+                UserId = userId.Value,
+                Budget = parsed.MaxPrice,
+                Days = parsed.DurationDays,
+                ResultIds = string.Join(",", response.RecommendedTours.Select(t => t.TourId)),
+                CreatedAt = DateTime.UtcNow
+            };
+            _dbContext.AILogs.Add(log);
+            await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
         return response;
@@ -212,13 +257,16 @@ public class TourAssistantService : ITourAssistantService
             EndDate = parsed.EndDate
         }, cancellationToken)).Select(MapToSearchItem).ToList();
 
-        response.Reply = response.RecommendedTours.Count > 0
-            ? (!string.IsNullOrWhiteSpace(parsed.City)
-                ? _text.ChatToursFoundForCity(response.RecommendedTours.Count, parsed.City)
-                : _text.ChatToursFound(response.RecommendedTours.Count))
-            : (!string.IsNullOrWhiteSpace(parsed.City)
-                ? _text.ChatNoToursForCity(parsed.City)
-                : _text.ChatNoTours);
+        var textResult = response.RecommendedTours.Count > 0
+            ? (string.IsNullOrWhiteSpace(parsed.City) ? _text.ChatToursFound(response.RecommendedTours.Count) : _text.ChatToursFoundForCity(response.RecommendedTours.Count, parsed.City))
+            : (string.IsNullOrWhiteSpace(parsed.City) ? _text.ChatNoTours : _text.ChatNoToursForCity(parsed.City));
+
+        if (response.UsedPersonalization && parsed.MaxPrice.HasValue)
+        {
+            textResult += _text.ChatUsedMemory(parsed.MaxPrice.Value);
+        }
+
+        response.Reply = textResult;
         response.SuggestedQuestions = _text.ChatDefaultSuggestions.ToList();
     }
 
@@ -243,9 +291,16 @@ public class TourAssistantService : ITourAssistantService
             CategoryId = parsed.CategoryId
         }, cancellationToken)).Select(MapToSearchItem).ToList();
 
-        response.Reply = response.RecommendedTours.Count > 0
+        var textResult = response.RecommendedTours.Count > 0
             ? _text.ChatRecommendFound(response.RecommendedTours.Count)
             : _text.ChatRecommendNone;
+
+        if (response.UsedPersonalization && parsed.MaxPrice.HasValue)
+        {
+            textResult += _text.ChatUsedMemory(parsed.MaxPrice.Value);
+        }
+
+        response.Reply = textResult;
 
         response.SuggestedQuestions = _text.ChatDefaultSuggestions.ToList();
     }
