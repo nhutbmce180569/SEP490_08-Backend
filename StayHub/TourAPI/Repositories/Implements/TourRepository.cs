@@ -141,34 +141,68 @@ namespace TourAPI.Repositories.Implements
                         EF.Functions.DateDiffDay(s.DepartureDate, s.ReturnDate) + 1 == numberOfDays));
             }
 
-            var sortedQuery = sortBy?.Trim().ToLowerInvariant() switch
+            if (string.IsNullOrWhiteSpace(sortBy))
             {
-                "price_asc" => query
-                    .OrderBy(t => t.TourSchedules
-                        .SelectMany(s => s.TourScheduleTickets)
-                        .Select(ticket => (long?)ticket.Price)
-                        .Min() ?? long.MaxValue)
-                    .ThenBy(t => t.Id),
-                "price_desc" => query
-                    .OrderByDescending(t => t.TourSchedules
-                        .SelectMany(s => s.TourScheduleTickets)
-                        .Select(ticket => (long?)ticket.Price)
-                        .Min() ?? 0)
-                    .ThenBy(t => t.Id),
-                "date_asc" => query
-                    .OrderBy(t => t.TourSchedules
-                        .Select(s => (DateTime?)s.DepartureDate)
-                        .Min() ?? DateTime.MaxValue)
-                    .ThenBy(t => t.Id),
-                "date_desc" => query
-                    .OrderByDescending(t => t.TourSchedules
-                        .Select(s => (DateTime?)s.DepartureDate)
-                        .Min() ?? DateTime.MinValue)
-                    .ThenBy(t => t.Id),
-                _ => query.OrderBy(t => t.Id)
-            };
+                return await GetPagedTours(query.OrderBy(t => t.Id), page, pageSize);
+            }
 
-            return await GetPagedTours(sortedQuery, page, pageSize);
+            var normalizedPage = Math.Max(1, page);
+            var normalizedPageSize = Math.Clamp(pageSize, 1, 1000);
+            var total = await query.CountAsync();
+
+            List<int> pagedIds;
+            var sortMode = sortBy.Trim().ToLowerInvariant();
+
+            if (sortMode == "price_asc")
+            {
+                var projections = await query.Select(t => new {
+                    t.Id,
+                    MinPrice = t.TourSchedules.SelectMany(s => s.TourScheduleTickets).Min(ticket => (long?)ticket.Price) ?? long.MaxValue
+                }).ToListAsync();
+                pagedIds = projections.OrderBy(x => x.MinPrice).ThenBy(x => x.Id).Skip((normalizedPage - 1) * normalizedPageSize).Take(normalizedPageSize).Select(x => x.Id).ToList();
+            }
+            else if (sortMode == "price_desc")
+            {
+                var projections = await query.Select(t => new {
+                    t.Id,
+                    MinPrice = t.TourSchedules.SelectMany(s => s.TourScheduleTickets).Min(ticket => (long?)ticket.Price) ?? 0
+                }).ToListAsync();
+                pagedIds = projections.OrderByDescending(x => x.MinPrice).ThenBy(x => x.Id).Skip((normalizedPage - 1) * normalizedPageSize).Take(normalizedPageSize).Select(x => x.Id).ToList();
+            }
+            else if (sortMode == "date_asc")
+            {
+                var projections = await query.Select(t => new {
+                    t.Id,
+                    MinDate = t.TourSchedules.Min(s => (DateTime?)s.DepartureDate) ?? DateTime.MaxValue
+                }).ToListAsync();
+                pagedIds = projections.OrderBy(x => x.MinDate).ThenBy(x => x.Id).Skip((normalizedPage - 1) * normalizedPageSize).Take(normalizedPageSize).Select(x => x.Id).ToList();
+            }
+            else if (sortMode == "date_desc")
+            {
+                var projections = await query.Select(t => new {
+                    t.Id,
+                    MinDate = t.TourSchedules.Min(s => (DateTime?)s.DepartureDate) ?? DateTime.MinValue
+                }).ToListAsync();
+                pagedIds = projections.OrderByDescending(x => x.MinDate).ThenBy(x => x.Id).Skip((normalizedPage - 1) * normalizedPageSize).Take(normalizedPageSize).Select(x => x.Id).ToList();
+            }
+            else
+            {
+                pagedIds = await query.OrderBy(t => t.Id).Skip((normalizedPage - 1) * normalizedPageSize).Take(normalizedPageSize).Select(t => t.Id).ToListAsync();
+            }
+
+            var tours = await _context.Tours
+                .Where(t => pagedIds.Contains(t.Id))
+                .Include(t => t.TourItineraries)
+                .Include(t => t.TourSchedules)
+                    .ThenInclude(t => t.TourScheduleTickets)
+                        .ThenInclude(t => t.Promotions)
+                .Include(t => t.Reviews)
+                .AsSplitQuery()
+                .ToListAsync();
+
+            tours = tours.OrderBy(t => pagedIds.IndexOf(t.Id)).ToList();
+
+            return (tours, total);
         }
 
         public async Task<(List<Tour> Tours, int Total)> GetByAdmin(
@@ -219,12 +253,7 @@ namespace TourAPI.Repositories.Implements
 
             var term = searchTerm.Trim();
 
-            return query.Where(t =>
-                t.Name.Contains(term) ||
-                (t.Description != null && t.Description.Contains(term)) ||
-                t.TourItineraries.Any(i =>
-                    (i.Title != null && i.Title.Contains(term)) ||
-                    (i.Description != null && i.Description.Contains(term))));
+            return query.Where(t => t.Name.Contains(term));
         }
 
         private static async Task<(List<Tour> Tours, int Total)> GetPagedTours(
@@ -244,11 +273,121 @@ namespace TourAPI.Repositories.Implements
                     .ThenInclude(t => t.TourScheduleTickets)
                         .ThenInclude(t => t.Promotions)
                 .Include(t => t.Reviews)
-                    .ThenInclude(r => r.ReviewReplies)
                 .AsSplitQuery()
                 .ToListAsync();
 
             return (tours, total);
+        }
+
+        public async Task<List<Tour>> GetSaleTours(int limit = 6)
+        {
+            var now = DateTime.UtcNow;
+            
+            var query = _context.Tours
+                .AsNoTracking()
+                .Where(t => t.Status == "Active")
+                .Where(t => t.TourSchedules.Any(s => s.DepartureDate > now && s.TourScheduleTickets.Any(ticket => 
+                    ticket.Promotions.Any(p => p.Status == "Active" && p.StartDate <= now && p.EndDate >= now))));
+
+            var tours = await query
+                .OrderByDescending(t => t.Id)
+                .Take(limit)
+                .Include(t => t.TourItineraries)
+                .Include(t => t.TourSchedules)
+                    .ThenInclude(t => t.TourScheduleTickets)
+                        .ThenInclude(t => t.Promotions)
+                .Include(t => t.Reviews)
+                .AsSplitQuery()
+                .ToListAsync();
+
+            return tours;
+        }
+
+        public async Task<List<Tour>> GetHotTours(int limit = 5)
+        {
+            var query = _context.Tours
+                .AsNoTracking()
+                .Where(t => t.Status == "Active")
+                .OrderByDescending(t => t.TourSchedules
+                    .SelectMany(s => s.TourScheduleTickets)
+                    .Sum(st => st.SoldQuantity ?? 0));
+
+            var tours = await query
+                .Take(limit)
+                .Include(t => t.TourItineraries)
+                .Include(t => t.TourSchedules)
+                    .ThenInclude(t => t.TourScheduleTickets)
+                        .ThenInclude(t => t.Promotions)
+                .Include(t => t.Reviews)
+                .AsSplitQuery()
+                .ToListAsync();
+
+            return tours;
+        }
+
+        public async Task<List<Tour>> GetUpcomingTours(int limit = 6)
+        {
+            var now = DateTime.UtcNow;
+
+            var query = _context.Tours
+                .AsNoTracking()
+                .Where(t => t.Status == "Active")
+                .Where(t => t.TourSchedules.Any(s => s.DepartureDate > now))
+                .OrderBy(t => t.TourSchedules
+                    .Where(s => s.DepartureDate > now)
+                    .Min(s => s.DepartureDate));
+
+            var tours = await query
+                .Take(limit)
+                .Include(t => t.TourItineraries)
+                .Include(t => t.TourSchedules)
+                    .ThenInclude(t => t.TourScheduleTickets)
+                        .ThenInclude(t => t.Promotions)
+                .Include(t => t.Reviews)
+                .AsSplitQuery()
+                .ToListAsync();
+
+            return tours;
+        }
+
+        public async Task<List<Tour>> GetToursByRegion(string region, int limit = 6)
+        {
+            var query = _context.Tours
+                .AsNoTracking()
+                .Where(t => t.Status == "Active");
+
+            var r = region.Trim().ToLowerInvariant();
+            string[] targetCities = r switch
+            {
+                "north" => new[] { "ha noi", "hai phong", "quang ninh", "lao cai", "ha giang", "yen bai", "lai chau", "dien bien", "son la", "hoa binh", "phu tho", "tuyen quang", "cao bang", "bac kan", "thai nguyen", "lang son", "bac giang", "bac ninh", "vinh phuc", "hai duong", "hung yen", "thai binh", "ha nam", "nam dinh", "ninh binh" },
+                "central" => new[] { "thanh hoa", "nghe an", "ha tinh", "quang binh", "quang tri", "thua thien hue", "da nang", "quang nam", "quang ngai", "binh dinh", "phu yen", "khanh hoa", "ninh thuan", "binh thuan", "kon tum", "gia lai", "dak lak", "dak nong", "lam dong" },
+                "south" => new[] { "ho chi minh", "ba ria", "vung tau", "binh duong", "binh phuoc", "dong nai", "tay ninh", "long an", "tien giang", "ben tre", "tra vinh", "vinh long", "dong thap", "an giang", "kien giang", "can tho", "hau giang", "soc trang", "bac lieu", "ca mau" },
+                _ => Array.Empty<string>()
+            };
+
+            if (targetCities.Length > 0)
+            {
+                query = query.Where(t => t.City != null && targetCities.Contains(t.City.ToLower()));
+            }
+            else
+            {
+                return new List<Tour>();
+            }
+
+            var now = DateTime.UtcNow;
+            var tours = await query
+                .Where(t => t.TourSchedules.Any(s => s.DepartureDate > now))
+                .OrderByDescending(t => t.Id)
+                .Take(limit)
+                .Include(t => t.TourItineraries)
+                .Include(t => t.TourSchedules)
+                    .ThenInclude(t => t.TourScheduleTickets)
+                        .ThenInclude(t => t.Promotions)
+                .Include(t => t.Reviews)
+                .AsSplitQuery()
+                .ToListAsync();
+
+            return tours;
         }
 
         public async Task<Tour> GetById(int id)
