@@ -25,6 +25,7 @@ namespace TourAPI.Repositories
             DateTime? endDate = null,
             int? duration = null,
             string? sortBy = null);
+        Task<List<Tour>> GetToursByRegion(string region, int limit = 6);
         Task<(List<Tour> Tours, int Total)> GetByAdmin(
             int page,
             int pageSize,
@@ -35,6 +36,9 @@ namespace TourAPI.Repositories
             int page,
             int pageSize,
             string? searchTerm = null);
+        Task<List<Tour>> GetSaleTours(int limit = 6);
+        Task<List<Tour>> GetHotTours(int limit = 5);
+        Task<List<Tour>> GetUpcomingTours(int limit = 6);
         Task<Tour> GetById(int id);
         void Update(Tour model);
         Task Delete(int id);
