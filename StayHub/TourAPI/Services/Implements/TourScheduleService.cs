@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
@@ -238,7 +238,8 @@ namespace TourAPI.Services.Implements
                             Name = item.LocationName,
                             Lat = item.LocationLat.Value,
                             Lng = item.LocationLng.Value,
-                            Sequence = sequence++
+                            Sequence = sequence++,
+                            DayNumber = item.DayNumber
                         });
 
                         routeDto.GeometryCoordinates.Add(new List<double> { item.LocationLng.Value, item.LocationLat.Value });
