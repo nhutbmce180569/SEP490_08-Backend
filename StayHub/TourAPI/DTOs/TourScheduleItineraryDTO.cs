@@ -26,11 +26,11 @@ namespace TourAPI.DTOs
         [Required(ErrorMessage = "ScheduleId is required")]
         public int ScheduleId { get; set; }
 
-        [Required(ErrorMessage = "ItineraryDate is required")]
+        [Required(ErrorMessage = "Itinerary Date is required")]
         public DateTime ItineraryDate { get; set; }
 
-        [Required(ErrorMessage = "DayNumber is required")]
-        [Range(1, int.MaxValue, ErrorMessage = "DayNumber must be greater than 0")]
+        [Required(ErrorMessage = "Day Number is required")]
+        [Range(1, int.MaxValue, ErrorMessage = "Day Number must be greater than 0")]
         public int DayNumber { get; set; }
 
         [StringLength(255, ErrorMessage = "Title cannot exceed 255 characters")]
@@ -38,17 +38,21 @@ namespace TourAPI.DTOs
 
         public string? Description { get; set; }
 
-        [Required(ErrorMessage = "StartDuration is required")]
+        [Required(ErrorMessage = "Start Duration is required")]
         public TimeOnly? StartDuration { get; set; }
 
-        [Required(ErrorMessage = "EndDuration is required")]
+        [Required(ErrorMessage = "End Duration is required")]
         public TimeOnly? EndDuration { get; set; }
 
-        [StringLength(255, ErrorMessage = "LocationName cannot exceed 255 characters")]
+        [StringLength(255, ErrorMessage = "Location Name cannot exceed 255 characters")]
         public string? LocationName { get; set; }
 
+        [Required(ErrorMessage = "Location Lat is required")]
+        [Range(-90, 90, ErrorMessage = "Location Lat must be between -90 and 90")]
         public double? LocationLat { get; set; }
 
+        [Required(ErrorMessage = "Location Lng is required")]
+        [Range(-180, 180, ErrorMessage = "Location Lng must be between -180 and 180")]
         public double? LocationLng { get; set; }
         public int? TourismInfoId { get; set; }
 
