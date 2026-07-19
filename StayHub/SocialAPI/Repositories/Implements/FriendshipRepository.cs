@@ -93,9 +93,11 @@ public class FriendshipRepository : IFriendshipRepository
     public async Task<Friendship?> GetFriendshipBetweenUsersAsync(int user1, int user2)
     {
         return await _context.Friendships
-            .FirstOrDefaultAsync(f =>
+            .Where(f =>
                 (f.RequesterId == user1 && f.ReceiverId == user2) ||
-                (f.RequesterId == user2 && f.ReceiverId == user1));
+                (f.RequesterId == user2 && f.ReceiverId == user1))
+            .OrderByDescending(f => f.Id)
+            .FirstOrDefaultAsync();
     }
 
     public async Task<IEnumerable<Friendship>> GetSentRequestsAsync(int userId)

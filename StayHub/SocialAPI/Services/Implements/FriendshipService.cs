@@ -40,6 +40,37 @@ public class FriendshipService : IFriendshipService
         if (exists)
             throw new InvalidOperationException("A friendship or pending request already exists between these users.");
 
+        // Block friend requests to staff or admin roles
+        try
+        {
+            var userResponse = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", new List<int> { requestDto.ReceiverId });
+            if (userResponse.IsSuccessStatusCode)
+            {
+                var apiResult = await userResponse.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
+                var targetProfile = apiResult?.Data?.FirstOrDefault();
+                if (targetProfile != null)
+                {
+                    var isStaffOrAdmin = targetProfile.RoleNames.Any(r => 
+                        r.Equals("Staff", StringComparison.OrdinalIgnoreCase) || 
+                        r.Equals("Manager", StringComparison.OrdinalIgnoreCase) || 
+                        r.Equals("Admin", StringComparison.OrdinalIgnoreCase));
+                    
+                    if (isStaffOrAdmin)
+                    {
+                        throw new InvalidOperationException("You cannot send friend requests to staff or administrator accounts.");
+                    }
+                }
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            throw;
+        }
+        catch
+        {
+            // Swallowed fallback to not block system if AuthAPI is transiently down
+        }
+
         var friendship = _mapper.Map<Friendship>(requestDto);
         friendship.RequesterId = requesterId;
         friendship.Status = "Pending";
@@ -66,7 +97,7 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch", friendIds);
+            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", friendIds);
             if (response.IsSuccessStatusCode)
             {
                 var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
@@ -110,7 +141,7 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch", requesterIds);
+            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", requesterIds);
             if (response.IsSuccessStatusCode)
             {
                 var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
@@ -155,7 +186,7 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch", receiverIds);
+            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", receiverIds);
             if (response.IsSuccessStatusCode)
             {
                 var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
@@ -234,7 +265,7 @@ public class FriendshipService : IFriendshipService
 
         var friendIds = friends.Select(f => f.RequesterId == userId ? f.ReceiverId : f.RequesterId).Distinct().ToList();
 
-        var authApiUrl = $"{_authApiBase}/api/users/batch";
+        var authApiUrl = $"{_authApiBase}/api/users/batch/public";
         var userProfiles = new Dictionary<int, UserProfileShortDto>();
         try
         {
@@ -289,7 +320,7 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch", new List<int> { dto.FriendId });
+            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", new List<int> { dto.FriendId });
             if (response.IsSuccessStatusCode)
             {
                 var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();

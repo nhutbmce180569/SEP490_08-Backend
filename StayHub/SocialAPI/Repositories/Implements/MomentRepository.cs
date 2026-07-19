@@ -28,7 +28,7 @@ public class MomentRepository : IMomentRepository
     public async Task<IEnumerable<TourMoment>> GetMomentsByScheduleIdAsync(int? scheduleId, int currentUserId)
     {
         var query = _context.TourMoments
-            .AsNoTracking()
+            .AsNoTrackingWithIdentityResolution()
             .AsSplitQuery()
             .Include(m => m.MomentComments.Where(c => c.Status == "Approved"))
             .Include(m => m.MomentReactions)
@@ -42,19 +42,21 @@ public class MomentRepository : IMomentRepository
 
         query = query.Where(m => m.UserId == currentUserId ||
                      m.Privacy == "Public" ||
+                     m.Privacy == "Tour" ||
                      (m.Privacy == "Friend" && _context.Friendships.Any(f => f.Status == "Accepted" &&
                          ((f.RequesterId == currentUserId && f.ReceiverId == m.UserId) ||
                           (f.ReceiverId == currentUserId && f.RequesterId == m.UserId)))));
 
         return await query
             .OrderByDescending(m => m.CreatedAt)
+            .ThenByDescending(m => m.Id)
             .ToListAsync();
     }
 
     public async Task<IEnumerable<TourMoment>> GetMomentFeedPagedAsync(int? scheduleId, int currentUserId, int skip, int top)
     {
         var query = _context.TourMoments
-            .AsNoTracking()
+            .AsNoTrackingWithIdentityResolution()
             .AsSplitQuery()
             .Include(m => m.MomentComments.Where(c => c.Status == "Approved"))
             .Include(m => m.MomentReactions)
@@ -69,12 +71,14 @@ public class MomentRepository : IMomentRepository
         query = query.Where(m =>
             m.UserId == currentUserId ||
             m.Privacy == "Public" ||
+            m.Privacy == "Tour" ||
             (m.Privacy == "Friend" && _context.Friendships.Any(f => f.Status == "Accepted" &&
                 ((f.RequesterId == currentUserId && f.ReceiverId == m.UserId) ||
                  (f.ReceiverId == currentUserId && f.RequesterId == m.UserId)))));
 
         return await query
             .OrderByDescending(m => m.CreatedAt)
+            .ThenByDescending(m => m.Id)
             .Skip(skip)
             .Take(top)
             .ToListAsync();

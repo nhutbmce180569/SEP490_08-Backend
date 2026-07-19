@@ -133,12 +133,12 @@ namespace SocialAPI.Controllers
         // GET /api/locations/footprints
         // Tra ve toan bo dau chan (LocationLogs) cua nguoi dung -> "cao map" tu di chuyen.
         [HttpGet("footprints")]
-        public async Task<IActionResult> GetMyFootprints()
+        public async Task<IActionResult> GetMyFootprints([FromQuery] int? scheduleId)
         {
             try
             {
                 var userId = GetCurrentUserId();
-                var data = await _locationService.GetMyFootprintsAsync(userId);
+                var data = await _locationService.GetMyFootprintsAsync(userId, scheduleId);
                 return Ok(new { message = M("FootprintsRetrievedSuccessfully"), data });
             }
             catch (Exception ex)
@@ -159,6 +159,21 @@ namespace SocialAPI.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = M("AnErrorOccurredWhileRetrievingHeatmap"), details = ex.Message });
+            }
+        }
+
+        [HttpPost("stop")]
+        public async Task<IActionResult> StopLocationSharing()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                await _locationService.StopLocationSharingAsync(userId);
+                return Ok(new { message = M("LocationSharingStoppedSuccessfully") });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileStoppingLocationSharing"), details = ex.Message });
             }
         }
     }
