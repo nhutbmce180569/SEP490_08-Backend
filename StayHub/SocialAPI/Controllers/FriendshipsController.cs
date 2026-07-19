@@ -26,7 +26,10 @@ public class FriendshipsController : LocalizedControllerBase
 
     private int GetCurrentUserId()
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                          ?? User.FindFirst("sub")?.Value
+                          ?? User.FindFirst("id")?.Value;
+
         if (int.TryParse(userIdClaim, out int userId))
         {
             return userId;

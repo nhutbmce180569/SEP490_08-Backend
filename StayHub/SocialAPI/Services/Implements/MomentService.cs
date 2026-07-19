@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace SocialAPI.Services.Implements;
@@ -24,6 +25,9 @@ public class MomentService : IMomentService
     private readonly IFriendshipRepository _friendshipRepository;
     private readonly IContentModerator _contentModerator;
     private readonly StayHubSocialDbContext _dbContext;
+    private readonly IBookingApiClient _bookingApiClient;
+    private readonly ITourApiClient _tourApiClient;
+    private readonly IAuthApiClient _authApiClient;
 
     public MomentService(
         IMomentRepository momentRepository,
@@ -32,7 +36,10 @@ public class MomentService : IMomentService
         IHttpClientFactory httpClientFactory,
         IFriendshipRepository friendshipRepository,
         IContentModerator contentModerator,
-        StayHubSocialDbContext dbContext)
+        StayHubSocialDbContext dbContext,
+        IBookingApiClient bookingApiClient,
+        ITourApiClient tourApiClient,
+        IAuthApiClient authApiClient)
     {
         _momentRepository = momentRepository;
         _cloudStorageService = cloudStorageService;
@@ -41,10 +48,37 @@ public class MomentService : IMomentService
         _friendshipRepository = friendshipRepository;
         _contentModerator = contentModerator;
         _dbContext = dbContext;
+        _bookingApiClient = bookingApiClient;
+        _tourApiClient = tourApiClient;
+        _authApiClient = authApiClient;
     }
 
     public async Task<MomentResponseDto> CreateMomentAsync(MomentCreateDto dto)
     {
+        // Enforce validation rules for posting moments
+        if (dto.ScheduleId > 0)
+        {
+            var metadata = await _tourApiClient.GetScheduleMetadataAsync(dto.ScheduleId, null);
+            if (metadata == null)
+            {
+                throw new ArgumentException("The specified tour schedule was not found.");
+            }
+
+            var now = DateTime.UtcNow.Date;
+            bool isOngoing = now >= metadata.DepartureDate.Date && now <= metadata.ReturnDate.Date;
+            if (!isOngoing)
+            {
+                throw new ArgumentException("You can only post moments for currently ongoing tours.");
+            }
+        }
+        else if (dto.ScheduleId == 0)
+        {
+            if (dto.Privacy != null && dto.Privacy.Equals("Tour", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException("Personal moments cannot be shared with tour privacy.");
+            }
+        }
+
         string imageUrl = await _cloudStorageService.UploadImageAsync(dto.Image, "stayhub/social/moments");
 
         string status = "Approved";
@@ -95,8 +129,6 @@ public class MomentService : IMomentService
         var existingReaction = await _momentRepository.GetReactionAsync(momentId, dto.UserId);
         if (existingReaction != null)
         {
-            // Nếu click lại cùng loại reaction -> xóa (un-react)
-            // Nếu click khác loại -> cập nhật
             if (existingReaction.IsLike == dto.IsLike)
             {
                 await _momentRepository.RemoveReactionAsync(existingReaction);
@@ -111,6 +143,18 @@ public class MomentService : IMomentService
         {
             var reaction = new MomentReaction { MomentId = momentId, UserId = dto.UserId, IsLike = dto.IsLike };
             await _momentRepository.AddReactionAsync(reaction);
+
+            // Gửi thông báo cho chủ bài viết (chỉ khi like bài của người khác)
+            if (moment.UserId != dto.UserId && dto.IsLike == true)
+            {
+                await SendMomentNotificationAsync(
+                    recipientUserId: moment.UserId,
+                    actorUserId: dto.UserId,
+                    title: "Tim moi tren bai viet cua ban",
+                    contentTemplate: "da bam tim bai viet cua ban.",
+                    notifType: "moment_like"
+                );
+            }
         }
     }
 
@@ -141,12 +185,24 @@ public class MomentService : IMomentService
 
         var result = _mapper.Map<CommentResponseDto>(createdComment);
 
-        // ✅ Enrich thông tin người bình luận để client hiển thị tên/avatar ngay.
+        // Enrich thong tin nguoi binh luan
         var profiles = await FetchUserProfilesAsync(new List<int> { dto.UserId });
         if (profiles.TryGetValue(dto.UserId, out var p))
         {
             result.UserName = p.FullName;
             result.AvatarUrl = p.AvatarUrl;
+        }
+
+        // Gui thong bao cho chu bai viet (chi khi comment bai cua nguoi khac)
+        if (moment.UserId != dto.UserId)
+        {
+            await SendMomentNotificationAsync(
+                recipientUserId: moment.UserId,
+                actorUserId: dto.UserId,
+                title: "Binh luan moi tren bai viet cua ban",
+                contentTemplate: "da binh luan tren bai viet cua ban.",
+                notifType: "moment_comment"
+            );
         }
 
         return result;
@@ -195,9 +251,24 @@ public class MomentService : IMomentService
         await _momentRepository.DeleteMomentAsync(moment);
     }
 
-    public async Task<IEnumerable<MomentResponseDto>> GetMomentFeedWithUsersAsync(int? scheduleId, int currentUserId, int skip, int top)
+    public async Task<IEnumerable<MomentResponseDto>> GetMomentFeedWithUsersAsync(int? scheduleId, int currentUserId, string? bearerToken, int skip, int top)
     {
-        var moments = (await _momentRepository.GetMomentFeedPagedAsync(scheduleId, currentUserId, skip, top)).ToList();
+        var rawMoments = (await _momentRepository.GetMomentFeedPagedAsync(scheduleId, currentUserId, skip, top)).ToList();
+        
+        var moments = new List<TourMoment>();
+        foreach (var m in rawMoments)
+        {
+            if (m.Privacy.Equals("Tour", StringComparison.OrdinalIgnoreCase) && m.UserId != currentUserId)
+            {
+                bool isMember = await CheckIsTourMemberAsync(m.ScheduleId, currentUserId, bearerToken);
+                if (!isMember)
+                {
+                    continue;
+                }
+            }
+            moments.Add(m);
+        }
+
         var dtos = _mapper.Map<List<MomentResponseDto>>(moments);
 
         if (!dtos.Any()) return dtos;
@@ -253,31 +324,43 @@ public class MomentService : IMomentService
         return dtos;
     }
 
+    private async Task<bool> CheckIsTourMemberAsync(int scheduleId, int userId, string? bearerToken)
+    {
+        if (scheduleId <= 0) return false;
+        try
+        {
+            var metadata = await _tourApiClient.GetScheduleMetadataAsync(scheduleId, bearerToken);
+            if (metadata != null)
+            {
+                if (metadata.TourCreatedBy == userId || (metadata.StaffIds != null && metadata.StaffIds.Contains(userId)))
+                {
+                    return true;
+                }
+            }
+
+            var bookedCustomerIds = await _bookingApiClient.GetCustomerIdsByScheduleAsync(scheduleId);
+            if (bookedCustomerIds != null && bookedCustomerIds.Contains(userId))
+            {
+                return true;
+            }
+        }
+        catch { }
+        return false;
+    }
+
     // ✅ Helper dùng chung: batch fetch user profiles (an toàn nếu user service lỗi).
     private async Task<Dictionary<int, UserProfileShortDto>> FetchUserProfilesAsync(List<int> userIds)
     {
-        var result = new Dictionary<int, UserProfileShortDto>();
-        if (userIds == null || userIds.Count == 0) return result;
-
-        using var client = _httpClientFactory.CreateClient();
+        if (userIds == null || userIds.Count == 0) return new Dictionary<int, UserProfileShortDto>();
         try
         {
-            var response = await client.PostAsJsonAsync("http://localhost:5046/api/users/batch", userIds);
-            if (response.IsSuccessStatusCode)
-            {
-                var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                if (apiResult?.Data != null)
-                {
-                    result = apiResult.Data.ToDictionary(u => u.Id, u => u);
-                }
-            }
+            return await _authApiClient.GetUserProfilesAsync(userIds);
         }
         catch
         {
             // Nuốt lỗi để feed vẫn load được khi user service không khả dụng.
+            return new Dictionary<int, UserProfileShortDto>();
         }
-
-        return result;
     }
 
     public async Task<IEnumerable<FootprintDto>> GetMyFootprintsAsync(int userId)
@@ -537,5 +620,51 @@ public class MomentService : IMomentService
         }
 
         return dto;
+    }
+
+    /// <summary>
+    /// Gui thong bao den SystemAPI khi nguoi dung like/comment bai viet cua nguoi khac.
+    /// </summary>
+    private async Task SendMomentNotificationAsync(
+        int recipientUserId,
+        int actorUserId,
+        string title,
+        string contentTemplate,
+        string notifType)
+    {
+        try
+        {
+            // Lay ten nguoi thuc hien hanh dong
+            string actorName = $"Nguoi dung #{actorUserId}";
+            try
+            {
+                var profiles = await _authApiClient.GetUserProfilesAsync(new List<int> { actorUserId });
+                if (profiles != null && profiles.TryGetValue(actorUserId, out var profile) && !string.IsNullOrWhiteSpace(profile.FullName))
+                {
+                    actorName = profile.FullName;
+                }
+            }
+            catch { /* Fallback to generic name */ }
+
+            var internalKey = "stayhub-internal-2025-xK9mP";
+            var client = _httpClientFactory.CreateClient("SystemApiClient");
+            var payload = new
+            {
+                UserId = recipientUserId,
+                Title = title,
+                Content = $"{actorName} {contentTemplate}"
+            };
+
+            var request = new HttpRequestMessage(HttpMethod.Post, "/api/notifications/internal/send")
+            {
+                Content = JsonContent.Create(payload)
+            };
+            request.Headers.Add("X-Internal-Key", internalKey);
+            await client.SendAsync(request);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MomentService] Failed to send {notifType} notification: {ex.Message}");
+        }
     }
 }

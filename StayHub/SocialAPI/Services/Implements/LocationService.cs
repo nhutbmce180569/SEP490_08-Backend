@@ -374,11 +374,31 @@ namespace SocialAPI.Services.Implements
                 var lng = root.GetProperty("lng").GetDouble();
                 var lastUpdated = root.GetProperty("lastUpdated").GetDateTime();
 
+                string fullName = $"User #{userId}";
+                string? avatarUrl = null;
+
+                try
+                {
+                    var userProfiles = await _authApiClient.GetUserProfilesAsync(new List<int> { userId });
+                    if (userProfiles != null && userProfiles.TryGetValue(userId, out var userProfile))
+                    {
+                        if (!string.IsNullOrWhiteSpace(userProfile.FullName))
+                        {
+                            fullName = userProfile.FullName;
+                        }
+                        avatarUrl = userProfile.AvatarUrl;
+                    }
+                }
+                catch
+                {
+                    // Fallback to User #{userId} if auth service unavailable
+                }
+
                 return new FriendLocationResponseDto
                 {
                     UserId = userId,
-                    FullName = "Anonymous user",
-                    AvatarUrl = null,
+                    FullName = fullName,
+                    AvatarUrl = avatarUrl,
                     Lat = lat,
                     Lng = lng,
                     LastUpdated = lastUpdated
@@ -390,7 +410,7 @@ namespace SocialAPI.Services.Implements
             }
         }
 
-        public async Task<IEnumerable<FootprintDto>> GetMyFootprintsAsync(int userId)
+        public async Task<IEnumerable<FootprintDto>> GetMyFootprintsAsync(int userId, int? scheduleId = null)
         {
             try
             {
@@ -398,9 +418,16 @@ namespace SocialAPI.Services.Implements
                 // Tranh tra ve hang ngan diem ping trung nhau khi di chuyen lau.
                 const int precision = 4;
 
-                var footprints = await _context.LocationLogs
+                var query = _context.LocationLogs
                     .AsNoTracking()
-                    .Where(x => x.UserId == userId)
+                    .Where(x => x.UserId == userId);
+
+                if (scheduleId.HasValue && scheduleId.Value > 0)
+                {
+                    query = query.Where(x => x.ScheduleId == scheduleId.Value);
+                }
+
+                var footprints = await query
                     .GroupBy(x => new
                     {
                         LatBucket = Math.Round(x.Lat, precision),
@@ -524,6 +551,46 @@ namespace SocialAPI.Services.Implements
             catch (Exception)
             {
                 return new List<HeatPointDto>();
+            }
+        }
+
+        public async Task StopLocationSharingAsync(int userId)
+        {
+            try
+            {
+                var db = _redis.GetDatabase();
+
+                // 1. Delete live position key
+                await db.KeyDeleteAsync($"live_loc_{userId}");
+
+                // 2. Find and delete all active sharing tokens of this user
+                var userTokensKey = $"user_tokens_{userId}";
+                var activeTokens = await db.SetMembersAsync(userTokensKey);
+                if (activeTokens != null && activeTokens.Length > 0)
+                {
+                    foreach (var tokenVal in activeTokens)
+                    {
+                        await db.KeyDeleteAsync($"tracking_{tokenVal}");
+                    }
+                }
+
+                // 3. Delete user tokens collection key
+                await db.KeyDeleteAsync(userTokensKey);
+
+                // 4. Notify friends via SignalR
+                var friendIds = await _context.Friendships
+                    .Where(f => f.Status == "Accepted" && (f.RequesterId == userId || f.ReceiverId == userId))
+                    .Select(f => f.RequesterId == userId ? f.ReceiverId : f.RequesterId)
+                    .ToListAsync();
+
+                foreach (var friendId in friendIds)
+                {
+                    await _hubContext.Clients.User(friendId.ToString()).SendAsync("ReceiveUserStoppedSharing", userId);
+                }
+            }
+            catch (Exception)
+            {
+                // Ignore exception to keep endpoint safe
             }
         }
     }
