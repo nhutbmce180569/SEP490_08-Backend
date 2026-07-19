@@ -36,14 +36,14 @@ namespace TourAPI.DTOs
         public int TicketTypeId { get; set; }
 
         [Required(ErrorMessage = "Price is required")]
-        [Range(0, long.MaxValue, ErrorMessage = "Price must be greater than or equal to 0")]
+        [Range(1, long.MaxValue, ErrorMessage = "Price must be greater than 0")]
         public long Price { get; set; }
 
         [Required(ErrorMessage = "Quantity is required")]
-        [Range(0, int.MaxValue, ErrorMessage = "Quantity must be greater than or equal to 0")]
+        [Range(1, int.MaxValue, ErrorMessage = "Quantity must be greater than 0")]
         public int Quantity { get; set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "SoldQuantity must be greater than or equal to 0")]
+        [Range(0, int.MaxValue, ErrorMessage = "Sold Quantity must be greater than or equal to 0")]
         public int? SoldQuantity { get; set; }
 
         public bool? IsActive { get; set; }
