@@ -31,7 +31,6 @@ namespace AuthAPI.Repositories.Implements
         {
             var query = _context.Users
                 .Include(r => r.Roles)
-                .Where(u => !u.Roles.Any(r => r.Name == "Admin"))
                 .AsNoTracking();
 
             int total = await query.CountAsync();
@@ -83,7 +82,6 @@ namespace AuthAPI.Repositories.Implements
         {
             var queryable = _context.Users
                 .Include(u => u.Roles)
-                .Where(u => !u.Roles.Any(r => r.Name == "Admin"))
                 .Where(u => u.FullName.Contains(query) || u.Email.Contains(query))
                 .AsNoTracking();
 
@@ -118,7 +116,6 @@ namespace AuthAPI.Repositories.Implements
         {
             var query = _context.Users
                 .Include(u => u.Roles)
-                .Where(u => !u.Roles.Any(r => r.Name == "Admin"))
                 .AsNoTracking()
                 .AsQueryable();
 

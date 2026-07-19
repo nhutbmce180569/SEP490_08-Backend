@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace ContentAPI.DTOs
 {
@@ -20,11 +20,10 @@ namespace ContentAPI.DTOs
         [Required(ErrorMessage = "Banner image is required.")]
         public IFormFile ImageFile { get; set; } = null!;
 
+        [MaxLength(500, ErrorMessage = "Target URL cannot exceed 500 characters.")]
         public string? TargetUrl { get; set; }
 
         public int? Priority { get; set; } = 0;
-
-        public bool? IsActive { get; set; } = true;
     }
     public class UpdateBannerDTO
     {
@@ -34,6 +33,7 @@ namespace ContentAPI.DTOs
 
         public IFormFile? ImageFile { get; set; }
 
+        [MaxLength(500, ErrorMessage = "Target URL cannot exceed 500 characters.")]
         public string? TargetUrl { get; set; }
 
         public int? Priority { get; set; }
