@@ -119,10 +119,10 @@
     <value>Cannot request metrics for more than 100 customers at once.</value>
   </data>
   <data name="CategoryActivatedSuccessfully" xml:space="preserve">
-    <value>Category activated successfully.</value>
+    <value>Kích hoạt danh mục thành công.</value>
   </data>
   <data name="CategoryDeactivatedSuccessfully" xml:space="preserve">
-    <value>Category deactivated successfully.</value>
+    <value>Vô hiệu hóa danh mục thành công.</value>
   </data>
   <data name="CategoryNotFound" xml:space="preserve">
     <value>Không tìm thấy danh mục.</value>
@@ -131,7 +131,7 @@
     <value>Không tìm thấy danh mục hoặc đã bị xóa.</value>
   </data>
   <data name="CategoryUpdatedSuccessfully" xml:space="preserve">
-    <value>Category updated successfully.</value>
+    <value>Cập nhật danh mục thành công.</value>
   </data>
   <data name="CommentDeletedSuccessfully" xml:space="preserve">
     <value>Comment deleted successfully.</value>
@@ -214,8 +214,20 @@
   <data name="ForgotPasswordSuccess" xml:space="preserve">
     <value>Nếu email đã đăng ký, mã đặt lại mật khẩu đã được gửi.</value>
   </data>
+  <data name="SocialAccountCannotResetPassword" xml:space="preserve">
+    <value>Tài khoản này đăng nhập bằng Google. Không thể đặt lại mật khẩu bằng email, vui lòng đăng nhập trực tiếp bằng Google.</value>
+  </data>
+  <data name="SocialAccountCannotChangePassword" xml:space="preserve">
+    <value>Tài khoản này đăng nhập bằng Google, không cần đổi mật khẩu tại đây.</value>
+  </data>
   <data name="OtpRequestTooSoon" xml:space="preserve">
     <value>Vui lòng chờ trước khi yêu cầu mã xác minh mới.</value>
+  </data>
+  <data name="InvalidOrExpiredOtp" xml:space="preserve">
+    <value>Mã xác nhận OTP không chính xác hoặc đã hết hạn.</value>
+  </data>
+  <data name="OtpVerifiedSuccessfully" xml:space="preserve">
+    <value>Xác nhận OTP thành công. Bạn có thể đặt lại mật khẩu mới.</value>
   </data>
   <data name="GoogleLoginSuccessful" xml:space="preserve">
     <value>Đăng nhập Google thành công.</value>
@@ -627,5 +639,41 @@
   </data>
   <data name="UserAccountUnblockedSuccess" xml:space="preserve">
     <value>Tài khoản đã được mở khóa và kích hoạt thành công.</value>
+  </data>
+  <data name="RegisterOtpSentSuccessfully" xml:space="preserve">
+    <value>Mã xác nhận đăng ký đã được gửi đến email của bạn.</value>
+  </data>
+  <data name="FullNameCannotContainSpecialCharacters" xml:space="preserve">
+    <value>Họ và tên không được chứa ký tự đặc biệt hoặc biểu tượng.</value>
+  </data>
+  <data name="PhoneNumberMax15Chars" xml:space="preserve">
+    <value>Số điện thoại tối đa 15 chữ số.</value>
+  </data>
+  <data name="InvalidPhoneNumberFormat" xml:space="preserve">
+    <value>Định dạng số điện thoại không hợp lệ.</value>
+  </data>
+  <data name="VerificationCodeRequired" xml:space="preserve">
+    <value>Vui lòng nhập mã xác nhận OTP.</value>
+  </data>
+  <data name="GoogleLoginRequirePhoneNumber" xml:space="preserve">
+    <value>Vui lòng bổ sung số điện thoại để hoàn tất đăng ký tài khoản Google.</value>
+  </data>
+  <data name="CategoryNameAlreadyExists" xml:space="preserve">
+    <value>Tên danh mục này đã tồn tại. Vui lòng chọn tên khác.</value>
+  </data>
+  <data name="CategorySlugAlreadyExists" xml:space="preserve">
+    <value>Slug này đã tồn tại. Vui lòng chọn slug khác.</value>
+  </data>
+  <data name="CategoryCannotBeDeletedHasTours" xml:space="preserve">
+    <value>Không thể xóa danh mục này vì đang có các tour du lịch liên kết với nó. Vui lòng xóa các tour liên kết trước khi thực hiện.</value>
+  </data>
+  <data name="CategoryNameNoSpecialChars" xml:space="preserve">
+    <value>Tên danh mục không được chứa ký tự đặc biệt.</value>
+  </data>
+  <data name="CategorySlugInvalidFormat" xml:space="preserve">
+    <value>Slug chỉ được chứa chữ thường (không dấu), số và dấu gạch nối.</value>
+  </data>
+  <data name="OnlyImageFilesAllowed" xml:space="preserve">
+    <value>Chỉ được upload file hình ảnh (JPG, PNG, GIF, SVG, WEBP). Không cho phép upload tài liệu hoặc các file khác.</value>
   </data>
 </root>
