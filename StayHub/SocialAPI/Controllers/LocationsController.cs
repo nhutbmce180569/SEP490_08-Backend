@@ -6,6 +6,7 @@ using StayHub.Common.Resources;
 using SocialAPI.DTOs;
 using SocialAPI.Services;
 using System;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -174,6 +175,36 @@ namespace SocialAPI.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = M("AnErrorOccurredWhileStoppingLocationSharing"), details = ex.Message });
+            }
+        }
+
+        [HttpPost("revoke-token")]
+        public async Task<IActionResult> RevokeTrackingToken([FromBody] RevokeTokenDto dto)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                await _locationService.RevokeTrackingTokenAsync(userId, dto.Token);
+                return Ok(new { message = M("TokenRevokedSuccessfully") });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileRevokingToken"), details = ex.Message });
+            }
+        }
+
+        [HttpPost("offline")]
+        public async Task<IActionResult> GoOffline()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                await _locationService.GoOfflineAsync(userId);
+                return Ok(new { message = M("UserWentOfflineSuccessfully") });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileGoingOffline"), details = ex.Message });
             }
         }
     }

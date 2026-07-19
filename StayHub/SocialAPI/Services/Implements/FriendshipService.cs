@@ -20,14 +20,16 @@ public class FriendshipService : IFriendshipService
     private readonly IMapper _mapper;
     private readonly HttpClient _httpClient;
     private readonly IHubContext<FriendshipHub> _hubContext;
+    private readonly IAuthApiClient _authApiClient;
     private readonly string _authApiBase;
 
-    public FriendshipService(IFriendshipRepository friendshipRepository, IMapper mapper, HttpClient httpClient, IHubContext<FriendshipHub> hubContext, IConfiguration configuration)
+    public FriendshipService(IFriendshipRepository friendshipRepository, IMapper mapper, HttpClient httpClient, IHubContext<FriendshipHub> hubContext, IConfiguration configuration, IAuthApiClient authApiClient)
     {
         _friendshipRepository = friendshipRepository;
         _mapper = mapper;
         _httpClient = httpClient;
         _hubContext = hubContext;
+        _authApiClient = authApiClient;
         _authApiBase = configuration["InternalApi:AuthApiBaseUrl"] ?? "https://localhost:7001";
     }
 
@@ -40,25 +42,21 @@ public class FriendshipService : IFriendshipService
         if (exists)
             throw new InvalidOperationException("A friendship or pending request already exists between these users.");
 
-        // Block friend requests to staff or admin roles
+        // Block friend requests to Staff/Manager/Admin accounts.
+        // Uses IAuthApiClient (internal /api/users/batch) which returns full RoleNames.
         try
         {
-            var userResponse = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", new List<int> { requestDto.ReceiverId });
-            if (userResponse.IsSuccessStatusCode)
+            var profiles = await _authApiClient.GetUserProfilesAsync(new List<int> { requestDto.ReceiverId });
+            if (profiles.TryGetValue(requestDto.ReceiverId, out var targetProfile))
             {
-                var apiResult = await userResponse.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                var targetProfile = apiResult?.Data?.FirstOrDefault();
-                if (targetProfile != null)
+                var isRestrictedRole = targetProfile.RoleNames.Any(r =>
+                    r.Equals("Staff", StringComparison.OrdinalIgnoreCase) ||
+                    r.Equals("Manager", StringComparison.OrdinalIgnoreCase) ||
+                    r.Equals("Admin", StringComparison.OrdinalIgnoreCase));
+
+                if (isRestrictedRole)
                 {
-                    var isStaffOrAdmin = targetProfile.RoleNames.Any(r => 
-                        r.Equals("Staff", StringComparison.OrdinalIgnoreCase) || 
-                        r.Equals("Manager", StringComparison.OrdinalIgnoreCase) || 
-                        r.Equals("Admin", StringComparison.OrdinalIgnoreCase));
-                    
-                    if (isStaffOrAdmin)
-                    {
-                        throw new InvalidOperationException("You cannot send friend requests to staff or administrator accounts.");
-                    }
+                    throw new InvalidOperationException("You cannot send friend requests to staff or administrator accounts.");
                 }
             }
         }
@@ -68,7 +66,7 @@ public class FriendshipService : IFriendshipService
         }
         catch
         {
-            // Swallowed fallback to not block system if AuthAPI is transiently down
+            // Swallowed: do not block the request if AuthAPI is transiently unavailable
         }
 
         var friendship = _mapper.Map<Friendship>(requestDto);

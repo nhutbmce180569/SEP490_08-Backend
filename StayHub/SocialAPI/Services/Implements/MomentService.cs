@@ -65,10 +65,12 @@ public class MomentService : IMomentService
             }
 
             var now = DateTime.UtcNow.Date;
-            bool isOngoing = now >= metadata.DepartureDate.Date && now <= metadata.ReturnDate.Date;
-            if (!isOngoing)
+            // Block posting moments for tours that have not started yet.
+            // Tours in progress and completed tours are both allowed (commemorative moments).
+            if (metadata.DepartureDate.Date > now)
             {
-                throw new ArgumentException("You can only post moments for currently ongoing tours.");
+                throw new ArgumentException(
+                    $"Cannot post a moment for a tour that has not started yet. The tour departs on {metadata.DepartureDate:yyyy-MM-dd}.");
             }
         }
         else if (dto.ScheduleId == 0)
