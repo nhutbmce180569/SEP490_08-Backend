@@ -38,6 +38,40 @@ namespace AuthAPI.Services.Implements
     </div>";
         }
 
+        public string GenerateRegisterOtpEmailBody(string fullName, string otp)
+        {
+            return $@"
+    <div style='font-family: ""Helvetica Neue"", Helvetica, Arial, sans-serif; background-color: #f4f5f7; padding: 40px 20px; color: #333333;'>
+        <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);'>
+            
+            <h2 style='color: #2c3e50; text-align: center; border-bottom: 2px solid #f0f2f5; padding-bottom: 20px; margin-top: 0;'>Welcome to StayHub!</h2>
+            
+            <p style='font-size: 16px; line-height: 1.6; margin-top: 20px;'>Hello <strong>{fullName}</strong>,</p>
+            
+            <p style='font-size: 16px; line-height: 1.6;'>Thank you for registering an account on StayHub. To complete your account registration and verify your email address, please use the verification code below:</p>
+            
+            <div style='text-align: center; margin: 35px 0;'>
+                <span style='font-size: 32px; font-weight: bold; color: #10b981; letter-spacing: 8px; padding: 15px 30px; background-color: #ecfdf5; border-radius: 8px; border: 2px dashed #10b981; display: inline-block;'>{otp}</span>
+            </div>
+            
+            <p style='font-size: 15px; color: #059669; text-align: center; font-weight: bold; margin-bottom: 30px;'>
+                ⏱️ This verification code is valid for exactly 10 minutes.
+            </p>
+            
+            <p style='font-size: 14px; line-height: 1.6; color: #666666;'>
+                If you did not request to create an account on StayHub, you can safely ignore this email.
+            </p>
+            
+            <hr style='border: none; border-top: 1px solid #eeeeee; margin: 30px 0;' />
+            
+            <p style='font-size: 13px; color: #999999; text-align: center; margin-bottom: 0;'>
+                Best regards,<br>
+                <strong>The StayHub Team</strong>
+            </p>
+        </div>
+    </div>";
+        }
+
         public string GenerateTemporaryCredentialsEmailBody(string fullName, string email, string temporaryPassword)
         {
             var safeEmail = WebUtility.HtmlEncode(email);

@@ -512,4 +512,16 @@
   <data name="VoucherCode must be between 3 and 50 characters" xml:space="preserve">
     <value>VoucherCode must be between 3 and 50 characters</value>
   </data>
+  <data name="FullNameCannotContainSpecialCharacters" xml:space="preserve">
+    <value>Full name cannot contain special characters or icons.</value>
+  </data>
+  <data name="PhoneNumberMax15Chars" xml:space="preserve">
+    <value>Phone number cannot exceed 15 digits.</value>
+  </data>
+  <data name="InvalidPhoneNumberFormat" xml:space="preserve">
+    <value>Invalid phone number format.</value>
+  </data>
+  <data name="VerificationCodeRequired" xml:space="preserve">
+    <value>OTP verification code is required.</value>
+  </data>
 </root>

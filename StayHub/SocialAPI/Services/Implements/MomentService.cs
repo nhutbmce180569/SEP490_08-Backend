@@ -262,7 +262,7 @@ public class MomentService : IMomentService
         using var client = _httpClientFactory.CreateClient();
         try
         {
-            var response = await client.PostAsJsonAsync("https://localhost:7010/api/users/batch", userIds);
+            var response = await client.PostAsJsonAsync("http://localhost:5046/api/users/batch", userIds);
             if (response.IsSuccessStatusCode)
             {
                 var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();

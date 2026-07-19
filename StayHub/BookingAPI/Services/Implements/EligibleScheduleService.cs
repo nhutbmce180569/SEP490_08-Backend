@@ -52,7 +52,7 @@ namespace BookingAPI.Services.Implements
                 }
 
                 // Thay đổi URL Gateway/Catalog tùy thuộc vào hệ thống của bạn
-                var catalogApiUrl = "https://localhost:7010/api/tourschedules/batch";
+                var catalogApiUrl = "http://localhost:5046/api/tourschedules/batch";
                 var scheduleResponse = await client.PostAsJsonAsync(catalogApiUrl, distinctScheduleIds);
 
                 if (scheduleResponse.IsSuccessStatusCode)
@@ -65,7 +65,7 @@ namespace BookingAPI.Services.Implements
                         var tourIds = scheduleDetails.Where(s => s.TourId > 0).Select(s => s.TourId).Distinct().ToList();
                         if (tourIds.Any())
                         {
-                            var toursApiUrl = "https://localhost:7010/api/tours/batch";
+                            var toursApiUrl = "http://localhost:5046/api/tours/batch";
                             var toursResponse = await client.PostAsJsonAsync(toursApiUrl, tourIds);
 
                             if (toursResponse.IsSuccessStatusCode)

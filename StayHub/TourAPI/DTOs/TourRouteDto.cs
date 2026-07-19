@@ -14,5 +14,6 @@ namespace TourAPI.DTOs
         public double Lat { get; set; }
         public double Lng { get; set; }
         public int Sequence { get; set; }
+        public int DayNumber { get; set; }
     }
 }
