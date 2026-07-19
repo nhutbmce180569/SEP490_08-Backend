@@ -21,10 +21,12 @@ namespace TourAPI.DTOs
     {
         [Required(ErrorMessage = "Code is required")]
         [StringLength(25, MinimumLength = 3, ErrorMessage = "Code must be between 3 and 25 characters")]
+        [RegularExpression(@"^[\p{L}\p{N}\s]*$", ErrorMessage = "Code cannot contain special characters.")]
         public string Code { get; set; } = null!;
 
         [Required(ErrorMessage = "Name is required")]
         [StringLength(100, MinimumLength = 5, ErrorMessage = "Name must be between 5 and 100 characters")]
+        [RegularExpression(@"^[\p{L}\p{N}\s]*$", ErrorMessage = "Name cannot contain special characters.")]
         public string Name { get; set; } = null!;
 
         public string? Description { get; set; }
