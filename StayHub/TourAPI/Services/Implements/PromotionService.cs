@@ -23,6 +23,21 @@ namespace TourAPI.Services.Implements
                 throw new ArgumentException("StartDate must be before EndDate");
             }
 
+            if (dto.DiscountType == "PERCENTAGE" && (dto.DiscountValue < 1 || dto.DiscountValue > 100))
+            {
+                throw new ArgumentException("Percentage discount must be between 1 and 100");
+            }
+
+            if (dto.DiscountType == "FIXED" && dto.DiscountValue < 10000)
+            {
+                throw new ArgumentException("Fixed discount must be at least 10,000 VND");
+            }
+
+            if (dto.DiscountType == "PERCENTAGE" && dto.MaxDiscountAmount.HasValue && dto.MaxDiscountAmount.Value < 10000)
+            {
+                throw new ArgumentException("Max discount amount must be at least 10,000 VND");
+            }
+
             var existingPromotion = await _promotionRepository.GetByCode(dto.Code);
             if (existingPromotion != null)
             {
@@ -83,6 +98,21 @@ namespace TourAPI.Services.Implements
                 throw new ArgumentException("StartDate must be before EndDate");
             }
 
+            if (dto.DiscountType == "PERCENTAGE" && (dto.DiscountValue < 1 || dto.DiscountValue > 100))
+            {
+                throw new ArgumentException("Percentage discount must be between 1 and 100");
+            }
+
+            if (dto.DiscountType == "FIXED" && dto.DiscountValue < 10000)
+            {
+                throw new ArgumentException("Fixed discount must be at least 10,000 VND");
+            }
+
+            if (dto.DiscountType == "PERCENTAGE" && dto.MaxDiscountAmount.HasValue && dto.MaxDiscountAmount.Value < 10000)
+            {
+                throw new ArgumentException("Max discount amount must be at least 10,000 VND");
+            }
+
             var promotion = await _promotionRepository.GetById(id);
             if (promotion == null)
             {
@@ -91,11 +121,12 @@ namespace TourAPI.Services.Implements
 
             if (promotion.Code != dto.Code)
             {
-                var existingPromotion = await _promotionRepository.GetByCode(dto.Code);
-                if (existingPromotion != null)
-                {
-                    throw new ArgumentException($"Promotion with code {dto.Code} already exists");
-                }
+                throw new ArgumentException("Cannot change Promotion Code");
+            }
+
+            if (promotion.DiscountType != dto.DiscountType)
+            {
+                throw new ArgumentException("Cannot change Discount Type");
             }
 
             _mapper.Map(dto, promotion);
