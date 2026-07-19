@@ -93,5 +93,38 @@ namespace AuthAPI.Services.Implements
   </div>
 </div>";
         }
+
+        public string GenerateAccountBlockedEmailBody(string fullName)
+        {
+            var safeFullName = WebUtility.HtmlEncode(fullName);
+            return $@"
+<div style='font-family: Arial, sans-serif; background: #f4f6f8; padding: 32px 16px; color: #1f2937;'>
+  <div style='max-width: 600px; margin: 0 auto; background: #ffffff; padding: 32px; border-radius: 12px; border-top: 4px solid #ef4444;'>
+    <h2 style='margin-top: 0; color: #b91c1c;'>Account Blocked</h2>
+    <p>Hello <strong>{safeFullName}</strong>,</p>
+    <p>We are writing to inform you that your StayHub account has been blocked by an administrator.</p>
+    <p>While your account is blocked, you will not be able to log in, make bookings, or access your profile.</p>
+    <p>If you believe this is an error or would like more information, please contact our support team.</p>
+    <br/>
+    <p>Best regards,<br/><strong>The StayHub Team</strong></p>
+  </div>
+</div>";
+        }
+
+        public string GenerateAccountActivatedEmailBody(string fullName)
+        {
+            var safeFullName = WebUtility.HtmlEncode(fullName);
+            return $@"
+<div style='font-family: Arial, sans-serif; background: #f4f6f8; padding: 32px 16px; color: #1f2937;'>
+  <div style='max-width: 600px; margin: 0 auto; background: #ffffff; padding: 32px; border-radius: 12px; border-top: 4px solid #10b981;'>
+    <h2 style='margin-top: 0; color: #047857;'>Account Activated</h2>
+    <p>Hello <strong>{safeFullName}</strong>,</p>
+    <p>We are pleased to inform you that your StayHub account has been activated by an administrator.</p>
+    <p>You can now log in and access all features of the platform.</p>
+    <br/>
+    <p>Welcome back!<br/><strong>The StayHub Team</strong></p>
+  </div>
+</div>";
+        }
     }
 }
