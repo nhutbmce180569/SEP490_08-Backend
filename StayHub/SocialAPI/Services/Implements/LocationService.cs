@@ -554,7 +554,7 @@ namespace SocialAPI.Services.Implements
             }
         }
 
-        public async Task StopLocationSharingAsync(int userId)
+        public async Task GoOfflineAsync(int userId)
         {
             try
             {
@@ -563,21 +563,7 @@ namespace SocialAPI.Services.Implements
                 // 1. Delete live position key
                 await db.KeyDeleteAsync($"live_loc_{userId}");
 
-                // 2. Find and delete all active sharing tokens of this user
-                var userTokensKey = $"user_tokens_{userId}";
-                var activeTokens = await db.SetMembersAsync(userTokensKey);
-                if (activeTokens != null && activeTokens.Length > 0)
-                {
-                    foreach (var tokenVal in activeTokens)
-                    {
-                        await db.KeyDeleteAsync($"tracking_{tokenVal}");
-                    }
-                }
-
-                // 3. Delete user tokens collection key
-                await db.KeyDeleteAsync(userTokensKey);
-
-                // 4. Notify friends via SignalR
+                // 2. Notify friends via SignalR
                 var friendIds = await _context.Friendships
                     .Where(f => f.Status == "Accepted" && (f.RequesterId == userId || f.ReceiverId == userId))
                     .Select(f => f.RequesterId == userId ? f.ReceiverId : f.RequesterId)
@@ -590,7 +576,61 @@ namespace SocialAPI.Services.Implements
             }
             catch (Exception)
             {
+                // Idempotent and safe: swallow exception to prevent 500
+            }
+        }
+
+        public async Task StopLocationSharingAsync(int userId)
+        {
+            try
+            {
+                // Reuse offline logic to delete live location and notify friends
+                await GoOfflineAsync(userId);
+
+                var db = _redis.GetDatabase();
+
+                // Delete active sharing tokens
+                var userTokensKey = $"user_tokens_{userId}";
+                var activeTokens = await db.SetMembersAsync(userTokensKey);
+                if (activeTokens != null && activeTokens.Length > 0)
+                {
+                    foreach (var tokenVal in activeTokens)
+                    {
+                        await db.KeyDeleteAsync($"tracking_{tokenVal}");
+                    }
+                }
+
+                // Delete user tokens collection key
+                await db.KeyDeleteAsync(userTokensKey);
+            }
+            catch (Exception)
+            {
                 // Ignore exception to keep endpoint safe
+            }
+        }
+
+        public async Task RevokeTrackingTokenAsync(int currentUserId, string token)
+        {
+            if (string.IsNullOrWhiteSpace(token)) return;
+
+            try
+            {
+                var db = _redis.GetDatabase();
+                var trackingKey = $"tracking_{token}";
+                var userIdVal = await db.StringGetAsync(trackingKey);
+
+                if (userIdVal.HasValue && int.TryParse(userIdVal.ToString(), out int userId))
+                {
+                    if (userId == currentUserId)
+                    {
+                        await db.KeyDeleteAsync(trackingKey);
+                        await db.SetRemoveAsync($"user_tokens_{currentUserId}", token);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Idempotent and safe: swallow exception to prevent 500
             }
         }
     }

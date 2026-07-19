@@ -676,4 +676,16 @@
   <data name="OnlyImageFilesAllowed" xml:space="preserve">
     <value>Chỉ được upload file hình ảnh (JPG, PNG, GIF, SVG, WEBP). Không cho phép upload tài liệu hoặc các file khác.</value>
   </data>
+  <data name="TokenRevokedSuccessfully" xml:space="preserve">
+    <value>Thu hồi token thành công.</value>
+  </data>
+  <data name="UserWentOfflineSuccessfully" xml:space="preserve">
+    <value>Ngoại tuyến thành công.</value>
+  </data>
+  <data name="AnErrorOccurredWhileRevokingToken" xml:space="preserve">
+    <value>Lỗi xảy ra khi thu hồi token.</value>
+  </data>
+  <data name="AnErrorOccurredWhileGoingOffline" xml:space="preserve">
+    <value>Lỗi xảy ra khi chuyển sang trạng thái ngoại tuyến.</value>
+  </data>
 </root>
