@@ -20,11 +20,11 @@ namespace TourAPI.DTOs
     public abstract class BasePromotionDTO
     {
         [Required(ErrorMessage = "Code is required")]
-        [StringLength(50, MinimumLength = 3, ErrorMessage = "Code must be between 3 and 50 characters")]
+        [StringLength(25, MinimumLength = 3, ErrorMessage = "Code must be between 3 and 25 characters")]
         public string Code { get; set; } = null!;
 
         [Required(ErrorMessage = "Name is required")]
-        [StringLength(200, MinimumLength = 5, ErrorMessage = "Name must be between 5 and 200 characters")]
+        [StringLength(100, MinimumLength = 5, ErrorMessage = "Name must be between 5 and 100 characters")]
         public string Name { get; set; } = null!;
 
         public string? Description { get; set; }
