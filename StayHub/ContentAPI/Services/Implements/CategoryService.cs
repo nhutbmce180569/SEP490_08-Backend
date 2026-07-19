@@ -137,7 +137,7 @@ namespace ContentAPI.Services.Implements
                 Name = dto.Name,
                 Slug = dto.Slug,
                 Description = dto.Description,
-                IsActive = dto.IsActive ?? false,
+                IsActive = false,
                 IconUrl = iconUrl
             };
 

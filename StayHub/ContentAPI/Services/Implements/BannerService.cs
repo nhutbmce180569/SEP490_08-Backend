@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using ContentAPI.DTOs;
 using ContentAPI.Models;
 using ContentAPI.Repositories;
@@ -91,7 +91,7 @@ namespace ContentAPI.Services.Implements
                 Title = dto.Title,
                 TargetUrl = dto.TargetUrl,
                 Priority = dto.Priority ?? 0,
-                IsActive = dto.IsActive ?? true,
+                IsActive = false,
                 ImageUrl = imageUrl
             };
 
