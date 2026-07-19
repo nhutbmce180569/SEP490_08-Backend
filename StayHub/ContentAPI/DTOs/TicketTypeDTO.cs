@@ -15,9 +15,11 @@ namespace ContentAPI.DTOs
     public class CreateTicketTypeDTO
     {
         [Required(ErrorMessage = "Ticket type name is required.")]
-        [MaxLength(100, ErrorMessage = "Ticket type name cannot exceed 100 characters.")]
+        [MaxLength(50, ErrorMessage = "Ticket type name cannot exceed 50 characters.")]
+        [RegularExpression(@"^[\p{L}\p{N}\s]*$", ErrorMessage = "Ticket type name cannot contain special characters.")]
         public string Name { get; set; } = null!;
 
+        [MaxLength(500, ErrorMessage = "Description cannot exceed 500 characters.")]
         public string? Description { get; set; }
 
         public bool? IsActive { get; set; } = true;
@@ -26,9 +28,11 @@ namespace ContentAPI.DTOs
     public class UpdateTicketTypeDTO
     {
         [Required(ErrorMessage = "Ticket type name is required.")]
-        [MaxLength(100, ErrorMessage = "Ticket type name cannot exceed 100 characters.")]
+        [MaxLength(50, ErrorMessage = "Ticket type name cannot exceed 50 characters.")]
+        [RegularExpression(@"^[\p{L}\p{N}\s]*$", ErrorMessage = "Ticket type name cannot contain special characters.")]
         public string Name { get; set; } = null!;
 
+        [MaxLength(500, ErrorMessage = "Description cannot exceed 500 characters.")]
         public string? Description { get; set; }
 
         public bool? IsActive { get; set; }
