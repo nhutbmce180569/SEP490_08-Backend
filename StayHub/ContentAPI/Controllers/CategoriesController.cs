@@ -1,4 +1,4 @@
-﻿using ContentAPI.DTOs;
+using ContentAPI.DTOs;
 using ContentAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -68,8 +68,19 @@ namespace ContentAPI.Controllers
                 return BadRequest(ModelState);
             }
 
-            var createdCategory = await _categoryService.CreateCategory(dto);
-            return CreatedAtAction(nameof(GetById), new { id = createdCategory.Id }, createdCategory);
+            try
+            {
+                var createdCategory = await _categoryService.CreateCategory(dto);
+                return CreatedAtAction(nameof(GetById), new { id = createdCategory.Id }, createdCategory);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = M("AnUnexpectedErrorOccurredWhileProcessingYourRequestPleaseT") });
+            }
         }
 
         // PUT: api/Categories/5
@@ -83,13 +94,24 @@ namespace ContentAPI.Controllers
                 return BadRequest(ModelState);
             }
 
-            var result = await _categoryService.UpdateCategory(id, dto);
-            if (!result)
+            try
             {
-                return NotFound(new { message = M("CategoryNotFoundOrHasBeenDeleted") });
-            }
+                var result = await _categoryService.UpdateCategory(id, dto);
+                if (!result)
+                {
+                    return NotFound(new { message = M("CategoryNotFoundOrHasBeenDeleted") });
+                }
 
-            return Ok(new { message = M("CategoryUpdatedSuccessfully") });
+                return Ok(new { message = M("CategoryUpdatedSuccessfully") });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = M("AnUnexpectedErrorOccurredWhileProcessingYourRequestPleaseT") });
+            }
         }
 
         // DELETE: api/Categories/5
