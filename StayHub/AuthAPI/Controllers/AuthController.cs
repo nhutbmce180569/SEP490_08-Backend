@@ -1,4 +1,4 @@
-﻿using AuthAPI.DTOs;
+using AuthAPI.DTOs;
 using AuthAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -40,11 +40,18 @@ namespace AuthAPI.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(new { message = M("InvalidInputData") });
 
-            var response = await _authService.GoogleLogin(googleLoginDTO);
-            if (response == null)
-                return Unauthorized(new { message = M("InvalidGoogleToken") });
+            try
+            {
+                var response = await _authService.GoogleLogin(googleLoginDTO);
+                if (response == null)
+                    return Unauthorized(new { message = M("InvalidGoogleToken") });
 
-            return Ok(new { message = M("GoogleLoginSuccessful"), data = response });
+                return Ok(new { message = response.RequirePhoneNumber ? M("GoogleLoginRequirePhoneNumber") : M("GoogleLoginSuccessful"), data = response });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = M(ex.Message) });
+            }
         }
 
         [HttpPost("facebook-login")]
@@ -60,17 +67,53 @@ namespace AuthAPI.Controllers
             return Ok(new { message = M("FacebookLoginSuccessful"), data = response });
         }
 
+        [HttpPost("send-register-otp")]
+        public async Task<IActionResult> SendRegisterOtp([FromBody] SendRegisterOtpDTO dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(new { message = M("InvalidRegistrationData") });
+
+            var result = await _authService.SendRegisterOtp(dto);
+            if (result.IsRateLimited)
+            {
+                Response.Headers["Retry-After"] = result.RetryAfterSeconds.ToString();
+                return StatusCode(StatusCodes.Status429TooManyRequests, new
+                {
+                    message = M("OtpRequestTooSoon"),
+                    retryAfterSeconds = result.RetryAfterSeconds
+                });
+            }
+
+            if (result.IsSocialAccount)
+            {
+                return Conflict(new { message = M("EmailAlreadyInUse") });
+            }
+
+            return Ok(new { message = M("RegisterOtpSentSuccessfully") });
+        }
+
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDTO registerDTO)
         {
             if (!ModelState.IsValid)
                 return BadRequest(new { message = M("InvalidRegistrationData") });
 
-            var response = await _authService.Register(registerDTO);
-            if (response == null)
-                return Conflict(new { message = M("EmailAlreadyInUse") });
+            try
+            {
+                var response = await _authService.Register(registerDTO);
+                if (response == null)
+                    return Conflict(new { message = M("EmailAlreadyInUse") });
 
-            return Ok(new { message = M("RegistrationSuccessful"), data = response });
+                return Ok(new { message = M("RegistrationSuccessful"), data = response });
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message == "InvalidOrExpiredOtp")
+                    return BadRequest(new { message = M("InvalidOrExpiredOtp") });
+                if (ex.Message == "EmailAlreadyInUse")
+                    return Conflict(new { message = M("EmailAlreadyInUse") });
+                throw;
+            }
         }
 
         [HttpPost("refresh-token")]
@@ -144,6 +187,10 @@ namespace AuthAPI.Controllers
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
                 return Unauthorized(new { message = M("InvalidTokenClaims") });
 
+            var providerClaim = User.FindFirst("Provider")?.Value;
+            if (!string.IsNullOrEmpty(providerClaim) && !providerClaim.Equals("Local", StringComparison.OrdinalIgnoreCase))
+                return BadRequest(new { message = M("SocialAccountCannotChangePassword") });
+
             var response = await _authService.ChangePassword(userId, dto);
             if (response == null)
                 return BadRequest(new { message = M("PasswordChangeFailed") });
@@ -168,7 +215,25 @@ namespace AuthAPI.Controllers
                 });
             }
 
+            if (result.IsSocialAccount)
+            {
+                return BadRequest(new { message = M("SocialAccountCannotResetPassword") });
+            }
+
             return Ok(new { message = M("ForgotPasswordSuccess") });
+        }
+
+        [HttpPost("verify-reset-otp")]
+        public async Task<IActionResult> VerifyResetOtp([FromBody] VerifyResetOtpDTO dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(new { message = M("InvalidInputData") });
+
+            var resetToken = await _authService.VerifyResetOtp(dto);
+            if (string.IsNullOrEmpty(resetToken))
+                return BadRequest(new { message = M("InvalidOrExpiredOtp") });
+
+            return Ok(new { message = M("OtpVerifiedSuccessfully"), data = new { resetToken } });
         }
 
         [HttpPost("reset-password")]

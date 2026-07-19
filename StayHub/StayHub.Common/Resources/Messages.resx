@@ -214,8 +214,20 @@
   <data name="ForgotPasswordSuccess" xml:space="preserve">
     <value>If the email is registered, a password reset code has been sent.</value>
   </data>
+  <data name="SocialAccountCannotResetPassword" xml:space="preserve">
+    <value>This account was registered using Google login. Password reset via email is not supported. Please sign in using Google directly.</value>
+  </data>
+  <data name="SocialAccountCannotChangePassword" xml:space="preserve">
+    <value>This account uses Google login. You do not need to set or change a password here.</value>
+  </data>
   <data name="OtpRequestTooSoon" xml:space="preserve">
     <value>Please wait before requesting another verification code.</value>
+  </data>
+  <data name="InvalidOrExpiredOtp" xml:space="preserve">
+    <value>The verification code is invalid or has expired.</value>
+  </data>
+  <data name="OtpVerifiedSuccessfully" xml:space="preserve">
+    <value>OTP verified successfully. You can now reset your password.</value>
   </data>
   <data name="GoogleLoginSuccessful" xml:space="preserve">
     <value>Google login successful.</value>
@@ -627,5 +639,41 @@
   </data>
   <data name="UserAccountUnblockedSuccess" xml:space="preserve">
     <value>User account has been successfully unblocked and activated.</value>
+  </data>
+  <data name="RegisterOtpSentSuccessfully" xml:space="preserve">
+    <value>Registration OTP verification code sent successfully to your email.</value>
+  </data>
+  <data name="FullNameCannotContainSpecialCharacters" xml:space="preserve">
+    <value>Full name cannot contain special characters or icons.</value>
+  </data>
+  <data name="PhoneNumberMax15Chars" xml:space="preserve">
+    <value>Phone number cannot exceed 15 digits.</value>
+  </data>
+  <data name="InvalidPhoneNumberFormat" xml:space="preserve">
+    <value>Invalid phone number format.</value>
+  </data>
+  <data name="VerificationCodeRequired" xml:space="preserve">
+    <value>OTP verification code is required.</value>
+  </data>
+  <data name="GoogleLoginRequirePhoneNumber" xml:space="preserve">
+    <value>Please enter your phone number to complete Google account registration.</value>
+  </data>
+  <data name="CategoryNameAlreadyExists" xml:space="preserve">
+    <value>This category name already exists. Please choose a different name.</value>
+  </data>
+  <data name="CategorySlugAlreadyExists" xml:space="preserve">
+    <value>This slug already exists. Please choose a different slug.</value>
+  </data>
+  <data name="CategoryCannotBeDeletedHasTours" xml:space="preserve">
+    <value>Cannot delete this category because there are tours associated with it. Please remove associated tours first.</value>
+  </data>
+  <data name="CategoryNameNoSpecialChars" xml:space="preserve">
+    <value>Category name cannot contain special characters.</value>
+  </data>
+  <data name="CategorySlugInvalidFormat" xml:space="preserve">
+    <value>Slug can only contain lowercase letters, numbers, and hyphens.</value>
+  </data>
+  <data name="OnlyImageFilesAllowed" xml:space="preserve">
+    <value>Only image files (JPG, PNG, GIF, SVG, WEBP) are allowed. Documents or other file types cannot be uploaded.</value>
   </data>
 </root>
