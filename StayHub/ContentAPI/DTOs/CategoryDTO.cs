@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace ContentAPI.DTOs
 {
@@ -23,7 +23,7 @@ namespace ContentAPI.DTOs
         public IFormFile? IconFile { get; set; }
 
         public string? Description { get; set; }
-        public bool? IsActive { get; set; } = true;
+        public bool? IsActive { get; set; } = false;
     }
 
     public class UpdateCategoryDTO

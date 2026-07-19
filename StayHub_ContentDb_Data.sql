@@ -1,4 +1,4 @@
-﻿/* =========================================================
+/* =========================================================
    STAYHUB CONTENT DATABASE DATA SEED & CONSTRAINT SCRIPT
    Generated explicit INSERT statements without SQL loops:
    - Categories: 12 professional English categories (Slug UNIQUE & checked [^a-z0-9-], Active/Inactive)
@@ -46,18 +46,18 @@ GO
 SET IDENTITY_INSERT Categories ON;
 -- Categories Batch 1 (Rows 1 to 12)
 INSERT INTO Categories (Id, Name, Slug, IconUrl, Description, IsActive) VALUES
-(1, N'Beach & Island', 'beach-island', 'https://cdn.stayhub.vn/icons/beach.svg', N'Beach and island tours, relaxation, and coral reef diving.', 1),
-(2, N'Mountain & Nature', 'mountain-nature', 'https://cdn.stayhub.vn/icons/mountain.svg', N'Mountain tours, trekking, and nature exploration.', 1),
-(3, N'Heritage & Culture', 'heritage-culture', 'https://cdn.stayhub.vn/icons/heritage.svg', N'Heritage, culture, traditional craft villages, and history tours.', 1),
-(4, N'Food Tour', 'food-tour', 'https://cdn.stayhub.vn/icons/food.svg', N'Local cuisine tours and specialty experiences.', 1),
-(5, N'City Break', 'city-break', 'https://cdn.stayhub.vn/icons/city.svg', N'Short-day city tours.', 1),
-(6, N'Adventure', 'adventure', 'https://cdn.stayhub.vn/icons/adventure.svg', N'Adventure tours, SUP boarding, ziplining, and caving.', 1),
-(7, N'Family Trip', 'family-trip', 'https://cdn.stayhub.vn/icons/family.svg', N'Tours suitable for families and children.', 1),
-(8, N'Honeymoon', 'honeymoon', 'https://cdn.stayhub.vn/icons/honeymoon.svg', N'Romantic getaway tours for couples.', 1),
-(9, N'Eco Tourism', 'eco-tourism', 'https://cdn.stayhub.vn/icons/eco.svg', N'Green tours, local communities, and conservation.', 1),
-(10, N'Wellness Retreat', 'wellness-retreat', 'https://cdn.stayhub.vn/icons/wellness.svg', N'Health and wellness retreat tours.', 1),
-(11, N'Photography Trip', 'photography-trip', 'https://cdn.stayhub.vn/icons/camera.svg', N'Photo hunting and scenic check-in tours.', 1),
-(12, N'Luxury Travel', 'luxury-travel', 'https://cdn.stayhub.vn/icons/luxury.svg', N'High-end tours, resorts, and private services.', 1);
+(1, N'Beach & Island', 'beach-island', 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80', N'Beach and island tours, relaxation, and coral reef diving.', 1),
+(2, N'Mountain & Nature', 'mountain-nature', 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80', N'Mountain tours, trekking, and nature exploration.', 1),
+(3, N'Heritage & Culture', 'heritage-culture', 'https://images.unsplash.com/photo-1528164344705-475426879c0d?auto=format&fit=crop&w=600&q=80', N'Heritage, culture, traditional craft villages, and history tours.', 1),
+(4, N'Food Tour', 'food-tour', 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80', N'Local cuisine tours and specialty experiences.', 1),
+(5, N'City Break', 'city-break', 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?auto=format&fit=crop&w=600&q=80', N'Short-day city tours.', 1),
+(6, N'Adventure', 'adventure', 'https://images.unsplash.com/photo-1533130061792-64b345e4a833?auto=format&fit=crop&w=600&q=80', N'Adventure tours, SUP boarding, ziplining, and caving.', 1),
+(7, N'Family Trip', 'family-trip', 'https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&w=600&q=80', N'Tours suitable for families and children.', 1),
+(8, N'Honeymoon', 'honeymoon', 'https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?auto=format&fit=crop&w=600&q=80', N'Romantic getaway tours for couples.', 1),
+(9, N'Eco Tourism', 'eco-tourism', 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=600&q=80', N'Green tours, local communities, and conservation.', 1),
+(10, N'Wellness Retreat', 'wellness-retreat', 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=600&q=80', N'Health and wellness retreat tours.', 1),
+(11, N'Photography Trip', 'photography-trip', 'https://images.unsplash.com/photo-1502982720700-bfff97f2ecac?auto=format&fit=crop&w=600&q=80', N'Photo hunting and scenic check-in tours.', 1),
+(12, N'Luxury Travel', 'luxury-travel', 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=600&q=80', N'High-end tours, resorts, and private services.', 1);
 GO
 
 SET IDENTITY_INSERT Categories OFF;
