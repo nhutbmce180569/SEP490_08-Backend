@@ -34,18 +34,21 @@ namespace TourAPI.DTOs
         [Required(ErrorMessage = "Description is required")]
         public string? Description { get; set; }
 
-        [Required(ErrorMessage = "StartDuration is required")]
+        [Required(ErrorMessage = "Start Duration is required")]
         public TimeOnly? StartDuration { get; set; }
-        [Required(ErrorMessage = "EndDuration is required")]
+        [Required(ErrorMessage = "End Duration is required")]
         public TimeOnly? EndDuration { get; set; }
 
-        [Required(ErrorMessage = "LocationName is required")]
-        [StringLength(255, MinimumLength = 3, ErrorMessage = "LocationName must be between 3 and 255 characters")]
+        [Required(ErrorMessage = "Location Name is required")]
+        [StringLength(255, MinimumLength = 3, ErrorMessage = "Location Name must be between 3 and 255 characters")]
         public string? LocationName { get; set; }
 
-        [Range(-90, 90, ErrorMessage = "LocationLat must be between -90 and 90")]
+        [Required(ErrorMessage = "Location Lat is required")]
+        [Range(-90, 90, ErrorMessage = "Location Lat must be between -90 and 90")]
         public double? LocationLat { get; set; }
-        [Range(-180, 180, ErrorMessage = "LocationLng must be between -180 and 180")]
+
+        [Required(ErrorMessage = "Location Lng is required")]
+        [Range(-180, 180, ErrorMessage = "Location Lng must be between -180 and 180")]
         public double? LocationLng { get; set; }
         public int? TourismInfoId { get; set; }
 
