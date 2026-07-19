@@ -18,7 +18,7 @@ public class MomentCreateDtoValidator : AbstractValidator<MomentCreateDto>
 
 
         RuleFor(x => x.ScheduleId)
-            .GreaterThan(0).WithMessage(v.Get("ScheduleId must be greater than 0."));
+            .GreaterThanOrEqualTo(0).WithMessage(v.Get("ScheduleId must be greater than or equal to 0."));
 
         RuleFor(x => x.Caption)
             .MaximumLength(500).WithMessage(v.Get("Caption cannot exceed 500 characters."))
@@ -33,8 +33,8 @@ public class MomentCreateDtoValidator : AbstractValidator<MomentCreateDto>
 
         RuleFor(x => x.Privacy)
             .NotEmpty().WithMessage(v.Get("Privacy is required."))
-            .Must(p => p == "Public" || p == "Private" || p == "Friend")
-            .WithMessage(v.Get("Privacy must be 'Public', 'Private', or 'Friend'."));
+            .Must(p => p == "Public" || p == "Private" || p == "Friend" || p == "Tour")
+            .WithMessage(v.Get("Privacy must be 'Public', 'Private', 'Friend', or 'Tour'."));
     }
 
     private bool IsValidImage(IFormFile file)
