@@ -60,7 +60,7 @@ namespace SocialAPI.Services.Implements
                 try
                 {
                     using var client = _httpClientFactory.CreateClient();
-                    var response = await client.PostAsJsonAsync("https://localhost:7010/api/users/batch", otherUserIds.Distinct());
+                    var response = await client.PostAsJsonAsync("http://localhost:5046/api/users/batch", otherUserIds.Distinct());
                     if (response.IsSuccessStatusCode)
                     {
                         var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
