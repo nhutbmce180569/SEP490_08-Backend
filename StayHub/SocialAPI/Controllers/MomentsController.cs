@@ -69,8 +69,8 @@ public class MomentsController : LocalizedControllerBase
                 return Unauthorized(new { message = M("UserIDNotFoundInToken") });
             }
 
-            // Truyền scheduleId (nullable) xuống Service
-            var result = await _momentService.GetMomentFeedWithUsersAsync(scheduleId, userId.Value, skip, top);
+            var bearerToken = Request.Headers["Authorization"].ToString();
+            var result = await _momentService.GetMomentFeedWithUsersAsync(scheduleId, userId.Value, bearerToken, skip, top);
 
             Response.Headers.Add("Cache-Control", "no-store, no-cache, must-revalidate, post-check=0, pre-check=0");
             Response.Headers.Add("Pragma", "no-cache");

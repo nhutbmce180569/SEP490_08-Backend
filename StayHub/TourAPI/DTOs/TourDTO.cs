@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using TourAPI.Models;
 
 namespace TourAPI.DTOs
@@ -38,6 +38,13 @@ namespace TourAPI.DTOs
         public string? Status { get; set; }
 
         public double? AverageStar { get; set; }
+        
+        public int TotalReviews { get; set; }
+        public int FiveStarCount { get; set; }
+        public int FourStarCount { get; set; }
+        public int ThreeStarCount { get; set; }
+        public int TwoStarCount { get; set; }
+        public int OneStarCount { get; set; }
 
         public bool CanEdit { get; set; }
 

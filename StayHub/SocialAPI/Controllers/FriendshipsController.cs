@@ -26,7 +26,10 @@ public class FriendshipsController : LocalizedControllerBase
 
     private int GetCurrentUserId()
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                          ?? User.FindFirst("sub")?.Value
+                          ?? User.FindFirst("id")?.Value;
+
         if (int.TryParse(userIdClaim, out int userId))
         {
             return userId;
@@ -164,6 +167,21 @@ public class FriendshipsController : LocalizedControllerBase
         catch (Exception ex)
         {
             return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("suggestions")]
+    public async Task<IActionResult> GetSuggestions()
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var suggestions = await _friendshipService.GetSuggestionsAsync(userId);
+            return Ok(suggestions);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while retrieving friend suggestions.", details = ex.Message });
         }
     }
 }

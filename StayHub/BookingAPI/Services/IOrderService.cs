@@ -1,4 +1,4 @@
-﻿using BookingAPI.DTOs;
+using BookingAPI.DTOs;
 using System.Threading.Tasks;
 
 namespace BookingAPI.Services
@@ -15,5 +15,6 @@ namespace BookingAPI.Services
         Task<bool> MarkOrderPaidAsync(int orderId, string customerEmail);
         Task<bool> CancelOrderAsync(int orderId);
         Task<List<int>> GetCustomerIdsByScheduleIdAsync(int scheduleId);
+        Task<List<int>> GetEligibleScheduleIdsByUserIdAsync(int userId);
     }
 }
