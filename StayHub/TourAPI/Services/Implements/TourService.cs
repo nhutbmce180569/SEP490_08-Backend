@@ -432,10 +432,11 @@ namespace TourAPI.Services.Implements
             return _mapper.Map<List<ReadTourDTO>>(tours);
         }
 
-        public async Task<IEnumerable<ReadTourDTO>> GetSaleTours(int limit = 6)
+        public async Task<PaginationDTO<ReadTourDTO>> GetSaleTours(int page, int pageSize)
         {
-            var tours = await _repository.GetSaleTours(limit);
-            return _mapper.Map<List<ReadTourDTO>>(tours);
+            var result = await _repository.GetSaleTours(page, pageSize);
+            var list = _mapper.Map<List<ReadTourDTO>>(result.Items);
+            return CreatePagination(list, result.TotalCount, page, pageSize);
         }
 
         public async Task<PaginationDTO<ReadTourDTO>> GetHotTours(int page, int pageSize)
@@ -445,16 +446,18 @@ namespace TourAPI.Services.Implements
             return CreatePagination(list, result.TotalCount, page, pageSize);
         }
 
-        public async Task<IEnumerable<ReadTourDTO>> GetUpcomingTours(int limit = 6)
+        public async Task<PaginationDTO<ReadTourDTO>> GetUpcomingTours(int page, int pageSize)
         {
-            var tours = await _repository.GetUpcomingTours(limit);
-            return _mapper.Map<List<ReadTourDTO>>(tours);
+            var result = await _repository.GetUpcomingTours(page, pageSize);
+            var list = _mapper.Map<List<ReadTourDTO>>(result.Items);
+            return CreatePagination(list, result.TotalCount, page, pageSize);
         }
 
-        public async Task<IEnumerable<ReadTourDTO>> GetToursByRegion(string region, int limit = 6)
+        public async Task<PaginationDTO<ReadTourDTO>> GetToursByRegion(string region, int page, int pageSize)
         {
-            var tours = await _repository.GetToursByRegion(region, limit);
-            return _mapper.Map<List<ReadTourDTO>>(tours);
+            var result = await _repository.GetToursByRegion(region, page, pageSize);
+            var list = _mapper.Map<List<ReadTourDTO>>(result.Items);
+            return CreatePagination(list, result.TotalCount, page, pageSize);
         }
 
         private static PaginationDTO<T> CreatePagination<T>(
