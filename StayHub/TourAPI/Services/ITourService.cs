@@ -22,7 +22,7 @@ namespace TourAPI.Services
         Task<List<ItineraryLocationDto>> GetItinerariesByTourIdAsync(int tourId);
         Task<IEnumerable<ReadTourDTO>> GetToursByIdsAsync(IEnumerable<int> tourIds);
         Task<IEnumerable<ReadTourDTO>> GetSaleTours(int limit = 6);
-        Task<IEnumerable<ReadTourDTO>> GetHotTours(int limit = 5);
+        Task<PaginationDTO<ReadTourDTO>> GetHotTours(int page, int pageSize);
         Task<IEnumerable<ReadTourDTO>> GetUpcomingTours(int limit = 6);
         Task<IEnumerable<ReadTourDTO>> GetToursByRegion(string region, int limit = 6);
     }

@@ -438,10 +438,11 @@ namespace TourAPI.Services.Implements
             return _mapper.Map<List<ReadTourDTO>>(tours);
         }
 
-        public async Task<IEnumerable<ReadTourDTO>> GetHotTours(int limit = 5)
+        public async Task<PaginationDTO<ReadTourDTO>> GetHotTours(int page, int pageSize)
         {
-            var tours = await _repository.GetHotTours(limit);
-            return _mapper.Map<List<ReadTourDTO>>(tours);
+            var result = await _repository.GetHotTours(page, pageSize);
+            var list = _mapper.Map<List<ReadTourDTO>>(result.Items);
+            return CreatePagination(list, result.TotalCount, page, pageSize);
         }
 
         public async Task<IEnumerable<ReadTourDTO>> GetUpcomingTours(int limit = 6)

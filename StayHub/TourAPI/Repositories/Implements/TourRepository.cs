@@ -303,7 +303,7 @@ namespace TourAPI.Repositories.Implements
             return tours;
         }
 
-        public async Task<List<Tour>> GetHotTours(int limit = 5)
+        public async Task<(List<Tour> Items, int TotalCount)> GetHotTours(int page, int pageSize)
         {
             var query = _context.Tours
                 .AsNoTracking()
@@ -312,8 +312,19 @@ namespace TourAPI.Repositories.Implements
                     .SelectMany(s => s.TourScheduleTickets)
                     .Sum(st => st.SoldQuantity ?? 0));
 
-            var tours = await query
-                .Take(limit)
+            var totalCount = await query.CountAsync();
+
+            var normalizedPageSize = Math.Clamp(pageSize, 1, 1000);
+            var normalizedPage = Math.Max(1, page);
+
+            var pagedIds = await query
+                .Skip((normalizedPage - 1) * normalizedPageSize)
+                .Take(normalizedPageSize)
+                .Select(t => t.Id)
+                .ToListAsync();
+
+            var tours = await _context.Tours
+                .Where(t => pagedIds.Contains(t.Id))
                 .Include(t => t.TourItineraries)
                 .Include(t => t.TourSchedules)
                     .ThenInclude(t => t.TourScheduleTickets)
@@ -322,7 +333,9 @@ namespace TourAPI.Repositories.Implements
                 .AsSplitQuery()
                 .ToListAsync();
 
-            return tours;
+            tours = tours.OrderBy(t => pagedIds.IndexOf(t.Id)).ToList();
+
+            return (tours, totalCount);
         }
 
         public async Task<List<Tour>> GetUpcomingTours(int limit = 6)
