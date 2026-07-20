@@ -17,13 +17,14 @@ namespace TourAPI.Services.Implements
         private readonly ITourRepository _repository;
         private readonly ICategoryService _categoryService;
         private readonly IOrderService _bookingService;
+        private readonly IEmailService _emailService;
 
         private readonly CloudinaryService _cloudinary;
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         IMapper _mapper;
 
-        public TourService(IOrderService bookingService, ICategoryService categoryService, ITourRepository repository, IMapper mapper, CloudinaryService cloudinary, HttpClient httpClient, IConfiguration configuration)
+        public TourService(IOrderService bookingService, ICategoryService categoryService, ITourRepository repository, IMapper mapper, CloudinaryService cloudinary, HttpClient httpClient, IConfiguration configuration, IEmailService emailService)
         {
             _repository = repository;
             _mapper = mapper;
@@ -32,6 +33,7 @@ namespace TourAPI.Services.Implements
             _configuration = configuration;
             _categoryService = categoryService;
             _bookingService = bookingService;
+            _emailService = emailService;
         }
         public async Task Add(CreateTourDTO model, int createdBy)
         {
@@ -432,28 +434,32 @@ namespace TourAPI.Services.Implements
             return _mapper.Map<List<ReadTourDTO>>(tours);
         }
 
-        public async Task<IEnumerable<ReadTourDTO>> GetSaleTours(int limit = 6)
+        public async Task<PaginationDTO<ReadTourDTO>> GetSaleTours(int page, int pageSize)
         {
-            var tours = await _repository.GetSaleTours(limit);
-            return _mapper.Map<List<ReadTourDTO>>(tours);
+            var result = await _repository.GetSaleTours(page, pageSize);
+            var list = _mapper.Map<List<ReadTourDTO>>(result.Items);
+            return CreatePagination(list, result.TotalCount, page, pageSize);
         }
 
-        public async Task<IEnumerable<ReadTourDTO>> GetHotTours(int limit = 5)
+        public async Task<PaginationDTO<ReadTourDTO>> GetHotTours(int page, int pageSize)
         {
-            var tours = await _repository.GetHotTours(limit);
-            return _mapper.Map<List<ReadTourDTO>>(tours);
+            var result = await _repository.GetHotTours(page, pageSize);
+            var list = _mapper.Map<List<ReadTourDTO>>(result.Items);
+            return CreatePagination(list, result.TotalCount, page, pageSize);
         }
 
-        public async Task<IEnumerable<ReadTourDTO>> GetUpcomingTours(int limit = 6)
+        public async Task<PaginationDTO<ReadTourDTO>> GetUpcomingTours(int page, int pageSize)
         {
-            var tours = await _repository.GetUpcomingTours(limit);
-            return _mapper.Map<List<ReadTourDTO>>(tours);
+            var result = await _repository.GetUpcomingTours(page, pageSize);
+            var list = _mapper.Map<List<ReadTourDTO>>(result.Items);
+            return CreatePagination(list, result.TotalCount, page, pageSize);
         }
 
-        public async Task<IEnumerable<ReadTourDTO>> GetToursByRegion(string region, int limit = 6)
+        public async Task<PaginationDTO<ReadTourDTO>> GetToursByRegion(string region, int page, int pageSize)
         {
-            var tours = await _repository.GetToursByRegion(region, limit);
-            return _mapper.Map<List<ReadTourDTO>>(tours);
+            var result = await _repository.GetToursByRegion(region, page, pageSize);
+            var list = _mapper.Map<List<ReadTourDTO>>(result.Items);
+            return CreatePagination(list, result.TotalCount, page, pageSize);
         }
 
         private static PaginationDTO<T> CreatePagination<T>(
@@ -537,6 +543,105 @@ namespace TourAPI.Services.Implements
 
             _repository.Update(tour);
             await _repository.SaveChangesAsync();
+        }
+
+        public async Task RequestConsultationAsync(ConsultationRequestDto request)
+        {
+            var tour = await _repository.GetById(request.TourId);
+            if (tour == null)
+                throw new Exception("Tour not found.");
+
+            var managerId = tour.CreatedBy;
+            var serviceKey = _configuration["InternalService:Key"] ?? "StayHubInternalServiceKey_Secret";
+            var gatewayUrl = _configuration.GetValue<string>("GatewayApi:BaseUrl") ?? "https://localhost:7010";
+            var requestUrl = $"{gatewayUrl.TrimEnd('/')}/api/internal/users/{managerId}";
+
+            var requestMsg = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+            requestMsg.Headers.Add("X-Service-Key", serviceKey);
+
+            // Create a custom handler to ignore SSL errors for internal calls
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+            };
+            using var localClient = new HttpClient(handler);
+
+            var response = await localClient.SendAsync(requestMsg);
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Failed to retrieve manager info (ID: {managerId}) via {requestUrl}. Status Code: {response.StatusCode}. Response: {errorBody}");
+            }
+
+            var jsonResponse = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+            if (!jsonResponse.TryGetProperty("data", out var data) || !data.TryGetProperty("email", out var emailElement))
+            {
+                throw new Exception($"Manager email not found in response for manager ID {managerId}.");
+            }
+
+            var managerEmail = emailElement.GetString();
+            if (string.IsNullOrEmpty(managerEmail))
+            {
+                throw new Exception("Manager email is empty.");
+            }
+
+            string subject = $"[StayHub] New Consultation Request for Tour: {tour.Name}";
+            string body = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>New Consultation Request</title>
+</head>
+<body style='font-family: ""Helvetica Neue"", Helvetica, Arial, sans-serif; background-color: #f3f4f6; padding: 40px 0; margin: 0; color: #333;'>
+    <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);'>
+        <!-- Header -->
+        <div style='background-color: #f97316; padding: 30px 40px; text-align: center;'>
+            <h1 style='color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 0.5px;'>New Consultation Request</h1>
+            <p style='color: #fff8f1; margin: 10px 0 0 0; font-size: 15px; opacity: 0.9;'>A customer is interested in your tour</p>
+        </div>
+        
+        <!-- Content -->
+        <div style='padding: 40px;'>
+            <div style='background-color: #fff7ed; border-left: 4px solid #f97316; padding: 15px 20px; border-radius: 4px; margin-bottom: 30px;'>
+                <p style='margin: 0; font-size: 16px; color: #9a3412;'><strong>Tour:</strong> {tour.Name} <span style='color: #fdba74; font-size: 14px;'>(ID: {tour.Id})</span></p>
+            </div>
+
+            <h3 style='color: #1f2937; font-size: 18px; margin: 0 0 20px 0; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px;'>Customer Details</h3>
+            
+            <table style='width: 100%; border-collapse: collapse; margin-bottom: 30px;'>
+                <tr>
+                    <td style='padding: 12px 0; border-bottom: 1px solid #f3f4f6; width: 120px; color: #6b7280; font-weight: 500; font-size: 15px;'>Name:</td>
+                    <td style='padding: 12px 0; border-bottom: 1px solid #f3f4f6; color: #111827; font-weight: 600; font-size: 15px;'>{request.FullName}</td>
+                </tr>
+                <tr>
+                    <td style='padding: 12px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280; font-weight: 500; font-size: 15px;'>Phone:</td>
+                    <td style='padding: 12px 0; border-bottom: 1px solid #f3f4f6; color: #111827; font-weight: 600; font-size: 15px;'><a href='tel:{request.Phone}' style='color: #f97316; text-decoration: none;'>{request.Phone}</a></td>
+                </tr>
+                <tr>
+                    <td style='padding: 12px 0; border-bottom: 1px solid #f3f4f6; color: #6b7280; font-weight: 500; font-size: 15px;'>Email:</td>
+                    <td style='padding: 12px 0; border-bottom: 1px solid #f3f4f6; color: #111827; font-weight: 600; font-size: 15px;'><a href='mailto:{request.Email}' style='color: #f97316; text-decoration: none;'>{request.Email}</a></td>
+                </tr>
+            </table>
+
+            <h3 style='color: #1f2937; font-size: 18px; margin: 0 0 15px 0;'>Customer's Note</h3>
+            <div style='background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; font-size: 15px; color: #4b5563; line-height: 1.6; white-space: pre-wrap;'>{(string.IsNullOrWhiteSpace(request.Note) ? "<em>No additional notes provided.</em>" : request.Note)}</div>
+            
+            <div style='margin-top: 40px; text-align: center;'>
+                <a href='mailto:{request.Email}' style='display: inline-block; background-color: #f97316; color: #ffffff; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 8px; font-size: 16px;'>Reply to Customer</a>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style='background-color: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb;'>
+            <p style='margin: 0; color: #9ca3af; font-size: 13px;'>This is an automated message from StayHub System.</p>
+        </div>
+    </div>
+</body>
+</html>";
+
+            await _emailService.SendEmailAsync(managerEmail, subject, body);
         }
     }
 }
