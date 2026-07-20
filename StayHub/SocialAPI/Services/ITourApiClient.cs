@@ -10,5 +10,6 @@ namespace SocialAPI.Services
         Task<bool> VerifyManagerAsync(int scheduleId, int managerId);
         Task<List<int>> GetStaffIdsByScheduleAsync(int scheduleId);
         Task<List<int>> GetStaffScheduleIdsAsync(int staffId);
+        Task<List<int>> GetManagerScheduleIdsAsync(int managerId);
     }
 }
