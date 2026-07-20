@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.SignalR;
 using SystemAPI.DTOs;
 using SystemAPI.Hubs;
@@ -72,10 +72,17 @@ namespace SystemAPI.Services.Implements
             return resultDto;
         }
 
-        public async Task<IEnumerable<ReadNotificationDTO>> GetUserNotificationsAsync(int userId)
+        public async Task<PaginationDTO<ReadNotificationDTO>> GetUserNotificationsAsync(int userId, int page = 1, int pageSize = 10)
         {
-            var notifications = await _repo.GetUserNotificationsAsync(userId);
-            return _mapper.Map<IEnumerable<ReadNotificationDTO>>(notifications);
+            var result = await _repo.GetUserNotificationsAsync(userId, page, pageSize);
+            return new PaginationDTO<ReadNotificationDTO>
+            {
+                Data = _mapper.Map<List<ReadNotificationDTO>>(result.items),
+                Total = result.totalCount,
+                CurrentPage = page,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling((double)result.totalCount / pageSize)
+            };
         }
 
         public async Task MarkAsReadAsync(int notificationId, int userId)
