@@ -44,5 +44,6 @@ namespace TourAPI.Repositories
         Task Delete(int id);
         Task SaveChangesAsync();
         Task<int> CountByCategoryIdAsync(int categoryId);
+        Task<bool> IsNameDuplicateAsync(string name, int? excludeId = null);
     }
 }

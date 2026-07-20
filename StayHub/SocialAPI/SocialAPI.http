@@ -3,4 +3,29 @@
 GET {{SocialAPI_HostAddress}}/weatherforecast/
 Accept: application/json
 
+### Generate Tracking Token (Share location)
+POST {{SocialAPI_HostAddress}}/api/locations/share
+Authorization: Bearer <insert_token_here>
+Accept: application/json
+
+### Revoke Tracking Token
+POST {{SocialAPI_HostAddress}}/api/locations/revoke-token
+Authorization: Bearer <insert_token_here>
+Content-Type: application/json
+Accept: application/json
+
+{
+  "token": "insert_tracking_token_here"
+}
+
+### Go Offline
+POST {{SocialAPI_HostAddress}}/api/locations/offline
+Authorization: Bearer <insert_token_here>
+Accept: application/json
+
+### Get My Footprints (with optional scheduleId)
+GET {{SocialAPI_HostAddress}}/api/locations/footprints?scheduleId=123
+Authorization: Bearer <insert_token_here>
+Accept: application/json
+
 ###

@@ -52,7 +52,9 @@ namespace TourAPI.Controllers
                 ScheduleId = schedule.Id,
                 TourId = schedule.TourId,
                 TourCreatedBy = schedule.Tour.CreatedBy,
-                StaffIds = schedule.TourScheduleStaffs.Select(s => s.StaffId).ToList()
+                StaffIds = schedule.TourScheduleStaffs.Select(s => s.StaffId).ToList(),
+                DepartureDate = schedule.DepartureDate,
+                ReturnDate = schedule.ReturnDate
             });
         }
 
