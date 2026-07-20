@@ -21,6 +21,8 @@ namespace SocialAPI.Services.Implements
         private readonly ILogger<ChatService> _logger;
         private readonly IAuthApiClient _authApiClient;
         private readonly IFriendshipRepository _friendshipRepository;
+        private readonly IBookingApiClient _bookingApiClient;
+        private readonly ITourApiClient _tourApiClient;
 
         public ChatService(
             IChatRepository chatRepository,
@@ -28,7 +30,9 @@ namespace SocialAPI.Services.Implements
             IHubContext<ChatHub> hubContext,
             ILogger<ChatService> logger,
             IAuthApiClient authApiClient,
-            IFriendshipRepository friendshipRepository)
+            IFriendshipRepository friendshipRepository,
+            IBookingApiClient bookingApiClient,
+            ITourApiClient tourApiClient)
         {
             _chatRepository = chatRepository;
             _httpClientFactory = httpClientFactory;
@@ -36,6 +40,8 @@ namespace SocialAPI.Services.Implements
             _logger = logger;
             _authApiClient = authApiClient;
             _friendshipRepository = friendshipRepository;
+            _bookingApiClient = bookingApiClient;
+            _tourApiClient = tourApiClient;
         }
 
         public async Task<List<ChatRoomDto>> GetUserChatRoomsAsync(int userId)
@@ -184,27 +190,10 @@ namespace SocialAPI.Services.Implements
                 if (otherMember != null)
                 {
                     int otherUserId = otherMember.UserId;
-                    bool areFriends = await _friendshipRepository.CheckAreFriendsAsync(senderId, otherUserId);
-                    if (!areFriends)
+                    bool isAllowed = await CanChatAsync(senderId, otherUserId);
+                    if (!isAllowed)
                     {
-                        var profiles = await _authApiClient.GetUserProfilesAsync(new List<int> { senderId, otherUserId });
-                        bool isAllowed = false;
-
-                        if (profiles.TryGetValue(senderId, out var currentProfile) &&
-                            (currentProfile.RoleNames.Contains("Admin") || currentProfile.RoleNames.Contains("Manager") || currentProfile.RoleNames.Contains("Staff")))
-                        {
-                            isAllowed = true;
-                        }
-                        else if (profiles.TryGetValue(otherUserId, out var otherProfile) &&
-                            (otherProfile.RoleNames.Contains("Admin") || otherProfile.RoleNames.Contains("Manager") || otherProfile.RoleNames.Contains("Staff")))
-                        {
-                            isAllowed = true;
-                        }
-
-                        if (!isAllowed)
-                        {
-                            throw new InvalidOperationException("You can no longer chat with this user because you are not friends.");
-                        }
+                        throw new InvalidOperationException("You do not have permission to chat with this user.");
                     }
                 }
             }
@@ -253,33 +242,16 @@ namespace SocialAPI.Services.Implements
 
         public async Task<ChatRoomDto> CreateOrGetChatRoomAsync(int currentUserId, int friendId)
         {
+            bool isAllowed = await CanChatAsync(currentUserId, friendId);
+            if (!isAllowed)
+            {
+                throw new InvalidOperationException("You do not have permission to chat with this user.");
+            }
+
             var room = await _chatRepository.GetDirectChatRoomAsync(currentUserId, friendId);
 
             if (room == null)
             {
-                bool areFriends = await _friendshipRepository.CheckAreFriendsAsync(currentUserId, friendId);
-                if (!areFriends)
-                {
-                    var profiles = await _authApiClient.GetUserProfilesAsync(new List<int> { currentUserId, friendId });
-                    bool isAllowed = false;
-
-                    if (profiles.TryGetValue(currentUserId, out var currentProfile) &&
-                        (currentProfile.RoleNames.Contains("Admin") || currentProfile.RoleNames.Contains("Manager") || currentProfile.RoleNames.Contains("Staff")))
-                    {
-                        isAllowed = true;
-                    }
-                    else if (profiles.TryGetValue(friendId, out var friendProfile) &&
-                        (friendProfile.RoleNames.Contains("Admin") || friendProfile.RoleNames.Contains("Manager") || friendProfile.RoleNames.Contains("Staff")))
-                    {
-                        isAllowed = true;
-                    }
-
-                    if (!isAllowed)
-                    {
-                        throw new InvalidOperationException("You can only chat with friends, Staff, Managers, or Admins.");
-                    }
-                }
-
                 room = await _chatRepository.CreateDirectChatRoomAsync(currentUserId, friendId);
             }
 
@@ -594,6 +566,92 @@ namespace SocialAPI.Services.Implements
             {
                 _logger.LogError(ex, $"Error removing member {userId} from schedule chat room for schedule {scheduleId}");
                 return false;
+            }
+        }
+
+        private async Task<bool> CanChatAsync(int userId1, int userId2)
+        {
+            if (userId1 == userId2) return true;
+
+            try
+            {
+                var profiles = await _authApiClient.GetUserProfilesAsync(new List<int> { userId1, userId2 });
+                if (profiles == null || !profiles.TryGetValue(userId1, out var profile1) || !profiles.TryGetValue(userId2, out var profile2))
+                {
+                    return await _friendshipRepository.CheckAreFriendsAsync(userId1, userId2);
+                }
+
+                // If either user is Admin, allow chat
+                bool isUser1Admin = profile1.RoleNames.Any(r => r.Equals("Admin", StringComparison.OrdinalIgnoreCase));
+                bool isUser2Admin = profile2.RoleNames.Any(r => r.Equals("Admin", StringComparison.OrdinalIgnoreCase));
+                if (isUser1Admin || isUser2Admin)
+                {
+                    return true;
+                }
+
+                // Check if either is Staff or Manager
+                bool isUser1StaffOrManager = profile1.RoleNames.Any(r =>
+                    r.Equals("Staff", StringComparison.OrdinalIgnoreCase) ||
+                    r.Equals("Manager", StringComparison.OrdinalIgnoreCase));
+
+                bool isUser2StaffOrManager = profile2.RoleNames.Any(r =>
+                    r.Equals("Staff", StringComparison.OrdinalIgnoreCase) ||
+                    r.Equals("Manager", StringComparison.OrdinalIgnoreCase));
+
+                // If both are staff/manager, allow chat
+                if (isUser1StaffOrManager && isUser2StaffOrManager)
+                {
+                    return true;
+                }
+
+                // If one is customer and one is staff/manager
+                if (isUser1StaffOrManager || isUser2StaffOrManager)
+                {
+                    int customerId = isUser1StaffOrManager ? userId2 : userId1;
+                    int staffOrManagerId = isUser1StaffOrManager ? userId1 : userId2;
+                    var staffOrManagerProfile = isUser1StaffOrManager ? profile1 : profile2;
+
+                    var scheduleIds = new List<int>();
+
+                    // Fetch assigned schedules for Staff
+                    if (staffOrManagerProfile.RoleNames.Any(r => r.Equals("Staff", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        var staffSchedules = await _tourApiClient.GetStaffScheduleIdsAsync(staffOrManagerId);
+                        if (staffSchedules != null && staffSchedules.Any())
+                        {
+                            scheduleIds.AddRange(staffSchedules);
+                        }
+                    }
+
+                    // Fetch managed schedules for Manager
+                    if (staffOrManagerProfile.RoleNames.Any(r => r.Equals("Manager", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        var managerSchedules = await _tourApiClient.GetManagerScheduleIdsAsync(staffOrManagerId);
+                        if (managerSchedules != null && managerSchedules.Any())
+                        {
+                            scheduleIds.AddRange(managerSchedules);
+                        }
+                    }
+
+                    scheduleIds = scheduleIds.Distinct().ToList();
+
+                    if (!scheduleIds.Any())
+                    {
+                        return false;
+                    }
+
+                    // Check completed bookings
+                    return await _bookingApiClient.CheckCompletedBookingAsync(customerId, scheduleIds);
+                }
+
+                // If both are regular customers, check friendship
+                return await _friendshipRepository.CheckAreFriendsAsync(userId1, userId2);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating chat permissions between {User1} and {User2}", userId1, userId2);
+                // Fallback to friendship check
+                return await _friendshipRepository.CheckAreFriendsAsync(userId1, userId2);
             }
         }
     }
