@@ -92,13 +92,66 @@ namespace AuthAPI.Services.Implements
             return await GenerateLoginResponse(user);
         }
 
-        // 3. ĐĂNG KÝ
+        // 3a. GỬI OTP ĐĂNG KÝ
+        public async Task<ForgotPasswordResultDTO> SendRegisterOtp(SendRegisterOtpDTO dto)
+        {
+            const int cooldownSeconds = 60;
+            var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
+
+            if (await _userRepository.GetByEmail(normalizedEmail) != null)
+            {
+                return new ForgotPasswordResultDTO { IsSocialAccount = true, Provider = "Existing" };
+            }
+
+            var acquiredCooldown = await _otpCacheService.TrySetRegisterCooldownAsync(
+                normalizedEmail,
+                TimeSpan.FromSeconds(cooldownSeconds));
+
+            if (!acquiredCooldown)
+            {
+                var remaining = await _otpCacheService.GetRegisterCooldownRemainingAsync(normalizedEmail);
+                return new ForgotPasswordResultDTO
+                {
+                    IsRateLimited = true,
+                    RetryAfterSeconds = Math.Max(
+                        1,
+                        (int)Math.Ceiling(remaining?.TotalSeconds ?? cooldownSeconds))
+                };
+            }
+
+            string otp = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+            await _otpCacheService.SetRegisterOtpAsync(normalizedEmail, otp, TimeSpan.FromMinutes(10));
+
+            string subject = "StayHub Account Registration Verification Code";
+            string emailBody = _emailTemplateService.GenerateRegisterOtpEmailBody(dto.FullName, otp);
+
+            try
+            {
+                await _emailService.SendEmailAsync(normalizedEmail, subject, emailBody);
+            }
+            catch
+            {
+                await _otpCacheService.DeleteRegisterOtpAsync(normalizedEmail);
+                await _otpCacheService.DeleteRegisterCooldownAsync(normalizedEmail);
+                throw;
+            }
+
+            return new ForgotPasswordResultDTO();
+        }
+
+        // 3b. ĐĂNG KÝ
         public async Task<UserResponseDTO?> Register(RegisterDTO registerDTO)
         {
-            if (await _userRepository.GetByEmail(registerDTO.Email) != null)
+            var normalizedEmail = registerDTO.Email.Trim().ToLowerInvariant();
+            if (await _userRepository.GetByEmail(normalizedEmail) != null)
                 return null;
 
+            var storedOtp = await _otpCacheService.GetRegisterOtpAsync(normalizedEmail);
+            if (string.IsNullOrEmpty(storedOtp) || storedOtp != registerDTO.OtpCode)
+                throw new InvalidOperationException("InvalidOrExpiredOtp");
+
             var newUser = _mapper.Map<User>(registerDTO);
+            newUser.Email = normalizedEmail;
             newUser.PasswordHash = _passwordHelper.Hash(newUser, registerDTO.Password);
             newUser.Status = "Active";
             newUser.Provider = "Local";
@@ -116,6 +169,10 @@ namespace AuthAPI.Services.Implements
                 newUser.Roles.Add(defaultRole);
 
             await _userRepository.Add(newUser);
+
+            await _otpCacheService.DeleteRegisterOtpAsync(normalizedEmail);
+            await _otpCacheService.DeleteRegisterCooldownAsync(normalizedEmail);
+
             return _mapper.Map<UserResponseDTO>(newUser);
         }
 
@@ -126,7 +183,7 @@ namespace AuthAPI.Services.Implements
             if (result == null)
                 return null;
 
-            return await ProcessSocialLogin(result.Email, result.Name, result.AvatarUrl, "Google");
+            return await ProcessSocialLogin(result.Email, result.Name, result.AvatarUrl, "Google", googleLoginDTO.PhoneNumber);
         }
 
         // 5. ĐĂNG NHẬP FACEBOOK
@@ -200,8 +257,11 @@ namespace AuthAPI.Services.Implements
 
             var user = await _userRepository.GetByEmail(normalizedEmail);
 
-            if (user == null || user.Provider != "Local" || user.Status != "Active")
+            if (user == null || user.Status != "Active")
                 return new ForgotPasswordResultDTO();
+
+            if (user.Provider != "Local")
+                return new ForgotPasswordResultDTO { IsSocialAccount = true, Provider = user.Provider };
 
             string otp = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
 
@@ -224,13 +284,47 @@ namespace AuthAPI.Services.Implements
             return new ForgotPasswordResultDTO();
         }
 
-        // 9. ĐẶT LẠI MẬT KHẨU
-        public async Task<bool> ResetPassword(ResetPasswordDTO dto)
+        // 9a. XÁC MINH OTP ĐẶT LẠI MẬT KHẨU (TẠO RESET TOKEN BẢO MẬT)
+        public async Task<string?> VerifyResetOtp(VerifyResetOtpDTO dto)
         {
             var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
             var storedOtp = await _otpCacheService.GetForgotPasswordOtpAsync(normalizedEmail);
 
             if (string.IsNullOrEmpty(storedOtp) || storedOtp != dto.Code)
+                return null;
+
+            var user = await _userRepository.GetByEmail(normalizedEmail);
+            if (user == null || user.Provider != "Local" || user.Status != "Active")
+                return null;
+
+            await _otpCacheService.DeleteForgotPasswordOtpAsync(normalizedEmail);
+
+            var randomNumber = new byte[32];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            string resetToken = Convert.ToHexString(randomNumber).ToLowerInvariant();
+
+            await _otpCacheService.SetResetPasswordTokenAsync(normalizedEmail, resetToken, TimeSpan.FromMinutes(15));
+
+            return resetToken;
+        }
+
+        // 9b. ĐẶT LẠI MẬT KHẨU
+        public async Task<bool> ResetPassword(ResetPasswordDTO dto)
+        {
+            var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
+            var tokenInput = dto.ResetToken ?? dto.Code;
+
+            if (string.IsNullOrEmpty(tokenInput))
+                return false;
+
+            var storedResetToken = await _otpCacheService.GetResetPasswordTokenAsync(normalizedEmail);
+            var storedOtp = await _otpCacheService.GetForgotPasswordOtpAsync(normalizedEmail);
+
+            bool isValidToken = (!string.IsNullOrEmpty(storedResetToken) && storedResetToken == tokenInput)
+                             || (!string.IsNullOrEmpty(storedOtp) && storedOtp == tokenInput);
+
+            if (!isValidToken)
                 return false;
 
             var user = await _userRepository.GetByEmail(normalizedEmail);
@@ -248,6 +342,7 @@ namespace AuthAPI.Services.Implements
 
             await _otpCacheService.RevokeUserSessionAsync(user.Id, TimeSpan.FromMinutes(60));
             await _otpCacheService.DeleteForgotPasswordOtpAsync(normalizedEmail);
+            await _otpCacheService.DeleteResetPasswordTokenAsync(normalizedEmail);
 
             return true;
         }
@@ -297,17 +392,54 @@ namespace AuthAPI.Services.Implements
             return await GenerateLoginResponse(user);
         }
 
-        private async Task<LoginResponseDTO?> ProcessSocialLogin(string email, string name, string? avatarUrl, string provider)
+        private async Task<LoginResponseDTO?> ProcessSocialLogin(string email, string name, string? avatarUrl, string provider, string? phoneNumber = null)
         {
             var user = await _userRepository.GetByEmail(email);
 
-            if (user == null)
+            if (user == null || string.IsNullOrWhiteSpace(user.PhoneNumber))
             {
-                user = CreateSocialUser(email, name, avatarUrl, provider);
-                var defaultRole = await _roleRepository.GetByName("Customer");
-                if (defaultRole != null) user.Roles.Add(defaultRole);
+                if (string.IsNullOrWhiteSpace(phoneNumber))
+                {
+                    return new LoginResponseDTO
+                    {
+                        RequirePhoneNumber = true,
+                        User = new UserResponseDTO
+                        {
+                            Email = email,
+                            FullName = name ?? user?.FullName ?? $"{provider} User",
+                            AvatarUrl = avatarUrl ?? user?.AvatarUrl,
+                            Provider = provider
+                        },
+                        Token = string.Empty,
+                        RefreshToken = string.Empty
+                    };
+                }
 
-                await _userRepository.Add(user);
+                if (phoneNumber.Length > 15)
+                {
+                    throw new ArgumentException("PhoneNumberMax15Chars");
+                }
+
+                if (user == null)
+                {
+                    user = CreateSocialUser(email, name, avatarUrl, provider, phoneNumber);
+                    var defaultRole = await _roleRepository.GetByName("Customer");
+                    if (defaultRole != null) user.Roles.Add(defaultRole);
+
+                    await _userRepository.Add(user);
+                }
+                else
+                {
+                    if (user.Provider != provider || user.Status != "Active")
+                        return null;
+
+                    user.PhoneNumber = phoneNumber;
+                    if (user.AvatarUrl != avatarUrl && !string.IsNullOrEmpty(avatarUrl))
+                    {
+                        user.AvatarUrl = avatarUrl;
+                    }
+                    await _userRepository.Update(user.Id, user);
+                }
             }
             else
             {
@@ -324,13 +456,14 @@ namespace AuthAPI.Services.Implements
             return await GenerateLoginResponse(user);
         }
 
-        private User CreateSocialUser(string email, string name, string? avatarUrl, string provider)
+        private User CreateSocialUser(string email, string name, string? avatarUrl, string provider, string? phoneNumber = null)
         {
             return new User
             {
                 Email = email,
                 FullName = name ?? $"{provider} User",
                 AvatarUrl = avatarUrl,
+                PhoneNumber = phoneNumber,
                 PasswordHash = string.Empty,
                 Status = "Active",
                 Provider = provider,
