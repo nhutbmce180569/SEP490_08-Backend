@@ -36,17 +36,29 @@ public class Program
         {
             client.Timeout = TimeSpan.FromSeconds(10);
         })
+        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        })
         .AddHttpMessageHandler<AuthorizationHeaderHandler>();
 
         builder.Services.AddHttpClient<IUserValidationService, UserValidationService>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(10);
         })
+        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        })
         .AddHttpMessageHandler<AuthorizationHeaderHandler>();
 
         builder.Services.AddHttpClient<IBookingAnalyticsClient, BookingAnalyticsClient>(client =>
         {
             client.Timeout = TimeSpan.FromSeconds(15);
+        })
+        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
         })
         .AddHttpMessageHandler<AuthorizationHeaderHandler>();
 
@@ -56,7 +68,11 @@ public class Program
         builder.Services.AddScoped<ICustomerVoucherService, CustomerVoucherService>();
         builder.Services.AddScoped<IPlatformAnalyticsService, PlatformAnalyticsService>();
         builder.Services.AddScoped<IEmailService, EmailService>();
-        builder.Services.AddHttpClient<INotificationInternalService, NotificationInternalService>();
+        builder.Services.AddHttpClient<INotificationInternalService, NotificationInternalService>()
+        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        });
 
         builder.Services.AddControllers().AddStayHubDataAnnotationsLocalization();
         builder.Services.AddStayHubLocalization();
@@ -134,6 +150,44 @@ public class Program
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
+
+        // Auto-remap dummy seed UserVouchers to valid existing Customer IDs
+        using (var scope = app.Services.CreateScope())
+        {
+            try
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<StayHubVoucherDbContext>();
+                var userValService = scope.ServiceProvider.GetRequiredService<IUserValidationService>();
+
+                var batchUsers = userValService.GetUsersBatchAsync(Enumerable.Range(1, 100).ToList()).GetAwaiter().GetResult();
+                var validUserIds = batchUsers.Select(u => u.Id).ToList();
+
+                if (validUserIds.Count > 0)
+                {
+                    var dummyUserVouchers = dbContext.UserVouchers.ToList();
+                    int remapIdx = 0;
+                    bool updated = false;
+                    foreach (var uv in dummyUserVouchers)
+                    {
+                        if (!validUserIds.Contains(uv.UserId))
+                        {
+                            uv.UserId = validUserIds[remapIdx % validUserIds.Count];
+                            remapIdx++;
+                            updated = true;
+                        }
+                    }
+                    if (updated)
+                    {
+                        dbContext.SaveChanges();
+                        Console.WriteLine("[VoucherAPI] Successfully remapped dummy UserVouchers to valid customer IDs.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[VoucherAPI] Remap warning: {ex.Message}");
+            }
+        }
 
         app.Run();
     }

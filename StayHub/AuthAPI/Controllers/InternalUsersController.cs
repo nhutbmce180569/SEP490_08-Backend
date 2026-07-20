@@ -52,6 +52,23 @@ public class InternalUsersController : ControllerBase
         return Ok(users);
     }
 
+    [HttpPost("batch")]
+    public async Task<IActionResult> GetUsersBatch([FromBody] List<int> ids)
+    {
+        if (!IsValidServiceKey())
+        {
+            return Unauthorized(new { message = "Invalid service key" });
+        }
+
+        if (ids == null || !ids.Any())
+        {
+            return Ok(new List<AuthAPI.DTOs.UserSearchResultDto>());
+        }
+
+        var users = await _userService.GetUsersBatchAsync(ids);
+        return Ok(users);
+    }
+
     private bool IsValidServiceKey()
     {
         if (!Request.Headers.TryGetValue("X-Service-Key", out var providedKey)) return false;

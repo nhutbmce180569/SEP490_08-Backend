@@ -46,13 +46,25 @@ public class VoucherService : IVoucherService
         bool? isActive,
         bool? createdByMe,
         int currentUserId,
-        string? voucherType)
+        string? voucherType,
+        bool isAdmin = false)
     {
         if (page <= 0) page = 1;
         if (pageSize <= 0) pageSize = 10;
 
         var entities = await _voucherRepository.GetAllAsync();
         var list = entities.ToList();
+
+        if (isAdmin)
+        {
+            // Admin manages system-wide vouchers (TourId == null) or vouchers created by Admin
+            list = list.Where(v => v.TourId == null || v.CreatorId == currentUserId).ToList();
+        }
+        else
+        {
+            // Manager only manages vouchers created by that manager
+            list = list.Where(v => v.CreatorId == currentUserId).ToList();
+        }
 
         if (createdByMe == true)
         {
@@ -140,11 +152,30 @@ public class VoucherService : IVoucherService
         var dto = _mapper.Map<ReadVoucherDetailDTO>(entity);
         await EnrichVoucherAsync(dto, entity);
 
-        foreach (var assignment in dto.AssignedCustomers)
+        if (dto.AssignedCustomers.Count > 0)
         {
-            var userInfo = await _userValidationService.ValidateUserAsync(assignment.UserId);
-            assignment.UserFullName = userInfo.FullName;
-            assignment.UserEmail = userInfo.Email;
+            var userIds = dto.AssignedCustomers.Select(a => a.UserId).Distinct().ToList();
+            var userList = await _userValidationService.GetUsersBatchAsync(userIds);
+            var userMap = userList.ToDictionary(u => u.Id, u => u);
+
+            foreach (var assignment in dto.AssignedCustomers)
+            {
+                if (userMap.TryGetValue(assignment.UserId, out var userInfo))
+                {
+                    assignment.UserFullName = userInfo.FullName;
+                    assignment.UserEmail = userInfo.Email;
+                }
+                else
+                {
+                    // Fallback to single user lookup if missing in batch
+                    var singleUser = await _userValidationService.ValidateUserAsync(assignment.UserId);
+                    if (singleUser.Exists)
+                    {
+                        assignment.UserFullName = singleUser.FullName;
+                        assignment.UserEmail = singleUser.Email;
+                    }
+                }
+            }
         }
 
         return dto;
@@ -624,9 +655,9 @@ public class VoucherService : IVoucherService
         }
         else if (discountType.Equals("Amount", StringComparison.OrdinalIgnoreCase))
         {
-            if (discountValue <= 0)
+            if (discountValue < 10000)
             {
-                throw new Exception("Amount discount must be greater than 0");
+                throw new Exception("Discount amount must be at least 10,000 VND");
             }
         }
         else
@@ -667,7 +698,38 @@ public class VoucherService : IVoucherService
         return await _voucherRepository.CodeExistsAsync(voucherCode);
     }
 
-    public async Task<object> DistributeBirthdayVoucherAsync(int month, int currentAdminId)
+    public async Task<object> GetBirthdayPreviewAsync(int month, int year)
+    {
+        var voucherCode = $"BDAY_{year}_{month:D2}";
+        var isDistributed = await _voucherRepository.CodeExistsAsync(voucherCode);
+        var customers = await _userValidationService.GetCustomersByBirthdayMonthAsync(month);
+        var activeCustomers = customers.Where(c => string.Equals(c.Status, "Active", StringComparison.OrdinalIgnoreCase)).ToList();
+
+        return new
+        {
+            Month = month,
+            Year = year,
+            VoucherCode = voucherCode,
+            IsDistributed = isDistributed,
+            TotalEligibleCustomers = activeCustomers.Count,
+            Customers = activeCustomers.Select(c => new
+            {
+                c.Id,
+                c.FullName,
+                c.Email,
+                c.Status
+            }).ToList()
+        };
+    }
+
+    public async Task<object> DistributeBirthdayVoucherAsync(
+        int month,
+        int currentAdminId,
+        string? discountType = "Percent",
+        long? discountValue = 10,
+        long? maxDiscountAmount = 500000,
+        DateTime? startDate = null,
+        DateTime? endDate = null)
     {
         var now = DateTime.Now;
         var year = now.Year;
@@ -687,16 +749,37 @@ public class VoucherService : IVoucherService
             throw new Exception($"No active customers found with a birthday in month {month}.");
         }
 
+        var finalDiscountType = string.Equals(discountType, "Amount", StringComparison.OrdinalIgnoreCase) ? "Amount" : "Percent";
+        var finalDiscountValue = discountValue.HasValue && discountValue.Value > 0 ? discountValue.Value : (finalDiscountType == "Percent" ? 10 : 50000);
+        long? finalMaxDiscount = finalDiscountType == "Percent" ? (maxDiscountAmount.HasValue && maxDiscountAmount.Value > 0 ? maxDiscountAmount.Value : 500000) : null;
+
+        var start = startDate ?? new DateTime(year, month, 1);
+        var end = endDate ?? new DateTime(year, month, DateTime.DaysInMonth(year, month)).AddDays(30);
+
+        if (start.Month != month)
+        {
+            throw new Exception($"Ngày bắt đầu ({start:dd/MM/yyyy}) phải thuộc Tháng sinh nhật được chọn (Tháng {month}).");
+        }
+
+        if (end < start)
+        {
+            throw new Exception($"Ngày hết hạn ({end:dd/MM/yyyy}) phải lớn hơn hoặc bằng Ngày bắt đầu ({start:dd/MM/yyyy}).");
+        }
+
+        var description = finalDiscountType == "Percent"
+            ? $"Happy Birthday! Enjoy {finalDiscountValue}% off (up to {finalMaxDiscount?.ToString("N0")} VND) on any tour booking. Valid for month {month}."
+            : $"Happy Birthday! Enjoy {finalDiscountValue:N0} VND off on any tour booking. Valid for month {month}.";
+
         var voucherDto = new CreateVoucherDTO
         {
             Code = voucherCode,
-            DiscountType = "Percent",
-            DiscountValue = 10,
-            MaxDiscountAmount = 500000,
+            DiscountType = finalDiscountType,
+            DiscountValue = finalDiscountValue,
+            MaxDiscountAmount = finalMaxDiscount,
             AvailableCount = activeCustomers.Count,
-            StartDate = new DateTime(year, month, 1),
-            EndDate = new DateTime(year, month, DateTime.DaysInMonth(year, month)).AddDays(30), // Valid for 30 days after the end of the month
-            Description = $"Happy Birthday! Enjoy 10% off (up to 500,000 VND) on any tour booking. Valid for month {month}.",
+            StartDate = start,
+            EndDate = end,
+            Description = description,
             TourId = null, // Global voucher
             CustomerAssignments = activeCustomers.Select(c => new CreateUserVoucherAssignmentDTO
             {
@@ -714,7 +797,7 @@ public class VoucherService : IVoucherService
             try
             {
                 var notifyTitle = "🎁 Happy Birthday from StayHub!";
-                var notifyContent = $"We have sent a 10% discount voucher (Code: {voucherCode}) to your account. Enjoy your trip!";
+                var notifyContent = $"We have sent a discount voucher (Code: {voucherCode}) to your account. Enjoy your trip!";
                 await _notificationInternalService.NotifyUserAsync(customer.Id, notifyTitle, notifyContent);
             }
             catch
@@ -730,7 +813,7 @@ public class VoucherService : IVoucherService
                     var body = $@"
                         <h3>Happy Birthday, {customer.FullName}!</h3>
                         <p>We are excited to celebrate your birthday month with you!</p>
-                        <p>Here is a special gift: a 10% discount voucher (up to 500,000 VND) for your next tour booking.</p>
+                        <p>Here is a special gift: a discount voucher (Code: {voucherCode}) for your next tour booking.</p>
                         <p><strong>Your Voucher Code:</strong> {voucherCode}</p>
                         <p>This voucher has already been saved to your account. Enjoy your trip!</p>";
 
@@ -778,8 +861,10 @@ public class VoucherService : IVoucherService
 
     private static string ResolveStatus(Voucher voucher)
     {
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
         if (now > voucher.EndDate) return "Expired";
+        if (now < voucher.StartDate) return "Scheduled";
+        if (voucher.UsedCount >= voucher.AvailableCount && voucher.AvailableCount > 0) return "Depleted";
         if (!voucher.IsActive) return "Inactive";
         return "Active";
     }

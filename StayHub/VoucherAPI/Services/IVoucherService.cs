@@ -14,7 +14,8 @@ public interface IVoucherService
         bool? isActive = null,
         bool? createdByMe = null,
         int currentUserId = 0,
-        string? voucherType = null);
+        string? voucherType = null,
+        bool isAdmin = false);
 
     Task<ReadVoucherDetailDTO?> GetById(int id);
 
@@ -26,6 +27,14 @@ public interface IVoucherService
 
     Task<ReadVoucherDTO> Deactivate(int id, int currentUserId, bool isAdmin);
 
-    Task<object> DistributeBirthdayVoucherAsync(int month, int currentAdminId);
+    Task<object> GetBirthdayPreviewAsync(int month, int year);
+    Task<object> DistributeBirthdayVoucherAsync(
+        int month,
+        int currentAdminId,
+        string? discountType = "Percent",
+        long? discountValue = 10,
+        long? maxDiscountAmount = 500000,
+        DateTime? startDate = null,
+        DateTime? endDate = null);
     Task<bool> CheckBirthdayVoucherDistributedAsync(int month, int year);
 }
