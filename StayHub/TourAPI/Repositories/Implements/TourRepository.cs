@@ -111,7 +111,14 @@ namespace TourAPI.Repositories.Implements
             if (!string.IsNullOrWhiteSpace(city))
             {
                 var normalizedCity = city.Trim();
-                query = query.Where(t => t.City == normalizedCity);
+                normalizedCity = normalizedCity
+                    .Replace("Thanh Pho ", "", StringComparison.OrdinalIgnoreCase)
+                    .Replace("Tinh ", "", StringComparison.OrdinalIgnoreCase)
+                    .Replace(" City", "", StringComparison.OrdinalIgnoreCase)
+                    .Replace(" Province", "", StringComparison.OrdinalIgnoreCase)
+                    .Trim();
+                    
+                query = query.Where(t => t.City != null && t.City.Contains(normalizedCity));
             }
 
             if (minPrice.HasValue || maxPrice.HasValue)
@@ -279,7 +286,7 @@ namespace TourAPI.Repositories.Implements
             return (tours, total);
         }
 
-        public async Task<List<Tour>> GetSaleTours(int limit = 6)
+        public async Task<(List<Tour> Items, int TotalCount)> GetSaleTours(int page, int pageSize)
         {
             var now = DateTime.UtcNow;
             
@@ -289,9 +296,20 @@ namespace TourAPI.Repositories.Implements
                 .Where(t => t.TourSchedules.Any(s => s.DepartureDate > now && s.TourScheduleTickets.Any(ticket => 
                     ticket.Promotions.Any(p => p.Status == "Active" && p.StartDate <= now && p.EndDate >= now))));
 
-            var tours = await query
+            var totalCount = await query.CountAsync();
+
+            var normalizedPageSize = Math.Clamp(pageSize, 1, 1000);
+            var normalizedPage = Math.Max(1, page);
+
+            var pagedIds = await query
                 .OrderByDescending(t => t.Id)
-                .Take(limit)
+                .Skip((normalizedPage - 1) * normalizedPageSize)
+                .Take(normalizedPageSize)
+                .Select(t => t.Id)
+                .ToListAsync();
+
+            var tours = await _context.Tours
+                .Where(t => pagedIds.Contains(t.Id))
                 .Include(t => t.TourItineraries)
                 .Include(t => t.TourSchedules)
                     .ThenInclude(t => t.TourScheduleTickets)
@@ -300,7 +318,9 @@ namespace TourAPI.Repositories.Implements
                 .AsSplitQuery()
                 .ToListAsync();
 
-            return tours;
+            tours = tours.OrderBy(t => pagedIds.IndexOf(t.Id)).ToList();
+
+            return (tours, totalCount);
         }
 
         public async Task<(List<Tour> Items, int TotalCount)> GetHotTours(int page, int pageSize)
@@ -338,32 +358,44 @@ namespace TourAPI.Repositories.Implements
             return (tours, totalCount);
         }
 
-        public async Task<List<Tour>> GetUpcomingTours(int limit = 6)
+        public async Task<(List<Tour> Items, int TotalCount)> GetUpcomingTours(int page, int pageSize)
         {
             var now = DateTime.UtcNow;
 
             var query = _context.Tours
                 .AsNoTracking()
                 .Where(t => t.Status == "Active")
-                .Where(t => t.TourSchedules.Any(s => s.DepartureDate > now))
+                .Where(t => t.TourSchedules.Any(s => s.DepartureDate > now));
+
+            var totalCount = await query.CountAsync();
+            var normalizedPageSize = Math.Clamp(pageSize, 1, 1000);
+            var normalizedPage = Math.Max(1, page);
+
+            var pagedIds = await query
                 .OrderBy(t => t.TourSchedules
                     .Where(s => s.DepartureDate > now)
-                    .Min(s => s.DepartureDate));
+                    .Min(s => s.DepartureDate))
+                .Skip((normalizedPage - 1) * normalizedPageSize)
+                .Take(normalizedPageSize)
+                .Select(t => t.Id)
+                .ToListAsync();
 
-            var tours = await query
-                .Take(limit)
+            var tours = await _context.Tours
+                .Where(t => pagedIds.Contains(t.Id))
                 .Include(t => t.TourItineraries)
-                .Include(t => t.TourSchedules)
+                .Include(t => t.TourSchedules.Where(s => s.DepartureDate > now))
                     .ThenInclude(t => t.TourScheduleTickets)
                         .ThenInclude(t => t.Promotions)
                 .Include(t => t.Reviews)
                 .AsSplitQuery()
                 .ToListAsync();
 
-            return tours;
+            tours = tours.OrderBy(t => pagedIds.IndexOf(t.Id)).ToList();
+
+            return (tours, totalCount);
         }
 
-        public async Task<List<Tour>> GetToursByRegion(string region, int limit = 6)
+        public async Task<(List<Tour> Items, int TotalCount)> GetToursByRegion(string region, int page, int pageSize)
         {
             var query = _context.Tours
                 .AsNoTracking()
@@ -384,23 +416,36 @@ namespace TourAPI.Repositories.Implements
             }
             else
             {
-                return new List<Tour>();
+                return (new List<Tour>(), 0);
             }
 
             var now = DateTime.UtcNow;
-            var tours = await query
-                .Where(t => t.TourSchedules.Any(s => s.DepartureDate > now))
+            query = query.Where(t => t.TourSchedules.Any(s => s.DepartureDate > now));
+
+            var totalCount = await query.CountAsync();
+            var normalizedPageSize = Math.Clamp(pageSize, 1, 1000);
+            var normalizedPage = Math.Max(1, page);
+
+            var pagedIds = await query
                 .OrderByDescending(t => t.Id)
-                .Take(limit)
+                .Skip((normalizedPage - 1) * normalizedPageSize)
+                .Take(normalizedPageSize)
+                .Select(t => t.Id)
+                .ToListAsync();
+
+            var tours = await _context.Tours
+                .Where(t => pagedIds.Contains(t.Id))
                 .Include(t => t.TourItineraries)
-                .Include(t => t.TourSchedules)
+                .Include(t => t.TourSchedules.Where(s => s.DepartureDate > now))
                     .ThenInclude(t => t.TourScheduleTickets)
                         .ThenInclude(t => t.Promotions)
                 .Include(t => t.Reviews)
                 .AsSplitQuery()
                 .ToListAsync();
 
-            return tours;
+            tours = tours.OrderBy(t => pagedIds.IndexOf(t.Id)).ToList();
+
+            return (tours, totalCount);
         }
 
         public async Task<Tour> GetById(int id)
