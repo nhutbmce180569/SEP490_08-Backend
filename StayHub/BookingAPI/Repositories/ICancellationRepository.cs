@@ -1,4 +1,4 @@
-﻿using BookingAPI.Models;
+using BookingAPI.Models;
 
 namespace BookingAPI.Repositories
 {
@@ -9,6 +9,7 @@ namespace BookingAPI.Repositories
         Task<(IEnumerable<CancellationRequest> Data, int Total)> GetAllCancellationRequestsAsync(
             IReadOnlyCollection<int> scheduleIds,
             string? status,
+            string? date,
             int page,
             int pageSize);
         Task<CancellationRequest?> GetCancellationRequestByIdAsync(int id);

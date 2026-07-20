@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using BookingAPI.DTOs;
 using BookingAPI.Models;
 using BookingAPI.Repositories;
@@ -100,6 +100,7 @@ namespace BookingAPI.Services.Implements
         public async Task<PaginationDTO<CancellationRequestListDTO>> GetCancellationRequestsAsync(
             int operatorId,
             string? status,
+            string? date,
             int page,
             int pageSize)
         {
@@ -107,6 +108,7 @@ namespace BookingAPI.Services.Implements
             var (requests, total) = await _repository.GetAllCancellationRequestsAsync(
                 scheduleIds,
                 status,
+                date,
                 page,
                 pageSize);
 
