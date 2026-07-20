@@ -146,6 +146,10 @@ namespace AuthAPI.Services.Implements
             if (await _userRepository.GetByEmail(normalizedEmail) != null)
                 return null;
 
+            if (await _userRepository.GetByPhoneNumber(registerDTO.PhoneNumber) != null)
+                throw new InvalidOperationException("PhoneNumberExists");
+
+
             var storedOtp = await _otpCacheService.GetRegisterOtpAsync(normalizedEmail);
             if (string.IsNullOrEmpty(storedOtp) || storedOtp != registerDTO.OtpCode)
                 throw new InvalidOperationException("InvalidOrExpiredOtp");
@@ -366,6 +370,15 @@ namespace AuthAPI.Services.Implements
             if (user == null || user.Status != "Active")
                 return null;
 
+            if (!string.IsNullOrWhiteSpace(dto.PhoneNumber) && dto.PhoneNumber != user.PhoneNumber)
+            {
+                var existingPhoneUser = await _userRepository.GetByPhoneNumber(dto.PhoneNumber);
+                if (existingPhoneUser != null)
+                {
+                    throw new InvalidOperationException("PhoneNumberExists");
+                }
+            }
+
             if (dto.AvatarFile != null)
             {
                 if (!string.IsNullOrEmpty(user.AvatarUrl))
@@ -418,6 +431,12 @@ namespace AuthAPI.Services.Implements
                 if (phoneNumber.Length > 15)
                 {
                     throw new ArgumentException("PhoneNumberMax15Chars");
+                }
+                
+                var existingPhoneUser = await _userRepository.GetByPhoneNumber(phoneNumber);
+                if (existingPhoneUser != null && existingPhoneUser.Email != email)
+                {
+                    throw new InvalidOperationException("PhoneNumberExists");
                 }
 
                 if (user == null)
