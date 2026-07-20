@@ -63,7 +63,11 @@ namespace ContentAPI.Services.Implements
             ValidateCoordinates(parsedLat, parsedLng);
             ValidateSourceUrl(dto.SourceUrl);
 
-            var imageUrl = await UploadImageAsync(dto.ImageFile);
+            string? imageUrl = null;
+            if (dto.ImageFile != null && dto.ImageFile.Length > 0)
+            {
+                imageUrl = await UploadImageAsync(dto.ImageFile);
+            }
 
             var entity = new TourismInformation
             {
@@ -103,6 +107,11 @@ namespace ContentAPI.Services.Implements
             {
                 await DeleteCloudinaryImageIfExists(entity.ImageUrl);
                 entity.ImageUrl = await UploadImageAsync(dto.ImageFile);
+            }
+            else if (dto.RemoveImage)
+            {
+                await DeleteCloudinaryImageIfExists(entity.ImageUrl);
+                entity.ImageUrl = null;
             }
 
             entity.Name = dto.Name.Trim();
@@ -199,11 +208,10 @@ namespace ContentAPI.Services.Implements
             {
                 throw new InvalidOperationException("Type is required.");
             }
-
-            if (!TourismInformationConstants.ValidTypes.Contains(type.Trim()))
+            
+            if (type.Trim().Length > 50)
             {
-                throw new InvalidOperationException(
-                    $"Invalid type. Allowed values: {string.Join(", ", TourismInformationConstants.ValidTypes)}.");
+                throw new InvalidOperationException("Type cannot exceed 50 characters.");
             }
         }
 
@@ -254,12 +262,6 @@ namespace ContentAPI.Services.Implements
 
         private static void ValidateOptionalFilters(string? type, string? status)
         {
-            if (!string.IsNullOrWhiteSpace(type) && !TourismInformationConstants.ValidTypes.Contains(type.Trim()))
-            {
-                throw new InvalidOperationException(
-                    $"Invalid type filter. Allowed values: {string.Join(", ", TourismInformationConstants.ValidTypes)}.");
-            }
-
             if (!string.IsNullOrWhiteSpace(status)
                 && status.Trim() != TourismInformationConstants.StatusActive
                 && status.Trim() != TourismInformationConstants.StatusInactive)
