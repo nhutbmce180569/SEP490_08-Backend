@@ -111,6 +111,26 @@ namespace SocialAPI.Services.Implements
             }
         }
 
+        public async Task<List<int>> GetManagerScheduleIdsAsync(int managerId)
+        {
+            try
+            {
+                var request = CreateRequest(HttpMethod.Get, $"api/internal/tourschedules/manager/{managerId}/schedule-ids");
+                var response = await _httpClient.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<ScheduleIdsResponse>();
+                    return result?.ScheduleIds ?? new List<int>();
+                }
+                return new List<int>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting schedule IDs for manager {ManagerId}", managerId);
+                return new List<int>();
+            }
+        }
+
         private class VerifyManagerResponse
         {
             public bool IsOwner { get; set; }
