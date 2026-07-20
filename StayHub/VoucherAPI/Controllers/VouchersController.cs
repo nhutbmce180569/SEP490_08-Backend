@@ -33,7 +33,9 @@ public class VouchersController : LocalizedControllerBase
         [FromQuery] bool? createdByMe = null,
         [FromQuery] string? voucherType = null)
     {
-        var result = await _voucherService.GetAll(page, pageSize, search, tourId, discountType, status, isActive, createdByMe, GetCurrentUserId() ?? 0, voucherType);
+        var isAdmin = User.IsInRole("Admin");
+        var result = await _voucherService.GetAll(
+            page, pageSize, search, tourId, discountType, status, isActive, createdByMe, GetCurrentUserId() ?? 0, voucherType, isAdmin);
         return Ok(result);
     }
 
@@ -157,6 +159,22 @@ public class VouchersController : LocalizedControllerBase
         }
     }
 
+    [HttpGet("birthday-distribute/preview")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetBirthdayPreview([FromQuery] int month, [FromQuery] int? year = null)
+    {
+        try
+        {
+            var targetYear = year ?? DateTime.Now.Year;
+            var preview = await _voucherService.GetBirthdayPreviewAsync(month, targetYear);
+            return Ok(preview);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [HttpGet("birthday-distribute/status")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CheckBirthdayVoucherStatus([FromQuery] int month, [FromQuery] int year)
@@ -174,7 +192,13 @@ public class VouchersController : LocalizedControllerBase
 
     [HttpPost("birthday-distribute")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> DistributeBirthdayVoucher([FromQuery] int? month = null)
+    public async Task<IActionResult> DistributeBirthdayVoucher(
+        [FromQuery] int? month = null,
+        [FromQuery] string? discountType = null,
+        [FromQuery] long? discountValue = null,
+        [FromQuery] long? maxDiscountAmount = null,
+        [FromQuery] DateTime? startDate = null,
+        [FromQuery] DateTime? endDate = null)
     {
         var currentUserId = GetCurrentUserId();
         if (currentUserId == null)
@@ -186,7 +210,14 @@ public class VouchersController : LocalizedControllerBase
 
         try
         {
-            var result = await _voucherService.DistributeBirthdayVoucherAsync(targetMonth, currentUserId.Value);
+            var result = await _voucherService.DistributeBirthdayVoucherAsync(
+                targetMonth,
+                currentUserId.Value,
+                discountType,
+                discountValue,
+                maxDiscountAmount,
+                startDate,
+                endDate);
             return Ok(result);
         }
         catch (Exception ex)

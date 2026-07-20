@@ -216,7 +216,7 @@ public class CustomerVoucherService : ICustomerVoucherService
     private async Task SyncExpiredStatusAsync(UserVoucher userVoucher)
     {
         if (userVoucher.Status.Equals("Available", StringComparison.OrdinalIgnoreCase) &&
-            userVoucher.Voucher.EndDate < DateTime.Now)
+            userVoucher.Voucher.EndDate < DateTime.UtcNow)
         {
             userVoucher.Status = "Expired";
             await _userVoucherRepository.UpdateAsync(userVoucher);
@@ -235,7 +235,7 @@ public class CustomerVoucherService : ICustomerVoucherService
 
     private static void ValidateVoucherEligibility(Voucher voucher)
     {
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
 
         if (!voucher.IsActive)
         {

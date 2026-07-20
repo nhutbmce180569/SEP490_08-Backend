@@ -9,7 +9,7 @@ using VoucherAPI.Services;
 
 namespace VoucherAPI.Controllers;
 
-[Authorize]
+[Authorize(Roles = "Customer")]
 [Route("api/customer/vouchers")]
 [ApiController]
 public class CustomerVouchersController : LocalizedControllerBase
