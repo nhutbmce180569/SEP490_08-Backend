@@ -23,7 +23,7 @@ namespace BookingAPI.Services.Implements
 
             try
             {
-                return await _httpClient.GetFromJsonAsync<ReadOrderTourDTO>($"api/tours/public/{tourId}");
+                return await _httpClient.GetFromJsonAsync<ReadOrderTourDTO>($"api/tours/{tourId}");
             }
             catch
             {

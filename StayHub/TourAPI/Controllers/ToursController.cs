@@ -141,9 +141,9 @@ namespace TourAPI.Controllers
 
         [AllowAnonymous]
         [HttpGet("public/region/{region}")]
-        public async Task<ActionResult> GetToursByRegion(string region, [FromQuery] int limit = 20)
+        public async Task<ActionResult> GetToursByRegion(string region, [FromQuery] int page = 1, [FromQuery] int pageSize = 12)
         {
-            var list = await _tourService.GetToursByRegion(region, limit);
+            var list = await _tourService.GetToursByRegion(region, page, pageSize);
             return Ok(list);
         }
 
@@ -159,25 +159,25 @@ namespace TourAPI.Controllers
 
         [AllowAnonymous]
         [HttpGet("sale")]
-        public async Task<ActionResult> GetSaleTours([FromQuery] int limit = 6)
+        public async Task<ActionResult> GetSaleTours([FromQuery] int page = 1, [FromQuery] int pageSize = 12)
         {
-            var list = await _tourService.GetSaleTours(limit);
+            var list = await _tourService.GetSaleTours(page, pageSize);
             return Ok(list);
         }
 
         [AllowAnonymous]
         [HttpGet("hot")]
-        public async Task<ActionResult> GetHotTours([FromQuery] int limit = 5)
+        public async Task<ActionResult> GetHotTours([FromQuery] int page = 1, [FromQuery] int pageSize = 12)
         {
-            var list = await _tourService.GetHotTours(limit);
+            var list = await _tourService.GetHotTours(page, pageSize);
             return Ok(list);
         }
 
         [AllowAnonymous]
         [HttpGet("upcoming")]
-        public async Task<ActionResult> GetUpcomingTours([FromQuery] int limit = 6)
+        public async Task<ActionResult> GetUpcomingTours([FromQuery] int page = 1, [FromQuery] int pageSize = 12)
         {
-            var list = await _tourService.GetUpcomingTours(limit);
+            var list = await _tourService.GetUpcomingTours(page, pageSize);
             return Ok(list);
         }
 
@@ -404,6 +404,26 @@ namespace TourAPI.Controllers
                                ?? User.FindFirst("id")?.Value
                                ?? User.FindFirst("sub")?.Value;
             return int.TryParse(userIdClaim, out var userId) ? userId : null;
+        }
+
+        [AllowAnonymous]
+        [HttpPost("request-consultation")]
+        public async Task<IActionResult> RequestConsultation([FromBody] ConsultationRequestDto request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                await _tourService.RequestConsultationAsync(request);
+                return Ok(new { message = "Your consultation request has been sent successfully. We will contact you soon." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while processing your consultation request.", error = ex.Message });
+            }
         }
     }
 }
