@@ -405,5 +405,25 @@ namespace TourAPI.Controllers
                                ?? User.FindFirst("sub")?.Value;
             return int.TryParse(userIdClaim, out var userId) ? userId : null;
         }
+
+        [AllowAnonymous]
+        [HttpPost("request-consultation")]
+        public async Task<IActionResult> RequestConsultation([FromBody] ConsultationRequestDto request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                await _tourService.RequestConsultationAsync(request);
+                return Ok(new { message = "Your consultation request has been sent successfully. We will contact you soon." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while processing your consultation request.", error = ex.Message });
+            }
+        }
     }
 }

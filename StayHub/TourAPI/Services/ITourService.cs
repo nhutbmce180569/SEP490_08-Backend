@@ -25,5 +25,6 @@ namespace TourAPI.Services
         Task<PaginationDTO<ReadTourDTO>> GetHotTours(int page, int pageSize);
         Task<PaginationDTO<ReadTourDTO>> GetUpcomingTours(int page, int pageSize);
         Task<PaginationDTO<ReadTourDTO>> GetToursByRegion(string region, int page, int pageSize);
+        Task RequestConsultationAsync(ConsultationRequestDto request);
     }
 }
