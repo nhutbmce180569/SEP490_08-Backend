@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using BookingAPI.DTOs;
 using BookingAPI.Exceptions;
 using BookingAPI.Services;
@@ -223,6 +223,17 @@ namespace BookingAPI.Controllers
 
             var customerIds = await _orderService.GetCustomerIdsByScheduleIdAsync(scheduleId);
             return Ok(new { data = customerIds });
+        }
+
+        [HttpGet("users/{userId}/eligible-schedule-ids")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetEligibleScheduleIdsInternal(int userId)
+        {
+            if (userId <= 0)
+                return BadRequest(new { message = "Invalid userId." });
+
+            var scheduleIds = await _orderService.GetEligibleScheduleIdsByUserIdAsync(userId);
+            return Ok(new { data = scheduleIds });
         }
 
         private static bool KeysMatch(string? configuredKey, string? providedKey)
