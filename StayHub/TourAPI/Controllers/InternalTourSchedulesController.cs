@@ -52,7 +52,9 @@ namespace TourAPI.Controllers
                 ScheduleId = schedule.Id,
                 TourId = schedule.TourId,
                 TourCreatedBy = schedule.Tour.CreatedBy,
-                StaffIds = schedule.TourScheduleStaffs.Select(s => s.StaffId).ToList()
+                StaffIds = schedule.TourScheduleStaffs.Select(s => s.StaffId).ToList(),
+                DepartureDate = schedule.DepartureDate,
+                ReturnDate = schedule.ReturnDate
             });
         }
 
@@ -101,6 +103,24 @@ namespace TourAPI.Controllers
             var scheduleIds = await _context.TourScheduleStaffs
                 .Where(s => s.StaffId == staffId)
                 .Select(s => s.ScheduleId)
+                .ToListAsync();
+
+            return Ok(new { scheduleIds = scheduleIds });
+        }
+
+        // GET: api/internal/tourschedules/manager/{managerId}/schedule-ids
+        [HttpGet("manager/{managerId}/schedule-ids")]
+        public async Task<IActionResult> GetManagerScheduleIds(int managerId)
+        {
+            if (!IsAuthorizedInternalRequest())
+            {
+                return Unauthorized(new { message = "Internal authorization required." });
+            }
+
+            var scheduleIds = await _context.TourSchedules
+                .Include(s => s.Tour)
+                .Where(s => s.Tour.CreatedBy == managerId)
+                .Select(s => s.Id)
                 .ToListAsync();
 
             return Ok(new { scheduleIds = scheduleIds });

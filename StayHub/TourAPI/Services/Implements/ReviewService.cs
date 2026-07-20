@@ -326,8 +326,13 @@ namespace TourAPI.Services.Implements
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"Error fetching user names: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
             }
 
             foreach (var review in reviewList)
