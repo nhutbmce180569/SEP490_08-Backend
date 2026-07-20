@@ -167,9 +167,9 @@ namespace TourAPI.Controllers
 
         [AllowAnonymous]
         [HttpGet("hot")]
-        public async Task<ActionResult> GetHotTours([FromQuery] int limit = 5)
+        public async Task<ActionResult> GetHotTours([FromQuery] int page = 1, [FromQuery] int pageSize = 12)
         {
-            var list = await _tourService.GetHotTours(limit);
+            var list = await _tourService.GetHotTours(page, pageSize);
             return Ok(list);
         }
 

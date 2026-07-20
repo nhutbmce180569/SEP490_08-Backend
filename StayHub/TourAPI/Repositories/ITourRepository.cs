@@ -37,7 +37,7 @@ namespace TourAPI.Repositories
             int pageSize,
             string? searchTerm = null);
         Task<List<Tour>> GetSaleTours(int limit = 6);
-        Task<List<Tour>> GetHotTours(int limit = 5);
+        Task<(List<Tour> Items, int TotalCount)> GetHotTours(int page, int pageSize);
         Task<List<Tour>> GetUpcomingTours(int limit = 6);
         Task<Tour> GetById(int id);
         void Update(Tour model);
