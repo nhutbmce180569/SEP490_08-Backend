@@ -1,4 +1,4 @@
-﻿using AuthAPI.Validations;
+using AuthAPI.Validations;
 using System.ComponentModel.DataAnnotations;
 
 namespace AuthAPI.DTOs
@@ -17,6 +17,10 @@ namespace AuthAPI.DTOs
     {
         [Required(ErrorMessage = "Google IdToken is required.")]
         public string IdToken { get; set; } = string.Empty;
+
+        [MaxLength(15, ErrorMessage = "PhoneNumberMax15Chars")]
+        [RegularExpression(@"^[0-9+()\- ]{8,15}$", ErrorMessage = "InvalidPhoneNumberFormat")]
+        public string? PhoneNumber { get; set; }
     }
 
     public class RefreshTokenRequestDTO
@@ -27,6 +31,7 @@ namespace AuthAPI.DTOs
 
     public class LoginResponseDTO
     {
+        public bool RequirePhoneNumber { get; set; }
         public UserResponseDTO User { get; set; } = null!;
         public string Token { get; set; } = null!;
         public string RefreshToken { get; set; } = null!;
@@ -80,10 +85,12 @@ namespace AuthAPI.DTOs
 
         [Required(ErrorMessage = "Full Name is required.")]
         [StringLength(100, MinimumLength = 2, ErrorMessage = "Full name must be between 2 and 100 characters.")]
+        [RegularExpression(@"^[a-zA-Z0-9\sÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ]+$", ErrorMessage = "FullNameCannotContainSpecialCharacters")]
         public string FullName { get; set; } = null!;
 
         [Required(ErrorMessage = "Phone Number is required.")]
-        [Phone(ErrorMessage = "Invalid phone number format.")]
+        [StringLength(15, MinimumLength = 8, ErrorMessage = "PhoneNumberMax15Chars")]
+        [RegularExpression(@"^[0-9+()\- ]{8,15}$", ErrorMessage = "InvalidPhoneNumberFormat")]
         public string PhoneNumber { get; set; } = null!;
 
         [Required(ErrorMessage = "Gender is required.")]
@@ -92,6 +99,20 @@ namespace AuthAPI.DTOs
         [Required(ErrorMessage = "Date of Birth is required.")]
         [NotFutureDate(ErrorMessage = "Date of birth cannot be in the future.")]
         public DateOnly? DateOfBirth { get; set; }
+
+        [Required(ErrorMessage = "VerificationCodeRequired")]
+        public string OtpCode { get; set; } = null!;
+    }
+
+    public class SendRegisterOtpDTO
+    {
+        [Required(ErrorMessage = "Email is required.")]
+        [EmailAddress(ErrorMessage = "Invalid email format.")]
+        public string Email { get; set; } = null!;
+
+        [Required(ErrorMessage = "Full Name is required.")]
+        [RegularExpression(@"^[a-zA-Z0-9\sÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ]+$", ErrorMessage = "FullNameCannotContainSpecialCharacters")]
+        public string FullName { get; set; } = null!;
     }
 
     public class FacebookLoginDTO
@@ -129,6 +150,18 @@ namespace AuthAPI.DTOs
     {
         public bool IsRateLimited { get; set; }
         public int RetryAfterSeconds { get; set; }
+        public bool IsSocialAccount { get; set; }
+        public string? Provider { get; set; }
+    }
+
+    public class VerifyResetOtpDTO
+    {
+        [Required(ErrorMessage = "Email is required.")]
+        [EmailAddress(ErrorMessage = "Invalid email format.")]
+        public string Email { get; set; } = null!;
+
+        [Required(ErrorMessage = "Verification code is required.")]
+        public string Code { get; set; } = null!;
     }
 
     public class ResetPasswordDTO
@@ -137,8 +170,8 @@ namespace AuthAPI.DTOs
         [EmailAddress(ErrorMessage = "Invalid email format.")]
         public string Email { get; set; } = null!;
 
-        [Required(ErrorMessage = "Verification code is required.")]
-        public string Code { get; set; } = null!;
+        public string? Code { get; set; }
+        public string? ResetToken { get; set; }
 
         [Required(ErrorMessage = "New password is required.")]
         [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$",

@@ -512,4 +512,16 @@
   <data name="VoucherCode must be between 3 and 50 characters" xml:space="preserve">
     <value>VoucherCode phải từ 3 đến 50 ký tự</value>
   </data>
+  <data name="FullNameCannotContainSpecialCharacters" xml:space="preserve">
+    <value>Họ và tên không được chứa ký tự đặc biệt hoặc biểu tượng.</value>
+  </data>
+  <data name="PhoneNumberMax15Chars" xml:space="preserve">
+    <value>Số điện thoại tối đa 15 chữ số.</value>
+  </data>
+  <data name="InvalidPhoneNumberFormat" xml:space="preserve">
+    <value>Định dạng số điện thoại không hợp lệ.</value>
+  </data>
+  <data name="VerificationCodeRequired" xml:space="preserve">
+    <value>Vui lòng nhập mã xác nhận OTP.</value>
+  </data>
 </root>

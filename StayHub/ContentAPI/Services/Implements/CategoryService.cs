@@ -6,6 +6,9 @@ using ContentAPI.Repositories;
 using System.Net.Http;
 using Microsoft.AspNetCore.SignalR;
 using ContentAPI.Hubs;
+using Microsoft.Extensions.Localization;
+using StayHub.Common.Resources;
+using System.Text.RegularExpressions;
 
 namespace ContentAPI.Services.Implements
 {
@@ -18,6 +21,7 @@ namespace ContentAPI.Services.Implements
         private readonly IConfiguration _configuration;
         private readonly ITourApiClient _tourApiClient;
         private readonly IHubContext<CategoryHub> _hubContext;
+        private readonly IStringLocalizer<Messages> _localizer;
 
         public CategoryService(
             ICategoryRepository categoryRepository,
@@ -26,7 +30,8 @@ namespace ContentAPI.Services.Implements
             HttpClient httpClient,
             IConfiguration configuration, 
             ITourApiClient tourApiClient,
-            IHubContext<CategoryHub> hubContext)
+            IHubContext<CategoryHub> hubContext,
+            IStringLocalizer<Messages> localizer)
         {
             _categoryRepository = categoryRepository;
             _cloudinaryService = cloudinaryService;
@@ -35,6 +40,7 @@ namespace ContentAPI.Services.Implements
             _configuration = configuration;
             _tourApiClient = tourApiClient;
             _hubContext = hubContext;
+            _localizer = localizer;
         }
 
         public async Task<PaginationDTO<ReadCategoryDTO>> GetAllCategories(int page, int pageSize)
@@ -88,22 +94,37 @@ namespace ContentAPI.Services.Implements
 
         public async Task<ReadCategoryDTO> CreateCategory(CreateCategoryDTO dto)
         {
+            if (!Regex.IsMatch(dto.Name, @"^[\p{L}\p{N}\s\-]+$"))
+            {
+                throw new InvalidOperationException(_localizer["CategoryNameNoSpecialChars"].Value);
+            }
+
+            if (!Regex.IsMatch(dto.Slug, @"^[a-z0-9\-]+$"))
+            {
+                throw new InvalidOperationException(_localizer["CategorySlugInvalidFormat"].Value);
+            }
+
             var existingByName = await _categoryRepository.GetByName(dto.Name);
             if (existingByName != null)
             {
-                throw new InvalidOperationException("Tên danh mục này đã tồn tại. Vui lòng chọn tên khác.");
+                throw new InvalidOperationException(_localizer["CategoryNameAlreadyExists"].Value);
             }
 
             var existingBySlug = await _categoryRepository.GetBySlug(dto.Slug);
             if (existingBySlug != null)
             {
-                throw new InvalidOperationException("Slug này đã tồn tại. Vui lòng chọn slug khác.");
+                throw new InvalidOperationException(_localizer["CategorySlugAlreadyExists"].Value);
             }
 
             string iconUrl = string.Empty;
 
             if (dto.IconFile != null && dto.IconFile.Length > 0)
             {
+                if (!dto.IconFile.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(_localizer["OnlyImageFilesAllowed"].Value);
+                }
+
                 var uploadResult = await _cloudinaryService.UploadImageAsync(dto.IconFile, "StayHub_Categories");
                 if (uploadResult.Error == null)
                 {
@@ -116,7 +137,7 @@ namespace ContentAPI.Services.Implements
                 Name = dto.Name,
                 Slug = dto.Slug,
                 Description = dto.Description,
-                IsActive = dto.IsActive ?? true,
+                IsActive = dto.IsActive ?? false,
                 IconUrl = iconUrl
             };
 
@@ -131,20 +152,35 @@ namespace ContentAPI.Services.Implements
             var existingCategory = await _categoryRepository.GetById(id);
             if (existingCategory == null) return false;
 
+            if (!Regex.IsMatch(dto.Name, @"^[\p{L}\p{N}\s\-]+$"))
+            {
+                throw new InvalidOperationException(_localizer["CategoryNameNoSpecialChars"].Value);
+            }
+
+            if (!Regex.IsMatch(dto.Slug, @"^[a-z0-9\-]+$"))
+            {
+                throw new InvalidOperationException(_localizer["CategorySlugInvalidFormat"].Value);
+            }
+
             var existingByName = await _categoryRepository.GetByName(dto.Name);
             if (existingByName != null && existingByName.Id != id)
             {
-                throw new InvalidOperationException("Tên danh mục này đã tồn tại. Vui lòng chọn tên khác.");
+                throw new InvalidOperationException(_localizer["CategoryNameAlreadyExists"].Value);
             }
 
             var existingBySlug = await _categoryRepository.GetBySlug(dto.Slug);
             if (existingBySlug != null && existingBySlug.Id != id)
             {
-                throw new InvalidOperationException("Slug này đã tồn tại. Vui lòng chọn slug khác.");
+                throw new InvalidOperationException(_localizer["CategorySlugAlreadyExists"].Value);
             }
 
             if (dto.IconFile != null && dto.IconFile.Length > 0)
             {
+                if (!dto.IconFile.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(_localizer["OnlyImageFilesAllowed"].Value);
+                }
+
                 // Xóa icon cũ trên Cloudinary
                 string? oldPublicId = _cloudinaryService.ExtractPublicIdFromUrl(existingCategory.IconUrl);
                 if (!string.IsNullOrEmpty(oldPublicId))
@@ -181,7 +217,7 @@ namespace ContentAPI.Services.Implements
                 var tourCount = await _tourApiClient.GetTourCountByCategoryIdAsync(id);
                 if (tourCount > 0)
                 {
-                    throw new InvalidOperationException("Không thể xóa danh mục này vì đang có các tour du lịch liên kết với nó. Vui lòng xóa các tour liên kết trước khi thực hiện.");
+                    throw new InvalidOperationException(_localizer["CategoryCannotBeDeletedHasTours"].Value);
                 }
             }
             catch (InvalidOperationException)
@@ -190,7 +226,7 @@ namespace ContentAPI.Services.Implements
             }
             catch (Exception)
             {
-                throw new InvalidOperationException("Không thể kết nối đến hệ thống Tour du lịch để kiểm tra liên kết danh mục. Vui lòng thử lại sau.");
+                throw new InvalidOperationException(_localizer["CategoryCannotBeDeletedHasTours"].Value);
             }
 
             string? publicId = _cloudinaryService.ExtractPublicIdFromUrl(category.IconUrl);
@@ -206,7 +242,7 @@ namespace ContentAPI.Services.Implements
             }
             catch (Exception)
             {
-                throw new InvalidOperationException("Không thể xóa danh mục này vì nó đang được tham chiếu bởi các bản ghi khác trong cơ sở dữ liệu.");
+                throw new InvalidOperationException(_localizer["CategoryCannotBeDeletedHasTours"].Value);
             }
             return true;
         }
