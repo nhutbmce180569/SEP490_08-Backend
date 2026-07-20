@@ -77,7 +77,11 @@ namespace TourAPI.Controllers
         [Authorize(Roles = "Manager,Admin")]
         public async Task<ActionResult> GetMySchedules(
             [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10)
+            [FromQuery] int pageSize = 10,
+            [FromQuery] int? tourId = null,
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null,
+            [FromQuery] string? search = null)
         {
             try
             {
@@ -88,7 +92,7 @@ namespace TourAPI.Controllers
                 if (userId == null)
                     return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
 
-                var result = await _scheduleService.GetSchedulesByCreatedByAsync(userId.Value, page, pageSize);
+                var result = await _scheduleService.GetSchedulesByCreatedByAsync(userId.Value, page, pageSize, tourId, startDate, endDate, search);
                 return Ok(result);
             }
             catch (Exception ex)

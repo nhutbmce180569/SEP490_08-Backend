@@ -169,4 +169,19 @@ public class FriendshipsController : LocalizedControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    [HttpGet("suggestions")]
+    public async Task<IActionResult> GetSuggestions()
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var suggestions = await _friendshipService.GetSuggestionsAsync(userId);
+            return Ok(suggestions);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "An error occurred while retrieving friend suggestions.", details = ex.Message });
+        }
+    }
 }
