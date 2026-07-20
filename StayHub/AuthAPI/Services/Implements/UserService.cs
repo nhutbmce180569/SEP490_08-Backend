@@ -77,6 +77,13 @@ namespace AuthAPI.Services.Implements
             if (existingUser != null)
                 throw new InvalidOperationException("Email is already in use.");
 
+            if (!string.IsNullOrWhiteSpace(createUserDto.PhoneNumber))
+            {
+                var existingPhoneUser = await _userRepository.GetByPhoneNumber(createUserDto.PhoneNumber);
+                if (existingPhoneUser != null)
+                    throw new InvalidOperationException("PhoneNumberExists");
+            }
+
             var newUser = _mapper.Map<User>(createUserDto);
             var temporaryPassword = GenerateTemporaryPassword();
 
@@ -195,6 +202,15 @@ namespace AuthAPI.Services.Implements
             if (existingUser.Roles.Any(r => r.Name == "Admin"))
             {
                 throw new InvalidOperationException("Cannot edit or block other Admin accounts.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(updateUserDto.PhoneNumber) && updateUserDto.PhoneNumber != existingUser.PhoneNumber)
+            {
+                var existingPhoneUser = await _userRepository.GetByPhoneNumber(updateUserDto.PhoneNumber);
+                if (existingPhoneUser != null)
+                {
+                    throw new InvalidOperationException("PhoneNumberExists");
+                }
             }
 
             _mapper.Map(updateUserDto, existingUser);

@@ -1,4 +1,4 @@
-﻿using BookingAPI.Models;
+using BookingAPI.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookingAPI.Repositories.Implements
@@ -28,6 +28,7 @@ namespace BookingAPI.Repositories.Implements
         public async Task<(IEnumerable<CancellationRequest> Data, int Total)> GetAllCancellationRequestsAsync(
             IReadOnlyCollection<int> scheduleIds,
             string? status,
+            string? date,
             int page,
             int pageSize)
         {
@@ -38,6 +39,11 @@ namespace BookingAPI.Repositories.Implements
             if (!string.IsNullOrEmpty(status))
             {
                 query = query.Where(r => r.Status == status);
+            }
+
+            if (!string.IsNullOrEmpty(date) && DateTime.TryParse(date, out var parsedDate))
+            {
+                query = query.Where(r => r.RequestedAt.HasValue && r.RequestedAt.Value.Date == parsedDate.Date);
             }
 
             int total = await query.CountAsync();
