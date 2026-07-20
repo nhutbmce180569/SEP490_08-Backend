@@ -59,16 +59,7 @@ namespace SocialAPI.Services.Implements
             {
                 try
                 {
-                    using var client = _httpClientFactory.CreateClient();
-                    var response = await client.PostAsJsonAsync("http://localhost:5046/api/users/batch", otherUserIds.Distinct());
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                        if (apiResult?.Data != null)
-                        {
-                            userProfiles = apiResult.Data.ToDictionary(u => u.Id, u => u);
-                        }
-                    }
+                    userProfiles = await _authApiClient.GetUserProfilesAsync(otherUserIds.Distinct());
                 }
                 catch
                 {
@@ -143,16 +134,7 @@ namespace SocialAPI.Services.Implements
             {
                 try
                 {
-                    using var client = _httpClientFactory.CreateClient();
-                    var response = await client.PostAsJsonAsync("https://localhost:7010/api/users/batch", senderIds);
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                        if (apiResult?.Data != null)
-                        {
-                            userProfiles = apiResult.Data.ToDictionary(u => u.Id, u => u);
-                        }
-                    }
+                    userProfiles = await _authApiClient.GetUserProfilesAsync(senderIds);
                 }
                 catch
                 {
@@ -243,17 +225,12 @@ namespace SocialAPI.Services.Implements
 
             try
             {
-                using var client = _httpClientFactory.CreateClient();
-                var response = await client.PostAsJsonAsync("https://localhost:7010/api/users/batch", new List<int> { senderId });
-                if (response.IsSuccessStatusCode)
+                var profileDict = await _authApiClient.GetUserProfilesAsync(new List<int> { senderId });
+                var profile = profileDict?.Values.FirstOrDefault();
+                if (profile != null)
                 {
-                    var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                    var profile = apiResult?.Data?.FirstOrDefault();
-                    if (profile != null)
-                    {
-                        senderName = profile.FullName ?? senderName;
-                        senderAvatar = profile.AvatarUrl ?? senderAvatar;
-                    }
+                    senderName = profile.FullName ?? senderName;
+                    senderAvatar = profile.AvatarUrl ?? senderAvatar;
                 }
             }
             catch
@@ -526,29 +503,15 @@ namespace SocialAPI.Services.Implements
                 {
                     try
                     {
-                        using var client = _httpClientFactory.CreateClient();
-                        var response = await client.PostAsJsonAsync("https://localhost:7010/api/users/batch", userIds);
-
-                        if (response.IsSuccessStatusCode)
+                        var profileDict = await _authApiClient.GetUserProfilesAsync(userIds);
+                        if (profileDict != null)
                         {
-                            var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                            if (apiResult?.Data != null)
-                            {
-                                userProfiles = apiResult.Data;
-                            }
+                            userProfiles = profileDict.Values.ToList();
                         }
-                        else
-                        {
-                            _logger.LogWarning($"Failed to fetch user profiles for room members. Status: {response.StatusCode}");
-                        }
-                    }
-                    catch (HttpRequestException ex)
-                    {
-                        _logger.LogError(ex, "HTTP error fetching user profiles for room members");
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Error fetching user profiles for room members");
+                        _logger.LogError(ex, "Error fetching user profiles for room members via IAuthApiClient");
                     }
                 }
 

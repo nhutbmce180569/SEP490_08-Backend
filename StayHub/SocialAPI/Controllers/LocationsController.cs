@@ -6,6 +6,7 @@ using StayHub.Common.Resources;
 using SocialAPI.DTOs;
 using SocialAPI.Services;
 using System;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -133,12 +134,12 @@ namespace SocialAPI.Controllers
         // GET /api/locations/footprints
         // Tra ve toan bo dau chan (LocationLogs) cua nguoi dung -> "cao map" tu di chuyen.
         [HttpGet("footprints")]
-        public async Task<IActionResult> GetMyFootprints()
+        public async Task<IActionResult> GetMyFootprints([FromQuery] int? scheduleId)
         {
             try
             {
                 var userId = GetCurrentUserId();
-                var data = await _locationService.GetMyFootprintsAsync(userId);
+                var data = await _locationService.GetMyFootprintsAsync(userId, scheduleId);
                 return Ok(new { message = M("FootprintsRetrievedSuccessfully"), data });
             }
             catch (Exception ex)
@@ -159,6 +160,51 @@ namespace SocialAPI.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = M("AnErrorOccurredWhileRetrievingHeatmap"), details = ex.Message });
+            }
+        }
+
+        [HttpPost("stop")]
+        public async Task<IActionResult> StopLocationSharing()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                await _locationService.StopLocationSharingAsync(userId);
+                return Ok(new { message = M("LocationSharingStoppedSuccessfully") });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileStoppingLocationSharing"), details = ex.Message });
+            }
+        }
+
+        [HttpPost("revoke-token")]
+        public async Task<IActionResult> RevokeTrackingToken([FromBody] RevokeTokenDto dto)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                await _locationService.RevokeTrackingTokenAsync(userId, dto.Token);
+                return Ok(new { message = M("TokenRevokedSuccessfully") });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileRevokingToken"), details = ex.Message });
+            }
+        }
+
+        [HttpPost("offline")]
+        public async Task<IActionResult> GoOffline()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                await _locationService.GoOfflineAsync(userId);
+                return Ok(new { message = M("UserWentOfflineSuccessfully") });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileGoingOffline"), details = ex.Message });
             }
         }
     }

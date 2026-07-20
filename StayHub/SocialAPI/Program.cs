@@ -127,6 +127,10 @@ namespace SocialAPI
             builder.Services.AddHttpClient<IAuthApiClient, AuthApiClient>(client =>
             {
                 client.BaseAddress = new Uri(builder.Configuration["AuthApi:BaseUrl"] ?? "https://localhost:7001/");
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
             });
 
             // Cấu hình Cloudinary & Redis
@@ -147,11 +151,30 @@ namespace SocialAPI
             {
                 client.BaseAddress = new Uri(builder.Configuration["BookingApi:BaseUrl"]
                     ?? "https://localhost:7002/");
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
             });
             builder.Services.AddHttpClient<ITourApiClient, TourApiClient>(client =>
             {
                 client.BaseAddress = new Uri(builder.Configuration["TourApi:BaseUrl"]
                     ?? "https://localhost:7005/");
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            });
+
+            // HttpClient gọi SystemAPI để tạo notification khi like/comment moment
+            builder.Services.AddHttpClient("SystemApiClient", client =>
+            {
+                client.BaseAddress = new Uri(builder.Configuration["InternalApi:SystemApiBaseUrl"]
+                    ?? "https://localhost:7009/");
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
             });
             builder.Services.AddAutoMapper(cfg =>
             {

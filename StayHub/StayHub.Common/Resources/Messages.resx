@@ -676,4 +676,16 @@
   <data name="OnlyImageFilesAllowed" xml:space="preserve">
     <value>Only image files (JPG, PNG, GIF, SVG, WEBP) are allowed. Documents or other file types cannot be uploaded.</value>
   </data>
+  <data name="TokenRevokedSuccessfully" xml:space="preserve">
+    <value>Token revoked successfully.</value>
+  </data>
+  <data name="UserWentOfflineSuccessfully" xml:space="preserve">
+    <value>User went offline successfully.</value>
+  </data>
+  <data name="AnErrorOccurredWhileRevokingToken" xml:space="preserve">
+    <value>An error occurred while revoking token.</value>
+  </data>
+  <data name="AnErrorOccurredWhileGoingOffline" xml:space="preserve">
+    <value>An error occurred while going offline.</value>
+  </data>
 </root>

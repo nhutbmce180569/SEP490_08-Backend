@@ -55,6 +55,7 @@ namespace TourAPI.Services.Implements
 
             var tour = await _tourRepository.GetById(dto.TourId);
             if (tour == null) throw new Exception($"Tour with Id {dto.TourId} not found");
+            if (tour.Status?.ToLower() != "inactive") throw new Exception("Can only edit itineraries of an inactive tour");
 
             await ValidateStartDurationUniqueness(dto.TourId, dto.DayNumber, dto.StartDuration);
 
@@ -74,6 +75,7 @@ namespace TourAPI.Services.Implements
 
             var tour = await _tourRepository.GetById(entity.TourId);
             if (tour == null) throw new Exception($"Tour with Id {entity.TourId} not found");
+            if (tour.Status?.ToLower() != "inactive") throw new Exception("Can only edit itineraries of an inactive tour");
 
             await ValidateStartDurationUniqueness(entity.TourId, dto.DayNumber, dto.StartDuration, id);
 
@@ -85,6 +87,9 @@ namespace TourAPI.Services.Implements
         {
             var entity = await _repository.GetByIdAsync(id);
             if (entity == null) throw new Exception("TourItinerary not found");
+
+            var tour = await _tourRepository.GetById(entity.TourId);
+            if (tour != null && tour.Status?.ToLower() != "inactive") throw new Exception("Can only edit itineraries of an inactive tour");
 
             await _repository.DeleteAsync(entity);
         }
@@ -103,6 +108,9 @@ namespace TourAPI.Services.Implements
 
             if (tourExists == null)
                 throw new Exception($"Tour with Id {tourId} not found");
+            
+            if (tourExists.Status?.ToLower() != "inactive") 
+                throw new Exception("Can only edit itineraries of an inactive tour");
 
 
             foreach (var itinerary in batch.Itineraries)

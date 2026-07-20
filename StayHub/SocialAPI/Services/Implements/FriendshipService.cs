@@ -20,14 +20,16 @@ public class FriendshipService : IFriendshipService
     private readonly IMapper _mapper;
     private readonly HttpClient _httpClient;
     private readonly IHubContext<FriendshipHub> _hubContext;
+    private readonly IAuthApiClient _authApiClient;
     private readonly string _authApiBase;
 
-    public FriendshipService(IFriendshipRepository friendshipRepository, IMapper mapper, HttpClient httpClient, IHubContext<FriendshipHub> hubContext, IConfiguration configuration)
+    public FriendshipService(IFriendshipRepository friendshipRepository, IMapper mapper, HttpClient httpClient, IHubContext<FriendshipHub> hubContext, IConfiguration configuration, IAuthApiClient authApiClient)
     {
         _friendshipRepository = friendshipRepository;
         _mapper = mapper;
         _httpClient = httpClient;
         _hubContext = hubContext;
+        _authApiClient = authApiClient;
         _authApiBase = configuration["InternalApi:AuthApiBaseUrl"] ?? "https://localhost:7001";
     }
 
@@ -39,6 +41,33 @@ public class FriendshipService : IFriendshipService
         bool exists = await _friendshipRepository.CheckExistingFriendship(requesterId, requestDto.ReceiverId);
         if (exists)
             throw new InvalidOperationException("A friendship or pending request already exists between these users.");
+
+        // Block friend requests to Staff/Manager/Admin accounts.
+        // Uses IAuthApiClient (internal /api/users/batch) which returns full RoleNames.
+        try
+        {
+            var profiles = await _authApiClient.GetUserProfilesAsync(new List<int> { requestDto.ReceiverId });
+            if (profiles.TryGetValue(requestDto.ReceiverId, out var targetProfile))
+            {
+                var isRestrictedRole = targetProfile.RoleNames.Any(r =>
+                    r.Equals("Staff", StringComparison.OrdinalIgnoreCase) ||
+                    r.Equals("Manager", StringComparison.OrdinalIgnoreCase) ||
+                    r.Equals("Admin", StringComparison.OrdinalIgnoreCase));
+
+                if (isRestrictedRole)
+                {
+                    throw new InvalidOperationException("You cannot send friend requests to staff or administrator accounts.");
+                }
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            throw;
+        }
+        catch
+        {
+            // Swallowed: do not block the request if AuthAPI is transiently unavailable
+        }
 
         var friendship = _mapper.Map<Friendship>(requestDto);
         friendship.RequesterId = requesterId;
@@ -66,7 +95,7 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch", friendIds);
+            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", friendIds);
             if (response.IsSuccessStatusCode)
             {
                 var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
@@ -110,7 +139,7 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch", requesterIds);
+            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", requesterIds);
             if (response.IsSuccessStatusCode)
             {
                 var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
@@ -155,7 +184,7 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch", receiverIds);
+            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", receiverIds);
             if (response.IsSuccessStatusCode)
             {
                 var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
@@ -234,7 +263,7 @@ public class FriendshipService : IFriendshipService
 
         var friendIds = friends.Select(f => f.RequesterId == userId ? f.ReceiverId : f.RequesterId).Distinct().ToList();
 
-        var authApiUrl = $"{_authApiBase}/api/users/batch";
+        var authApiUrl = $"{_authApiBase}/api/users/batch/public";
         var userProfiles = new Dictionary<int, UserProfileShortDto>();
         try
         {
@@ -289,7 +318,7 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch", new List<int> { dto.FriendId });
+            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", new List<int> { dto.FriendId });
             if (response.IsSuccessStatusCode)
             {
                 var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
