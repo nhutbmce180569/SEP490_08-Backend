@@ -129,6 +129,8 @@ namespace TourAPI
             builder.Services.AddHttpClient<IReviewService, ReviewService>(client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(10);
+                var gatewayUrl = builder.Configuration.GetValue<string>("GatewayApi:BaseUrl") ?? "https://localhost:7010";
+                client.BaseAddress = new Uri(gatewayUrl.TrimEnd('/') + "/");
             })
             .AddHttpMessageHandler<AuthorizationHeaderHandler>();
             builder.Services.AddScoped<IEmailService, EmailService>();

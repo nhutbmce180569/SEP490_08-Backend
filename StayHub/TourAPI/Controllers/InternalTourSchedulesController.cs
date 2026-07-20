@@ -107,5 +107,23 @@ namespace TourAPI.Controllers
 
             return Ok(new { scheduleIds = scheduleIds });
         }
+
+        // GET: api/internal/tourschedules/manager/{managerId}/schedule-ids
+        [HttpGet("manager/{managerId}/schedule-ids")]
+        public async Task<IActionResult> GetManagerScheduleIds(int managerId)
+        {
+            if (!IsAuthorizedInternalRequest())
+            {
+                return Unauthorized(new { message = "Internal authorization required." });
+            }
+
+            var scheduleIds = await _context.TourSchedules
+                .Include(s => s.Tour)
+                .Where(s => s.Tour.CreatedBy == managerId)
+                .Select(s => s.Id)
+                .ToListAsync();
+
+            return Ok(new { scheduleIds = scheduleIds });
+        }
     }
 }

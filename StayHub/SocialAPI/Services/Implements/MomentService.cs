@@ -64,13 +64,13 @@ public class MomentService : IMomentService
                 throw new ArgumentException("The specified tour schedule was not found.");
             }
 
-            var now = DateTime.UtcNow.Date;
+            var now = DateTime.UtcNow;
             // Block posting moments for tours that have not started yet.
             // Tours in progress and completed tours are both allowed (commemorative moments).
-            if (metadata.DepartureDate.Date > now)
+            if (metadata.DepartureDate > now)
             {
                 throw new ArgumentException(
-                    $"Cannot post a moment for a tour that has not started yet. The tour departs on {metadata.DepartureDate:yyyy-MM-dd}.");
+                    $"Cannot post a moment for a tour that has not started yet. The tour departs on {metadata.DepartureDate:yyyy-MM-dd HH:mm} (UTC).");
             }
         }
         else if (dto.ScheduleId == 0)

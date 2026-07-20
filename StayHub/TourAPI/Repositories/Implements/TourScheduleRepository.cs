@@ -61,11 +61,27 @@ namespace TourAPI.Repositories.Implements
                 .FirstOrDefaultAsync(x => x.Id == scheduleId);
         }
 
-        public async Task<IEnumerable<TourSchedule>> GetByCreatedByAsync(int userId, int page, int pageSize)
+        public async Task<IEnumerable<TourSchedule>> GetByCreatedByAsync(int userId, int page, int pageSize, int? tourId = null, DateTime? startDate = null, DateTime? endDate = null, string? search = null)
         {
-            return await _context.TourSchedules
+            var query = _context.TourSchedules
                 .Include(ts => ts.Tour)
                 .Where(ts => ts.Tour != null && ts.Tour.CreatedBy == userId)
+                .AsQueryable();
+
+            if (tourId.HasValue)
+                query = query.Where(ts => ts.TourId == tourId.Value);
+
+            if (startDate.HasValue)
+                query = query.Where(ts => ts.DepartureDate >= startDate.Value);
+
+            if (endDate.HasValue)
+                query = query.Where(ts => ts.DepartureDate <= endDate.Value);
+
+            if (!string.IsNullOrWhiteSpace(search))
+                query = query.Where(ts => ts.Tour != null && ts.Tour.Name.Contains(search.Trim()));
+
+            return await query
+                .OrderByDescending(ts => ts.DepartureDate)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -80,12 +96,26 @@ namespace TourAPI.Repositories.Implements
                 .ToListAsync();
         }
 
-        public async Task<int> CountByCreatedByAsync(int userId)
+        public async Task<int> CountByCreatedByAsync(int userId, int? tourId = null, DateTime? startDate = null, DateTime? endDate = null, string? search = null)
         {
-            return await _context.TourSchedules
+            var query = _context.TourSchedules
                 .Include(ts => ts.Tour)
                 .Where(ts => ts.Tour != null && ts.Tour.CreatedBy == userId)
-                .CountAsync();
+                .AsQueryable();
+
+            if (tourId.HasValue)
+                query = query.Where(ts => ts.TourId == tourId.Value);
+
+            if (startDate.HasValue)
+                query = query.Where(ts => ts.DepartureDate >= startDate.Value);
+
+            if (endDate.HasValue)
+                query = query.Where(ts => ts.DepartureDate <= endDate.Value);
+
+            if (!string.IsNullOrWhiteSpace(search))
+                query = query.Where(ts => ts.Tour != null && ts.Tour.Name.Contains(search.Trim()));
+
+            return await query.CountAsync();
         }
 
         public async Task<IEnumerable<TourSchedule>> SearchByTourNameAsync(string tourName, int page, int pageSize)
