@@ -46,8 +46,7 @@ namespace ContentAPI.DTOs
 
         public string? Longitude { get; set; }
 
-        [Required(ErrorMessage = "Image is required.")]
-        public IFormFile ImageFile { get; set; } = null!;
+        public IFormFile? ImageFile { get; set; }
 
         [MaxLength(255, ErrorMessage = "Source name cannot exceed 255 characters.")]
         public string? SourceName { get; set; }
@@ -81,6 +80,8 @@ namespace ContentAPI.DTOs
         public string? Longitude { get; set; }
 
         public IFormFile? ImageFile { get; set; }
+        
+        public bool RemoveImage { get; set; }
 
         [MaxLength(255, ErrorMessage = "Source name cannot exceed 255 characters.")]
         public string? SourceName { get; set; }
