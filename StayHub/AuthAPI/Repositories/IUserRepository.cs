@@ -1,4 +1,4 @@
-﻿using AuthAPI.DTOs;
+using AuthAPI.DTOs;
 using AuthAPI.Models;
 
 namespace AuthAPI.Repositories
@@ -12,6 +12,7 @@ namespace AuthAPI.Repositories
         Task<string?> GetFcmTokenAsync(int userId);
         Task<User?> GetById(int id);
         Task<User?> GetByEmail(string email);
+        Task<User?> GetByPhoneNumber(string phoneNumber);
         Task Update(int id, User model);
         Task Delete(int id);
 
