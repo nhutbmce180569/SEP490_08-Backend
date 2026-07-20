@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
@@ -41,7 +41,7 @@ namespace SystemAPI.Controllers
         // ==========================================
         [Authorize] // Bắt buộc phải có JWT Token
         [HttpGet]
-        public async Task<IActionResult> GetMyNotifications()
+        public async Task<IActionResult> GetMyNotifications([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             // Tự động bóc tách UserId từ JWT Token của người đang đăng nhập
             var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -52,7 +52,7 @@ namespace SystemAPI.Controllers
                 return Unauthorized(new { message = M("InvalidUserToken") });
             }
 
-            var notifications = await _notificationService.GetUserNotificationsAsync(userId);
+            var notifications = await _notificationService.GetUserNotificationsAsync(userId, page, pageSize);
             return Ok(notifications);
         }
 
