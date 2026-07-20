@@ -58,6 +58,13 @@ namespace AuthAPI.Repositories.Implements
                 .FirstOrDefaultAsync(u => u.Email == email);
         }
 
+        public async Task<User?> GetByPhoneNumber(string phoneNumber)
+        {
+            return await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber);
+        }
+
         public async Task Update(int id, User model)
         {
             var user = await _context.Users.FindAsync(id);

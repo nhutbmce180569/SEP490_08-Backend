@@ -52,6 +52,12 @@ namespace AuthAPI.Controllers
             {
                 return BadRequest(new { message = M(ex.Message) });
             }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message == "PhoneNumberExists")
+                    return Conflict(new { message = M("PhoneNumberExists") });
+                throw;
+            }
         }
 
         [HttpPost("facebook-login")]
@@ -60,11 +66,20 @@ namespace AuthAPI.Controllers
             if (string.IsNullOrEmpty(request.AccessToken))
                 return BadRequest(new { message = M("AccessTokenRequired") });
 
-            var response = await _authService.FacebookLogin(request.AccessToken);
-            if (response == null)
-                return Unauthorized(new { message = M("InvalidFacebookToken") });
+            try
+            {
+                var response = await _authService.FacebookLogin(request.AccessToken);
+                if (response == null)
+                    return Unauthorized(new { message = M("InvalidFacebookToken") });
 
-            return Ok(new { message = M("FacebookLoginSuccessful"), data = response });
+                return Ok(new { message = M("FacebookLoginSuccessful"), data = response });
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message == "PhoneNumberExists")
+                    return Conflict(new { message = M("PhoneNumberExists") });
+                throw;
+            }
         }
 
         [HttpPost("send-register-otp")]
@@ -112,6 +127,8 @@ namespace AuthAPI.Controllers
                     return BadRequest(new { message = M("InvalidOrExpiredOtp") });
                 if (ex.Message == "EmailAlreadyInUse")
                     return Conflict(new { message = M("EmailAlreadyInUse") });
+                if (ex.Message == "PhoneNumberExists")
+                    return Conflict(new { message = M("PhoneNumberExists") });
                 throw;
             }
         }
@@ -170,11 +187,20 @@ namespace AuthAPI.Controllers
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
                 return Unauthorized(new { message = M("InvalidTokenClaims") });
 
-            var response = await _authService.UpdateProfileAsync(userId, dto);
-            if (response == null)
-                return BadRequest(new { message = M("FailedToUpdateProfile") });
+            try
+            {
+                var response = await _authService.UpdateProfileAsync(userId, dto);
+                if (response == null)
+                    return BadRequest(new { message = M("FailedToUpdateProfile") });
 
-            return Ok(new { message = M("ProfileUpdatedSuccessfully"), data = response });
+                return Ok(new { message = M("ProfileUpdatedSuccessfully"), data = response });
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message == "PhoneNumberExists")
+                    return Conflict(new { message = "PhoneNumberExists" });
+                throw;
+            }
         }
 
         [HttpPost("change-password")]
