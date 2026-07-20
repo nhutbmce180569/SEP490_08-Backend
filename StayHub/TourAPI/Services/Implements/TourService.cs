@@ -37,6 +37,10 @@ namespace TourAPI.Services.Implements
         {
             ValidateAndNormalize(model);
 
+            var isDuplicate = await _repository.IsNameDuplicateAsync(model.Name);
+            if (isDuplicate)
+                throw new Exception("Tour name already exists.");
+
             var checkCategory =
                 await _categoryService.CheckCategoryExist(model.CategoryId);
 
@@ -70,6 +74,10 @@ namespace TourAPI.Services.Implements
         public async Task Update(int id, UpdateTourDTO model, int updatedBy)
         {
             ValidateAndNormalize(model);
+
+            var isDuplicate = await _repository.IsNameDuplicateAsync(model.Name, id);
+            if (isDuplicate)
+                throw new Exception("Tour name already exists.");
 
             var checkCategory = await _categoryService.CheckCategoryExist(model.CategoryId);
 
@@ -125,7 +133,17 @@ namespace TourAPI.Services.Implements
                 throw new Exception("Not found");
             }
 
+            if (tour.Status != null && !tour.Status.Equals("Inactive", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new Exception("Cannot delete tour: Tour must be deactivated (Inactive) first.");
+            }
+
             var scheduleIds = tour.TourSchedules?.Select(s => s.Id).ToList() ?? new List<int>();
+            if (scheduleIds.Any())
+            {
+                throw new Exception("Cannot delete tour: Tour has existing schedules. Please delete all schedules first.");
+            }
+
             var request = new CheckBookingTour()
             {
                 ScheduleIds = scheduleIds,
@@ -460,6 +478,7 @@ namespace TourAPI.Services.Implements
         private static void ValidateAndNormalize(BaseTourDTO model)
         {
             model.Name = model.Name.Trim();
+
             model.Description = model.Description?.Trim();
             model.Country = model.Country?.Trim();
             model.City = model.City?.Trim();

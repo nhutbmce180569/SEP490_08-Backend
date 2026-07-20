@@ -192,9 +192,9 @@ namespace AuthAPI.Services.Implements
                 throw new InvalidOperationException("Cannot edit Customer accounts.");
             }
 
-            if (updateUserDto.Status == "Blocked" && existingUser.Roles.Any(r => r.Name == "Admin"))
+            if (existingUser.Roles.Any(r => r.Name == "Admin"))
             {
-                throw new InvalidOperationException("Cannot block an Admin account.");
+                throw new InvalidOperationException("Cannot edit or block other Admin accounts.");
             }
 
             _mapper.Map(updateUserDto, existingUser);
@@ -341,8 +341,21 @@ namespace AuthAPI.Services.Implements
             }
 
             await _userRepository.Update(id, user);
-            return true;
 
+            try
+            {
+                string subject = newStatus == "Blocked" ? "Your StayHub account has been blocked" : "Your StayHub account has been activated";
+                string body = newStatus == "Blocked" 
+                    ? _emailTemplateService.GenerateAccountBlockedEmailBody(user.FullName)
+                    : _emailTemplateService.GenerateAccountActivatedEmailBody(user.FullName);
+                await _emailService.SendEmailAsync(user.Email, subject, body);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send status change email to user {UserId}.", user.Id);
+            }
+
+            return true;
         }
 
         public async Task<PaginationDTO<ReadUserDTO>> FilterUsersAsync(UserFilterDTO filter)

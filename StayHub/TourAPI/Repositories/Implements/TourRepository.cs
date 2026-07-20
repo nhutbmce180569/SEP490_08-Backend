@@ -433,5 +433,15 @@ namespace TourAPI.Repositories.Implements
                 throw new Exception(e.Message);
             }
         }
+
+        public async Task<bool> IsNameDuplicateAsync(string name, int? excludeId = null)
+        {
+            var query = _context.Tours.Where(t => t.Name.ToLower() == name.ToLower());
+            if (excludeId.HasValue)
+            {
+                query = query.Where(t => t.Id != excludeId.Value);
+            }
+            return await query.AnyAsync();
+        }
     }
 }
