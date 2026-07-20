@@ -256,10 +256,10 @@ namespace TourAPI.Services.Implements
             return _mapper.Map<IEnumerable<ReadTourScheduleDTO>>(schedules);
         }
 
-        public async Task<PaginationDTO<ReadTourScheduleDTO>> GetSchedulesByCreatedByAsync(int userId, int page, int pageSize)
+        public async Task<PaginationDTO<ReadTourScheduleDTO>> GetSchedulesByCreatedByAsync(int userId, int page, int pageSize, int? tourId = null, DateTime? startDate = null, DateTime? endDate = null, string? search = null)
         {
-            var schedules = await _scheduleRepo.GetByCreatedByAsync(userId, page, pageSize);
-            var total = await _scheduleRepo.CountByCreatedByAsync(userId);
+            var schedules = await _scheduleRepo.GetByCreatedByAsync(userId, page, pageSize, tourId, startDate, endDate, search);
+            var total = await _scheduleRepo.CountByCreatedByAsync(userId, tourId, startDate, endDate, search);
 
             return new PaginationDTO<ReadTourScheduleDTO>
             {

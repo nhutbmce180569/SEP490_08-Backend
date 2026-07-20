@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SystemAPI.Models;
 
 namespace SystemAPI.Repositories.Implements
@@ -19,12 +19,18 @@ namespace SystemAPI.Repositories.Implements
             return notification;
         }
 
-        public async Task<IEnumerable<Notification>> GetUserNotificationsAsync(int userId)
+        public async Task<(IEnumerable<Notification> items, int totalCount)> GetUserNotificationsAsync(int userId, int page = 1, int pageSize = 10)
         {
-            return await _context.Notifications
-                .Where(n => n.UserId == userId)
+            var query = _context.Notifications.Where(n => n.UserId == userId);
+            
+            var totalCount = await query.CountAsync();
+            var items = await query
                 .OrderByDescending(n => n.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+
+            return (items, totalCount);
         }
 
         public async Task<Notification?> GetByIdAsync(int id)
