@@ -84,6 +84,7 @@ namespace BookingAPI.Services.Implements
 
             var totalQuantity = detailRequests.Sum(x => x.Quantity);
             var totalAmount = detailRequests.Sum(x => x.TotalPrice);
+            var totalPromotionDiscount = detailRequests.Sum(x => x.PromotionDiscountValue);
 
             var hasVoucherCode = !string.IsNullOrWhiteSpace(request.VoucherCode);
             if (!hasVoucherCode && request.DiscountValue.HasValue && request.DiscountValue.Value > 0)
@@ -127,8 +128,9 @@ namespace BookingAPI.Services.Implements
                 TotalQuantity = totalQuantity,
                 TotalAmount = totalAmount,
                 DiscountValue = discountValue,
+                PromotionDiscountValue = totalPromotionDiscount,
                 VoucherCode = voucherCode,
-                FinalAmount = Math.Max(0, totalAmount - discountValue),
+                FinalAmount = Math.Max(0, totalAmount - discountValue - totalPromotionDiscount),
                 Note = request.Note,
                 Status = "Pending",
                 InviteToken = Guid.NewGuid().ToString(),
@@ -144,6 +146,7 @@ namespace BookingAPI.Services.Implements
                     Quantity = detailRequest.Quantity,
                     UnitPrice = detailRequest.UnitPrice,
                     TotalPrice = detailRequest.TotalPrice,
+                    PromotionDiscountValue = detailRequest.PromotionDiscountValue,
                     Order = order
                 };
 
@@ -460,7 +463,10 @@ namespace BookingAPI.Services.Implements
                         $"Tour schedule ticket {detail.TourScheduleTicketId} is inactive.");
                 }
 
-                var effectivePrice = GetEffectivePrice(scheduleTicket.Price, scheduleTicket.Promotion);
+                var basePrice = scheduleTicket.Price;
+                var priceInfo = GetEffectivePrice(basePrice, scheduleTicket.Promotion);
+                var effectivePrice = priceInfo.EffectivePrice;
+                var unitPromotionDiscount = priceInfo.PromotionDiscount;
 
                 if (detail.UnitPrice.HasValue && detail.UnitPrice.Value != effectivePrice)
                 {
@@ -496,8 +502,9 @@ namespace BookingAPI.Services.Implements
                     TourScheduleTicketId = scheduleTicket.Id,
                     TicketTypeId = scheduleTicket.TicketTypeId,
                     Quantity = quantity,
-                    UnitPrice = effectivePrice,
-                    TotalPrice = effectivePrice * quantity,
+                    UnitPrice = basePrice,
+                    TotalPrice = basePrice * quantity,
+                    PromotionDiscountValue = unitPromotionDiscount * quantity,
                     Tickets = detail.Tickets
                 });
             }
@@ -505,20 +512,20 @@ namespace BookingAPI.Services.Implements
             return result;
         }
 
-        private long GetEffectivePrice(long basePrice, ReadPromotionDTO? promo)
+        private (long EffectivePrice, long PromotionDiscount) GetEffectivePrice(long basePrice, ReadPromotionDTO? promo)
         {
             if (promo == null || promo.Status != "Active")
-                return basePrice;
+                return (basePrice, 0);
 
             var now = DateTime.Now;
             if (promo.StartDate > now || promo.EndDate < now)
-                return basePrice;
+                return (basePrice, 0);
 
             if (promo.DiscountValue <= 0)
-                return basePrice;
+                return (basePrice, 0);
 
             decimal discountAmount = 0;
-            if (promo.DiscountType == "PERCENTAGE")
+            if (promo.DiscountType.ToLower() == "percentage")
             {
                 discountAmount = basePrice * (promo.DiscountValue / 100);
                 if (promo.MaxDiscountAmount.HasValue && discountAmount > promo.MaxDiscountAmount.Value)
@@ -531,7 +538,10 @@ namespace BookingAPI.Services.Implements
                 discountAmount = promo.DiscountValue;
             }
 
-            return Math.Max(0, basePrice - (long)discountAmount);
+            long finalDiscount = (long)discountAmount;
+            if (finalDiscount > basePrice) finalDiscount = basePrice;
+
+            return (Math.Max(0, basePrice - finalDiscount), finalDiscount);
         }
 
         private async Task ReleaseOrderTicketsAsync(Order order)
