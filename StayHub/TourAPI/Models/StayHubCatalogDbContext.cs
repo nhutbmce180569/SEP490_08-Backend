@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,6 +22,8 @@ public partial class StayHubCatalogDbContext : DbContext
     public virtual DbSet<ReviewReply> ReviewReplies { get; set; }
 
     public virtual DbSet<Tour> Tours { get; set; }
+
+    public virtual DbSet<TourImage> TourImages { get; set; }
 
     public virtual DbSet<TourItinerary> TourItineraries { get; set; }
 
@@ -103,6 +105,7 @@ public partial class StayHubCatalogDbContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.ImageUrl).HasMaxLength(500);
+            entity.Property(e => e.TransportationType).HasMaxLength(100);
             entity.Property(e => e.Name).HasMaxLength(255);
             entity.Property(e => e.SourceName)
                 .HasMaxLength(255)
@@ -113,6 +116,21 @@ public partial class StayHubCatalogDbContext : DbContext
                 .IsUnicode(false)
                 .HasDefaultValue("Active");
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<TourImage>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__TourImages");
+
+            entity.Property(e => e.ImageUrl).HasMaxLength(500);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Tour).WithMany(p => p.TourImages)
+                .HasForeignKey(d => d.TourId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_TourImages_Tours");
         });
 
         modelBuilder.Entity<TourItinerary>(entity =>
