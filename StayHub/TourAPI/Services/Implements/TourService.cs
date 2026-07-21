@@ -70,6 +70,27 @@ namespace TourAPI.Services.Implements
                 tour.ImageUrl = imageUrl;
             }
 
+            if (model.TourImages != null && model.TourImages.Any())
+            {
+                var tourImages = new List<TourImage>();
+                foreach (var file in model.TourImages)
+                {
+                    var fileUrl = await _cloudinary.UploadGalleryImageAsync(
+                        file,
+                        "tours/gallery",
+                        $"tour_gallery_{tour.Id}_{Guid.NewGuid()}"
+                    );
+                    if (fileUrl != null)
+                    {
+                        tourImages.Add(new TourImage { TourId = tour.Id, ImageUrl = fileUrl });
+                    }
+                }
+                if (tourImages.Any())
+                {
+                    await _repository.AddTourImages(tourImages);
+                }
+            }
+
             await _repository.SaveChangesAsync();
         }
 
@@ -118,6 +139,37 @@ namespace TourAPI.Services.Implements
                 );
 
                 tour.ImageUrl = imageUrl;
+            }
+
+            if (model.RemovedTourImageIds != null && model.RemovedTourImageIds.Any())
+            {
+                var imagesToRemove = await _repository.GetTourImagesByIds(model.RemovedTourImageIds);
+                // Optionally delete from Cloudinary if we parse the public_id, but DB remove is enough for now
+                if (imagesToRemove.Any())
+                {
+                    _repository.RemoveTourImages(imagesToRemove);
+                }
+            }
+
+            if (model.TourImages != null && model.TourImages.Any())
+            {
+                var newTourImages = new List<TourImage>();
+                foreach (var file in model.TourImages)
+                {
+                    var fileUrl = await _cloudinary.UploadGalleryImageAsync(
+                        file,
+                        "tours/gallery",
+                        $"tour_gallery_{tour.Id}_{Guid.NewGuid()}"
+                    );
+                    if (fileUrl != null)
+                    {
+                        newTourImages.Add(new TourImage { TourId = tour.Id, ImageUrl = fileUrl });
+                    }
+                }
+                if (newTourImages.Any())
+                {
+                    await _repository.AddTourImages(newTourImages);
+                }
             }
 
             tour.UpdatedAt = DateTime.Now;
