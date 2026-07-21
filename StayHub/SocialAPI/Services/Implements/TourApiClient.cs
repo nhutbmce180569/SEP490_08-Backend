@@ -51,6 +51,26 @@ namespace SocialAPI.Services.Implements
             }
         }
 
+        public async Task<TourRouteDto?> GetTourRouteAsync(int scheduleId)
+        {
+            try
+            {
+                var request = CreateRequest(HttpMethod.Get, $"api/TourSchedules/{scheduleId}/route");
+                var response = await _httpClient.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    var wrapper = await response.Content.ReadFromJsonAsync<TourRouteResponseWrapper>();
+                    return wrapper?.Data;
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting tour route for schedule {ScheduleId}", scheduleId);
+                return null;
+            }
+        }
+
         public async Task<bool> VerifyManagerAsync(int scheduleId, int managerId)
         {
             try
@@ -144,6 +164,12 @@ namespace SocialAPI.Services.Implements
         private class ScheduleIdsResponse
         {
             public List<int> ScheduleIds { get; set; } = new List<int>();
+        }
+
+        private class TourRouteResponseWrapper
+        {
+            public bool Success { get; set; }
+            public TourRouteDto? Data { get; set; }
         }
     }
 }
