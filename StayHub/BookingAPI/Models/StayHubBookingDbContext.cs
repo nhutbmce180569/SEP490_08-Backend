@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
@@ -58,6 +58,7 @@ public partial class StayHubBookingDbContext : DbContext
             entity.HasIndex(e => e.InviteToken, "UQ__Orders__AB479560AAAFDD9F").IsUnique();
 
             entity.Property(e => e.DiscountValue).HasDefaultValue(0L);
+            entity.Property(e => e.PromotionDiscountValue).HasDefaultValue(0L);
             entity.Property(e => e.VoucherCode)
                 .HasMaxLength(50)
                 .IsUnicode(false);
@@ -76,6 +77,7 @@ public partial class StayHubBookingDbContext : DbContext
         modelBuilder.Entity<OrderDetail>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__OrderDet__3214EC07147B3A51");
+            entity.Property(e => e.PromotionDiscountValue).HasDefaultValue(0L);
 
             entity.HasOne(d => d.Order).WithMany(p => p.OrderDetails)
                 .HasForeignKey(d => d.OrderId)

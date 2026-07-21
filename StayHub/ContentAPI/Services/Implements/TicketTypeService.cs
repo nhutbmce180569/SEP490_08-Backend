@@ -66,10 +66,18 @@ namespace ContentAPI.Services.Implements
             {
                 throw new Exception("Ticket Type Name exist! Please check again!");
             }
+
+            if (dto.MinAge.HasValue && dto.MaxAge.HasValue && dto.MaxAge.Value <= dto.MinAge.Value)
+            {
+                throw new Exception("Max age must be greater than min age.");
+            }
+
             var ticketType = new TicketType
             {
                 Name = dto.Name,
                 Description = dto.Description,
+                MinAge = dto.MinAge,
+                MaxAge = dto.MaxAge,
                 IsActive = dto.IsActive ?? true,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
@@ -86,11 +94,19 @@ namespace ContentAPI.Services.Implements
             {
                 throw new Exception("Ticket Type Name exist! Please check again!");
             }
+
+            if (dto.MinAge.HasValue && dto.MaxAge.HasValue && dto.MaxAge.Value <= dto.MinAge.Value)
+            {
+                throw new Exception("Max age must be greater than min age.");
+            }
+
             var existingTicketType = await _ticketTypeRepository.GetById(id);
             if (existingTicketType == null) return false;
 
             existingTicketType.Name = dto.Name;
             existingTicketType.Description = dto.Description;
+            existingTicketType.MinAge = dto.MinAge;
+            existingTicketType.MaxAge = dto.MaxAge;
             if (dto.IsActive.HasValue) existingTicketType.IsActive = dto.IsActive.Value;
             existingTicketType.UpdatedAt = DateTime.Now;
 

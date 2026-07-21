@@ -7,6 +7,8 @@ namespace ContentAPI.DTOs
         public int Id { get; set; }
         public string Name { get; set; } = null!;
         public string? Description { get; set; }
+        public int? MinAge { get; set; }
+        public int? MaxAge { get; set; }
         public bool? IsActive { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
@@ -22,6 +24,12 @@ namespace ContentAPI.DTOs
         [MaxLength(500, ErrorMessage = "Description cannot exceed 500 characters.")]
         public string? Description { get; set; }
 
+        [Range(0, 150, ErrorMessage = "Min age must be a positive number.")]
+        public int? MinAge { get; set; }
+        
+        [Range(0, 150, ErrorMessage = "Max age must be a positive number.")]
+        public int? MaxAge { get; set; }
+
         public bool? IsActive { get; set; } = true;
     }
 
@@ -34,6 +42,12 @@ namespace ContentAPI.DTOs
 
         [MaxLength(500, ErrorMessage = "Description cannot exceed 500 characters.")]
         public string? Description { get; set; }
+
+        [Range(0, 150, ErrorMessage = "Min age must be a positive number.")]
+        public int? MinAge { get; set; }
+        
+        [Range(0, 150, ErrorMessage = "Max age must be a positive number.")]
+        public int? MaxAge { get; set; }
 
         public bool? IsActive { get; set; }
     }

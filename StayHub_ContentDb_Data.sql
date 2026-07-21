@@ -1223,12 +1223,12 @@ GO
    ========================================================= */
 SET IDENTITY_INSERT TicketTypes ON;
 -- TicketTypes Batch 1 (Rows 1 to 5)
-INSERT INTO TicketTypes (Id, Name, Description, IsActive, CreatedAt, UpdatedAt) VALUES
-(1, N'Adult', N'Standard ticket for adult travelers.', 1, GETDATE(), NULL),
-(2, N'Child', N'Discounted ticket for children, usually from 6 to 11 years old.', 1, GETDATE(), NULL),
-(3, N'Infant', N'Ticket for infants or toddlers, usually under 6 years old.', 1, GETDATE(), NULL),
-(4, N'Senior', N'Discounted ticket for senior travelers.', 1, GETDATE(), NULL),
-(5, N'Student', N'Discounted ticket for students with valid student identification.', 1, GETDATE(), NULL);
+INSERT INTO TicketTypes (Id, Name, Description, MinAge, MaxAge, IsActive, CreatedAt, UpdatedAt) VALUES
+(1, N'Adult', N'Standard ticket for adult travelers.', 12, NULL, 1, GETDATE(), NULL),
+(2, N'Child', N'Discounted ticket for children, usually from 6 to 11 years old.', 6, 11, 1, GETDATE(), NULL),
+(3, N'Infant', N'Ticket for infants or toddlers, usually under 6 years old.', 0, 5, 1, GETDATE(), NULL),
+(4, N'Senior', N'Discounted ticket for senior travelers.', 60, NULL, 1, GETDATE(), NULL),
+(5, N'Student', N'Discounted ticket for students with valid student identification.', 12, 25, 1, GETDATE(), NULL);
 GO
 
 SET IDENTITY_INSERT TicketTypes OFF;
