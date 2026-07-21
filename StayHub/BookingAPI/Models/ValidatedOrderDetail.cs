@@ -9,6 +9,7 @@ namespace BookingAPI.Models
         public int Quantity { get; init; }
         public long UnitPrice { get; init; }
         public long TotalPrice { get; init; }
+        public long PromotionDiscountValue { get; init; }
         public List<CreateTicketDTO> Tickets { get; init; } = new List<CreateTicketDTO>();
     }
 }
