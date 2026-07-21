@@ -15,6 +15,9 @@ public partial class Voucher
     /// <summary>Trần tiền giảm tối đa — chỉ áp dụng khi DiscountType = Percent.</summary>
     public long? MaxDiscountAmount { get; set; }
 
+    /// <summary>Giá trị đơn hàng tối thiểu để áp dụng voucher.</summary>
+    public long? MinOrderAmount { get; set; }
+
     public int UsedCount { get; set; }
 
     public int AvailableCount { get; set; }

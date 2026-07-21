@@ -338,6 +338,11 @@ public class VoucherService : IVoucherService
             entity.MaxDiscountAmount = null;
         }
 
+        if (dto.MinOrderAmount.HasValue)
+        {
+            entity.MinOrderAmount = dto.MinOrderAmount.Value <= 0 ? null : dto.MinOrderAmount.Value;
+        }
+
         ApplyMaxDiscountAmount(entity);
         ValidateMaxDiscountAmount(entity.DiscountType, entity.MaxDiscountAmount);
 

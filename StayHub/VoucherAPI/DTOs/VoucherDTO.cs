@@ -18,6 +18,8 @@ public class ReadVoucherDTO
 
     public long? MaxDiscountAmount { get; set; }
 
+    public long? MinOrderAmount { get; set; }
+
     public int UsedCount { get; set; }
 
     public int AvailableCount { get; set; }
@@ -83,6 +85,9 @@ public abstract class BaseVoucherDTO
     [Range(1, long.MaxValue, ErrorMessage = "MaxDiscountAmount must be greater than 0")]
     public long? MaxDiscountAmount { get; set; }
 
+    [Range(10000, long.MaxValue, ErrorMessage = "MinOrderAmount must be at least 10000 VND when provided")]
+    public long? MinOrderAmount { get; set; }
+
     [Range(1, int.MaxValue, ErrorMessage = "AvailableCount must be at least 1")]
     public int AvailableCount { get; set; }
 
@@ -142,6 +147,9 @@ public class UpdateVoucherDTO
 
     [Range(1, long.MaxValue, ErrorMessage = "MaxDiscountAmount must be greater than 0")]
     public long? MaxDiscountAmount { get; set; }
+
+    [Range(0, long.MaxValue, ErrorMessage = "MinOrderAmount must be non-negative")]
+    public long? MinOrderAmount { get; set; }
 
     [Range(1, int.MaxValue, ErrorMessage = "AvailableCount must be at least 1")]
     public int? AvailableCount { get; set; }

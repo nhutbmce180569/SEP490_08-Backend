@@ -15,6 +15,11 @@ public static class VoucherDiscountHelper
             return 0;
         }
 
+        if (voucher.MinOrderAmount.HasValue && billAmount < voucher.MinOrderAmount.Value)
+        {
+            return 0;
+        }
+
         if (voucher.DiscountType.Equals("Percent", StringComparison.OrdinalIgnoreCase))
         {
             var percentDiscount = billAmount * voucher.DiscountValue / 100;

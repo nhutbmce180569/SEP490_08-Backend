@@ -15,6 +15,7 @@ public class CustomerVoucherProfile : Profile
             .ForMember(dest => dest.DiscountType, opt => opt.MapFrom(src => src.Voucher.DiscountType))
             .ForMember(dest => dest.DiscountValue, opt => opt.MapFrom(src => src.Voucher.DiscountValue))
             .ForMember(dest => dest.MaxDiscountAmount, opt => opt.MapFrom(src => src.Voucher.MaxDiscountAmount))
+            .ForMember(dest => dest.MinOrderAmount, opt => opt.MapFrom(src => src.Voucher.MinOrderAmount))
             .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.Voucher.StartDate))
             .ForMember(dest => dest.EndDate, opt => opt.MapFrom(src => src.Voucher.EndDate))
             .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Voucher.Description))
