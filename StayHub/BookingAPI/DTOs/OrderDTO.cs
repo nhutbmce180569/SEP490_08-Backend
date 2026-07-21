@@ -24,6 +24,8 @@ namespace BookingAPI.DTOs
         public long TotalAmount { get; set; }
 
         public long? DiscountValue { get; set; }
+        
+        public long? PromotionDiscountValue { get; set; }
 
         public string? VoucherCode { get; set; }
 
@@ -153,6 +155,8 @@ namespace BookingAPI.DTOs
         public int? TicketCount { get; set; }
 
         public long? DiscountValue { get; set; }
+        
+        public long? PromotionDiscountValue { get; set; }
 
         public long FinalAmount { get; set; }
 
@@ -198,6 +202,7 @@ namespace BookingAPI.DTOs
         public int Quantity { get; set; }
         public long UnitPrice { get; set; }
         public long TotalPrice { get; set; }
+        public long? PromotionDiscountValue { get; set; }
         public List<ReadTicketDTO> Tickets { get; set; } = new List<ReadTicketDTO>();
     }
 
