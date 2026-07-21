@@ -187,6 +187,7 @@ CREATE TABLE Tours (
     Address NVARCHAR(255),
 
     ImageUrl NVARCHAR(500),
+    TransportationType NVARCHAR(100),
     SourceName NVARCHAR(255) NOT NULL DEFAULT N'Vietnam National Administration of Tourism',
     SourceUrl NVARCHAR(500) NULL,
 	CreatedBy INT NOT NULL,
@@ -194,6 +195,14 @@ CREATE TABLE Tours (
 	CreatedAt DATETIME DEFAULT GETDATE(),
 	UpdatedAt DATETIME NULL,
     Status VARCHAR(50) DEFAULT 'Active'
+);
+
+CREATE TABLE TourImages (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    TourId INT NOT NULL,
+    ImageUrl NVARCHAR(500) NOT NULL,
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (TourId) REFERENCES Tours(Id) ON DELETE CASCADE
 );
 
 CREATE TABLE TourItineraries (
@@ -429,7 +438,7 @@ CREATE TABLE CancellationRequests (
     Reason NVARCHAR(MAX) NOT NULL,
 
     Status VARCHAR(50) NOT NULL,
-    -- Pending, Approved, Rejected, Refunded
+    -- Pending, Approved, Rejected
 
     RejectReason NVARCHAR(MAX) NULL, 
 

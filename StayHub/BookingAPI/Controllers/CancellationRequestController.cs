@@ -55,6 +55,7 @@ namespace BookingAPI.Controllers
         public async Task<IActionResult> GetAllRequests(
             [FromQuery] string? status,
             [FromQuery] string? date,
+            [FromQuery] int? tourId,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 5)
         {
@@ -67,7 +68,7 @@ namespace BookingAPI.Controllers
                 if (operatorId == null)
                     return Unauthorized(new { message = M("AdminStaffIdentityCouldNotBeVerified") });
 
-                var result = await _cancellationService.GetCancellationRequestsAsync(operatorId.Value, status, date, page, pageSize);
+                var result = await _cancellationService.GetCancellationRequestsAsync(operatorId.Value, status, date, tourId, page, pageSize);
 
                 return Ok(new
                 {

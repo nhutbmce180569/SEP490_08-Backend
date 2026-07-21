@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace BookingAPI.DTOs
 {
@@ -36,6 +36,8 @@ namespace BookingAPI.DTOs
         public DateTime? RequestedAt { get; set; }
         public long RefundAmount { get; set; }
         public string Status { get; set; } = null!;
+        public int? TourId { get; set; }
+        public string? TourName { get; set; }
     }
 
     public class CancellationRequestDetailDTO

@@ -19,6 +19,7 @@ namespace TourAPI.Repositories.Implements
         public async Task Delete(int id)
         {
             var tour = await _context.Tours
+                .Include(t => t.TourImages)
                 .Include(t => t.Reviews)
                 .Include(t => t.TourItineraries)
                 .Include(t => t.TourSchedules)
@@ -203,6 +204,7 @@ namespace TourAPI.Repositories.Implements
                 .Include(t => t.TourSchedules)
                     .ThenInclude(t => t.TourScheduleTickets)
                         .ThenInclude(t => t.Promotions)
+                .Include(t => t.TourImages)
                 .Include(t => t.Reviews)
                 .AsSplitQuery()
                 .ToListAsync();
@@ -279,6 +281,7 @@ namespace TourAPI.Repositories.Implements
                 .Include(t => t.TourSchedules)
                     .ThenInclude(t => t.TourScheduleTickets)
                         .ThenInclude(t => t.Promotions)
+                .Include(t => t.TourImages)
                 .Include(t => t.Reviews)
                 .AsSplitQuery()
                 .ToListAsync();
@@ -314,6 +317,7 @@ namespace TourAPI.Repositories.Implements
                 .Include(t => t.TourSchedules)
                     .ThenInclude(t => t.TourScheduleTickets)
                         .ThenInclude(t => t.Promotions)
+                .Include(t => t.TourImages)
                 .Include(t => t.Reviews)
                 .AsSplitQuery()
                 .ToListAsync();
@@ -349,6 +353,7 @@ namespace TourAPI.Repositories.Implements
                 .Include(t => t.TourSchedules)
                     .ThenInclude(t => t.TourScheduleTickets)
                         .ThenInclude(t => t.Promotions)
+                .Include(t => t.TourImages)
                 .Include(t => t.Reviews)
                 .AsSplitQuery()
                 .ToListAsync();
@@ -386,6 +391,7 @@ namespace TourAPI.Repositories.Implements
                 .Include(t => t.TourSchedules.Where(s => s.DepartureDate > now))
                     .ThenInclude(t => t.TourScheduleTickets)
                         .ThenInclude(t => t.Promotions)
+                .Include(t => t.TourImages)
                 .Include(t => t.Reviews)
                 .AsSplitQuery()
                 .ToListAsync();
@@ -439,6 +445,7 @@ namespace TourAPI.Repositories.Implements
                 .Include(t => t.TourSchedules.Where(s => s.DepartureDate > now))
                     .ThenInclude(t => t.TourScheduleTickets)
                         .ThenInclude(t => t.Promotions)
+                .Include(t => t.TourImages)
                 .Include(t => t.Reviews)
                 .AsSplitQuery()
                 .ToListAsync();
@@ -457,6 +464,7 @@ namespace TourAPI.Repositories.Implements
                     .Include(t => t.TourSchedules)
                         .ThenInclude(t => t.TourScheduleTickets)
                             .ThenInclude(t => t.Promotions)
+                    .Include(t => t.TourImages)
                     .Include(t => t.Reviews)
                         .ThenInclude(r => r.ReviewReplies)
                     .AsSplitQuery()
@@ -494,12 +502,23 @@ namespace TourAPI.Repositories.Implements
 
         public async Task<bool> IsNameDuplicateAsync(string name, int? excludeId = null)
         {
-            var query = _context.Tours.Where(t => t.Name.ToLower() == name.ToLower());
-            if (excludeId.HasValue)
-            {
-                query = query.Where(t => t.Id != excludeId.Value);
-            }
-            return await query.AnyAsync();
+            return await _context.Tours
+                .AnyAsync(t => t.Name.ToLower() == name.ToLower() && t.Id != excludeId);
+        }
+
+        public async Task<List<TourImage>> GetTourImagesByIds(IEnumerable<int> ids)
+        {
+            return await _context.TourImages.Where(i => ids.Contains(i.Id)).ToListAsync();
+        }
+
+        public void RemoveTourImages(IEnumerable<TourImage> images)
+        {
+            _context.TourImages.RemoveRange(images);
+        }
+
+        public async Task AddTourImages(IEnumerable<TourImage> images)
+        {
+            await _context.TourImages.AddRangeAsync(images);
         }
     }
 }
