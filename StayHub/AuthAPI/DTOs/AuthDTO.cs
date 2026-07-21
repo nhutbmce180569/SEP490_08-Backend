@@ -94,13 +94,6 @@ namespace AuthAPI.DTOs
         [RegularExpression(@"^[0-9+()\- ]{8,15}$", ErrorMessage = "InvalidPhoneNumberFormat")]
         public string PhoneNumber { get; set; } = null!;
 
-        [Required(ErrorMessage = "Gender is required.")]
-        public string Gender { get; set; } = null!;
-
-        [Required(ErrorMessage = "Date of Birth is required.")]
-        [NotFutureDate(ErrorMessage = "Date of birth cannot be in the future.")]
-        public DateOnly? DateOfBirth { get; set; }
-
         [Required(ErrorMessage = "VerificationCodeRequired")]
         public string OtpCode { get; set; } = null!;
     }
