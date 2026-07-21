@@ -45,5 +45,8 @@ namespace TourAPI.Repositories
         Task SaveChangesAsync();
         Task<int> CountByCategoryIdAsync(int categoryId);
         Task<bool> IsNameDuplicateAsync(string name, int? excludeId = null);
+        Task<List<TourImage>> GetTourImagesByIds(IEnumerable<int> ids);
+        void RemoveTourImages(IEnumerable<TourImage> images);
+        Task AddTourImages(IEnumerable<TourImage> images);
     }
 }
