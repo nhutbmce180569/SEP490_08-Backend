@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace ContentAPI.Models;
@@ -10,6 +10,10 @@ public partial class TicketType
     public string Name { get; set; } = null!;
 
     public string? Description { get; set; }
+
+    public int? MinAge { get; set; }
+    
+    public int? MaxAge { get; set; }
 
     public bool? IsActive { get; set; }
 

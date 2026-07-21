@@ -96,6 +96,8 @@ CREATE TABLE TicketTypes (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     Name NVARCHAR(100) NOT NULL,
     Description NVARCHAR(MAX),
+    MinAge INT NULL,
+    MaxAge INT NULL,
     IsActive BIT DEFAULT 1,
     CreatedAt DATETIME2 DEFAULT GETDATE(),
     UpdatedAt DATETIME2 NULL
@@ -357,6 +359,7 @@ CREATE TABLE Orders (
     TotalQuantity INT NOT NULL,
 
     DiscountValue BIGINT DEFAULT 0,
+    PromotionDiscountValue BIGINT DEFAULT 0,
     VoucherCode VARCHAR(50) NULL,
     TotalAmount BIGINT NOT NULL,
     FinalAmount BIGINT NOT NULL,
@@ -382,6 +385,7 @@ CREATE TABLE OrderDetails (
     Quantity INT NOT NULL,
     UnitPrice BIGINT NOT NULL,
     TotalPrice BIGINT NOT NULL,
+    PromotionDiscountValue BIGINT DEFAULT 0,
 
     CONSTRAINT FK_OrderDetails_Orders
         FOREIGN KEY (OrderId)
