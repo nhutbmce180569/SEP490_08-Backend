@@ -21,6 +21,8 @@ namespace TourAPI.DTOs
 
         public string? ImageUrl { get; set; }
 
+        public string? TransportationType { get; set; }
+
         public string? SourceName { get; set; }
 
         public string? SourceUrl { get; set; }
@@ -53,7 +55,18 @@ namespace TourAPI.DTOs
         public ICollection<ReadTourScheduleDTO>? TourSchedules { get; set; }
 
         public ICollection<ReadReviewDTO>? Reviews { get; set; }
+
+        public ICollection<ReadTourImageDTO>? TourImages { get; set; }
     }
+
+    public class ReadTourImageDTO
+    {
+        public int Id { get; set; }
+        public int TourId { get; set; }
+        public string ImageUrl { get; set; } = null!;
+        public DateTime? CreatedAt { get; set; }
+    }
+
     public class ReadTourBasicDTO
     {
         public int Id { get; set; }
@@ -93,6 +106,11 @@ namespace TourAPI.DTOs
 
         public string? Status { get; set; } = "Inactive";
         public IFormFile? Image { get; set; }
+
+        [Required(ErrorMessage = "TransportationType is required")]
+        public string TransportationType { get; set; } = null!;
+
+        public List<IFormFile>? TourImages { get; set; }
     }
 
     public class CreateTourDTO : BaseTourDTO
@@ -102,6 +120,7 @@ namespace TourAPI.DTOs
     public class UpdateTourDTO : BaseTourDTO
     {
         public bool RemoveImage { get; set; }
+        public List<int>? RemovedTourImageIds { get; set; }
     }
 
     public class ReadUserDTO
