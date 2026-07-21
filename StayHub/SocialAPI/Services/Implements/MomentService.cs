@@ -65,12 +65,42 @@ public class MomentService : IMomentService
             }
 
             var now = DateTime.UtcNow;
+            var departureUtc = metadata.DepartureDate.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(metadata.DepartureDate, DateTimeKind.Utc)
+                : metadata.DepartureDate.ToUniversalTime();
+
             // Block posting moments for tours that have not started yet.
             // Tours in progress and completed tours are both allowed (commemorative moments).
-            if (metadata.DepartureDate > now)
+            if (departureUtc > now)
             {
                 throw new ArgumentException(
                     $"Cannot post a moment for a tour that has not started yet. The tour departs on {metadata.DepartureDate:yyyy-MM-dd HH:mm} (UTC).");
+            }
+
+            // Geographical validation: The moment coordinates must be within 50km of at least one tour waypoint
+            // (if waypoints exist for this tour schedule).
+            var route = await _tourApiClient.GetTourRouteAsync(dto.ScheduleId);
+            if (route != null && route.Waypoints != null && route.Waypoints.Count > 0)
+            {
+                if (dto.Lat == 0 && dto.Lng == 0)
+                {
+                    throw new ArgumentException("Valid location coordinates (GPS) are required to post a moment for a tour.");
+                }
+
+                double minDistance = double.MaxValue;
+                foreach (var wp in route.Waypoints)
+                {
+                    double dist = CalculateDistance(dto.Lat, dto.Lng, wp.Lat, wp.Lng);
+                    if (dist < minDistance)
+                    {
+                        minDistance = dist;
+                    }
+                }
+
+                if (minDistance > 50.0)
+                {
+                    throw new ArgumentException($"Your moment location is too far from the tour route waypoints (closest is {minDistance:F1}km away, limit is 50.0km). Please post moments that are physically within the tour's path.");
+                }
             }
         }
         else if (dto.ScheduleId == 0)
@@ -399,6 +429,16 @@ public class MomentService : IMomentService
             throw new ArgumentException("Invalid content type. Must be 'Moment' or 'Comment'.");
         }
 
+        // Chặn người dùng báo cáo lại cùng nội dung khi đã có báo cáo đang chờ xử lý
+        var alreadyReported = await _dbContext.ContentReports.AnyAsync(r =>
+            r.ReporterId == reporterId &&
+            r.ContentType == contentType &&
+            r.TargetId == targetId &&
+            r.Status == "Pending");
+
+        if (alreadyReported)
+            throw new ArgumentException("Bạn đã báo cáo nội dung này rồi. Vui lòng chờ kiểm duyệt viên xem xét.");
+
         var report = new ContentReport
         {
             ReporterId = reporterId,
@@ -668,5 +708,22 @@ public class MomentService : IMomentService
         {
             Console.WriteLine($"[MomentService] Failed to send {notifType} notification: {ex.Message}");
         }
+    }
+
+    private static double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
+    {
+        var r = 6371; // Earth's radius in km
+        var dLat = ToRadians(lat2 - lat1);
+        var dLon = ToRadians(lon2 - lon1);
+        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2)) *
+                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+        return r * c; // Distance in km
+    }
+
+    private static double ToRadians(double val)
+    {
+        return (Math.PI / 180) * val;
     }
 }
