@@ -105,9 +105,11 @@ namespace TourAPI.DTOs
         public string? Address { get; set; }
 
         public string? Status { get; set; } = "Inactive";
+
         public IFormFile? Image { get; set; }
 
-        [Required(ErrorMessage = "TransportationType is required")]
+        [Required(ErrorMessage = "Transportation Type is required")]
+        [StringLength(100, ErrorMessage = "Transportation Type cannot exceed 255 characters")]
         public string TransportationType { get; set; } = null!;
 
         public List<IFormFile>? TourImages { get; set; }
