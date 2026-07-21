@@ -48,7 +48,7 @@ namespace BookingAPI.Services.Implements
             }
         }
 
-        public async Task<IReadOnlyCollection<int>> GetManagedScheduleIdsAsync(int operatorId)
+        public async Task<IReadOnlyCollection<int>> GetManagedScheduleIdsAsync(int operatorId, int? tourId = null)
         {
             if (operatorId <= 0)
             {
@@ -60,7 +60,13 @@ namespace BookingAPI.Services.Implements
                 throw new InvalidOperationException("Tour API base address is not configured.");
             }
 
-            using var response = await _httpClient.GetAsync("api/tourschedules/my/ids");
+            string url = "api/tourschedules/my/ids";
+            if (tourId.HasValue && tourId.Value > 0)
+            {
+                url += $"?tourId={tourId.Value}";
+            }
+
+            using var response = await _httpClient.GetAsync(url);
             response.EnsureSuccessStatusCode();
 
             return await response.Content.ReadFromJsonAsync<List<int>>() ?? new List<int>();
