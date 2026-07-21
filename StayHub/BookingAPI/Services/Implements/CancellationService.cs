@@ -101,10 +101,11 @@ namespace BookingAPI.Services.Implements
             int operatorId,
             string? status,
             string? date,
+            int? tourId,
             int page,
             int pageSize)
         {
-            var scheduleIds = await _tourApiClient.GetManagedScheduleIdsAsync(operatorId);
+            var scheduleIds = await _tourApiClient.GetManagedScheduleIdsAsync(operatorId, tourId);
             var (requests, total) = await _repository.GetAllCancellationRequestsAsync(
                 scheduleIds,
                 status,
@@ -113,6 +114,33 @@ namespace BookingAPI.Services.Implements
                 pageSize);
 
             var mappedData = _mapper.Map<List<CancellationRequestListDTO>>(requests);
+
+            var scheduleCache = new Dictionary<int, ReadOrderScheduleDTO?>();
+            var tourCache = new Dictionary<int, ReadOrderTourDTO?>();
+
+            foreach (var item in mappedData)
+            {
+                var req = requests.FirstOrDefault(r => r.Id == item.Id);
+                if (req?.Order != null && req.Order.ScheduleId > 0)
+                {
+                    if (!scheduleCache.TryGetValue(req.Order.ScheduleId, out var schedule))
+                    {
+                        schedule = await _tourApiClient.GetScheduleByIdAsync(req.Order.ScheduleId);
+                        scheduleCache[req.Order.ScheduleId] = schedule;
+                    }
+
+                    if (schedule != null && schedule.TourId > 0)
+                    {
+                        item.TourId = schedule.TourId;
+                        if (!tourCache.TryGetValue(schedule.TourId, out var tour))
+                        {
+                            tour = await _tourApiClient.GetTourByIdAsync(schedule.TourId);
+                            tourCache[schedule.TourId] = tour;
+                        }
+                        item.TourName = tour?.Name;
+                    }
+                }
+            }
 
             var totalPages = (int)Math.Ceiling(total / (double)pageSize);
 
