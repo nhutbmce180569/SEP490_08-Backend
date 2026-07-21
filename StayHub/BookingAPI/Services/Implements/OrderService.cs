@@ -27,6 +27,7 @@ namespace BookingAPI.Services.Implements
         private readonly INotificationInternalService _notificationInternalService;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IContentApiClient _contentApiClient;
         private readonly ILogger<OrderService> _logger;
         public OrderService(
          IOrderRepository orderRepository,
@@ -39,6 +40,7 @@ namespace BookingAPI.Services.Implements
          INotificationInternalService notificationInternalService,
          IHttpClientFactory httpClientFactory,
          IHttpContextAccessor httpContextAccessor,
+         IContentApiClient contentApiClient,
          ILogger<OrderService> logger)
         {
             _orderRepository = orderRepository;
@@ -51,6 +53,7 @@ namespace BookingAPI.Services.Implements
             _notificationInternalService = notificationInternalService;
             _httpClientFactory = httpClientFactory;
             _httpContextAccessor = httpContextAccessor;
+            _contentApiClient = contentApiClient;
             _logger = logger;
         }
 
@@ -435,7 +438,16 @@ namespace BookingAPI.Services.Implements
                     $"TourScheduleTicketId {duplicateTicket.Key} is duplicated in this order.");
             }
 
+            var totalTickets = request.OrderDetails.Sum(d => d.Tickets?.Count ?? 0);
+            if (totalTickets > 9)
+            {
+                throw new BookingValidationException("You are exceeding StayHub's policy (maximum 9 tickets per order). Please contact our customer support for group bookings.");
+            }
+
             var result = new List<ValidatedOrderDetail>();
+            var ticketTypesCache = new Dictionary<int, TicketTypeResponseDTO?>();
+            int totalChildTickets = 0;
+            int totalAdultTickets = 0;
 
             foreach (var detail in request.OrderDetails)
             {
@@ -497,6 +509,33 @@ namespace BookingAPI.Services.Implements
                             : $"Only {scheduleTicket.AvailableQuantity} ticket(s) remaining for this ticket type.");
                 }
 
+                if (!ticketTypesCache.TryGetValue(scheduleTicket.TicketTypeId, out var ticketTypeInfo))
+                {
+                    ticketTypeInfo = await _contentApiClient.GetTicketTypeByIdAsync(scheduleTicket.TicketTypeId);
+                    ticketTypesCache[scheduleTicket.TicketTypeId] = ticketTypeInfo;
+                }
+
+                if (ticketTypeInfo != null && (ticketTypeInfo.MinAge.HasValue || ticketTypeInfo.MaxAge.HasValue))
+                {
+                    foreach (var ticket in detail.Tickets)
+                    {
+                        if (!ticket.DateOfBirth.HasValue)
+                        {
+                            throw new BookingValidationException($"Date of birth is required for {ticketTypeInfo.Name} tickets.");
+                        }
+
+                        var age = CalculateAge(ticket.DateOfBirth.Value);
+                        if (ticketTypeInfo.MinAge.HasValue && age < ticketTypeInfo.MinAge.Value)
+                        {
+                            throw new BookingValidationException($"Passenger {ticket.AttendeeName} ({age} years old) does not meet the minimum age requirement of {ticketTypeInfo.MinAge.Value} for {ticketTypeInfo.Name}.");
+                        }
+                        if (ticketTypeInfo.MaxAge.HasValue && age > ticketTypeInfo.MaxAge.Value)
+                        {
+                            throw new BookingValidationException($"Passenger {ticket.AttendeeName} ({age} years old) exceeds the maximum age limit of {ticketTypeInfo.MaxAge.Value} for {ticketTypeInfo.Name}.");
+                        }
+                    }
+                }
+
                 result.Add(new ValidatedOrderDetail
                 {
                     TourScheduleTicketId = scheduleTicket.Id,
@@ -507,9 +546,38 @@ namespace BookingAPI.Services.Implements
                     PromotionDiscountValue = unitPromotionDiscount * quantity,
                     Tickets = detail.Tickets
                 });
+                
+                var isChildTicket = false;
+                if (ticketTypeInfo != null)
+                {
+                    var nameLower = ticketTypeInfo.Name.ToLower();
+                    isChildTicket = nameLower.Contains("child") || nameLower.Contains("children") || (ticketTypeInfo.MaxAge.HasValue && ticketTypeInfo.MaxAge.Value <= 12);
+                }
+
+                if (isChildTicket)
+                {
+                    totalChildTickets += quantity;
+                }
+                else
+                {
+                    totalAdultTickets += quantity;
+                }
+            }
+            
+            if (totalChildTickets > totalAdultTickets)
+            {
+                throw new BookingValidationException("Each Child ticket must be accompanied by at least 1 Adult ticket.");
             }
 
             return result;
+        }
+
+        private static int CalculateAge(DateOnly dateOfBirth)
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var age = today.Year - dateOfBirth.Year;
+            if (dateOfBirth > today.AddYears(-age)) age--;
+            return age;
         }
 
         private (long EffectivePrice, long PromotionDiscount) GetEffectivePrice(long basePrice, ReadPromotionDTO? promo)
