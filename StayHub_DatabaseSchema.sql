@@ -475,6 +475,7 @@ CREATE TABLE Vouchers (
     DiscountType VARCHAR(50) NOT NULL, -- Percent, Amount
     DiscountValue BIGINT NOT NULL, -- CHUYỂN SANG BIGINT (Giữ % dưới dạng số nguyên hoặc số tiền trực tiếp)
     MaxDiscountAmount BIGINT NULL, -- Chỉ áp dụng khi DiscountType = Percent (trần tiền giảm tối đa)
+    MinOrderAmount BIGINT NULL, -- Giá trị đơn hàng tối thiểu áp dụng voucher (VND)
     UsedCount INT DEFAULT 0,
     AvailableCount INT NOT NULL,
     StartDate DATETIME2 NOT NULL,

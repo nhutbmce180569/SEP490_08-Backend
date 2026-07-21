@@ -170,6 +170,11 @@ public class CustomerVoucherService : ICustomerVoucherService
             throw new Exception("You have no remaining uses for this voucher");
         }
 
+        if (voucher.MinOrderAmount.HasValue && dto.BillAmount < voucher.MinOrderAmount.Value)
+        {
+            throw new Exception($"Đơn hàng tối thiểu để áp dụng voucher này là {voucher.MinOrderAmount.Value:N0} VNĐ");
+        }
+
         var discountAmount = VoucherDiscountHelper.CalculateDiscountAmount(voucher, dto.BillAmount);
         if (discountAmount <= 0)
         {
@@ -193,6 +198,7 @@ public class CustomerVoucherService : ICustomerVoucherService
             DiscountType = voucher.DiscountType,
             DiscountValue = voucher.DiscountValue,
             MaxDiscountAmount = voucher.MaxDiscountAmount,
+            MinOrderAmount = voucher.MinOrderAmount,
             BillAmount = billAmount,
             DiscountAmount = discountAmount,
             FinalAmount = billAmount - discountAmount,
