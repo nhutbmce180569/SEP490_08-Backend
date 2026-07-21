@@ -17,8 +17,11 @@ namespace TourAPI.Mappers
             .ForMember(dest => dest.TwoStarCount, opt => opt.MapFrom(src => src.Reviews.Count(r => !r.IsHidden && r.Rating == 2)))
             .ForMember(dest => dest.OneStarCount, opt => opt.MapFrom(src => src.Reviews.Count(r => !r.IsHidden && r.Rating == 1)));
             CreateMap<Tour, ReadTourBasicDTO>();
-            CreateMap<CreateTourDTO, Tour>();
-            CreateMap<UpdateTourDTO, Tour>();
+            CreateMap<CreateTourDTO, Tour>()
+                .ForMember(dest => dest.TourImages, opt => opt.Ignore());
+            CreateMap<UpdateTourDTO, Tour>()
+                .ForMember(dest => dest.TourImages, opt => opt.Ignore());
+            CreateMap<TourImage, ReadTourImageDTO>();
         }
     }
 }
