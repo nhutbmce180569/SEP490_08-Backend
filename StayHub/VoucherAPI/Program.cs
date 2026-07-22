@@ -151,12 +151,40 @@ public class Program
         app.UseAuthorization();
         app.MapControllers();
 
-        // Auto-remap dummy seed UserVouchers to valid existing Customer IDs
+        // Auto-remap dummy seed UserVouchers to valid existing Customer IDs & ensure MinOrderAmount column exists
         using (var scope = app.Services.CreateScope())
         {
             try
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<StayHubVoucherDbContext>();
+
+                try
+                {
+                    dbContext.Database.ExecuteSqlRaw(@"
+                        IF NOT EXISTS (
+                            SELECT 1 FROM sys.columns 
+                            WHERE object_id = OBJECT_ID('Vouchers') AND name = 'MinOrderAmount'
+                        )
+                        BEGIN
+                            ALTER TABLE Vouchers ADD MinOrderAmount BIGINT NULL;
+                        END
+                    ");
+
+                    dbContext.Database.ExecuteSqlRaw(@"
+                        UPDATE Vouchers SET MinOrderAmount = 500000 WHERE Code = 'STUDENT2025' AND (MinOrderAmount IS NULL OR MinOrderAmount = 0);
+                        UPDATE Vouchers SET MinOrderAmount = 1000000 WHERE Code = 'TET2025' AND (MinOrderAmount IS NULL OR MinOrderAmount = 0);
+                        UPDATE Vouchers SET MinOrderAmount = 2000000 WHERE Code = 'HONEYMOON25' AND (MinOrderAmount IS NULL OR MinOrderAmount = 0);
+                        UPDATE Vouchers SET MinOrderAmount = 1500000 WHERE Code = 'EARLYBIRD25' AND (MinOrderAmount IS NULL OR MinOrderAmount = 0);
+                        UPDATE Vouchers SET MinOrderAmount = 300000 WHERE Code = 'SUMMER25' AND (MinOrderAmount IS NULL OR MinOrderAmount = 0);
+                        UPDATE Vouchers SET MinOrderAmount = 1000000 WHERE Code = 'TOPCUST2026' AND (MinOrderAmount IS NULL OR MinOrderAmount = 0);
+                    ");
+                    Console.WriteLine("[VoucherAPI] Successfully verified MinOrderAmount column and seeded default values.");
+                }
+                catch (Exception dbEx)
+                {
+                    Console.WriteLine($"[VoucherAPI] DB Migration/Seed notice: {dbEx.Message}");
+                }
+
                 var userValService = scope.ServiceProvider.GetRequiredService<IUserValidationService>();
 
                 var batchUsers = userValService.GetUsersBatchAsync(Enumerable.Range(1, 100).ToList()).GetAwaiter().GetResult();

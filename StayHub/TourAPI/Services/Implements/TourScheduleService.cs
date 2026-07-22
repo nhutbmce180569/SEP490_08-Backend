@@ -271,9 +271,9 @@ namespace TourAPI.Services.Implements
             };
         }
 
-        public Task<List<int>> GetScheduleIdsByCreatedByAsync(int userId)
+        public Task<List<int>> GetScheduleIdsByCreatedByAsync(int userId, int? tourId = null)
         {
-            return _scheduleRepo.GetIdsByCreatedByAsync(userId);
+            return _scheduleRepo.GetIdsByCreatedByAsync(userId, tourId);
         }
 
         private async Task ValidateScheduleDuration(int tourId, DateTime departureDate, DateTime returnDate)

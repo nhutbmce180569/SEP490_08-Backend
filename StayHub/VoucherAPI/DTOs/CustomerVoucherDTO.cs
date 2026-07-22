@@ -40,6 +40,8 @@ public class ReadSavedVoucherDTO
 
     public long? MaxDiscountAmount { get; set; }
 
+    public long? MinOrderAmount { get; set; }
+
     public DateTime StartDate { get; set; }
 
     public DateTime EndDate { get; set; }
@@ -78,6 +80,8 @@ public class ApplyVoucherResultDTO
     public long DiscountValue { get; set; }
 
     public long? MaxDiscountAmount { get; set; }
+
+    public long? MinOrderAmount { get; set; }
 
     public long BillAmount { get; set; }
 
