@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
@@ -54,6 +54,9 @@ public partial class StayHubContentDbContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.Name).HasMaxLength(100);
+            entity.Property(e => e.Description);
+            entity.Property(e => e.MinAge);
+            entity.Property(e => e.MaxAge);
         });
 
         modelBuilder.Entity<TourismInformation>(entity =>
