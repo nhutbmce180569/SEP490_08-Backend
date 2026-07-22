@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace TourAPI.Models;
@@ -35,7 +35,11 @@ public partial class Tour
 
     public string? Status { get; set; }
 
+    public string? TransportationType { get; set; }
+
     public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
+
+    public virtual ICollection<TourImage> TourImages { get; set; } = new List<TourImage>();
 
     public virtual ICollection<TourItinerary> TourItineraries { get; set; } = new List<TourItinerary>();
 

@@ -103,13 +103,13 @@ namespace TourAPI.Controllers
 
         [HttpGet("my/ids")]
         [Authorize(Roles = "Manager,Admin")]
-        public async Task<ActionResult<List<int>>> GetMyScheduleIds()
+        public async Task<ActionResult<List<int>>> GetMyScheduleIds([FromQuery] int? tourId)
         {
             var userId = GetCurrentUserId();
             if (userId == null)
                 return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
 
-            var result = await _scheduleService.GetScheduleIdsByCreatedByAsync(userId.Value);
+            var result = await _scheduleService.GetScheduleIdsByCreatedByAsync(userId.Value, tourId);
             return Ok(result);
         }
 
