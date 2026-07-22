@@ -1,4 +1,4 @@
-﻿using BookingAPI.DTOs;
+using BookingAPI.DTOs;
 using BookingAPI.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -332,6 +332,7 @@ namespace BookingAPI.Repositories.Implements
                 {
                     TotalRevenue = g.Sum(o => o.FinalAmount),
                     TotalDiscount = g.Sum(o => o.DiscountValue ?? 0),
+                    TotalPromotionDiscount = g.Sum(o => o.PromotionDiscountValue ?? 0),
                     TotalOrders = g.Count(),
                     TotalTicketsSold = g.Sum(o => o.TotalQuantity)
                 })
@@ -415,6 +416,27 @@ namespace BookingAPI.Repositories.Implements
                 .Take(10)
                 .ToListAsync();
 
+            var promoDiscountSum = metricsData.TotalPromotionDiscount;
+            var voucherDiscountSum = metricsData.TotalDiscount;
+            var promoOrdersCount = await paidOrders.CountAsync(o => (o.PromotionDiscountValue ?? 0) > 0);
+            var voucherOrdersCount = await paidOrders.CountAsync(o => (o.DiscountValue ?? 0) > 0);
+
+            var discountBreakdown = new List<DiscountBreakdownDTO>
+            {
+                new()
+                {
+                    Type = "Promotion",
+                    TotalAmount = promoDiscountSum,
+                    OrderCount = promoOrdersCount
+                },
+                new()
+                {
+                    Type = "Voucher",
+                    TotalAmount = voucherDiscountSum,
+                    OrderCount = voucherOrdersCount
+                }
+            };
+
             return new BookingStatisticsResponseDTO
             {
                 Metrics = metricsData,
@@ -422,7 +444,8 @@ namespace BookingAPI.Repositories.Implements
                 SalesByTicketType = salesByTicketType,
                 OrdersByHour = ordersByHour,
                 CheckInRatio = checkInRatio,
-                TopCancellationReasons = topCancellationReasons
+                TopCancellationReasons = topCancellationReasons,
+                DiscountBreakdown = discountBreakdown
             };
         }
 
