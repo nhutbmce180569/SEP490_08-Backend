@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace BookingAPI.Models;
@@ -14,6 +14,8 @@ public partial class Order
     public int TotalQuantity { get; set; }
 
     public long? DiscountValue { get; set; }
+    
+    public long? PromotionDiscountValue { get; set; }
 
     public string? VoucherCode { get; set; }
 

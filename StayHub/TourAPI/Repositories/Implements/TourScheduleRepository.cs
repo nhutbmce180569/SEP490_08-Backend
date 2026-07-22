@@ -81,7 +81,7 @@ namespace TourAPI.Repositories.Implements
                 query = query.Where(ts => ts.Tour != null && ts.Tour.Name.Contains(search.Trim()));
 
             return await query
-                .OrderByDescending(ts => ts.DepartureDate)
+                .OrderBy(ts => ts.DepartureDate)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

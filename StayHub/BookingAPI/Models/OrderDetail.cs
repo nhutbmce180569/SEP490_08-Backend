@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace BookingAPI.Models;
@@ -18,6 +18,8 @@ public partial class OrderDetail
     public long UnitPrice { get; set; }
 
     public long TotalPrice { get; set; }
+    
+    public long? PromotionDiscountValue { get; set; }
 
     public virtual Order Order { get; set; } = null!;
 

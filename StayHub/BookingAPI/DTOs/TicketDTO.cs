@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace BookingAPI.DTOs
@@ -76,6 +76,8 @@ namespace BookingAPI.DTOs
     {
         public int Id { get; set; }
         public string Name { get; set; } = null!;
+        public int? MinAge { get; set; }
+        public int? MaxAge { get; set; }
     }
 
     public class CheckInResultDTO
