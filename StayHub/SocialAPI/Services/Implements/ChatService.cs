@@ -153,7 +153,12 @@ namespace SocialAPI.Services.Implements
                 var senderName = "Unknown User";
                 var senderAvatar = "https://cdn.stayhub.vn/avatars/default.png";
 
-                if (userProfiles.TryGetValue(cm.SenderId, out var profile))
+                if (cm.SenderId == 0)
+                {
+                    senderName = "System";
+                    senderAvatar = "https://cdn.stayhub.vn/avatars/system.png";
+                }
+                else if (userProfiles.TryGetValue(cm.SenderId, out var profile))
                 {
                     senderName = profile.FullName ?? senderName;
                     senderAvatar = profile.AvatarUrl ?? senderAvatar;
@@ -302,11 +307,15 @@ namespace SocialAPI.Services.Implements
                 await _chatRepository.AddMembersToGroupAsync(currentRoomId, dto.UserIds);
             }
 
+            var addedUserProfiles = await _authApiClient.GetUserProfilesAsync(dto.UserIds);
+            var usersList = addedUserProfiles.Values.Select(u => new { id = u.Id, fullName = u.FullName, avatarUrl = u.AvatarUrl }).ToList();
+            var contentJson = System.Text.Json.JsonSerializer.Serialize(new { action = "MEMBER_ADDED", users = usersList });
+
             var systemMessage = new ChatMessage
             {
                 ChatRoomId = targetRoomId,
                 SenderId = 0,
-                Content = "A new member has been added to the team.",
+                Content = contentJson,
                 IsRead = false,
                 SentAt = DateTime.UtcNow
             };
@@ -388,11 +397,15 @@ namespace SocialAPI.Services.Implements
 
                 await _chatRepository.AddMembersToGroupAsync(room.Id, new List<int> { dto.UserId });
 
+                var addedUserProfiles = await _authApiClient.GetUserProfilesAsync(new List<int> { dto.UserId });
+                var usersList = addedUserProfiles.Values.Select(u => new { id = u.Id, fullName = u.FullName, avatarUrl = u.AvatarUrl }).ToList();
+                var contentJson = System.Text.Json.JsonSerializer.Serialize(new { action = "MEMBER_ADDED", users = usersList });
+
                 var systemMessage = new ChatMessage
                 {
                     ChatRoomId = room.Id,
                     SenderId = 0,
-                    Content = "A new member has been added to the team.",
+                    Content = contentJson,
                     IsRead = false,
                     SentAt = DateTime.UtcNow
                 };

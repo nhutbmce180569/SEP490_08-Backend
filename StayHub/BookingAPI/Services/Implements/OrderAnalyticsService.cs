@@ -6,10 +6,12 @@ namespace BookingAPI.Services.Implements
     public class OrderAnalyticsService : IOrderAnalyticsService
     {
         private readonly IOrderRepository _orderRepository;
+        private readonly IContentApiClient _contentApiClient;
 
-        public OrderAnalyticsService(IOrderRepository orderRepository)
+        public OrderAnalyticsService(IOrderRepository orderRepository, IContentApiClient contentApiClient)
         {
             _orderRepository = orderRepository;
+            _contentApiClient = contentApiClient;
         }
 
         public async Task<OrderAnalyticsOverviewDTO> GetOverviewAsync(DateTime? from, DateTime? to)
@@ -52,7 +54,28 @@ namespace BookingAPI.Services.Implements
             ValidateDateRange(request.StartDate, request.EndDate);
             request.GroupBy = NormalizeBookingStatisticsGroupBy(request.GroupBy);
 
-            return await _orderRepository.GetBookingStatisticsAsync(request);
+            var result = await _orderRepository.GetBookingStatisticsAsync(request);
+
+            if (result.SalesByTicketType != null && result.SalesByTicketType.Count > 0)
+            {
+                var activeTicketTypes = await _contentApiClient.GetActiveTicketTypesAsync();
+                var ticketTypeDict = activeTicketTypes.ToDictionary(t => t.Id, t => t.Name);
+
+                foreach (var item in result.SalesByTicketType)
+                {
+                    if (ticketTypeDict.TryGetValue(item.TicketTypeId, out var typeName))
+                    {
+                        item.TicketTypeName = typeName;
+                    }
+                    else
+                    {
+                        var typeDto = await _contentApiClient.GetTicketTypeByIdAsync(item.TicketTypeId);
+                        item.TicketTypeName = typeDto?.Name ?? $"Loại #{item.TicketTypeId}";
+                    }
+                }
+            }
+
+            return result;
         }
 
         public async Task<List<TopCustomerOrderDTO>> GetTopCustomersAsync(
