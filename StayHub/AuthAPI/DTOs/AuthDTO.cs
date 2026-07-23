@@ -51,6 +51,7 @@ namespace AuthAPI.DTOs
         public DateOnly? DateOfBirth { get; set; }
         public DateTime? LastOnline { get; set; }
         public bool RequirePasswordChange { get; set; }
+        public bool HasCompletedTour { get; set; }
         public List<string> Roles { get; set; } = new();
     }
 
