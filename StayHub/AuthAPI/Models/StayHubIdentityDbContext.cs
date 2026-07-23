@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
@@ -88,6 +88,7 @@ public partial class StayHubIdentityDbContext : DbContext
                 .IsUnicode(false)
                 .HasDefaultValue("Active");
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.HasCompletedTour).HasDefaultValue(false);
 
             entity.HasMany(d => d.Roles).WithMany(p => p.Users)
                 .UsingEntity<Dictionary<string, object>>(
