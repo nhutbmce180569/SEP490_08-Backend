@@ -249,12 +249,6 @@ namespace AuthAPI.Services.Implements
                 }
             }
 
-
-            if (updateUserDto.Status == "Blocked")
-            {
-                await _otpCacheService.RevokeUserSessionAsync(id, TimeSpan.FromMinutes(60));
-            }
-
             await _userRepository.Update(id, existingUser);
 
             await _refreshTokenRepository.DeleteAllByUserId(id);

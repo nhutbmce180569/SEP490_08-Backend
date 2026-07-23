@@ -54,9 +54,6 @@ namespace AuthAPI.DTOs
         [NotFutureDate(ErrorMessage = "Date of birth cannot be in the future.")]
         public DateOnly? DateOfBirth { get; set; }
 
-        [Required(ErrorMessage = "Status is required.")]
-        public string Status { get; set; } = "Active";
-
         public List<int>? RoleIds { get; set; }
     }
 
@@ -77,13 +74,6 @@ namespace AuthAPI.DTOs
 
         [NotFutureDate(ErrorMessage = "Date of birth cannot be in the future.")]
         public DateOnly? DateOfBirth { get; set; }
-
-        [Required(ErrorMessage = "Status is required.")]
-        [RegularExpression("^(Active|Blocked)$", ErrorMessage = "Status must be either 'Active' or 'Blocked'.")]
-        public string? Status { get; set; } = "Active";
-
-        public bool? LocPrivacy { get; set; }
-        public bool? MomentPrivacy { get; set; }
 
         public List<int>? RoleIds { get; set; }
     }
