@@ -140,7 +140,8 @@ CREATE TABLE Users (
     SecurityStamp NVARCHAR(MAX) DEFAULT NEWID(), 
     CreatedAt DATETIME2 DEFAULT GETDATE(),
     UpdatedAt DATETIME2 DEFAULT GETDATE(),
-    FcmToken VARCHAR(MAX) NULL
+    FcmToken VARCHAR(MAX) NULL,
+    HasCompletedTour BIT DEFAULT 0
 );
 
 -- Bảng trung gian Nhiều - Nhiều (1 User có nhiều Role)

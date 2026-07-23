@@ -17,6 +17,6 @@ namespace AuthAPI.Services
         Task<bool> ResetPassword(ResetPasswordDTO dto);
         Task<UserResponseDTO?> GetProfileAsync(int userId);
         Task<LoginResponseDTO?> UpdateProfileAsync(int userId, UpdateProfileDTO dto);
-
+        Task<bool> CompleteTourAsync(int userId);
     }
 }
