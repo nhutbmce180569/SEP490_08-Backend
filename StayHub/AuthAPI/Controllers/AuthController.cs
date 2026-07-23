@@ -274,5 +274,22 @@ namespace AuthAPI.Controllers
 
             return Ok(new { message = M("PasswordResetSuccessfully") });
         }
+
+        [HttpPut("complete-tour")]
+        [Authorize]
+        public async Task<IActionResult> CompleteTour()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                              ?? User.FindFirst("id")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+                return Unauthorized(new { message = M("InvalidTokenClaims") });
+
+            var isSuccess = await _authService.CompleteTourAsync(userId);
+            if (!isSuccess)
+                return BadRequest(new { message = "Failed to update tour status" });
+
+            return Ok(new { message = "Tour completed successfully" });
+        }
     }
 }
