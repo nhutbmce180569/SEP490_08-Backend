@@ -15,7 +15,7 @@ namespace TourAPI.Repositories.Implements
 
         public async Task<CustomerEngagementAnalyticsDTO> GetEngagementOverviewAsync(int totalCustomers)
         {
-            var reviews = await _context.Reviews.AsNoTracking().ToListAsync();
+            var reviews = await _context.Reviews.AsNoTracking().Include(r => r.Tour).ToListAsync();
             var wishlists = await _context.Wishlists.AsNoTracking().Include(w => w.Tour).ToListAsync();
 
             var visibleReviews = reviews.Where(r => !r.IsHidden).ToList();

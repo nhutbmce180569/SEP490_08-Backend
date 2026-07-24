@@ -1,4 +1,4 @@
-﻿using SocialAPI.DTOs;
+using SocialAPI.DTOs;
 
 namespace SocialAPI.Services
 {
@@ -8,5 +8,6 @@ namespace SocialAPI.Services
         Task<UserProfileShortDto?> GetUserProfileAsync(int userId);
         Task<string?> GetFcmTokenAsync(int userId);
         Task ClearFcmTokenAsync(int userId);
+        Task<List<int>> GetUsersByRoleAsync(string roleName);
     }
 }

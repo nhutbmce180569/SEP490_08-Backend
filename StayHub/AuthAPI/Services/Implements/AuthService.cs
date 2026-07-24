@@ -518,6 +518,17 @@ namespace AuthAPI.Services.Implements
             };
         }
 
+        public async Task<bool> CompleteTourAsync(int userId)
+        {
+            var user = await _userRepository.GetById(userId);
+            if (user == null)
+                return false;
+
+            user.HasCompletedTour = true;
+            await _userRepository.Update(userId, user);
+            return true;
+        }
+
         private string GenerateSecureRefreshToken()
         {
             var randomNumber = new byte[64];

@@ -139,4 +139,32 @@ public class UserValidationService : IUserValidationService
 
         return new List<ReadUserApiDTO>();
     }
+
+    public async Task<List<int>> GetAllActiveCustomerIdsAsync()
+    {
+        var gatewayUrl = _configuration["Gateway:BaseUrl"] ?? "https://localhost:7010";
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{gatewayUrl.TrimEnd('/')}/api/internal/users/active-customers/ids");
+        
+        var internalKey = _configuration["InternalService:Key"] ?? _configuration["InternalApi:SecretKey"] ?? "StayHub_Internal_Service_Key_2026";
+        if (!string.IsNullOrEmpty(internalKey))
+        {
+            request.Headers.Add("X-Service-Key", internalKey);
+        }
+
+        try
+        {
+            var response = await _httpClient.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                var ids = await response.Content.ReadFromJsonAsync<List<int>>();
+                return ids ?? new List<int>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[UserValidationService] Error getting active customer ids: {ex.Message}");
+        }
+
+        return new List<int>();
+    }
 }

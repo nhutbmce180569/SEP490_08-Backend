@@ -218,6 +218,19 @@ public class VoucherService : IVoucherService
         }
 
         var assignments = await ResolveCustomerAssignmentsAsync(dto.CustomerAssignments, dto.TopCustomerAssignment);
+        
+        if (assignments.Count == 0)
+        {
+            var activeUserIds = await _userValidationService.GetAllActiveCustomerIdsAsync();
+            var limit = dto.AvailableCount ?? activeUserIds.Count;
+            
+            assignments = activeUserIds.Take(limit).Select(id => new CreateUserVoucherAssignmentDTO
+            {
+                UserId = id,
+                Quantity = 1
+            }).ToList();
+        }
+
         if (assignments.Count > 0)
         {
             ValidateCustomerAssignments(assignments);
