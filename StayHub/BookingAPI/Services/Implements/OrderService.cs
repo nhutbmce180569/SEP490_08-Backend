@@ -673,12 +673,23 @@ namespace BookingAPI.Services.Implements
                 var departure = schedule?.DepartureDate.ToString("dd/MM/yyyy") ?? "N/A";
                 var returnDate = schedule?.ReturnDate.ToString("dd/MM/yyyy") ?? "N/A";
 
+                // Notify Customer
                 await _notificationInternalService.NotifyUserAsync(
                         order.CustomerId,
                         "Booking payment successful",
                         $"Your booking for tour \"{tourName}\" " +
                         $"{departure} → {returnDate} " +
                         $"has been paid successfully. Your tickets are being sent to your email.");
+                
+                // Notify Manager
+                if (tour != null && tour.OperatorId > 0)
+                {
+                    await _notificationInternalService.NotifyUserAsync(
+                        tour.OperatorId,
+                        "Customer Payment Successful",
+                        $"Customer (ID: {order.CustomerId}) has successfully paid for the tour \"{tourName}\" " +
+                        $"{departure} → {returnDate}.");
+                }
             }
             catch (Exception ex)
             {
