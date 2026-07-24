@@ -22,9 +22,11 @@ namespace TourAPI.Services.Implements
         private readonly CloudinaryService _cloudinary;
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
+        private readonly INotificationInternalService _notificationInternalService;
+        private readonly IAuthApiClient _authApiClient;
         IMapper _mapper;
 
-        public TourService(IOrderService bookingService, ICategoryService categoryService, ITourRepository repository, IMapper mapper, CloudinaryService cloudinary, HttpClient httpClient, IConfiguration configuration, IEmailService emailService)
+        public TourService(IOrderService bookingService, ICategoryService categoryService, ITourRepository repository, IMapper mapper, CloudinaryService cloudinary, HttpClient httpClient, IConfiguration configuration, IEmailService emailService, INotificationInternalService notificationInternalService, IAuthApiClient authApiClient)
         {
             _repository = repository;
             _mapper = mapper;
@@ -34,6 +36,8 @@ namespace TourAPI.Services.Implements
             _categoryService = categoryService;
             _bookingService = bookingService;
             _emailService = emailService;
+            _notificationInternalService = notificationInternalService;
+            _authApiClient = authApiClient;
         }
         public async Task Add(CreateTourDTO model, int createdBy)
         {
@@ -85,13 +89,33 @@ namespace TourAPI.Services.Implements
                         tourImages.Add(new TourImage { TourId = tour.Id, ImageUrl = fileUrl });
                     }
                 }
-                if (tourImages.Any())
+            if (tourImages.Any())
                 {
                     await _repository.AddTourImages(tourImages);
                 }
             }
 
             await _repository.SaveChangesAsync();
+
+            try
+            {
+                var creatorName = await GetAccountNameByIdAsync(createdBy);
+                if (string.IsNullOrWhiteSpace(creatorName)) creatorName = $"User #{createdBy}";
+
+                var admins = await _authApiClient.GetUsersByRoleAsync("Admin");
+                var title = "New Tour Created";
+                var content = $"{creatorName} has just created a new tour: '{model.Name}'.";
+
+                foreach (var admin in admins)
+                {
+                    await _notificationInternalService.NotifyUserAsync(admin.Id, title, content);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log exception but do not fail the tour creation process
+                Console.WriteLine($"[Warning] Failed to notify admins about new tour: {ex.Message}");
+            }
         }
 
         public async Task Update(int id, UpdateTourDTO model, int updatedBy)

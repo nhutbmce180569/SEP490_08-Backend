@@ -176,6 +176,18 @@ namespace SocialAPI
             {
                 ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
             });
+            builder.Services.AddHttpClient<INotificationInternalService, NotificationInternalService>(client =>
+            {
+                var systemApiBaseUrl = builder.Configuration["InternalApi:SystemApiBaseUrl"]
+                    ?? "https://localhost:7009/";
+                client.BaseAddress = new Uri(systemApiBaseUrl.TrimEnd('/') + "/");
+                client.DefaultRequestHeaders.Add("X-Service-Key", builder.Configuration["InternalApi:SecretKey"]);
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            });
+
             builder.Services.AddAutoMapper(cfg =>
             {
                 cfg.AddProfile<MappingProfile>();

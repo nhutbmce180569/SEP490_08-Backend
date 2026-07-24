@@ -23,6 +23,8 @@ namespace AuthAPI.Services
 
         Task<CustomerListAnalyticsDTO> GetCustomersForAnalyticsAsync(string? search, int page, int pageSize);
 
+        Task<List<ReadUserDTO>> GetUsersByRoleAsync(string role);
+
         Task<List<ReadUserDTO>> GetCustomersByBirthdayMonthAsync(int month);
 
         Task<PlatformUserStatsDTO> GetPlatformUserStatsAsync(DateTime? from, DateTime? to, string granularity);
