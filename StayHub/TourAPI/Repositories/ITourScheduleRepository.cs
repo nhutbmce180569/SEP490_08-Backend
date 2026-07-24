@@ -17,6 +17,7 @@ namespace TourAPI.Repositories
         Task<IEnumerable<TourSchedule>> SearchByTourNameAsync(string tourName, int page, int pageSize);
         Task<int> CountByTourNameAsync(string tourName);
         Task<int> CountAllAsync();
+        Task<IEnumerable<TourSchedule>> GetSchedulesStartingOnAsync(DateTime date);
         Task AddAsync(TourSchedule tourSchedule);
         Task UpdateAsync(TourSchedule tourSchedule);
         Task DeleteAsync(TourSchedule tourSchedule);
