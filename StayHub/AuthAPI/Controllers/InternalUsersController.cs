@@ -52,6 +52,18 @@ public class InternalUsersController : ControllerBase
         return Ok(users);
     }
 
+    [HttpGet("active-customers/ids")]
+    public async Task<IActionResult> GetAllActiveCustomerIds()
+    {
+        if (!IsValidServiceKey())
+        {
+            return Unauthorized(new { message = "Invalid service key" });
+        }
+
+        var ids = await _userService.GetAllActiveCustomerIdsAsync();
+        return Ok(ids);
+    }
+
     [HttpPost("batch")]
     public async Task<IActionResult> GetUsersBatch([FromBody] List<int> ids)
     {

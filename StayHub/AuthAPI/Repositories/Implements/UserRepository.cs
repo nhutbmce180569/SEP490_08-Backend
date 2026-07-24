@@ -183,10 +183,11 @@ namespace AuthAPI.Repositories.Implements
 
             if (!string.IsNullOrWhiteSpace(search))
             {
+                var keyword = search.Trim();
                 query = query.Where(u =>
-                    u.FullName.Contains(search) ||
-                    u.Email.Contains(search) ||
-                    (u.PhoneNumber != null && u.PhoneNumber.Contains(search)));
+                    u.FullName.Contains(keyword) ||
+                    u.Email.Contains(keyword) ||
+                    (u.PhoneNumber != null && u.PhoneNumber.Contains(keyword)));
             }
 
             var total = await query.CountAsync();
@@ -197,6 +198,14 @@ namespace AuthAPI.Repositories.Implements
                 .ToListAsync();
 
             return (users, total);
+        }
+
+        public async Task<List<int>> GetAllActiveCustomerIdsAsync()
+        {
+            return await _context.Users
+                .Where(u => u.Status == "Active" && u.Roles.Any(r => r.Name == "Customer"))
+                .Select(u => u.Id)
+                .ToListAsync();
         }
     }
 }
