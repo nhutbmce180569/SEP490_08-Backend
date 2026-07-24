@@ -145,6 +145,16 @@ namespace TourAPI.Repositories.Implements
                 .CountAsync();
         }
 
+        public async Task<IEnumerable<TourSchedule>> GetSchedulesStartingOnAsync(DateTime date)
+        {
+            var targetDate = date.Date;
+            return await _context.TourSchedules
+                .Include(ts => ts.Tour)
+                .Include(ts => ts.TourScheduleStaffs)
+                .Where(ts => ts.DepartureDate.Date == targetDate)
+                .ToListAsync();
+        }
+
         public async Task AddAsync(TourSchedule tourSchedule)
         {
             await _context.TourSchedules.AddAsync(tourSchedule);

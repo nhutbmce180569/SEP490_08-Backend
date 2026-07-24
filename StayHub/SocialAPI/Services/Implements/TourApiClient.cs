@@ -20,9 +20,6 @@ namespace SocialAPI.Services.Implements
             _httpClient = httpClient;
             _logger = logger;
             _secretKey = configuration["InternalApi:SecretKey"] ?? "";
-            
-            var tourApiBaseUrl = configuration["InternalApi:TourApiBaseUrl"] ?? "https://localhost:7005";
-            _httpClient.BaseAddress = new Uri(tourApiBaseUrl);
         }
 
         private HttpRequestMessage CreateRequest(HttpMethod method, string relativeUrl)

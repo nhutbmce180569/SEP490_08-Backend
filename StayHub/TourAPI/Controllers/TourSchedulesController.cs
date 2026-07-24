@@ -257,6 +257,22 @@ namespace TourAPI.Controllers
             }
         }
 
+        [AllowAnonymous]
+        [HttpGet("internal/starting-tomorrow")]
+        public async Task<IActionResult> GetSchedulesStartingTomorrow()
+        {
+            try
+            {
+                var tomorrow = DateTime.Now.AddDays(1).Date;
+                var schedules = await _scheduleService.GetSchedulesStartingOnAsync(tomorrow);
+                return Ok(schedules);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
         private int? GetCurrentUserId()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
