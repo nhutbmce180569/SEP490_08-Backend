@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using SocialAPI.DTOs;
 
 namespace SocialAPI.Services.Implements
@@ -98,6 +98,32 @@ namespace SocialAPI.Services.Implements
             catch
             {
                 // ignore
+            }
+        }
+
+        public async Task<List<int>> GetUsersByRoleAsync(string roleName)
+        {
+            if (string.IsNullOrWhiteSpace(roleName) || _httpClient.BaseAddress == null)
+                return new List<int>();
+
+            try
+            {
+                var request = new HttpRequestMessage(
+                    HttpMethod.Get,
+                    $"api/internal/users/by-role?role={roleName}");
+                
+                request.Headers.Add("X-Service-Key", "stayhub-internal-2025-xK9mP");
+
+                var response = await _httpClient.SendAsync(request);
+                if (!response.IsSuccessStatusCode)
+                    return new List<int>();
+
+                var users = await response.Content.ReadFromJsonAsync<List<UserProfileShortDto>>();
+                return users?.Select(u => u.Id).ToList() ?? new List<int>();
+            }
+            catch
+            {
+                return new List<int>();
             }
         }
 

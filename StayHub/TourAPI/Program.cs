@@ -146,6 +146,7 @@ namespace TourAPI
             })
             .AddHttpMessageHandler<AuthorizationHeaderHandler>();
             builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddHttpClient<IAuthApiClient, AuthApiClient>();
             builder.Services.AddHttpClient<INotificationInternalService, NotificationInternalService>();
             //{
             //    client.Timeout = TimeSpan.FromSeconds(10);
@@ -155,6 +156,8 @@ namespace TourAPI
                 client.Timeout = TimeSpan.FromSeconds(10);
             })
            .AddHttpMessageHandler<AuthorizationHeaderHandler>();
+            
+            builder.Services.AddHostedService<TourAPI.BackgroundServices.ScheduleNotificationBackgroundService>();
             // Add services to the container.
 
             builder.Services.AddControllers().AddStayHubDataAnnotationsLocalization();

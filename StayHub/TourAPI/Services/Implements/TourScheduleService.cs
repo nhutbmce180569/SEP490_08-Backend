@@ -276,6 +276,12 @@ namespace TourAPI.Services.Implements
             return _scheduleRepo.GetIdsByCreatedByAsync(userId, tourId);
         }
 
+        public async Task<IEnumerable<ReadTourScheduleDTO>> GetSchedulesStartingOnAsync(DateTime date)
+        {
+            var schedules = await _scheduleRepo.GetSchedulesStartingOnAsync(date);
+            return _mapper.Map<IEnumerable<ReadTourScheduleDTO>>(schedules);
+        }
+
         private async Task ValidateScheduleDuration(int tourId, DateTime departureDate, DateTime returnDate)
         {
             var tour = await _tourRepo.GetById(tourId);
