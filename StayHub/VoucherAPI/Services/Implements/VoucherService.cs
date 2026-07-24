@@ -222,8 +222,7 @@ public class VoucherService : IVoucherService
         if (assignments.Count == 0)
         {
             var activeUserIds = await _userValidationService.GetAllActiveCustomerIdsAsync();
-            var limit = dto.AvailableCount ?? activeUserIds.Count;
-            
+            var limit = dto.AvailableCount;
             assignments = activeUserIds.Take(limit).Select(id => new CreateUserVoucherAssignmentDTO
             {
                 UserId = id,
@@ -560,7 +559,7 @@ public class VoucherService : IVoucherService
         ValidateTopCustomerAssignment(topCustomerAssignment!);
         var (from, to) = ResolveRevenuePeriod(topCustomerAssignment!);
         var topCustomers = await _bookingAnalyticsClient.GetTopCustomersAsync(
-            topCustomerAssignment.Top,
+            topCustomerAssignment!.Top,
             from,
             to);
 
