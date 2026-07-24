@@ -47,12 +47,40 @@ public class TrendPredictionController : ControllerBase
         return 1.0; // Bình thường
     }
 
+    private string TranslateCity(string city)
+    {
+        if (string.IsNullOrEmpty(city)) return city;
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            {"Hà Nội", "Hanoi"},
+            {"Hồ Chí Minh", "Ho Chi Minh City"},
+            {"TP. Hồ Chí Minh", "Ho Chi Minh City"},
+            {"Đà Nẵng", "Da Nang"},
+            {"Phú Quốc", "Phu Quoc"},
+            {"Đà Lạt", "Da Lat"},
+            {"Sa Pa", "Sapa"},
+            {"Hạ Long", "Ha Long"},
+            {"Hội An", "Hoi An"},
+            {"Ninh Bình", "Ninh Binh"},
+            {"Vũng Tàu", "Vung Tau"},
+            {"Huế", "Hue"},
+            {"Quy Nhơn", "Quy Nhon"},
+            {"Cần Thơ", "Can Tho"},
+            {"Hà Giang", "Ha Giang"},
+            {"Mộc Châu", "Moc Chau"},
+            {"Quảng Bình", "Quang Binh"}
+        };
+        return map.TryGetValue(city, out var enCity) ? enCity : city;
+    }
+
     [AllowAnonymous]
     [HttpGet("hot-tours")]
     public async Task<ActionResult> GetHotTours([FromQuery] int? targetMonth, [FromQuery] int? targetYear, CancellationToken cancellationToken)
     {
         int month = targetMonth ?? DateTime.Now.Month;
         int year = targetYear ?? DateTime.Now.Year;
+        string lang = Request.Headers["X-Language"].FirstOrDefault() ?? "vi";
+        bool isEn = lang.ToLower() == "en";
         
         var allTours = _catalogStore.Tours;
         if (allTours == null || !allTours.Any())
@@ -122,10 +150,10 @@ public class TrendPredictionController : ControllerBase
             double hotness = (wMult * 50) + new Random(p.GetHashCode() + month).Next(10, 30);
             if (hotness > 100) hotness = new Random().Next(95, 99);
             
-            string status = wMult < 0.8 ? "Nguy cơ thời tiết xấu" : (hotness > 80 ? "Xu hướng bùng nổ" : "Ổn định");
+            string status = wMult < 0.8 ? (isEn ? "Severe weather risk" : "Nguy cơ thời tiết xấu") : (hotness > 80 ? (isEn ? "Booming trend" : "Xu hướng bùng nổ") : (isEn ? "Stable" : "Ổn định"));
             
             return new {
-                province = p,
+                province = isEn ? TranslateCity(p) : p,
                 hotnessScore = Math.Round(hotness, 1),
                 status = status
             };
@@ -134,27 +162,32 @@ public class TrendPredictionController : ControllerBase
 
         var evidences = new List<object>();
 
+        string displayTopCity = isEn && topCity != null ? TranslateCity(topCity) : (topCity ?? "Unknown");
+
         // Evidence 1: Khí hậu quyết định
         evidences.Add(new {
             type = "weather",
-            title = $"Yếu tố Thời Tiết & Mùa Vụ",
-            description = $"Hệ số thời tiết vùng (Climate Suitability) được tích hợp làm Màng Lọc Tối Cao. Các tour miền Trung vào mùa bão (Tháng 9-11) bị ép điểm BVS xuống 40%, trong khi khu vực {topCity} tháng {month} đạt hệ số lý tưởng ({Math.Round(bestTour.WeatherSuitability, 1)}x)."
+            title = isEn ? "Weather & Seasonality Factors" : "Yếu tố Thời Tiết & Mùa Vụ",
+            description = isEn ? $"Regional climate suitability is integrated as the Supreme Filter. Central tours during storm season (Sep-Nov) have BVS forced down to 40%, while the {displayTopCity} area in month {month} achieves an ideal coefficient ({Math.Round(bestTour.WeatherSuitability, 1)}x)."
+                               : $"Hệ số thời tiết vùng (Climate Suitability) được tích hợp làm Màng Lọc Tối Cao. Các tour miền Trung vào mùa bão (Tháng 9-11) bị ép điểm BVS xuống 40%, trong khi khu vực {displayTopCity} tháng {month} đạt hệ số lý tưởng ({Math.Round(bestTour.WeatherSuitability, 1)}x)."
         });
 
         // Evidence 2: Dữ liệu Booking Lịch Sử
         double avgOccupancy = topTours.Average(t => t.HistoricalOccupancy);
         evidences.Add(new {
             type = "historical",
-            title = "Hiệu suất lịch sử (YoY)",
-            description = $"Bên cạnh thời tiết, thuật toán nội suy tỷ lệ lấp đầy năm ngoái. Nhóm tour này đạt tỷ lệ {Math.Round(avgOccupancy * 100, 1)}%."
+            title = isEn ? "Historical Performance (YoY)" : "Hiệu suất lịch sử (YoY)",
+            description = isEn ? $"Alongside weather, the algorithm interpolates last year's occupancy rate. This tour group achieved a rate of {Math.Round(avgOccupancy * 100, 1)}%."
+                               : $"Bên cạnh thời tiết, thuật toán nội suy tỷ lệ lấp đầy năm ngoái. Nhóm tour này đạt tỷ lệ {Math.Round(avgOccupancy * 100, 1)}%."
         });
 
         // Evidence 3: Tín hiệu Nhu cầu Hiện tại
         int totalWishlist = topTours.Sum(t => t.RecentWishlistAdds);
         evidences.Add(new {
             type = "intent",
-            title = "Trọng số Động Lực Học Máy",
-            description = $"Các tỷ trọng 35%, 25% không phải cố định mà được Auto-Calibrated (tự cân chỉnh) bởi AI. Hiện tại lượng Wishlist đột biến ({totalWishlist:N0} lượt) ép mô hình dồn trọng số vào Tỷ lệ chuyển đổi."
+            title = isEn ? "Machine Learning Dynamics Weight" : "Trọng số Động Lực Học Máy",
+            description = isEn ? $"The 35%, 25% weights are not fixed but Auto-Calibrated by AI. Currently, a sudden surge in Wishlists ({totalWishlist:N0} adds) forces the model to shift weight towards Conversion Rate."
+                               : $"Các tỷ trọng 35%, 25% không phải cố định mà được Auto-Calibrated (tự cân chỉnh) bởi AI. Hiện tại lượng Wishlist đột biến ({totalWishlist:N0} lượt) ép mô hình dồn trọng số vào Tỷ lệ chuyển đổi."
         });
 
         long totalRevenue = topTours.Sum(t => t.ProjectedRevenue);
@@ -163,8 +196,9 @@ public class TrendPredictionController : ControllerBase
         {
             targetMonth = month,
             targetYear = year,
-            suggestedTourType = "Nhóm tour An Toàn Khí Hậu & Nhu Cầu Cao",
-            reason = $"Mô hình đã loại bỏ triệt để các rủi ro thời tiết (bão lũ, nghịch mùa) đối với từng khu vực địa lý, kết hợp máy học nội suy dữ liệu đặt chỗ năm trước để đề xuất danh sách mang lại {totalRevenue:N0} VND doanh thu dự kiến.",
+            suggestedTourType = isEn ? "Climate Safe & High Demand Tour Group" : "Nhóm tour An Toàn Khí Hậu & Nhu Cầu Cao",
+            reason = isEn ? $"The model has thoroughly eliminated weather risks (storms, off-season) for each geographical area, combining machine learning to interpolate previous year's booking data to propose a list generating an expected {totalRevenue:N0} VND in revenue."
+                          : $"Mô hình đã loại bỏ triệt để các rủi ro thời tiết (bão lũ, nghịch mùa) đối với từng khu vực địa lý, kết hợp máy học nội suy dữ liệu đặt chỗ năm trước để đề xuất danh sách mang lại {totalRevenue:N0} VND doanh thu dự kiến.",
             evidences = evidences,
             provinceForecasts = provinceForecasts,
             predictedTours = topTours.Select(t => new
@@ -172,7 +206,7 @@ public class TrendPredictionController : ControllerBase
                 id = t.Tour.Id,
                 name = t.Tour.Name,
                 imageUrl = t.Tour.ImageUrl,
-                city = t.Tour.City,
+                city = isEn && t.Tour.City != null ? TranslateCity(t.Tour.City) : t.Tour.City,
                 trendScore = Math.Round(t.BVS, 1),
                 reviewCount = t.Tour.ReviewCount,
                 averageStar = t.Tour.AverageStar,
