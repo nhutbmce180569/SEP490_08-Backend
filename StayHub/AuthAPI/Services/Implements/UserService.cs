@@ -445,6 +445,11 @@ namespace AuthAPI.Services.Implements
             return _mapper.Map<List<ReadUserDTO>>(birthdayCustomers);
         }
 
+        public async Task<List<int>> GetAllActiveCustomerIdsAsync()
+        {
+            return await _userRepository.GetAllActiveCustomerIdsAsync();
+        }
+
         public async Task<CustomerListAnalyticsDTO> GetCustomersForAnalyticsAsync(string? search, int page, int pageSize)
         {
             if (page <= 0) page = 1;

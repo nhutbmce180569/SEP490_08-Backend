@@ -23,5 +23,6 @@ namespace AuthAPI.Repositories
         Task<List<User>> GetAllCustomersAsync();
 
         Task<(List<User> Users, int Total)> GetCustomersPagedAsync(string? search, int page, int pageSize);
+        Task<List<int>> GetAllActiveCustomerIdsAsync();
     }
 }
