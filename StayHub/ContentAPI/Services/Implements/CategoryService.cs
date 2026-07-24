@@ -152,6 +152,11 @@ namespace ContentAPI.Services.Implements
             var existingCategory = await _categoryRepository.GetById(id);
             if (existingCategory == null) return false;
 
+            if (existingCategory.IsActive == false)
+            {
+                throw new InvalidOperationException(_localizer["CategoryMustBeInactiveToUpdate"].Value);
+            }
+
             if (!Regex.IsMatch(dto.Name, @"^[\p{L}\p{N}\s\-]+$"))
             {
                 throw new InvalidOperationException(_localizer["CategoryNameNoSpecialChars"].Value);
