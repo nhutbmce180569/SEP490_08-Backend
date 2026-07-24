@@ -688,4 +688,7 @@
   <data name="AnErrorOccurredWhileGoingOffline" xml:space="preserve">
     <value>An error occurred while going offline.</value>
   </data>
+  <data name="CategoryMustBeInactiveToUpdate" xml:space="preserve">
+    <value>Category must be inactive to update.</value>
+  </data>
 </root>
