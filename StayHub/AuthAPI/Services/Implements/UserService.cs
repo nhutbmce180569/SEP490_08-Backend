@@ -448,6 +448,12 @@ namespace AuthAPI.Services.Implements
         public async Task<List<int>> GetAllActiveCustomerIdsAsync()
         {
             return await _userRepository.GetAllActiveCustomerIdsAsync();
+        }        
+        public async Task<List<ReadUserDTO>> GetUsersByRoleAsync(string role)
+        {
+            var users = await _userRepository.GetAll();
+            var usersWithRole = users.Where(u => u.Roles != null && u.Roles.Any(r => string.Equals(r.Name, role, StringComparison.OrdinalIgnoreCase))).ToList();
+            return _mapper.Map<List<ReadUserDTO>>(usersWithRole);
         }
 
         public async Task<CustomerListAnalyticsDTO> GetCustomersForAnalyticsAsync(string? search, int page, int pageSize)

@@ -1,4 +1,4 @@
-﻿
+
 using BookingAPI.Helpers;
 using BookingAPI.Mappers;
 using BookingAPI.Mappings;
@@ -99,6 +99,7 @@ namespace BookingAPI
   });
             builder.Services.AddScoped<ITicketRepository, TicketRepository>();
             builder.Services.AddScoped<ITicketService, TicketService>();
+            builder.Services.AddHostedService<BookingAPI.BackgroundServices.OrderNotificationBackgroundService>();
             builder.Services.AddAutoMapper(cfg =>
             {
                 cfg.AddProfile<OrderProfile>();

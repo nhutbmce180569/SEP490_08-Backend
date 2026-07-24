@@ -28,6 +28,7 @@ public class MomentService : IMomentService
     private readonly IBookingApiClient _bookingApiClient;
     private readonly ITourApiClient _tourApiClient;
     private readonly IAuthApiClient _authApiClient;
+    private readonly INotificationInternalService _notificationInternalService;
 
     public MomentService(
         IMomentRepository momentRepository,
@@ -39,7 +40,8 @@ public class MomentService : IMomentService
         StayHubSocialDbContext dbContext,
         IBookingApiClient bookingApiClient,
         ITourApiClient tourApiClient,
-        IAuthApiClient authApiClient)
+        IAuthApiClient authApiClient,
+        INotificationInternalService notificationInternalService)
     {
         _momentRepository = momentRepository;
         _cloudStorageService = cloudStorageService;
@@ -51,6 +53,7 @@ public class MomentService : IMomentService
         _bookingApiClient = bookingApiClient;
         _tourApiClient = tourApiClient;
         _authApiClient = authApiClient;
+        _notificationInternalService = notificationInternalService;
     }
 
     public async Task<MomentResponseDto> CreateMomentAsync(MomentCreateDto dto)
@@ -182,8 +185,8 @@ public class MomentService : IMomentService
                 await SendMomentNotificationAsync(
                     recipientUserId: moment.UserId,
                     actorUserId: dto.UserId,
-                    title: "Tim moi tren bai viet cua ban",
-                    contentTemplate: "da bam tim bai viet cua ban.",
+                    title: "New Like on Your Post",
+                    contentTemplate: "liked your post.",
                     notifType: "moment_like"
                 );
             }
@@ -231,8 +234,8 @@ public class MomentService : IMomentService
             await SendMomentNotificationAsync(
                 recipientUserId: moment.UserId,
                 actorUserId: dto.UserId,
-                title: "Binh luan moi tren bai viet cua ban",
-                contentTemplate: "da binh luan tren bai viet cua ban.",
+                title: "New Comment on Your Post",
+                contentTemplate: "commented on your post.",
                 notifType: "moment_comment"
             );
         }
@@ -414,15 +417,20 @@ public class MomentService : IMomentService
 
     public async Task ReportContentAsync(int reporterId, string contentType, int targetId, string reason, string? details)
     {
+        int? scheduleId = null;
+
         if (contentType.Equals("Moment", StringComparison.OrdinalIgnoreCase))
         {
             var moment = await _dbContext.TourMoments.FindAsync(targetId);
             if (moment == null) throw new KeyNotFoundException("Moment not found.");
+            scheduleId = moment.ScheduleId;
         }
         else if (contentType.Equals("Comment", StringComparison.OrdinalIgnoreCase))
         {
             var comment = await _dbContext.MomentComments.FindAsync(targetId);
             if (comment == null) throw new KeyNotFoundException("Comment not found.");
+            var moment = await _dbContext.TourMoments.FindAsync(comment.MomentId);
+            if (moment != null) scheduleId = moment.ScheduleId;
         }
         else
         {
@@ -452,6 +460,33 @@ public class MomentService : IMomentService
 
         await _dbContext.ContentReports.AddAsync(report);
         await _dbContext.SaveChangesAsync();
+
+        if (scheduleId.HasValue && scheduleId.Value > 0)
+        {
+            await NotifyManagerOnReportAsync(scheduleId.Value, contentType, reason);
+        }
+    }
+
+    private async Task NotifyManagerOnReportAsync(int scheduleId, string contentType, string reason)
+    {
+        try
+        {
+            var managers = await _authApiClient.GetUsersByRoleAsync("Manager");
+            if (managers != null && managers.Any())
+            {
+                var title = "New Content Report";
+                var content = $"There is a new report on a {contentType.ToLower()} in your tour schedule. Reason: {reason}. Please review.";
+                
+                foreach (var managerId in managers)
+                {
+                    await _notificationInternalService.NotifyUserAsync(managerId, title, content);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MomentService] Failed to notify managers about report: {ex.Message}");
+        }
     }
 
     public async Task<IEnumerable<ContentReport>> GetPendingReportsAsync()

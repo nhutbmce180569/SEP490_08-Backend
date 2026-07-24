@@ -94,6 +94,25 @@ namespace BookingAPI.Services.Implements
 
             await _repository.CreateCancellationRequestAsync(cancellationRequest);
 
+            try
+            {
+                var schedule = await _tourApiClient.GetScheduleByIdAsync(order.ScheduleId);
+                if (schedule != null)
+                {
+                    var tour = await _tourApiClient.GetTourByIdAsync(schedule.TourId);
+                    if (tour != null && tour.OperatorId > 0)
+                    {
+                        string title = "New Cancellation Request";
+                        string content = $"There is a new cancellation request (Order #{order.Id}) from customer (ID: {customerId}) for tour '{tour.Name}'.";
+                        await _notificationService.NotifyUserAsync(tour.OperatorId, title, content);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Warning] Failed to send notification to manager: {ex.Message}");
+            }
+
             return _mapper.Map<CancellationRequestDetailDTO>(cancellationRequest);
         }
 
