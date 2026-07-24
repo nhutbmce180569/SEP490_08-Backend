@@ -15,5 +15,6 @@ namespace TourAPI.Services
         Task<PaginationDTO<ReadTourScheduleDTO>> GetSchedulesByCreatedByAsync(int userId, int page, int pageSize, int? tourId = null, DateTime? startDate = null, DateTime? endDate = null, string? search = null);
         Task<List<int>> GetScheduleIdsByCreatedByAsync(int userId, int? tourId = null);
         Task<TourRouteDto> GetTourRouteAsync(int scheduleId);
+        Task<IEnumerable<ReadTourScheduleDTO>> GetSchedulesStartingOnAsync(DateTime date);
     }
 }

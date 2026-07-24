@@ -52,6 +52,18 @@ public class InternalUsersController : ControllerBase
         return Ok(users);
     }
 
+    [HttpGet("active-customers/ids")]
+    public async Task<IActionResult> GetAllActiveCustomerIds()
+    {
+        if (!IsValidServiceKey())
+        {
+            return Unauthorized(new { message = "Invalid service key" });
+        }
+
+        var ids = await _userService.GetAllActiveCustomerIdsAsync();
+        return Ok(ids);
+    }
+
     [HttpPost("batch")]
     public async Task<IActionResult> GetUsersBatch([FromBody] List<int> ids)
     {
@@ -66,6 +78,23 @@ public class InternalUsersController : ControllerBase
         }
 
         var users = await _userService.GetUsersBatchAsync(ids);
+        return Ok(users);
+    }
+
+    [HttpGet("by-role")]
+    public async Task<IActionResult> GetUsersByRole([FromQuery] string role)
+    {
+        if (!IsValidServiceKey())
+        {
+            return Unauthorized(new { message = "Invalid service key" });
+        }
+
+        if (string.IsNullOrWhiteSpace(role))
+        {
+            return BadRequest(new { message = "Role is required" });
+        }
+
+        var users = await _userService.GetUsersByRoleAsync(role);
         return Ok(users);
     }
 

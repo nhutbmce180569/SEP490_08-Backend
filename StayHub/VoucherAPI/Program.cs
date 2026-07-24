@@ -74,6 +74,8 @@ public class Program
             ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
         });
 
+        builder.Services.AddHostedService<VoucherAPI.BackgroundServices.VoucherExpiryBackgroundService>();
+
         builder.Services.AddControllers().AddStayHubDataAnnotationsLocalization();
         builder.Services.AddStayHubLocalization();
         builder.Services.AddEndpointsApiExplorer();

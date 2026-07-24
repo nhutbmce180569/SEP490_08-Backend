@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace AuthAPI.Models;
@@ -44,4 +44,6 @@ public partial class User
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 
     public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
+
+    public bool HasCompletedTour { get; set; }
 }

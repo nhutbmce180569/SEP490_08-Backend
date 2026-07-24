@@ -35,7 +35,7 @@ public class VoucherProfile : Profile
 
     private static string ResolveStatus(Voucher voucher)
     {
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
         if (now > voucher.EndDate) return "Expired";
         if (!voucher.IsActive) return "Inactive";
         return "Active";
