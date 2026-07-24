@@ -688,4 +688,7 @@
   <data name="AnErrorOccurredWhileGoingOffline" xml:space="preserve">
     <value>Lỗi xảy ra khi chuyển sang trạng thái ngoại tuyến.</value>
   </data>
+  <data name="CategoryMustBeInactiveToUpdate" xml:space="preserve">
+    <value>Danh mục phải ở trạng thái không hoạt động mới có thể cập nhật.</value>
+  </data>
 </root>
