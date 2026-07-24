@@ -41,6 +41,13 @@ namespace SystemAPI
             builder.Services.AddSingleton<IUserIdProvider, CustomUserIdProvider>();
             builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
             builder.Services.AddScoped<INotificationService, NotificationService>();
+            
+            // Register SystemSettings and Cloudinary
+            builder.Services.Configure<DTOs.CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
+            builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
+            builder.Services.AddScoped<ISystemSettingRepository, SystemSettingRepository>();
+            builder.Services.AddScoped<ISystemSettingService, SystemSettingService>();
+
             builder.Services.AddHttpClient<IAuthApiClient, AuthApiClient>(client =>
             {
                 client.BaseAddress = new Uri(builder.Configuration["AuthApi:BaseUrl"] ?? "https://localhost:7001/");
