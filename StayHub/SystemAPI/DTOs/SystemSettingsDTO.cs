@@ -15,7 +15,7 @@ namespace SystemAPI.DTOs
         public List<SystemSettingUpdateItem> Settings { get; set; } = new List<SystemSettingUpdateItem>();
         
         public IFormFile? WebLogoFile { get; set; }
-        public IFormFile? AppLogoFile { get; set; }
+        public IFormFile? WebVideoLogoFile { get; set; }
     }
 
     public class SystemSettingUpdateItem

@@ -95,20 +95,20 @@ namespace SystemAPI.Services.Implements
                 }
             }
 
-            // Process AppLogo Upload
-            if (dto.AppLogoFile != null && dto.AppLogoFile.Length > 0)
+            // Process WebVideoLogo Upload
+            if (dto.WebVideoLogoFile != null && dto.WebVideoLogoFile.Length > 0)
             {
-                var uploadResult = await _cloudinaryService.UploadImageAsync(dto.AppLogoFile, "StayHub_System");
+                var uploadResult = await _cloudinaryService.UploadVideoAsync(dto.WebVideoLogoFile, "StayHub_System");
                 if (uploadResult.Error == null)
                 {
-                    var appLogoSetting = await _systemSettingRepository.GetSettingByKeyAsync("AppLogo");
+                    var appLogoSetting = await _systemSettingRepository.GetSettingByKeyAsync("WebVideoLogo");
                     if (appLogoSetting != null)
                     {
-                        // Delete old image if exists
+                        // Delete old video if exists
                         string? oldPublicId = _cloudinaryService.ExtractPublicIdFromUrl(appLogoSetting.SettingValue);
                         if (!string.IsNullOrEmpty(oldPublicId))
                         {
-                            await _cloudinaryService.DeleteImageAsync(oldPublicId);
+                            await _cloudinaryService.DeleteVideoAsync(oldPublicId);
                         }
 
                         appLogoSetting.SettingValue = uploadResult.SecureUrl.ToString();
@@ -119,7 +119,7 @@ namespace SystemAPI.Services.Implements
                     {
                         await _systemSettingRepository.AddSettingAsync(new SystemSetting
                         {
-                            SettingKey = "AppLogo",
+                            SettingKey = "WebVideoLogo",
                             SettingValue = uploadResult.SecureUrl.ToString(),
                             UpdatedAt = DateTime.UtcNow
                         });
