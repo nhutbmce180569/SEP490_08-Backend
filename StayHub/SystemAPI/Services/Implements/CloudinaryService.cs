@@ -45,9 +45,34 @@ namespace SystemAPI.Services.Implements
             return uploadResult;
         }
 
+        public async Task<VideoUploadResult> UploadVideoAsync(IFormFile file, string folderName = "StayHub_General")
+        {
+            var uploadResult = new VideoUploadResult();
+
+            if (file != null && file.Length > 0)
+            {
+                using var stream = file.OpenReadStream();
+                var uploadParams = new VideoUploadParams
+                {
+                    File = new FileDescription(file.FileName, stream),
+                    Folder = folderName
+                };
+
+                uploadResult = await _cloudinary.UploadAsync(uploadParams);
+            }
+
+            return uploadResult;
+        }
+
         public async Task<DeletionResult> DeleteImageAsync(string publicId)
         {
             var deleteParams = new DeletionParams(publicId);
+            return await _cloudinary.DestroyAsync(deleteParams);
+        }
+
+        public async Task<DeletionResult> DeleteVideoAsync(string publicId)
+        {
+            var deleteParams = new DeletionParams(publicId) { ResourceType = ResourceType.Video };
             return await _cloudinary.DestroyAsync(deleteParams);
         }
 
