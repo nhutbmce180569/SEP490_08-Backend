@@ -502,8 +502,12 @@ namespace TourAPI.Repositories.Implements
 
         public async Task<bool> IsNameDuplicateAsync(string name, int? excludeId = null)
         {
-            return await _context.Tours
-                .AnyAsync(t => t.Name.ToLower() == name.ToLower() && t.Id != excludeId);
+            var query = _context.Tours.Where(t => t.Name.ToLower() == name.ToLower());
+            if (excludeId.HasValue)
+            {
+                query = query.Where(t => t.Id != excludeId.Value);
+            }
+            return await query.AnyAsync();
         }
 
         public async Task<List<TourImage>> GetTourImagesByIds(IEnumerable<int> ids)
