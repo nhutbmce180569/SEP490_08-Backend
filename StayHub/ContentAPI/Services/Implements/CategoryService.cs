@@ -152,7 +152,7 @@ namespace ContentAPI.Services.Implements
             var existingCategory = await _categoryRepository.GetById(id);
             if (existingCategory == null) return false;
 
-            if (existingCategory.IsActive == false)
+            if (existingCategory.IsActive == true)
             {
                 throw new InvalidOperationException(_localizer["CategoryMustBeInactiveToUpdate"].Value);
             }
