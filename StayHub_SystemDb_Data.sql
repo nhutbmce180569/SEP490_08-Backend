@@ -46,6 +46,9 @@ GO
 -- Clean existing data
 DELETE FROM Notifications;
 DBCC CHECKIDENT ('Notifications', RESEED, 0);
+-- Clean existing data
+DELETE FROM SystemSettings;
+DBCC CHECKIDENT ('SystemSettings', RESEED, 0);
 GO
 
 SET IDENTITY_INSERT Notifications ON;
