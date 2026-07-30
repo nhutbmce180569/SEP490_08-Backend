@@ -4,8 +4,7 @@
 		<TargetFramework>net9.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
-	  <ServerGarbageCollection>false</ServerGarbageCollection>
-  </PropertyGroup>
+	</PropertyGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\StayHub.Common\StayHub.Common.csproj" />

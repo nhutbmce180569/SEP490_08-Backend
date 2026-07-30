@@ -112,7 +112,15 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            usersDict = await _authApiClient.GetUserProfilesAsync(friendIds);
+            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", friendIds);
+            if (response.IsSuccessStatusCode)
+            {
+                var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
+                if (apiResult?.Data != null)
+                {
+                    usersDict = apiResult.Data.ToDictionary(u => u.Id, u => u);
+                }
+            }
         }
         catch 
         { 
@@ -148,7 +156,15 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            usersDict = await _authApiClient.GetUserProfilesAsync(requesterIds);
+            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", requesterIds);
+            if (response.IsSuccessStatusCode)
+            {
+                var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
+                if (apiResult?.Data != null)
+                {
+                    usersDict = apiResult.Data.ToDictionary(u => u.Id, u => u);
+                }
+            }
         }
         catch
         {
@@ -185,7 +201,15 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            usersDict = await _authApiClient.GetUserProfilesAsync(receiverIds);
+            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", receiverIds);
+            if (response.IsSuccessStatusCode)
+            {
+                var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
+                if (apiResult?.Data != null)
+                {
+                    usersDict = apiResult.Data.ToDictionary(u => u.Id, u => u);
+                }
+            }
         }
         catch
         {
@@ -256,10 +280,19 @@ public class FriendshipService : IFriendshipService
 
         var friendIds = friends.Select(f => f.RequesterId == userId ? f.ReceiverId : f.RequesterId).Distinct().ToList();
 
+        var authApiUrl = $"{_authApiBase}/api/users/batch/public";
         var userProfiles = new Dictionary<int, UserProfileShortDto>();
         try
         {
-            userProfiles = await _authApiClient.GetUserProfilesAsync(friendIds);
+            var response = await _httpClient.PostAsJsonAsync(authApiUrl, friendIds);
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
+                if (result?.Data != null)
+                {
+                    userProfiles = result.Data.ToDictionary(u => u.Id, u => u);
+                }
+            }
         }
         catch
         {
@@ -302,11 +335,20 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var userProfiles = await _authApiClient.GetUserProfilesAsync(new List<int> { dto.FriendId });
-            if (userProfiles.TryGetValue(dto.FriendId, out var userProfile))
+            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", new List<int> { dto.FriendId });
+            if (response.IsSuccessStatusCode)
             {
-                dto.FullName = userProfile.FullName ?? "Anonymous user";
-                dto.AvatarUrl = userProfile.AvatarUrl;
+                var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
+                var userProfile = apiResult?.Data?.FirstOrDefault();
+                if (userProfile != null)
+                {
+                    dto.FullName = userProfile.FullName ?? "Anonymous user";
+                    dto.AvatarUrl = userProfile.AvatarUrl;
+                }
+                else
+                {
+                    dto.FullName = "Anonymous user";
+                }
             }
             else
             {
