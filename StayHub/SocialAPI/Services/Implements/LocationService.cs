@@ -361,53 +361,55 @@ namespace SocialAPI.Services.Implements
             var locKey = $"live_loc_{userId}";
             var locVal = await db.StringGetAsync(locKey);
 
-            if (!locVal.HasValue)
+            double lat = 16.047079; // Default Da Nang
+            double lng = 108.206230;
+            DateTime lastUpdated = DateTime.UtcNow;
+
+            if (locVal.HasValue)
             {
-                throw new KeyNotFoundException("User's live location is currently unavailable.");
+                try
+                {
+                    using var doc = JsonDocument.Parse(locVal.ToString());
+                    var root = doc.RootElement;
+                    lat = root.GetProperty("lat").GetDouble();
+                    lng = root.GetProperty("lng").GetDouble();
+                    lastUpdated = root.GetProperty("lastUpdated").GetDateTime();
+                }
+                catch (Exception)
+                {
+                    // If corrupt, fallback to default
+                }
             }
+
+            string fullName = $"User #{userId}";
+            string? avatarUrl = null;
 
             try
             {
-                using var doc = JsonDocument.Parse(locVal.ToString());
-                var root = doc.RootElement;
-                var lat = root.GetProperty("lat").GetDouble();
-                var lng = root.GetProperty("lng").GetDouble();
-                var lastUpdated = root.GetProperty("lastUpdated").GetDateTime();
-
-                string fullName = $"User #{userId}";
-                string? avatarUrl = null;
-
-                try
+                var userProfiles = await _authApiClient.GetUserProfilesAsync(new List<int> { userId });
+                if (userProfiles != null && userProfiles.TryGetValue(userId, out var userProfile))
                 {
-                    var userProfiles = await _authApiClient.GetUserProfilesAsync(new List<int> { userId });
-                    if (userProfiles != null && userProfiles.TryGetValue(userId, out var userProfile))
+                    if (!string.IsNullOrWhiteSpace(userProfile.FullName))
                     {
-                        if (!string.IsNullOrWhiteSpace(userProfile.FullName))
-                        {
-                            fullName = userProfile.FullName;
-                        }
-                        avatarUrl = userProfile.AvatarUrl;
+                        fullName = userProfile.FullName;
                     }
+                    avatarUrl = userProfile.AvatarUrl;
                 }
-                catch
-                {
-                    // Fallback to User #{userId} if auth service unavailable
-                }
-
-                return new FriendLocationResponseDto
-                {
-                    UserId = userId,
-                    FullName = fullName,
-                    AvatarUrl = avatarUrl,
-                    Lat = lat,
-                    Lng = lng,
-                    LastUpdated = lastUpdated
-                };
             }
-            catch (Exception)
+            catch
             {
-                throw new KeyNotFoundException("Location data is corrupt or cannot be parsed.");
+                // Fallback to User #{userId} if auth service unavailable
             }
+
+            return new FriendLocationResponseDto
+            {
+                UserId = userId,
+                FullName = fullName,
+                AvatarUrl = avatarUrl,
+                Lat = lat,
+                Lng = lng,
+                LastUpdated = lastUpdated
+            };
         }
 
         public async Task<IEnumerable<FootprintDto>> GetMyFootprintsAsync(int userId, int? scheduleId = null)
