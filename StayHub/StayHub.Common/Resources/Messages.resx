@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -233,7 +233,7 @@
     <value>Google login successful.</value>
   </data>
   <data name="IMDanhCheckInThNhCNg" xml:space="preserve">
-    <value>Điểm danh (Check-in) thành công!</value>
+    <value>Äiá»ƒm danh (Check-in) thÃ nh cÃ´ng!</value>
   </data>
   <data name="InteractionLoggedForMLRetrainingSignals" xml:space="preserve">
     <value>Interaction logged for ML retraining signals.</value>
@@ -293,19 +293,19 @@
     <value>Itineraries retrieved successfully.</value>
   </data>
   <data name="KhNgXCNhCDanhTNhNhNViN" xml:space="preserve">
-    <value>Không xác định được danh tính nhân viên.</value>
+    <value>KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c danh tÃ­nh nhÃ¢n viÃªn.</value>
   </data>
   <data name="KhNgXCThCCUser" xml:space="preserve">
-    <value>Không xác thực được user.</value>
+    <value>KhÃ´ng xÃ¡c thá»±c Ä‘Æ°á»£c user.</value>
   </data>
   <data name="LIHThNg" xml:space="preserve">
-    <value>Lỗi hệ thống.</value>
+    <value>Lá»—i há»‡ thá»‘ng.</value>
   </data>
   <data name="LIHThNgTrongQuTrNhIMDanh" xml:space="preserve">
-    <value>Lỗi hệ thống trong quá trình điểm danh.</value>
+    <value>Lá»—i há»‡ thá»‘ng trong quÃ¡ trÃ¬nh Ä‘iá»ƒm danh.</value>
   </data>
   <data name="LYDanhSChNhNViNThNhCNg" xml:space="preserve">
-    <value>Lấy danh sách nhân viên thành công.</value>
+    <value>Láº¥y danh sÃ¡ch nhÃ¢n viÃªn thÃ nh cÃ´ng.</value>
   </data>
   <data name="LeftTheChatRoomSuccessfully" xml:space="preserve">
     <value>Left the chat room successfully.</value>
@@ -401,7 +401,7 @@
     <value>Payment was already completed or order could not be cancelled.</value>
   </data>
   <data name="PhNCNgNhNViNThNhCNg" xml:space="preserve">
-    <value>Phân công nhân viên thành công.</value>
+    <value>PhÃ¢n cÃ´ng nhÃ¢n viÃªn thÃ nh cÃ´ng.</value>
   </data>
   <data name="PlatformAnalyticsOverviewRetrievedSuccessfully" xml:space="preserve">
     <value>Platform analytics overview retrieved successfully.</value>
@@ -473,10 +473,10 @@
     <value>Schedule customers retrieved successfully.</value>
   </data>
   <data name="ScheduleIdKhNgHPL" xml:space="preserve">
-    <value>ScheduleId không hợp lệ.</value>
+    <value>ScheduleId khÃ´ng há»£p lá»‡.</value>
   </data>
   <data name="ScheduleIdVStaffIdPhILNHN0" xml:space="preserve">
-    <value>ScheduleId và StaffId phải lớn hơn 0.</value>
+    <value>ScheduleId vÃ  StaffId pháº£i lá»›n hÆ¡n 0.</value>
   </data>
   <data name="SearchKeywordCannotBeEmpty" xml:space="preserve">
     <value>Search keyword cannot be empty.</value>
@@ -691,4 +691,4 @@
   <data name="CategoryMustBeInactiveToUpdate" xml:space="preserve">
     <value>Category must be inactive to update.</value>
   </data>
-</root>
+<data name="InvalidProvider" xml:space="preserve">`n    <value>This email is registered with a different login method. Please select the correct login method.</value>`n  </data>`n</root>

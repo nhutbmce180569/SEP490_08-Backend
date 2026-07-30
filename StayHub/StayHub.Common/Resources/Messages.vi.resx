@@ -1,14 +1,14 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <data name="AccessTokenRequired" xml:space="preserve">
-    <value>Yêu cầu access token.</value>
+    <value>YÃªu cáº§u access token.</value>
   </data>
   <data name="AdminStaffIdentityCouldNotBeVerified" xml:space="preserve">
-    <value>Không thể xác minh danh tính Admin/Staff.</value>
+    <value>KhÃ´ng thá»ƒ xÃ¡c minh danh tÃ­nh Admin/Staff.</value>
   </data>
   <data name="AnErrorOccurredWhileAddingMembers" xml:space="preserve">
     <value>An error occurred while adding members.</value>
@@ -95,7 +95,7 @@
     <value>An unexpected error occurred while processing your request. Please try again later.</value>
   </data>
   <data name="BadRequest" xml:space="preserve">
-    <value>Yêu cầu không hợp lệ.</value>
+    <value>YÃªu cáº§u khÃ´ng há»£p lá»‡.</value>
   </data>
   <data name="BannerActivatedSuccessfully" xml:space="preserve">
     <value>Banner activated successfully.</value>
@@ -113,25 +113,25 @@
     <value>Cancellation request submitted successfully. Please wait for admin approval.</value>
   </data>
   <data name="CannotExtractUserIDFromToken" xml:space="preserve">
-    <value>Không thể lấy ID người dùng từ token</value>
+    <value>KhÃ´ng thá»ƒ láº¥y ID ngÆ°á»i dÃ¹ng tá»« token</value>
   </data>
   <data name="CannotRequestMetricsForMoreThan100CustomersAtOnce" xml:space="preserve">
     <value>Cannot request metrics for more than 100 customers at once.</value>
   </data>
   <data name="CategoryActivatedSuccessfully" xml:space="preserve">
-    <value>Kích hoạt danh mục thành công.</value>
+    <value>KÃ­ch hoáº¡t danh má»¥c thÃ nh cÃ´ng.</value>
   </data>
   <data name="CategoryDeactivatedSuccessfully" xml:space="preserve">
-    <value>Vô hiệu hóa danh mục thành công.</value>
+    <value>VÃ´ hiá»‡u hÃ³a danh má»¥c thÃ nh cÃ´ng.</value>
   </data>
   <data name="CategoryNotFound" xml:space="preserve">
-    <value>Không tìm thấy danh mục.</value>
+    <value>KhÃ´ng tÃ¬m tháº¥y danh má»¥c.</value>
   </data>
   <data name="CategoryNotFoundOrHasBeenDeleted" xml:space="preserve">
-    <value>Không tìm thấy danh mục hoặc đã bị xóa.</value>
+    <value>KhÃ´ng tÃ¬m tháº¥y danh má»¥c hoáº·c Ä‘Ã£ bá»‹ xÃ³a.</value>
   </data>
   <data name="CategoryUpdatedSuccessfully" xml:space="preserve">
-    <value>Cập nhật danh mục thành công.</value>
+    <value>Cáº­p nháº­t danh má»¥c thÃ nh cÃ´ng.</value>
   </data>
   <data name="CommentDeletedSuccessfully" xml:space="preserve">
     <value>Comment deleted successfully.</value>
@@ -161,7 +161,7 @@
     <value>Customer list retrieved successfully.</value>
   </data>
   <data name="CustomerNotFound" xml:space="preserve">
-    <value>Không tìm thấy khách hàng.</value>
+    <value>KhÃ´ng tÃ¬m tháº¥y khÃ¡ch hÃ ng.</value>
   </data>
   <data name="CustomerOrderMetricsRetrievedSuccessfully" xml:space="preserve">
     <value>Customer order metrics retrieved successfully.</value>
@@ -182,13 +182,13 @@
     <value>Eligible schedules retrieved successfully.</value>
   </data>
   <data name="EmailAlreadyInUse" xml:space="preserve">
-    <value>Email đã được sử dụng.</value>
+    <value>Email Ä‘Ã£ Ä‘Æ°á»£c sá»­ dá»¥ng.</value>
   </data>
   <data name="ErrorLeavingRoom" xml:space="preserve">
     <value>Error leaving room</value>
   </data>
   <data name="FacebookLoginSuccessful" xml:space="preserve">
-    <value>Đăng nhập Facebook thành công.</value>
+    <value>ÄÄƒng nháº­p Facebook thÃ nh cÃ´ng.</value>
   </data>
   <data name="FailedToRetrieveCustomerDemographics" xml:space="preserve">
     <value>Failed to retrieve customer demographics.</value>
@@ -206,106 +206,106 @@
     <value>Failed to retrieve platform voucher stats.</value>
   </data>
   <data name="FailedToUpdateProfile" xml:space="preserve">
-    <value>Cập nhật hồ sơ thất bại. Không tìm thấy người dùng hoặc tài khoản chưa được kích hoạt.</value>
+    <value>Cáº­p nháº­t há»“ sÆ¡ tháº¥t báº¡i. KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng hoáº·c tÃ i khoáº£n chÆ°a Ä‘Æ°á»£c kÃ­ch hoáº¡t.</value>
   </data>
   <data name="FootprintsRetrievedSuccessfully" xml:space="preserve">
     <value>Footprints retrieved successfully.</value>
   </data>
   <data name="ForgotPasswordSuccess" xml:space="preserve">
-    <value>Nếu email đã đăng ký, mã đặt lại mật khẩu đã được gửi.</value>
+    <value>Náº¿u email Ä‘Ã£ Ä‘Äƒng kÃ½, mÃ£ Ä‘áº·t láº¡i máº­t kháº©u Ä‘Ã£ Ä‘Æ°á»£c gá»­i.</value>
   </data>
   <data name="SocialAccountCannotResetPassword" xml:space="preserve">
-    <value>Tài khoản này đăng nhập bằng Google. Không thể đặt lại mật khẩu bằng email, vui lòng đăng nhập trực tiếp bằng Google.</value>
+    <value>TÃ i khoáº£n nÃ y Ä‘Äƒng nháº­p báº±ng Google. KhÃ´ng thá»ƒ Ä‘áº·t láº¡i máº­t kháº©u báº±ng email, vui lÃ²ng Ä‘Äƒng nháº­p trá»±c tiáº¿p báº±ng Google.</value>
   </data>
   <data name="SocialAccountCannotChangePassword" xml:space="preserve">
-    <value>Tài khoản này đăng nhập bằng Google, không cần đổi mật khẩu tại đây.</value>
+    <value>TÃ i khoáº£n nÃ y Ä‘Äƒng nháº­p báº±ng Google, khÃ´ng cáº§n Ä‘á»•i máº­t kháº©u táº¡i Ä‘Ã¢y.</value>
   </data>
   <data name="OtpRequestTooSoon" xml:space="preserve">
-    <value>Vui lòng chờ trước khi yêu cầu mã xác minh mới.</value>
+    <value>Vui lÃ²ng chá» trÆ°á»›c khi yÃªu cáº§u mÃ£ xÃ¡c minh má»›i.</value>
   </data>
   <data name="InvalidOrExpiredOtp" xml:space="preserve">
-    <value>Mã xác nhận OTP không chính xác hoặc đã hết hạn.</value>
+    <value>MÃ£ xÃ¡c nháº­n OTP khÃ´ng chÃ­nh xÃ¡c hoáº·c Ä‘Ã£ háº¿t háº¡n.</value>
   </data>
   <data name="OtpVerifiedSuccessfully" xml:space="preserve">
-    <value>Xác nhận OTP thành công. Bạn có thể đặt lại mật khẩu mới.</value>
+    <value>XÃ¡c nháº­n OTP thÃ nh cÃ´ng. Báº¡n cÃ³ thá»ƒ Ä‘áº·t láº¡i máº­t kháº©u má»›i.</value>
   </data>
   <data name="GoogleLoginSuccessful" xml:space="preserve">
-    <value>Đăng nhập Google thành công.</value>
+    <value>ÄÄƒng nháº­p Google thÃ nh cÃ´ng.</value>
   </data>
   <data name="IMDanhCheckInThNhCNg" xml:space="preserve">
-    <value>Điểm danh (Check-in) thành công!</value>
+    <value>Äiá»ƒm danh (Check-in) thÃ nh cÃ´ng!</value>
   </data>
   <data name="InteractionLoggedForMLRetrainingSignals" xml:space="preserve">
     <value>Interaction logged for ML retraining signals.</value>
   </data>
   <data name="InternalServerError" xml:space="preserve">
-    <value>Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau.</value>
+    <value>ÄÃ£ xáº£y ra lá»—i khÃ´ng mong muá»‘n. Vui lÃ²ng thá»­ láº¡i sau.</value>
   </data>
   <data name="InvalidEmailOrPassword" xml:space="preserve">
-    <value>Email hoặc mật khẩu không đúng, hoặc tài khoản chưa được kích hoạt.</value>
+    <value>Email hoáº·c máº­t kháº©u khÃ´ng Ä‘Ãºng, hoáº·c tÃ i khoáº£n chÆ°a Ä‘Æ°á»£c kÃ­ch hoáº¡t.</value>
   </data>
   <data name="InvalidFacebookToken" xml:space="preserve">
-    <value>Token Facebook không hợp lệ hoặc tài khoản đã bị khóa.</value>
+    <value>Token Facebook khÃ´ng há»£p lá»‡ hoáº·c tÃ i khoáº£n Ä‘Ã£ bá»‹ khÃ³a.</value>
   </data>
   <data name="InvalidFilterParameters" xml:space="preserve">
-    <value>Tham số lọc không hợp lệ.</value>
+    <value>Tham sá»‘ lá»c khÃ´ng há»£p lá»‡.</value>
   </data>
   <data name="InvalidGoogleToken" xml:space="preserve">
-    <value>Token Google không hợp lệ hoặc tài khoản đã bị khóa.</value>
+    <value>Token Google khÃ´ng há»£p lá»‡ hoáº·c tÃ i khoáº£n Ä‘Ã£ bá»‹ khÃ³a.</value>
   </data>
   <data name="InvalidInputData" xml:space="preserve">
-    <value>Dữ liệu đầu vào không hợp lệ.</value>
+    <value>Dá»¯ liá»‡u Ä‘áº§u vÃ o khÃ´ng há»£p lá»‡.</value>
   </data>
   <data name="InvalidOrExpiredSession" xml:space="preserve">
-    <value>Phiên đăng nhập không hợp lệ hoặc đã hết hạn.</value>
+    <value>PhiÃªn Ä‘Äƒng nháº­p khÃ´ng há»£p lá»‡ hoáº·c Ä‘Ã£ háº¿t háº¡n.</value>
   </data>
   <data name="InvalidQueryParameters" xml:space="preserve">
-    <value>Tham số truy vấn không hợp lệ.</value>
+    <value>Tham sá»‘ truy váº¥n khÃ´ng há»£p lá»‡.</value>
   </data>
   <data name="InvalidRefreshToken" xml:space="preserve">
-    <value>Refresh token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.</value>
+    <value>Refresh token khÃ´ng há»£p lá»‡ hoáº·c Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.</value>
   </data>
   <data name="InvalidRegistrationData" xml:space="preserve">
-    <value>Dữ liệu đăng ký không hợp lệ.</value>
+    <value>Dá»¯ liá»‡u Ä‘Äƒng kÃ½ khÃ´ng há»£p lá»‡.</value>
   </data>
   <data name="InvalidServiceKey" xml:space="preserve">
-    <value>Service key không hợp lệ</value>
+    <value>Service key khÃ´ng há»£p lá»‡</value>
   </data>
   <data name="InvalidTokenClaims" xml:space="preserve">
-    <value>Token không hợp lệ.</value>
+    <value>Token khÃ´ng há»£p lá»‡.</value>
   </data>
   <data name="InvalidTokenClaimsEmailNotFound" xml:space="preserve">
-    <value>Token không hợp lệ. Không tìm thấy email.</value>
+    <value>Token khÃ´ng há»£p lá»‡. KhÃ´ng tÃ¬m tháº¥y email.</value>
   </data>
   <data name="InvalidTokenClaimsUserNotIdentified" xml:space="preserve">
-    <value>Token không hợp lệ. Không xác định được người dùng.</value>
+    <value>Token khÃ´ng há»£p lá»‡. KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c ngÆ°á»i dÃ¹ng.</value>
   </data>
   <data name="InvalidTokenMissingOrInvalidUserID" xml:space="preserve">
-    <value>Token không hợp lệ: Thiếu hoặc sai User ID.</value>
+    <value>Token khÃ´ng há»£p lá»‡: Thiáº¿u hoáº·c sai User ID.</value>
   </data>
   <data name="InvalidTokenPayload" xml:space="preserve">
-    <value>Token không hợp lệ hoặc thiếu thông tin bảo mật.</value>
+    <value>Token khÃ´ng há»£p lá»‡ hoáº·c thiáº¿u thÃ´ng tin báº£o máº­t.</value>
   </data>
   <data name="InvalidUserToken" xml:space="preserve">
-    <value>Token người dùng không hợp lệ.</value>
+    <value>Token ngÆ°á»i dÃ¹ng khÃ´ng há»£p lá»‡.</value>
   </data>
   <data name="ItinerariesRetrievedSuccessfully" xml:space="preserve">
     <value>Itineraries retrieved successfully.</value>
   </data>
   <data name="KhNgXCNhCDanhTNhNhNViN" xml:space="preserve">
-    <value>Không xác định được danh tính nhân viên.</value>
+    <value>KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c danh tÃ­nh nhÃ¢n viÃªn.</value>
   </data>
   <data name="KhNgXCThCCUser" xml:space="preserve">
-    <value>Không xác thực được người dùng.</value>
+    <value>KhÃ´ng xÃ¡c thá»±c Ä‘Æ°á»£c ngÆ°á»i dÃ¹ng.</value>
   </data>
   <data name="LIHThNg" xml:space="preserve">
-    <value>Lỗi hệ thống.</value>
+    <value>Lá»—i há»‡ thá»‘ng.</value>
   </data>
   <data name="LIHThNgTrongQuTrNhIMDanh" xml:space="preserve">
-    <value>Lỗi hệ thống trong quá trình điểm danh.</value>
+    <value>Lá»—i há»‡ thá»‘ng trong quÃ¡ trÃ¬nh Ä‘iá»ƒm danh.</value>
   </data>
   <data name="LYDanhSChNhNViNThNhCNg" xml:space="preserve">
-    <value>Lấy danh sách nhân viên thành công.</value>
+    <value>Láº¥y danh sÃ¡ch nhÃ¢n viÃªn thÃ nh cÃ´ng.</value>
   </data>
   <data name="LeftTheChatRoomSuccessfully" xml:space="preserve">
     <value>Left the chat room successfully.</value>
@@ -323,13 +323,13 @@
     <value>Location retrieved successfully.</value>
   </data>
   <data name="LoggedOutSuccessfully" xml:space="preserve">
-    <value>Đăng xuất thành công.</value>
+    <value>ÄÄƒng xuáº¥t thÃ nh cÃ´ng.</value>
   </data>
   <data name="LoginRequiredForPersonalizedRecommendations" xml:space="preserve">
     <value>Login required for personalized recommendations.</value>
   </data>
   <data name="LoginSuccessful" xml:space="preserve">
-    <value>Đăng nhập thành công.</value>
+    <value>ÄÄƒng nháº­p thÃ nh cÃ´ng.</value>
   </data>
   <data name="MLNETModelsRetrainedSuccessfully" xml:space="preserve">
     <value>ML.NET models retrained successfully.</value>
@@ -350,10 +350,10 @@
     <value>Not enough available tickets or ticket type is inactive.</value>
   </data>
   <data name="NotFound" xml:space="preserve">
-    <value>Không tìm thấy tài nguyên.</value>
+    <value>KhÃ´ng tÃ¬m tháº¥y tÃ i nguyÃªn.</value>
   </data>
   <data name="OperationSuccessful" xml:space="preserve">
-    <value>Thao tác hoàn tất thành công.</value>
+    <value>Thao tÃ¡c hoÃ n táº¥t thÃ nh cÃ´ng.</value>
   </data>
   <data name="OrderAndTicketsCreatedSuccessfully" xml:space="preserve">
     <value>Order and tickets created successfully.</value>
@@ -386,13 +386,13 @@
     <value>Orders retrieved successfully.</value>
   </data>
   <data name="PasswordChangeFailed" xml:space="preserve">
-    <value>Đổi mật khẩu thất bại. Mật khẩu cũ không đúng hoặc tài khoản không hợp lệ.</value>
+    <value>Äá»•i máº­t kháº©u tháº¥t báº¡i. Máº­t kháº©u cÅ© khÃ´ng Ä‘Ãºng hoáº·c tÃ i khoáº£n khÃ´ng há»£p lá»‡.</value>
   </data>
   <data name="PasswordChangedSuccessfully" xml:space="preserve">
-    <value>Đổi mật khẩu thành công. Tất cả thiết bị khác đã được đăng xuất.</value>
+    <value>Äá»•i máº­t kháº©u thÃ nh cÃ´ng. Táº¥t cáº£ thiáº¿t bá»‹ khÃ¡c Ä‘Ã£ Ä‘Æ°á»£c Ä‘Äƒng xuáº¥t.</value>
   </data>
   <data name="PasswordResetSuccessfully" xml:space="preserve">
-    <value>Đặt lại mật khẩu thành công. Tất cả thiết bị khác đã được đăng xuất. Bạn có thể đăng nhập ngay.</value>
+    <value>Äáº·t láº¡i máº­t kháº©u thÃ nh cÃ´ng. Táº¥t cáº£ thiáº¿t bá»‹ khÃ¡c Ä‘Ã£ Ä‘Æ°á»£c Ä‘Äƒng xuáº¥t. Báº¡n cÃ³ thá»ƒ Ä‘Äƒng nháº­p ngay.</value>
   </data>
   <data name="PaymentNotCompletedOrOrderCouldNotBeUpdated" xml:space="preserve">
     <value>Payment not completed or order could not be updated.</value>
@@ -401,7 +401,7 @@
     <value>Payment was already completed or order could not be cancelled.</value>
   </data>
   <data name="PhNCNgNhNViNThNhCNg" xml:space="preserve">
-    <value>Phân công nhân viên thành công.</value>
+    <value>PhÃ¢n cÃ´ng nhÃ¢n viÃªn thÃ nh cÃ´ng.</value>
   </data>
   <data name="PlatformAnalyticsOverviewRetrievedSuccessfully" xml:space="preserve">
     <value>Platform analytics overview retrieved successfully.</value>
@@ -434,10 +434,10 @@
     <value>Platform voucher stats retrieved successfully.</value>
   </data>
   <data name="ProfileRetrievedSuccessfully" xml:space="preserve">
-    <value>Lấy thông tin hồ sơ thành công.</value>
+    <value>Láº¥y thÃ´ng tin há»“ sÆ¡ thÃ nh cÃ´ng.</value>
   </data>
   <data name="ProfileUpdatedSuccessfully" xml:space="preserve">
-    <value>Cập nhật hồ sơ thành công. Token mới đã được cấp để cập nhật thông tin client.</value>
+    <value>Cáº­p nháº­t há»“ sÆ¡ thÃ nh cÃ´ng. Token má»›i Ä‘Ã£ Ä‘Æ°á»£c cáº¥p Ä‘á»ƒ cáº­p nháº­t thÃ´ng tin client.</value>
   </data>
   <data name="QueryMustBeAtLeast2Characters" xml:space="preserve">
     <value>Query must be at least 2 characters.</value>
@@ -446,13 +446,13 @@
     <value>Reaction toggled successfully.</value>
   </data>
   <data name="RefreshTokenRequired" xml:space="preserve">
-    <value>Yêu cầu refresh token.</value>
+    <value>YÃªu cáº§u refresh token.</value>
   </data>
   <data name="RegistrationSuccessful" xml:space="preserve">
-    <value>Đăng ký thành công.</value>
+    <value>ÄÄƒng kÃ½ thÃ nh cÃ´ng.</value>
   </data>
   <data name="ResetPasswordFailed" xml:space="preserve">
-    <value>Mã xác minh không hợp lệ hoặc đã hết hạn, hoặc tài khoản không đủ điều kiện.</value>
+    <value>MÃ£ xÃ¡c minh khÃ´ng há»£p lá»‡ hoáº·c Ä‘Ã£ háº¿t háº¡n, hoáº·c tÃ i khoáº£n khÃ´ng Ä‘á»§ Ä‘iá»u kiá»‡n.</value>
   </data>
   <data name="RetrievedCancellationRequestDetailsSuccessfully" xml:space="preserve">
     <value>Retrieved cancellation request details successfully.</value>
@@ -461,7 +461,7 @@
     <value>Retrieved cancellation requests successfully.</value>
   </data>
   <data name="RoleNameCannotBeEmpty" xml:space="preserve">
-    <value>Tên vai trò không được để trống.</value>
+    <value>TÃªn vai trÃ² khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng.</value>
   </data>
   <data name="RoleRetrievedSuccessfully" xml:space="preserve">
     <value>Role retrieved successfully.</value>
@@ -473,19 +473,19 @@
     <value>Schedule customers retrieved successfully.</value>
   </data>
   <data name="ScheduleIdKhNgHPL" xml:space="preserve">
-    <value>ScheduleId không hợp lệ.</value>
+    <value>ScheduleId khÃ´ng há»£p lá»‡.</value>
   </data>
   <data name="ScheduleIdVStaffIdPhILNHN0" xml:space="preserve">
-    <value>ScheduleId và StaffId phải lớn hơn 0.</value>
+    <value>ScheduleId vÃ  StaffId pháº£i lá»›n hÆ¡n 0.</value>
   </data>
   <data name="SearchKeywordCannotBeEmpty" xml:space="preserve">
-    <value>Từ khóa tìm kiếm không được để trống.</value>
+    <value>Tá»« khÃ³a tÃ¬m kiáº¿m khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng.</value>
   </data>
   <data name="SearchQueryCannotBeEmpty" xml:space="preserve">
-    <value>Truy vấn tìm kiếm không được để trống.</value>
+    <value>Truy váº¥n tÃ¬m kiáº¿m khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng.</value>
   </data>
   <data name="SessionExpiredSecurity" xml:space="preserve">
-    <value>Phiên đăng nhập đã hết hạn do thay đổi bảo mật hoặc tài khoản bị vô hiệu hóa. Vui lòng đăng nhập lại.</value>
+    <value>PhiÃªn Ä‘Äƒng nháº­p Ä‘Ã£ háº¿t háº¡n do thay Ä‘á»•i báº£o máº­t hoáº·c tÃ i khoáº£n bá»‹ vÃ´ hiá»‡u hÃ³a. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.</value>
   </data>
   <data name="TicketTypeActivatedSuccessfully" xml:space="preserve">
     <value>Ticket type activated successfully.</value>
@@ -494,7 +494,7 @@
     <value>Ticket type deactivated successfully.</value>
   </data>
   <data name="TicketTypeNotFound" xml:space="preserve">
-    <value>Không tìm thấy loại vé.</value>
+    <value>KhÃ´ng tÃ¬m tháº¥y loáº¡i vÃ©.</value>
   </data>
   <data name="TicketTypeUpdatedSuccessfully" xml:space="preserve">
     <value>Ticket type updated successfully.</value>
@@ -509,10 +509,10 @@
     <value>Token generated successfully.</value>
   </data>
   <data name="TokenInvalidatedPasswordChange" xml:space="preserve">
-    <value>Token đã bị vô hiệu do thay đổi mật khẩu. Vui lòng đăng nhập lại.</value>
+    <value>Token Ä‘Ã£ bá»‹ vÃ´ hiá»‡u do thay Ä‘á»•i máº­t kháº©u. Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i.</value>
   </data>
   <data name="TokenRefreshedSuccessfully" xml:space="preserve">
-    <value>Làm mới token thành công.</value>
+    <value>LÃ m má»›i token thÃ nh cÃ´ng.</value>
   </data>
   <data name="TopCustomersRetrievedSuccessfully" xml:space="preserve">
     <value>Top customers retrieved successfully.</value>
@@ -524,16 +524,16 @@
     <value>Top must be between 1 and 30.</value>
   </data>
   <data name="TourItineraryNotFound" xml:space="preserve">
-    <value>Không tìm thấy lịch trình tour</value>
+    <value>KhÃ´ng tÃ¬m tháº¥y lá»‹ch trÃ¬nh tour</value>
   </data>
   <data name="TourNotFound" xml:space="preserve">
-    <value>Không tìm thấy tour</value>
+    <value>KhÃ´ng tÃ¬m tháº¥y tour</value>
   </data>
   <data name="TourScheduleItineraryNotFound" xml:space="preserve">
-    <value>Không tìm thấy lịch trình theo lịch</value>
+    <value>KhÃ´ng tÃ¬m tháº¥y lá»‹ch trÃ¬nh theo lá»‹ch</value>
   </data>
   <data name="TourScheduleTicketNotFound" xml:space="preserve">
-    <value>Không tìm thấy vé theo lịch</value>
+    <value>KhÃ´ng tÃ¬m tháº¥y vÃ© theo lá»‹ch</value>
   </data>
   <data name="TourismInformationActivatedSuccessfully" xml:space="preserve">
     <value>Tourism information activated successfully.</value>
@@ -542,16 +542,16 @@
     <value>Tourism information deactivated successfully.</value>
   </data>
   <data name="TourismInformationNotFound" xml:space="preserve">
-    <value>Không tìm thấy thông tin du lịch.</value>
+    <value>KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin du lá»‹ch.</value>
   </data>
   <data name="TourismInformationUpdatedSuccessfully" xml:space="preserve">
     <value>Tourism information updated successfully.</value>
   </data>
   <data name="UnableToDetermineCurrentUser" xml:space="preserve">
-    <value>Không xác định được người dùng hiện tại.</value>
+    <value>KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c ngÆ°á»i dÃ¹ng hiá»‡n táº¡i.</value>
   </data>
   <data name="Unauthorized" xml:space="preserve">
-    <value>Không có quyền truy cập</value>
+    <value>KhÃ´ng cÃ³ quyá»n truy cáº­p</value>
   </data>
   <data name="UserCreatedSuccessfullyByAdmin" xml:space="preserve">
     <value>User created successfully by Admin.</value>
@@ -560,22 +560,22 @@
     <value>User deleted successfully.</value>
   </data>
   <data name="UserIDNotFoundInToken" xml:space="preserve">
-    <value>Không tìm thấy ID người dùng trong token.</value>
+    <value>KhÃ´ng tÃ¬m tháº¥y ID ngÆ°á»i dÃ¹ng trong token.</value>
   </data>
   <data name="UserIDsListCannotBeEmpty" xml:space="preserve">
-    <value>Danh sách ID người dùng không được để trống.</value>
+    <value>Danh sÃ¡ch ID ngÆ°á»i dÃ¹ng khÃ´ng Ä‘Æ°á»£c Ä‘á»ƒ trá»‘ng.</value>
   </data>
   <data name="UserIdentityCouldNotBeVerified" xml:space="preserve">
-    <value>Không thể xác minh danh tính người dùng.</value>
+    <value>KhÃ´ng thá»ƒ xÃ¡c minh danh tÃ­nh ngÆ°á»i dÃ¹ng.</value>
   </data>
   <data name="UserMomentsRetrievedSuccessfully" xml:space="preserve">
     <value>User moments retrieved successfully.</value>
   </data>
   <data name="UserNotFound" xml:space="preserve">
-    <value>Không tìm thấy người dùng.</value>
+    <value>KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng.</value>
   </data>
   <data name="UserNotFoundOrInactive" xml:space="preserve">
-    <value>Không tìm thấy người dùng hoặc tài khoản chưa được kích hoạt.</value>
+    <value>KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng hoáº·c tÃ i khoáº£n chÆ°a Ä‘Æ°á»£c kÃ­ch hoáº¡t.</value>
   </data>
   <data name="UserProfileNotFound" xml:space="preserve">
     <value>User profile not found.</value>
@@ -593,7 +593,7 @@
     <value>Users retrieved successfully.</value>
   </data>
   <data name="VoucherNotFound" xml:space="preserve">
-    <value>Không tìm thấy voucher</value>
+    <value>KhÃ´ng tÃ¬m tháº¥y voucher</value>
   </data>
   <data name="VoucherRestoredSuccessfully" xml:space="preserve">
     <value>Voucher restored successfully</value>
@@ -602,93 +602,93 @@
     <value>You don't have any friends in your list yet.</value>
   </data>
   <data name="StaffIdentityNotDetermined" xml:space="preserve">
-    <value>Không xác định được danh tính nhân viên.</value>
+    <value>KhÃ´ng xÃ¡c Ä‘á»‹nh Ä‘Æ°á»£c danh tÃ­nh nhÃ¢n viÃªn.</value>
   </data>
   <data name="CheckInSuccessful" xml:space="preserve">
-    <value>Điểm danh (Check-in) thành công!</value>
+    <value>Äiá»ƒm danh (Check-in) thÃ nh cÃ´ng!</value>
   </data>
   <data name="CheckInSystemError" xml:space="preserve">
-    <value>Lỗi hệ thống trong quá trình điểm danh.</value>
+    <value>Lá»—i há»‡ thá»‘ng trong quÃ¡ trÃ¬nh Ä‘iá»ƒm danh.</value>
   </data>
   <data name="ScheduleAndStaffIdMustBePositive" xml:space="preserve">
-    <value>ScheduleId và StaffId phải lớn hơn 0.</value>
+    <value>ScheduleId vÃ  StaffId pháº£i lá»›n hÆ¡n 0.</value>
   </data>
   <data name="StaffAssignedSuccessfully" xml:space="preserve">
-    <value>Phân công nhân viên thành công.</value>
+    <value>PhÃ¢n cÃ´ng nhÃ¢n viÃªn thÃ nh cÃ´ng.</value>
   </data>
   <data name="InvalidScheduleId" xml:space="preserve">
-    <value>ScheduleId không hợp lệ.</value>
+    <value>ScheduleId khÃ´ng há»£p lá»‡.</value>
   </data>
   <data name="StaffListRetrievedSuccessfully" xml:space="preserve">
-    <value>Lấy danh sách nhân viên thành công.</value>
+    <value>Láº¥y danh sÃ¡ch nhÃ¢n viÃªn thÃ nh cÃ´ng.</value>
   </data>
   <data name="SystemError" xml:space="preserve">
-    <value>Lỗi hệ thống.</value>
+    <value>Lá»—i há»‡ thá»‘ng.</value>
   </data>
   <data name="UserAuthenticationFailed" xml:space="preserve">
-    <value>Không xác thực được người dùng.</value>
+    <value>KhÃ´ng xÃ¡c thá»±c Ä‘Æ°á»£c ngÆ°á»i dÃ¹ng.</value>
   </data>
   <data name="NoUsersFoundMatchingQuery" xml:space="preserve">
-    <value>Không tìm thấy người dùng khớp '{0}'.</value>
+    <value>KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng khá»›p '{0}'.</value>
   </data>
   <data name="FoundUsersMatchingQuery" xml:space="preserve">
-    <value>Tìm thấy {0} người dùng khớp '{1}'.</value>
+    <value>TÃ¬m tháº¥y {0} ngÆ°á»i dÃ¹ng khá»›p '{1}'.</value>
   </data>
   <data name="UserAccountBlockedSuccess" xml:space="preserve">
-    <value>Tài khoản đã bị khóa thành công. Tất cả phiên đăng nhập đang hoạt động đã bị thu hồi ngay lập tức.</value>
+    <value>TÃ i khoáº£n Ä‘Ã£ bá»‹ khÃ³a thÃ nh cÃ´ng. Táº¥t cáº£ phiÃªn Ä‘Äƒng nháº­p Ä‘ang hoáº¡t Ä‘á»™ng Ä‘Ã£ bá»‹ thu há»“i ngay láº­p tá»©c.</value>
   </data>
   <data name="UserAccountUnblockedSuccess" xml:space="preserve">
-    <value>Tài khoản đã được mở khóa và kích hoạt thành công.</value>
+    <value>TÃ i khoáº£n Ä‘Ã£ Ä‘Æ°á»£c má»Ÿ khÃ³a vÃ  kÃ­ch hoáº¡t thÃ nh cÃ´ng.</value>
   </data>
   <data name="RegisterOtpSentSuccessfully" xml:space="preserve">
-    <value>Mã xác nhận đăng ký đã được gửi đến email của bạn.</value>
+    <value>MÃ£ xÃ¡c nháº­n Ä‘Äƒng kÃ½ Ä‘Ã£ Ä‘Æ°á»£c gá»­i Ä‘áº¿n email cá»§a báº¡n.</value>
   </data>
   <data name="FullNameCannotContainSpecialCharacters" xml:space="preserve">
-    <value>Họ và tên không được chứa ký tự đặc biệt hoặc biểu tượng.</value>
+    <value>Há» vÃ  tÃªn khÃ´ng Ä‘Æ°á»£c chá»©a kÃ½ tá»± Ä‘áº·c biá»‡t hoáº·c biá»ƒu tÆ°á»£ng.</value>
   </data>
   <data name="PhoneNumberMax15Chars" xml:space="preserve">
-    <value>Số điện thoại tối đa 15 chữ số.</value>
+    <value>Sá»‘ Ä‘iá»‡n thoáº¡i tá»‘i Ä‘a 15 chá»¯ sá»‘.</value>
   </data>
   <data name="InvalidPhoneNumberFormat" xml:space="preserve">
-    <value>Định dạng số điện thoại không hợp lệ.</value>
+    <value>Äá»‹nh dáº¡ng sá»‘ Ä‘iá»‡n thoáº¡i khÃ´ng há»£p lá»‡.</value>
   </data>
   <data name="VerificationCodeRequired" xml:space="preserve">
-    <value>Vui lòng nhập mã xác nhận OTP.</value>
+    <value>Vui lÃ²ng nháº­p mÃ£ xÃ¡c nháº­n OTP.</value>
   </data>
   <data name="GoogleLoginRequirePhoneNumber" xml:space="preserve">
-    <value>Vui lòng bổ sung số điện thoại để hoàn tất đăng ký tài khoản Google.</value>
+    <value>Vui lÃ²ng bá»• sung sá»‘ Ä‘iá»‡n thoáº¡i Ä‘á»ƒ hoÃ n táº¥t Ä‘Äƒng kÃ½ tÃ i khoáº£n Google.</value>
   </data>
   <data name="CategoryNameAlreadyExists" xml:space="preserve">
-    <value>Tên danh mục này đã tồn tại. Vui lòng chọn tên khác.</value>
+    <value>TÃªn danh má»¥c nÃ y Ä‘Ã£ tá»“n táº¡i. Vui lÃ²ng chá»n tÃªn khÃ¡c.</value>
   </data>
   <data name="CategorySlugAlreadyExists" xml:space="preserve">
-    <value>Slug này đã tồn tại. Vui lòng chọn slug khác.</value>
+    <value>Slug nÃ y Ä‘Ã£ tá»“n táº¡i. Vui lÃ²ng chá»n slug khÃ¡c.</value>
   </data>
   <data name="CategoryCannotBeDeletedHasTours" xml:space="preserve">
-    <value>Không thể xóa danh mục này vì đang có các tour du lịch liên kết với nó. Vui lòng xóa các tour liên kết trước khi thực hiện.</value>
+    <value>KhÃ´ng thá»ƒ xÃ³a danh má»¥c nÃ y vÃ¬ Ä‘ang cÃ³ cÃ¡c tour du lá»‹ch liÃªn káº¿t vá»›i nÃ³. Vui lÃ²ng xÃ³a cÃ¡c tour liÃªn káº¿t trÆ°á»›c khi thá»±c hiá»‡n.</value>
   </data>
   <data name="CategoryNameNoSpecialChars" xml:space="preserve">
-    <value>Tên danh mục không được chứa ký tự đặc biệt.</value>
+    <value>TÃªn danh má»¥c khÃ´ng Ä‘Æ°á»£c chá»©a kÃ½ tá»± Ä‘áº·c biá»‡t.</value>
   </data>
   <data name="CategorySlugInvalidFormat" xml:space="preserve">
-    <value>Slug chỉ được chứa chữ thường (không dấu), số và dấu gạch nối.</value>
+    <value>Slug chá»‰ Ä‘Æ°á»£c chá»©a chá»¯ thÆ°á»ng (khÃ´ng dáº¥u), sá»‘ vÃ  dáº¥u gáº¡ch ná»‘i.</value>
   </data>
   <data name="OnlyImageFilesAllowed" xml:space="preserve">
-    <value>Chỉ được upload file hình ảnh (JPG, PNG, GIF, SVG, WEBP). Không cho phép upload tài liệu hoặc các file khác.</value>
+    <value>Chá»‰ Ä‘Æ°á»£c upload file hÃ¬nh áº£nh (JPG, PNG, GIF, SVG, WEBP). KhÃ´ng cho phÃ©p upload tÃ i liá»‡u hoáº·c cÃ¡c file khÃ¡c.</value>
   </data>
   <data name="TokenRevokedSuccessfully" xml:space="preserve">
-    <value>Thu hồi token thành công.</value>
+    <value>Thu há»“i token thÃ nh cÃ´ng.</value>
   </data>
   <data name="UserWentOfflineSuccessfully" xml:space="preserve">
-    <value>Ngoại tuyến thành công.</value>
+    <value>Ngoáº¡i tuyáº¿n thÃ nh cÃ´ng.</value>
   </data>
   <data name="AnErrorOccurredWhileRevokingToken" xml:space="preserve">
-    <value>Lỗi xảy ra khi thu hồi token.</value>
+    <value>Lá»—i xáº£y ra khi thu há»“i token.</value>
   </data>
   <data name="AnErrorOccurredWhileGoingOffline" xml:space="preserve">
-    <value>Lỗi xảy ra khi chuyển sang trạng thái ngoại tuyến.</value>
+    <value>Lá»—i xáº£y ra khi chuyá»ƒn sang tráº¡ng thÃ¡i ngoáº¡i tuyáº¿n.</value>
   </data>
   <data name="CategoryMustBeInactiveToUpdate" xml:space="preserve">
-    <value>Danh mục phải ở trạng thái không hoạt động mới có thể cập nhật.</value>
+    <value>Danh má»¥c pháº£i á»Ÿ tráº¡ng thÃ¡i khÃ´ng hoáº¡t Ä‘á»™ng má»›i cÃ³ thá»ƒ cáº­p nháº­t.</value>
   </data>
-</root>
+<data name="InvalidProvider" xml:space="preserve">`n    <value>Email này đã được đăng ký bằng phương thức khác. Vui lòng chọn đúng phương thức đăng nhập.</value>`n  </data>`n</root>
