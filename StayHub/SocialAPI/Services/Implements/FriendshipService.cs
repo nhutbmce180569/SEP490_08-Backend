@@ -112,15 +112,7 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", friendIds);
-            if (response.IsSuccessStatusCode)
-            {
-                var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                if (apiResult?.Data != null)
-                {
-                    usersDict = apiResult.Data.ToDictionary(u => u.Id, u => u);
-                }
-            }
+            usersDict = await _authApiClient.GetUserProfilesAsync(friendIds);
         }
         catch 
         { 
@@ -156,15 +148,7 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", requesterIds);
-            if (response.IsSuccessStatusCode)
-            {
-                var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                if (apiResult?.Data != null)
-                {
-                    usersDict = apiResult.Data.ToDictionary(u => u.Id, u => u);
-                }
-            }
+            usersDict = await _authApiClient.GetUserProfilesAsync(requesterIds);
         }
         catch
         {
@@ -201,15 +185,7 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", receiverIds);
-            if (response.IsSuccessStatusCode)
-            {
-                var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                if (apiResult?.Data != null)
-                {
-                    usersDict = apiResult.Data.ToDictionary(u => u.Id, u => u);
-                }
-            }
+            usersDict = await _authApiClient.GetUserProfilesAsync(receiverIds);
         }
         catch
         {
@@ -280,19 +256,10 @@ public class FriendshipService : IFriendshipService
 
         var friendIds = friends.Select(f => f.RequesterId == userId ? f.ReceiverId : f.RequesterId).Distinct().ToList();
 
-        var authApiUrl = $"{_authApiBase}/api/users/batch/public";
         var userProfiles = new Dictionary<int, UserProfileShortDto>();
         try
         {
-            var response = await _httpClient.PostAsJsonAsync(authApiUrl, friendIds);
-            if (response.IsSuccessStatusCode)
-            {
-                var result = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                if (result?.Data != null)
-                {
-                    userProfiles = result.Data.ToDictionary(u => u.Id, u => u);
-                }
-            }
+            userProfiles = await _authApiClient.GetUserProfilesAsync(friendIds);
         }
         catch
         {
@@ -335,20 +302,11 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", new List<int> { dto.FriendId });
-            if (response.IsSuccessStatusCode)
+            var userProfiles = await _authApiClient.GetUserProfilesAsync(new List<int> { dto.FriendId });
+            if (userProfiles.TryGetValue(dto.FriendId, out var userProfile))
             {
-                var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                var userProfile = apiResult?.Data?.FirstOrDefault();
-                if (userProfile != null)
-                {
-                    dto.FullName = userProfile.FullName ?? "Anonymous user";
-                    dto.AvatarUrl = userProfile.AvatarUrl;
-                }
-                else
-                {
-                    dto.FullName = "Anonymous user";
-                }
+                dto.FullName = userProfile.FullName ?? "Anonymous user";
+                dto.AvatarUrl = userProfile.AvatarUrl;
             }
             else
             {
