@@ -56,7 +56,13 @@ namespace AuthAPI.Services.Implements
         {
             var user = await _userRepository.GetByEmail(loginDTO.Email);
 
-            if (user == null || user.Provider != "Local" || user.Status != "Active")
+            if (user == null)
+                return null;
+
+            if (user.Provider != "Local")
+                throw new InvalidOperationException("InvalidProvider");
+
+            if (user.Status != "Active")
                 return null;
 
             if (!_passwordHelper.Verify(user, user.PasswordHash, loginDTO.Password))
@@ -449,7 +455,10 @@ namespace AuthAPI.Services.Implements
                 }
                 else
                 {
-                    if (user.Provider != provider || user.Status != "Active")
+                    if (user.Provider != provider)
+                        throw new InvalidOperationException("InvalidProvider");
+
+                    if (user.Status != "Active")
                         return null;
 
                     user.PhoneNumber = phoneNumber;
@@ -462,7 +471,10 @@ namespace AuthAPI.Services.Implements
             }
             else
             {
-                if (user.Provider != provider || user.Status != "Active")
+                if (user.Provider != provider)
+                    throw new InvalidOperationException("InvalidProvider");
+
+                if (user.Status != "Active")
                     return null;
 
                 if (user.AvatarUrl != avatarUrl && !string.IsNullOrEmpty(avatarUrl))
