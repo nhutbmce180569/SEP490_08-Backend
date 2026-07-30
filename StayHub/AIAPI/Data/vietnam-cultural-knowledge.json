@@ -1,0 +1,525 @@
+{
+  "version": "2.0",
+  "description": "Curated Vietnam cultural corpus (regional entries). Complements StayHub-VN-RAG-Corpus-v2 (75 retrieval chunks). Sources: UNESCO, VNAT.",
+  "entries": [
+    {
+      "cityKeys": [
+        "cantho",
+        "cairang",
+        "mekong"
+      ],
+      "displayName": "Can Tho / Mekong Delta",
+      "region": "Mekong Delta",
+      "facts": [
+        "Cai Rang floating market is one of the largest floating markets in the Mekong Delta, best visited at dawn.",
+        "Mekong Delta cuisine features freshwater fish, coconut products, and Banh Xeo (savoury crepes).",
+        "River-based tourism requires sun protection and stable footwear on boat decks."
+      ],
+      "foreignVisitorNotes": [
+        "Carry VND cash for floating market vendors; card acceptance is limited.",
+        "Dress modestly when visiting local homes or temples near the delta.",
+        "Confirm boat safety equipment and life jackets before departure."
+      ],
+      "elderlyNotes": [
+        "Prefer morning departures to avoid midday heat on open boats.",
+        "Choose tours with seated intervals and minimal stair climbing."
+      ],
+      "childNotes": [
+        "Short boat segments and fruit-garden visits are engaging for children.",
+        "Bring snacks and hydration; market areas can be crowded."
+      ],
+      "sources": [
+        {
+          "name": "UNESCO World Heritage Centre",
+          "url": "https://whc.unesco.org/en/statesparties/vn",
+          "authority": "International"
+        },
+        {
+          "name": "Vietnam National Administration of Tourism",
+          "url": "https://vietnamtourism.gov.vn/en",
+          "authority": "National"
+        }
+      ],
+      "factsVi": [
+        "Chợ nổi Cái Ràng là một trong những chợ nổi lớn nhất Đồng bằng sông Cửu Long, nên ghé từ sáng sớm.",
+        "Ẩm thực miền Tây nổi bật cá nước ngọt, dừa và bánh xèo.",
+        "Du lịch sông nước cần che nắng và giày ổn định trên sàn thuyền."
+      ],
+      "foreignVisitorNotesVi": [
+        "Mang tiền mặt VND cho chợ nổi; ít nơi nhận thẻ.",
+        "Ăn mặc kín đáo khi vào nhà dân hoặc chùa gần kênh rạch.",
+        "Kiểm tra áo phao và thiết bị an toàn trước khi xuống thuyền."
+      ],
+      "elderlyNotesVi": [
+        "Ưu tiên khởi hành sáng để tránh nắng trưa trên thuyền mở.",
+        "Chọn tour có chỗ ngồi và ít leo thang."
+      ],
+      "childNotesVi": [
+        "Đoạn đi thuyền ngắn và tham quan vườn trái rất hấp dẫn trẻ em.",
+        "Mang đồ ăn nhẹ và nước; chợ có thể đông."
+      ],
+      "displayNameVi": "Cần Thơ / Đồng bằng sông Cửu Long"
+    },
+    {
+      "cityKeys": [
+        "hoian"
+      ],
+      "displayName": "Hoi An",
+      "region": "Central Vietnam",
+      "facts": [
+        "Hoi An Ancient Town is a UNESCO World Heritage Site known for lantern festivals and merchant architecture.",
+        "Signature dishes include Cao Lau and White Rose dumplings.",
+        "Evening pedestrian zones are ideal for cultural walking tours."
+      ],
+      "foreignVisitorNotes": [
+        "Purchase combined ancient town tickets for heritage sites.",
+        "Respect photography restrictions inside worship houses."
+      ],
+      "elderlyNotes": [
+        "Flat terrain in the ancient town core suits slow-paced walking."
+      ],
+      "childNotes": [
+        "Lantern-making workshops and river boat rides are family-friendly."
+      ],
+      "sources": [
+        {
+          "name": "UNESCO - Hoi An",
+          "url": "https://whc.unesco.org/en/list/874",
+          "authority": "International"
+        }
+      ],
+      "factsVi": [
+        "Phố cổ Hội An (UNESCO) nổi tiếng lễ hội đèn lồng và kiến trúc hội quán.",
+        "Đặc sản: cao lầu và bánh bao trắng (White Rose).",
+        "Khu phố đi bộ buổi tối lý tưởng cho tour văn hóa."
+      ],
+      "foreignVisitorNotesVi": [
+        "Mua vé tham quan di tích phố cổ.",
+        "Tôn trọng quy định chụp ảnh trong đình chùa."
+      ],
+      "elderlyNotesVi": [
+        "Địa hình phố cổ khá phẳng, phù hợp đi bộ chậm."
+      ],
+      "childNotesVi": [
+        "Workshop làm đèn lồng và đi thuyền sông Hoài thân thiện gia đình."
+      ],
+      "displayNameVi": "Hội An"
+    },
+    {
+      "cityKeys": [
+        "halong",
+        "quangninh"
+      ],
+      "displayName": "Ha Long Bay / Quang Ninh",
+      "region": "Northeast Vietnam",
+      "facts": [
+        "Ha Long Bay is a UNESCO World Heritage Site with karst islands and cave systems.",
+        "Overnight cruises combine scenic sailing with cave and kayak activities."
+      ],
+      "foreignVisitorNotes": [
+        "Verify cruise operator licensing and cabin safety briefing."
+      ],
+      "elderlyNotes": [
+        "Select cruises with elevator access and limited kayak requirements."
+      ],
+      "childNotes": [
+        "Choose family cabins and short kayak sessions with life jackets."
+      ],
+      "sources": [
+        {
+          "name": "UNESCO - Ha Long Bay",
+          "url": "https://whc.unesco.org/en/list/672",
+          "authority": "International"
+        }
+      ],
+      "factsVi": [
+        "Vịnh Hạ Long (UNESCO) với đảo đá vôi và hang động.",
+        "Tour du thuyền qua đêm kết hợp hang và kayak."
+      ],
+      "foreignVisitorNotesVi": [
+        "Kiểm tra giấy phép và briefing an toàn của du thuyền."
+      ],
+      "elderlyNotesVi": [
+        "Chọn du thuyền có thang máy, hạn chế kayak."
+      ],
+      "childNotesVi": [
+        "Cabin gia đình và kayak ngắn có áo phao cho trẻ."
+      ],
+      "displayNameVi": "Vịnh Hạ Long / Quảng Ninh"
+    },
+    {
+      "cityKeys": [
+        "hue"
+      ],
+      "displayName": "Hue",
+      "region": "Central Vietnam",
+      "facts": [
+        "The Complex of Hue Monuments is a UNESCO World Heritage Site of imperial citadel architecture.",
+        "Royal cuisine and Perfume River boat trips are cultural highlights."
+      ],
+      "foreignVisitorNotes": [
+        "Formal attire recommended for imperial palace areas."
+      ],
+      "elderlyNotes": [
+        "Use electric carts inside the citadel to reduce walking distance."
+      ],
+      "childNotes": [
+        "Interactive craft villages can supplement monument visits."
+      ],
+      "sources": [
+        {
+          "name": "UNESCO - Hue",
+          "url": "https://whc.unesco.org/en/list/678",
+          "authority": "International"
+        }
+      ],
+      "factsVi": [
+        "Quần thể di tích Cố đô Huế (UNESCO).",
+        "Ẩm thực cung đình và du thuyền sông Hương là điểm nhấn."
+      ],
+      "foreignVisitorNotesVi": [
+        "Trang phục lịch sự khi vào Đại Nội."
+      ],
+      "elderlyNotesVi": [
+        "Dùng xe điện trong Đại Nội để giảm đi bộ."
+      ],
+      "childNotesVi": [
+        "Làng nghề thủ công bổ sung cho tham quan di tích."
+      ],
+      "displayNameVi": "Huế"
+    },
+    {
+      "cityKeys": [
+        "sapa",
+        "laocai"
+      ],
+      "displayName": "Sapa / Lao Cai",
+      "region": "Northwest Vietnam",
+      "facts": [
+        "Sapa features terraced rice fields and ethnic minority cultural experiences.",
+        "Mountain weather changes rapidly; layered clothing is recommended."
+      ],
+      "foreignVisitorNotes": [
+        "Support community-based tourism with licensed local guides."
+      ],
+      "elderlyNotes": [
+        "Avoid long trekking routes; choose cable car or gentle valley walks."
+      ],
+      "childNotes": [
+        "Not ideal for very young children on multi-hour treks."
+      ],
+      "sources": [
+        {
+          "name": "Vietnam National Administration of Tourism",
+          "url": "https://vietnamtourism.gov.vn/en",
+          "authority": "National"
+        }
+      ],
+      "factsVi": [
+        "Sa Pa có ruộng bậc thang và văn hóa dân tộc thiểu số.",
+        "Thời tiết núi thay đổi nhanh; nên mang áo nhiều lớp."
+      ],
+      "foreignVisitorNotesVi": [
+        "Ủng hộ du lịch cộng đồng với hướng dẫn viên địa phương có giấy phép."
+      ],
+      "elderlyNotesVi": [
+        "Tránh trek dài; chọn cáp treo hoặc đi bộ thung lũng nhẹ."
+      ],
+      "childNotesVi": [
+        "Không lý tưởng cho trẻ rất nhỏ khi trek nhiều giờ."
+      ],
+      "displayNameVi": "Sa Pa / Lào Cai"
+    },
+    {
+      "cityKeys": [
+        "phuquoc"
+      ],
+      "displayName": "Phu Quoc",
+      "region": "Southwest Coast",
+      "facts": [
+        "Phu Quoc is known for island resorts, marine ecosystems, and seafood.",
+        "Dry season (Nov-Apr) is generally preferred for beach activities."
+      ],
+      "foreignVisitorNotes": [
+        "Check visa policy for Phu Quoc special zone if applicable."
+      ],
+      "elderlyNotes": [
+        "Resort-based tours reduce mobility strain."
+      ],
+      "childNotes": [
+        "Shallow beaches and resort pools suit family travel."
+      ],
+      "sources": [
+        {
+          "name": "Vietnam National Administration of Tourism",
+          "url": "https://vietnamtourism.gov.vn/en",
+          "authority": "National"
+        }
+      ],
+      "factsVi": [
+        "Phú Quốc nổi tiếng resort biển, hệ sinh thái biển và hải sản.",
+        "Mùa khô (11–4) thích hợp tắm biển."
+      ],
+      "foreignVisitorNotesVi": [
+        "Kiểm tra chính sách visa khu đặc thù nếu áp dụng."
+      ],
+      "elderlyNotesVi": [
+        "Tour resort giảm di chuyển."
+      ],
+      "childNotesVi": [
+        "Bãi nông và hồ resort phù hợp gia đình."
+      ],
+      "displayNameVi": "Phú Quốc"
+    },
+    {
+      "cityKeys": [
+        "dalat"
+      ],
+      "displayName": "Da Lat",
+      "region": "Central Highlands",
+      "facts": [
+        "Da Lat has temperate climate, colonial architecture, and specialty coffee culture.",
+        "Cloud-hunting viewpoints require early-morning departures."
+      ],
+      "foreignVisitorNotes": [
+        "Cool evenings year-round; bring a light jacket."
+      ],
+      "elderlyNotes": [
+        "Garden and lake tours are lower intensity."
+      ],
+      "childNotes": [
+        "Flower gardens and farms are suitable for children."
+      ],
+      "sources": [
+        {
+          "name": "Vietnam National Administration of Tourism",
+          "url": "https://vietnamtourism.gov.vn/en",
+          "authority": "National"
+        }
+      ],
+      "factsVi": [
+        "Đà Lạt có khí hậu mát, kiến trúc thuộc địa và văn hóa cà phê.",
+        "Săn mây cần khởi hành rất sớm."
+      ],
+      "foreignVisitorNotesVi": [
+        "Buổi tối mát quanh năm; mang áo khoác nhẹ."
+      ],
+      "elderlyNotesVi": [
+        "Tour vườn hoa, hồ ít vận động mạnh."
+      ],
+      "childNotesVi": [
+        "Vườn hoa và trang trại phù hợp trẻ em."
+      ],
+      "displayNameVi": "Đà Lạt"
+    },
+    {
+      "cityKeys": [
+        "danang"
+      ],
+      "displayName": "Da Nang",
+      "region": "Central Coast",
+      "facts": [
+        "Da Nang connects coastal recreation with access to Ba Na Hills and Hoi An.",
+        "Dragon Bridge fire-water shows occur on weekends."
+      ],
+      "foreignVisitorNotes": [
+        "Beach safety flags should be observed during monsoon swells."
+      ],
+      "elderlyNotes": [
+        "Cable car access to Ba Na Hills reduces climbing."
+      ],
+      "childNotes": [
+        "Theme attractions and beaches offer mixed-age activities."
+      ],
+      "sources": [
+        {
+          "name": "Vietnam National Administration of Tourism",
+          "url": "https://vietnamtourism.gov.vn/en",
+          "authority": "National"
+        }
+      ],
+      "factsVi": [
+        "Đà Nẵng kết nối biển với Bà Nà Hills và Hội An.",
+        "Cầu Rồng phun lửa-nước cuối tuần."
+      ],
+      "foreignVisitorNotesVi": [
+        "Chú ý cờ cảnh báo biển mùa monsoon."
+      ],
+      "elderlyNotesVi": [
+        "Cáp treo Bà Nà giảm leo núi."
+      ],
+      "childNotesVi": [
+        "Khu vui chơi và biển đa dạng độ tuổi."
+      ],
+      "displayNameVi": "Đà Nẵng"
+    },
+    {
+      "cityKeys": [
+        "hanoi"
+      ],
+      "displayName": "Hanoi",
+      "region": "Red River Delta",
+      "facts": [
+        "Hanoi Old Quarter preserves street-food culture and French-colonial architecture.",
+        "Thang Long Imperial Citadel is a UNESCO World Heritage Site."
+      ],
+      "foreignVisitorNotes": [
+        "Street food tours should use reputable operators for hygiene."
+      ],
+      "elderlyNotes": [
+        "Choose walking tours with frequent rest stops."
+      ],
+      "childNotes": [
+        "Water puppet shows are popular cultural experiences for children."
+      ],
+      "sources": [
+        {
+          "name": "UNESCO - Thang Long",
+          "url": "https://whc.unesco.org/en/list/1328",
+          "authority": "International"
+        }
+      ],
+      "factsVi": [
+        "Phố cổ Hà Nội giữ văn hóa ẩm thực đường phố và kiến trúc Pháp.",
+        "Hoàng thành Thăng Long là di sản UNESCO."
+      ],
+      "foreignVisitorNotesVi": [
+        "Tour ẩm thực nên chọn nhà điều hành uy tín vì vệ sinh."
+      ],
+      "elderlyNotesVi": [
+        "Chọn tour đi bộ có nhiều điểm nghỉ."
+      ],
+      "childNotesVi": [
+        "Múa rối nước là trải nghiệm văn hóa quen thuộc với trẻ."
+      ],
+      "displayNameVi": "Hà Nội"
+    },
+    {
+      "cityKeys": [
+        "nhatrang",
+        "khanhhoa",
+        "camranh"
+      ],
+      "displayName": "Nha Trang / Khanh Hoa",
+      "region": "South Central Coast",
+      "facts": [
+        "Nha Trang offers island hopping, diving, and seafood cuisine.",
+        "Marine activities depend on seasonal sea conditions."
+      ],
+      "foreignVisitorNotes": [
+        "Use licensed dive operators with international safety standards."
+      ],
+      "elderlyNotes": [
+        "Island day trips with seated transport are preferable."
+      ],
+      "childNotes": [
+        "Snorkeling in shallow bays can be arranged for older children."
+      ],
+      "sources": [
+        {
+          "name": "Vietnam National Administration of Tourism",
+          "url": "https://vietnamtourism.gov.vn/en",
+          "authority": "National"
+        }
+      ],
+      "factsVi": [
+        "Nha Trang có nhảy đảo, lặn và hải sản.",
+        "Hoạt động biển phụ thuộc mùa."
+      ],
+      "foreignVisitorNotesVi": [
+        "Dùng trung tâm lặn có chứng nhận an toàn quốc tế."
+      ],
+      "elderlyNotesVi": [
+        "Tour đảo ngồi thuyền ổn định hơn."
+      ],
+      "childNotesVi": [
+        "Snorkel vùng nông cho trẻ lớn hơn."
+      ],
+      "displayNameVi": "Nha Trang / Khánh Hòa"
+    },
+    {
+      "cityKeys": [
+        "ninhbinh",
+        "trangan"
+      ],
+      "displayName": "Ninh Binh / Trang An",
+      "region": "Red River Delta",
+      "facts": [
+        "Trang An Landscape Complex is a UNESCO mixed natural and cultural heritage site.",
+        "Boat routes pass through limestone caves and temples."
+      ],
+      "foreignVisitorNotes": [
+        "Boat routes are fixed; allow 2-3 hours for full experience."
+      ],
+      "elderlyNotes": [
+        "Boat seating is suitable for limited-mobility travelers."
+      ],
+      "childNotes": [
+        "Scenic boat rides are engaging; bring sun hats."
+      ],
+      "sources": [
+        {
+          "name": "UNESCO - Trang An",
+          "url": "https://whc.unesco.org/en/list/1438",
+          "authority": "International"
+        }
+      ],
+      "factsVi": [
+        "Tràng An (UNESCO) — di sản thiên nhiên và văn hóa hỗn hợp.",
+        "Đi thuyền qua hang động và chùa."
+      ],
+      "foreignVisitorNotesVi": [
+        "Tuyến thuyền cố định; dành 2–3 giờ."
+      ],
+      "elderlyNotesVi": [
+        "Ngồi thuyền phù hợp người hạn chế di chuyển."
+      ],
+      "childNotesVi": [
+        "Đi thuyền cảnh đẹp; mang mũ chống nắng."
+      ],
+      "displayNameVi": "Ninh Bình / Tràng An"
+    },
+    {
+      "cityKeys": [
+        "hochiminh",
+        "saigon"
+      ],
+      "displayName": "Ho Chi Minh City",
+      "region": "Southeast Vietnam",
+      "facts": [
+        "Ho Chi Minh City combines colonial landmarks, museums, and street-food culture.",
+        "Evening food tours by foot or cyclo are popular urban experiences."
+      ],
+      "foreignVisitorNotes": [
+        "Traffic density is high; use marked crosswalks and guided transport."
+      ],
+      "elderlyNotes": [
+        "Air-conditioned vehicle tours reduce heat exposure."
+      ],
+      "childNotes": [
+        "Interactive museums and parks suit mixed-age groups."
+      ],
+      "sources": [
+        {
+          "name": "Vietnam National Administration of Tourism",
+          "url": "https://vietnamtourism.gov.vn/en",
+          "authority": "National"
+        }
+      ],
+      "factsVi": [
+        "TP.HCM có dinh thự, bảo tàng và ẩm thực đường phố.",
+        "Tour ẩm thực đêm bằng xe máy hoặc đi bộ rất phổ biến."
+      ],
+      "foreignVisitorNotesVi": [
+        "Giao thông đông; dùng vạch sang đường và xe có hướng dẫn."
+      ],
+      "elderlyNotesVi": [
+        "Tour xe điều hòa giảm nắng nóng."
+      ],
+      "childNotesVi": [
+        "Bảo tàng tương tác và công viên phù hợp nhóm đa tuổi."
+      ],
+      "displayNameVi": "TP. Hồ Chí Minh"
+    }
+  ]
+}

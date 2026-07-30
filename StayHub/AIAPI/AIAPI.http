@@ -1,0 +1,206 @@
+@AIAPI_HostAddress = https://localhost:7007
+@Gateway_HostAddress = https://localhost:7010
+
+### Health check
+GET {{AIAPI_HostAddress}}/api/ai/tour-assistant/health
+
+### Standard questionnaire (for UI form)
+GET {{Gateway_HostAddress}}/api/ai/tour-assistant/questionnaire
+
+### Personalized recommend — foreigner visiting Can Tho
+POST {{Gateway_HostAddress}}/api/ai/tour-assistant/recommend-from-profile
+Content-Type: application/json
+
+{
+  "companionType": "couple",
+  "preferredStartDate": "2026-06-12",
+  "preferredEndDate": "2026-06-14",
+  "maxBudgetPerPerson": 3500000,
+  "hasElderly": false,
+  "hasChildren": false,
+  "travelInterests": ["river", "culture", "food"],
+  "nationalityType": "foreigner",
+  "preferredCity": "Can Tho",
+  "top": 5,
+  "sessionId": "demo-foreigner-cantho"
+}
+
+### Personalized recommend — Vietnamese family with elderly + children
+POST {{Gateway_HostAddress}}/api/ai/tour-assistant/recommend-from-profile
+Content-Type: application/json
+
+{
+  "companionType": "family",
+  "preferredStartDate": "2026-07-10",
+  "preferredEndDate": "2026-07-15",
+  "maxBudgetPerPerson": 6000000,
+  "hasElderly": true,
+  "elderlyCount": 2,
+  "hasChildren": true,
+  "childrenCount": 1,
+  "travelInterests": ["beach", "relax"],
+  "nationalityType": "vietnamese",
+  "preferredCity": "Phu Quoc",
+  "top": 6
+}
+
+### Chat - natural language (via Gateway)
+POST {{Gateway_HostAddress}}/api/ai/tour-assistant/chat
+Content-Type: application/json
+
+{
+  "message": "Gợi ý tour biển giá dưới 5 triệu cho 2 người",
+  "sessionId": "demo-session-001"
+}
+
+### Semantic search
+POST {{Gateway_HostAddress}}/api/ai/tour-assistant/search
+Content-Type: application/json
+
+{
+  "query": "tour khám phá văn hóa miền Trung 4 ngày",
+  "top": 8,
+  "maxPrice": 6000000
+}
+
+### Consultation with structured criteria
+POST {{Gateway_HostAddress}}/api/ai/tour-assistant/consult
+Content-Type: application/json
+
+{
+  "city": "Da Lat",
+  "durationDays": 3,
+  "maxPrice": 5000000,
+  "groupSize": 2,
+  "travelStyle": "thiên nhiên nghỉ dưỡng",
+  "top": 6
+}
+
+### Tourism culture insights (authoritative content)
+GET {{Gateway_HostAddress}}/api/ai/tour-assistant/tourism?query=dac san van hoa&city=Hoi An&top=5
+
+### Similar tours
+GET {{Gateway_HostAddress}}/api/ai/tour-assistant/recommend/similar/1?top=5
+
+### Evaluation — offline baselines (Admin JWT)
+GET {{Gateway_HostAddress}}/api/ai/evaluation/baselines
+
+POST {{Gateway_HostAddress}}/api/ai/evaluation/run
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "profileCount": 100,
+  "topK": 8,
+  "randomSeed": 42,
+  "profileSplit": "test",
+  "calibrateWeightsOnValidationFirst": true,
+  "includeAlphaSweep": true,
+  "labelingMode": "hybrid",
+  "includeSignificanceTests": true,
+  "exportFormat": "json"
+}
+
+### Evaluation — calibrate dimension weights on validation partition (indices 0-29)
+POST {{Gateway_HostAddress}}/api/ai/evaluation/calibrate-weights
+Authorization: Bearer {{admin_token}}
+
+### Evaluation — RAG corpus size ablation {0,25,50,75,100}
+GET {{Gateway_HostAddress}}/api/ai/evaluation/rag-corpus-ablation
+Authorization: Bearer {{admin_token}}
+
+### Evaluation — import expert judgments (Admin)
+POST {{Gateway_HostAddress}}/api/ai/evaluation/judgments
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "judgments": [
+    {
+      "profileSignature": "seed-cantho-river",
+      "profileQueryKey": "foreigner_can_tho_couple_river",
+      "tourId": 5,
+      "relevanceGrade": 3,
+      "source": "expert",
+      "judgeId": "reviewer-01",
+      "notes": "Mekong floating market"
+    }
+  ]
+}
+
+GET {{Gateway_HostAddress}}/api/ai/evaluation/judgments
+Authorization: Bearer {{admin_token}}
+
+### User study — protocol (public)
+GET {{Gateway_HostAddress}}/api/ai/evaluation/user-study/protocol
+
+### User study — scenarios
+GET {{Gateway_HostAddress}}/api/ai/evaluation/user-study/scenarios
+
+### User study — blind comparison for scenario 0
+GET {{Gateway_HostAddress}}/api/ai/evaluation/user-study/scenarios/0/comparison?sessionId=participant-demo-001
+
+### User study — submit Likert response
+POST {{Gateway_HostAddress}}/api/ai/evaluation/user-study/responses
+Content-Type: application/json
+
+{
+  "assignmentId": 1,
+  "sessionId": "participant-demo-001",
+  "preferredList": "A",
+  "fairnessListA": 6,
+  "fairnessListB": 4,
+  "satisfactionListA": 6,
+  "satisfactionListB": 5,
+  "groupFairnessListA": 7,
+  "groupFairnessListB": 4,
+  "wouldBookListA": 6,
+  "wouldBookListB": 5,
+  "ageGroup": "25-34",
+  "travelExperience": "moderate"
+}
+
+### User study — aggregated summary (Admin)
+GET {{Gateway_HostAddress}}/api/ai/evaluation/user-study/summary
+Authorization: Bearer {{admin_token}}
+
+### Paper — methodology (public, for writing)
+GET {{Gateway_HostAddress}}/api/ai/evaluation/methodology
+
+### Paper — inter-rater agreement κ
+GET {{Gateway_HostAddress}}/api/ai/evaluation/inter-rater-agreement
+Authorization: Bearer {{admin_token}}
+
+### Paper — seed 40 pilot user study participants (Admin)
+POST {{Gateway_HostAddress}}/api/ai/evaluation/user-study/seed-pilot
+Authorization: Bearer {{admin_token}}
+Content-Type: application/json
+
+{
+  "participantCount": 40,
+  "randomSeed": 42,
+  "clearExistingPilot": true
+}
+
+### Paper — full bundle export (all tables for Q4 paper)
+GET {{Gateway_HostAddress}}/api/ai/evaluation/paper-bundle
+Authorization: Bearer {{admin_token}}
+
+### Scoring model spec (paper-ready)
+GET {{Gateway_HostAddress}}/api/ai/tour-assistant/scoring-model
+
+### RAG corpus stats (paper Methodology)
+GET {{Gateway_HostAddress}}/api/ai/knowledge/corpus-stats
+
+### RAG semantic retrieval
+GET {{Gateway_HostAddress}}/api/ai/knowledge/rag/search?query=river%20culture%20floating%20market&city=Can%20Tho&interests=river,culture&foreignVisitor=true&top=5
+
+### Multi-source cultural facts
+GET {{Gateway_HostAddress}}/api/ai/knowledge/facts?city=Hoi%20An&foreignVisitor=true&interests=culture,food
+
+GET {{Gateway_HostAddress}}/api/ai/training/status
+Authorization: Bearer {{admin_token}}
+
+### Admin - retrain ML models
+POST {{Gateway_HostAddress}}/api/ai/training/retrain
+Authorization: Bearer {{admin_token}}

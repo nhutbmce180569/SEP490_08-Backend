@@ -1,0 +1,25 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using TourAPI.Models;
+
+namespace TourAPI.Repositories
+{
+    public interface ITourScheduleRepository
+    {
+        Task<IEnumerable<TourSchedule>> GetAllAsync(int page, int pageSize);
+        Task<TourSchedule?> GetByIdAsync(int id);
+        Task<List<TourSchedule>> GetByIdsAsync(List<int> ids);
+        Task<List<TourSchedule>> GetByTourIdAsync(int tourId);
+        Task<TourSchedule?> GetScheduleWithItineraryAsync(int scheduleId);
+        Task<IEnumerable<TourSchedule>> GetByCreatedByAsync(int userId, int page, int pageSize, int? tourId = null, DateTime? startDate = null, DateTime? endDate = null, string? search = null);
+        Task<List<int>> GetIdsByCreatedByAsync(int userId, int? tourId = null);
+        Task<int> CountByCreatedByAsync(int userId, int? tourId = null, DateTime? startDate = null, DateTime? endDate = null, string? search = null);
+        Task<IEnumerable<TourSchedule>> SearchByTourNameAsync(string tourName, int page, int pageSize);
+        Task<int> CountByTourNameAsync(string tourName);
+        Task<int> CountAllAsync();
+        Task<IEnumerable<TourSchedule>> GetSchedulesStartingOnAsync(DateTime date);
+        Task AddAsync(TourSchedule tourSchedule);
+        Task UpdateAsync(TourSchedule tourSchedule);
+        Task DeleteAsync(TourSchedule tourSchedule);
+    }
+}

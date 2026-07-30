@@ -1,0 +1,527 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <data name="Action must be either 'Approve' or 'Reject'." xml:space="preserve">
+    <value>Action must be either 'Approve' or 'Reject'.</value>
+  </data>
+  <data name="Address cannot exceed 255 characters." xml:space="preserve">
+    <value>Address cannot exceed 255 characters.</value>
+  </data>
+  <data name="Address is required" xml:space="preserve">
+    <value>Address is required</value>
+  </data>
+  <data name="AgeGroup cannot exceed 20 characters." xml:space="preserve">
+    <value>AgeGroup cannot exceed 20 characters.</value>
+  </data>
+  <data name="Amount is required" xml:space="preserve">
+    <value>Amount is required</value>
+  </data>
+  <data name="Amount must be greater than 0" xml:space="preserve">
+    <value>Amount must be greater than 0</value>
+  </data>
+  <data name="AssignedRole cannot exceed 255 characters" xml:space="preserve">
+    <value>AssignedRole cannot exceed 255 characters</value>
+  </data>
+  <data name="AssignmentId must be greater than 0." xml:space="preserve">
+    <value>AssignmentId must be greater than 0.</value>
+  </data>
+  <data name="AvailableCount must be at least 1" xml:space="preserve">
+    <value>AvailableCount must be at least 1</value>
+  </data>
+  <data name="Avatar must be an image file (.jpg, .jpeg, .png, .gif)." xml:space="preserve">
+    <value>Avatar must be an image file (.jpg, .jpeg, .png, .gif).</value>
+  </data>
+  <data name="Banner image is required." xml:space="preserve">
+    <value>Banner image is required.</value>
+  </data>
+  <data name="BillAmount must be greater than 0" xml:space="preserve">
+    <value>BillAmount must be greater than 0</value>
+  </data>
+  <data name="Caption cannot exceed 500 characters." xml:space="preserve">
+    <value>Caption cannot exceed 500 characters.</value>
+  </data>
+  <data name="Category name is required." xml:space="preserve">
+    <value>Category name is required.</value>
+  </data>
+  <data name="CategoryId is required" xml:space="preserve">
+    <value>CategoryId is required</value>
+  </data>
+  <data name="CategoryId must be greater than 0" xml:space="preserve">
+    <value>CategoryId must be greater than 0</value>
+  </data>
+  <data name="ChildrenCount is required when HasChildren is true." xml:space="preserve">
+    <value>ChildrenCount is required when HasChildren is true.</value>
+  </data>
+  <data name="City cannot exceed 100 characters." xml:space="preserve">
+    <value>City cannot exceed 100 characters.</value>
+  </data>
+  <data name="City is required" xml:space="preserve">
+    <value>City is required</value>
+  </data>
+  <data name="Code is required" xml:space="preserve">
+    <value>Code is required</value>
+  </data>
+  <data name="Code must be between 3 and 50 characters" xml:space="preserve">
+    <value>Code must be between 3 and 50 characters</value>
+  </data>
+  <data name="Code must contain only letters, numbers, hyphens, and underscores" xml:space="preserve">
+    <value>Code must contain only letters, numbers, hyphens, and underscores</value>
+  </data>
+  <data name="Comment cannot be empty." xml:space="preserve">
+    <value>Comment cannot be empty.</value>
+  </data>
+  <data name="Comment cannot contain only whitespace." xml:space="preserve">
+    <value>Comment cannot contain only whitespace.</value>
+  </data>
+  <data name="Comment cannot exceed 1000 characters." xml:space="preserve">
+    <value>Comment cannot exceed 1000 characters.</value>
+  </data>
+  <data name="Comment cannot exceed 500 characters." xml:space="preserve">
+    <value>Comment cannot exceed 500 characters.</value>
+  </data>
+  <data name="Comment is required." xml:space="preserve">
+    <value>Comment is required.</value>
+  </data>
+  <data name="CompanionType is required." xml:space="preserve">
+    <value>CompanionType is required.</value>
+  </data>
+  <data name="CompanionType must be solo, family, couple, or group." xml:space="preserve">
+    <value>CompanionType must be solo, family, couple, or group.</value>
+  </data>
+  <data name="Country cannot exceed 100 characters." xml:space="preserve">
+    <value>Country cannot exceed 100 characters.</value>
+  </data>
+  <data name="Country is required" xml:space="preserve">
+    <value>Country is required</value>
+  </data>
+  <data name="CustomerId is required." xml:space="preserve">
+    <value>CustomerId is required.</value>
+  </data>
+  <data name="CustomerId must be greater than 0" xml:space="preserve">
+    <value>CustomerId must be greater than 0</value>
+  </data>
+  <data name="Date of Birth is required." xml:space="preserve">
+    <value>Date of Birth is required.</value>
+  </data>
+  <data name="Date of birth cannot be in the future." xml:space="preserve">
+    <value>Date of birth cannot be in the future.</value>
+  </data>
+  <data name="DayNumber is required" xml:space="preserve">
+    <value>DayNumber is required</value>
+  </data>
+  <data name="DayNumber must be greater than 0" xml:space="preserve">
+    <value>DayNumber must be greater than 0</value>
+  </data>
+  <data name="Departure date is required" xml:space="preserve">
+    <value>Departure date is required</value>
+  </data>
+  <data name="Description cannot exceed 1000 characters" xml:space="preserve">
+    <value>Description cannot exceed 1000 characters</value>
+  </data>
+  <data name="Description cannot exceed 2000 characters" xml:space="preserve">
+    <value>Description cannot exceed 2000 characters</value>
+  </data>
+  <data name="Description is required" xml:space="preserve">
+    <value>Description is required</value>
+  </data>
+  <data name="DiscountType is required" xml:space="preserve">
+    <value>DiscountType is required</value>
+  </data>
+  <data name="DiscountType must be 'Percent' or 'Amount'" xml:space="preserve">
+    <value>DiscountType must be 'Percent' or 'Amount'</value>
+  </data>
+  <data name="DiscountValue must be greater than 0" xml:space="preserve">
+    <value>DiscountValue must be greater than 0</value>
+  </data>
+  <data name="DurationDays must be between 1 and 365." xml:space="preserve">
+    <value>DurationDays must be between 1 and 365.</value>
+  </data>
+  <data name="ElderlyCount is required when HasElderly is true." xml:space="preserve">
+    <value>ElderlyCount is required when HasElderly is true.</value>
+  </data>
+  <data name="Email is required." xml:space="preserve">
+    <value>Email is required.</value>
+  </data>
+  <data name="EndDate is required" xml:space="preserve">
+    <value>EndDate is required</value>
+  </data>
+  <data name="EndDuration is required" xml:space="preserve">
+    <value>EndDuration is required</value>
+  </data>
+  <data name="Facebook AccessToken is required." xml:space="preserve">
+    <value>Facebook AccessToken is required.</value>
+  </data>
+  <data name="Full Name is required." xml:space="preserve">
+    <value>Full Name is required.</value>
+  </data>
+  <data name="Full name must be between 2 and 100 characters." xml:space="preserve">
+    <value>Full name must be between 2 and 100 characters.</value>
+  </data>
+  <data name="Gender is required." xml:space="preserve">
+    <value>Gender is required.</value>
+  </data>
+  <data name="Google IdToken is required." xml:space="preserve">
+    <value>Google IdToken is required.</value>
+  </data>
+  <data name="Granularity must be day, week, or month." xml:space="preserve">
+    <value>Granularity must be day, week, or month.</value>
+  </data>
+  <data name="GroupSize must be between 1 and 500." xml:space="preserve">
+    <value>GroupSize must be between 1 and 500.</value>
+  </data>
+  <data name="HTML tags are not allowed." xml:space="preserve">
+    <value>HTML tags are not allowed.</value>
+  </data>
+  <data name="Image is required." xml:space="preserve">
+    <value>Image is required.</value>
+  </data>
+  <data name="Image size cannot exceed 5MB." xml:space="preserve">
+    <value>Image size cannot exceed 5MB.</value>
+  </data>
+  <data name="InteractionType must be view, click, wishlist, booking, or chat_recommend." xml:space="preserve">
+    <value>InteractionType must be view, click, wishlist, booking, or chat_recommend.</value>
+  </data>
+  <data name="Invalid companion type." xml:space="preserve">
+    <value>Invalid companion type.</value>
+  </data>
+  <data name="Invalid email format." xml:space="preserve">
+    <value>Invalid email format.</value>
+  </data>
+  <data name="Invalid file format. Only image files are allowed." xml:space="preserve">
+    <value>Invalid file format. Only image files are allowed.</value>
+  </data>
+  <data name="Invalid interaction type." xml:space="preserve">
+    <value>Invalid interaction type.</value>
+  </data>
+  <data name="Invalid nationality type." xml:space="preserve">
+    <value>Invalid nationality type.</value>
+  </data>
+  <data name="Invalid phone number format." xml:space="preserve">
+    <value>Invalid phone number format.</value>
+  </data>
+  <data name="IsLike cannot be null." xml:space="preserve">
+    <value>IsLike cannot be null.</value>
+  </data>
+  <data name="ItineraryDate is required" xml:space="preserve">
+    <value>ItineraryDate is required</value>
+  </data>
+  <data name="Latitude must be between -90 and 90." xml:space="preserve">
+    <value>Latitude must be between -90 and 90.</value>
+  </data>
+  <data name="LocationName cannot exceed 255 characters" xml:space="preserve">
+    <value>LocationName cannot exceed 255 characters</value>
+  </data>
+  <data name="Longitude must be between -180 and 180." xml:space="preserve">
+    <value>Longitude must be between -180 and 180.</value>
+  </data>
+  <data name="MaxDiscountAmount must be greater than 0" xml:space="preserve">
+    <value>MaxDiscountAmount must be greater than 0</value>
+  </data>
+  <data name="MaxPrice must be non-negative." xml:space="preserve">
+    <value>MaxPrice must be non-negative.</value>
+  </data>
+  <data name="Message cannot exceed 2000 characters." xml:space="preserve">
+    <value>Message cannot exceed 2000 characters.</value>
+  </data>
+  <data name="Message is required." xml:space="preserve">
+    <value>Message is required.</value>
+  </data>
+  <data name="Message must be at least 2 characters." xml:space="preserve">
+    <value>Message must be at least 2 characters.</value>
+  </data>
+  <data name="Message must be between 2 and 2000 characters." xml:space="preserve">
+    <value>Message must be between 2 and 2000 characters.</value>
+  </data>
+  <data name="MinPrice cannot be greater than MaxPrice." xml:space="preserve">
+    <value>MinPrice cannot be greater than MaxPrice.</value>
+  </data>
+  <data name="MinPrice must be non-negative." xml:space="preserve">
+    <value>MinPrice must be non-negative.</value>
+  </data>
+  <data name="MomentId must be greater than 0." xml:space="preserve">
+    <value>MomentId must be greater than 0.</value>
+  </data>
+  <data name="Name cannot exceed 200 characters" xml:space="preserve">
+    <value>Name cannot exceed 200 characters</value>
+  </data>
+  <data name="Name cannot exceed 255 characters." xml:space="preserve">
+    <value>Name cannot exceed 255 characters.</value>
+  </data>
+  <data name="Name is required" xml:space="preserve">
+    <value>Name is required</value>
+  </data>
+  <data name="Name is required." xml:space="preserve">
+    <value>Name is required.</value>
+  </data>
+  <data name="NationalityType must be vietnamese or foreigner." xml:space="preserve">
+    <value>NationalityType must be vietnamese or foreigner.</value>
+  </data>
+  <data name="New password is required." xml:space="preserve">
+    <value>New password is required.</value>
+  </data>
+  <data name="New password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character." xml:space="preserve">
+    <value>New password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.</value>
+  </data>
+  <data name="Old password is required." xml:space="preserve">
+    <value>Old password is required.</value>
+  </data>
+  <data name="Only .jpg, .jpeg, .png, .gif, and .webp extensions are allowed." xml:space="preserve">
+    <value>Only .jpg, .jpeg, .png, .gif, and .webp extensions are allowed.</value>
+  </data>
+  <data name="Only the following file extensions are allowed: {0}" xml:space="preserve">
+    <value>Only the following file extensions are allowed: {0}</value>
+  </data>
+  <data name="OrderId is required" xml:space="preserve">
+    <value>OrderId is required</value>
+  </data>
+  <data name="OrderId must be greater than 0" xml:space="preserve">
+    <value>OrderId must be greater than 0</value>
+  </data>
+  <data name="Page must be greater than 0." xml:space="preserve">
+    <value>Page must be greater than 0.</value>
+  </data>
+  <data name="PageSize must be between 1 and 100." xml:space="preserve">
+    <value>PageSize must be between 1 and 100.</value>
+  </data>
+  <data name="Password is required." xml:space="preserve">
+    <value>Password is required.</value>
+  </data>
+  <data name="Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character." xml:space="preserve">
+    <value>Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.</value>
+  </data>
+  <data name="Phone Number is required." xml:space="preserve">
+    <value>Phone Number is required.</value>
+  </data>
+  <data name="PreferredEndDate cannot be before PreferredStartDate." xml:space="preserve">
+    <value>PreferredEndDate cannot be before PreferredStartDate.</value>
+  </data>
+  <data name="PreferredList is required." xml:space="preserve">
+    <value>PreferredList is required.</value>
+  </data>
+  <data name="PreferredStartDate cannot be after PreferredEndDate." xml:space="preserve">
+    <value>PreferredStartDate cannot be after PreferredEndDate.</value>
+  </data>
+  <data name="PreferredStartDate cannot be too far in the past." xml:space="preserve">
+    <value>PreferredStartDate cannot be too far in the past.</value>
+  </data>
+  <data name="PreferredStartDate is required." xml:space="preserve">
+    <value>PreferredStartDate is required.</value>
+  </data>
+  <data name="Price is required" xml:space="preserve">
+    <value>Price is required</value>
+  </data>
+  <data name="Price must be greater than or equal to 0" xml:space="preserve">
+    <value>Price must be greater than or equal to 0</value>
+  </data>
+  <data name="Privacy is required." xml:space="preserve">
+    <value>Privacy is required.</value>
+  </data>
+  <data name="Privacy must be 'Public', 'Private', or 'Friend'." xml:space="preserve">
+    <value>Privacy must be 'Public', 'Private', or 'Friend'.</value>
+  </data>
+  <data name="Provide at least one consultation criterion (city, country, budget, duration, category, or travel style)." xml:space="preserve">
+    <value>Provide at least one consultation criterion (city, country, budget, duration, category, or travel style).</value>
+  </data>
+  <data name="Quantity is required" xml:space="preserve">
+    <value>Quantity is required</value>
+  </data>
+  <data name="Quantity must be at least 1" xml:space="preserve">
+    <value>Quantity must be at least 1</value>
+  </data>
+  <data name="Quantity must be greater than 0" xml:space="preserve">
+    <value>Quantity must be greater than 0</value>
+  </data>
+  <data name="Quantity must be greater than or equal to 0" xml:space="preserve">
+    <value>Quantity must be greater than or equal to 0</value>
+  </data>
+  <data name="Query is required." xml:space="preserve">
+    <value>Query is required.</value>
+  </data>
+  <data name="Query must be between 2 and 1000 characters." xml:space="preserve">
+    <value>Query must be between 2 and 1000 characters.</value>
+  </data>
+  <data name="Rating is required." xml:space="preserve">
+    <value>Rating is required.</value>
+  </data>
+  <data name="Rating must be between 1 and 5 stars." xml:space="preserve">
+    <value>Rating must be between 1 and 5 stars.</value>
+  </data>
+  <data name="Rating must be between 1 and 5." xml:space="preserve">
+    <value>Rating must be between 1 and 5.</value>
+  </data>
+  <data name="Rating must be between 1 and 7." xml:space="preserve">
+    <value>Rating must be between 1 and 7.</value>
+  </data>
+  <data name="Receiver ID is required." xml:space="preserve">
+    <value>Receiver ID is required.</value>
+  </data>
+  <data name="ReceiverId must be greater than 0." xml:space="preserve">
+    <value>ReceiverId must be greater than 0.</value>
+  </data>
+  <data name="Refresh token is required." xml:space="preserve">
+    <value>Refresh token is required.</value>
+  </data>
+  <data name="Request ID is required." xml:space="preserve">
+    <value>Request ID is required.</value>
+  </data>
+  <data name="RequestId must be greater than 0." xml:space="preserve">
+    <value>RequestId must be greater than 0.</value>
+  </data>
+  <data name="Return date is required" xml:space="preserve">
+    <value>Return date is required</value>
+  </data>
+  <data name="ScheduleId is required" xml:space="preserve">
+    <value>ScheduleId is required</value>
+  </data>
+  <data name="ScheduleId must be greater than 0" xml:space="preserve">
+    <value>ScheduleId must be greater than 0</value>
+  </data>
+  <data name="ScheduleId must be greater than 0." xml:space="preserve">
+    <value>ScheduleId must be greater than 0.</value>
+  </data>
+  <data name="Select at least one travel interest." xml:space="preserve">
+    <value>Select at least one travel interest.</value>
+  </data>
+  <data name="SessionId cannot exceed 64 characters." xml:space="preserve">
+    <value>SessionId cannot exceed 64 characters.</value>
+  </data>
+  <data name="SessionId is required." xml:space="preserve">
+    <value>SessionId is required.</value>
+  </data>
+  <data name="SessionId must be between 8 and 64 characters." xml:space="preserve">
+    <value>SessionId must be between 8 and 64 characters.</value>
+  </data>
+  <data name="Slug is required." xml:space="preserve">
+    <value>Slug is required.</value>
+  </data>
+  <data name="SoldQuantity must be greater than or equal to 0" xml:space="preserve">
+    <value>SoldQuantity must be greater than or equal to 0</value>
+  </data>
+  <data name="SortBy must be one of: totalSpend, orderCount, reviewCount, wishlistCount, createdAt, lastOrderAt." xml:space="preserve">
+    <value>SortBy must be one of: totalSpend, orderCount, reviewCount, wishlistCount, createdAt, lastOrderAt.</value>
+  </data>
+  <data name="SortOrder must be asc or desc." xml:space="preserve">
+    <value>SortOrder must be asc or desc.</value>
+  </data>
+  <data name="Source name cannot exceed 255 characters." xml:space="preserve">
+    <value>Source name cannot exceed 255 characters.</value>
+  </data>
+  <data name="StaffId is required" xml:space="preserve">
+    <value>StaffId is required</value>
+  </data>
+  <data name="StartDate cannot be after EndDate." xml:space="preserve">
+    <value>StartDate cannot be after EndDate.</value>
+  </data>
+  <data name="StartDate is required" xml:space="preserve">
+    <value>StartDate is required</value>
+  </data>
+  <data name="StartDuration is required" xml:space="preserve">
+    <value>StartDuration is required</value>
+  </data>
+  <data name="Status cannot exceed 50 characters." xml:space="preserve">
+    <value>Status cannot exceed 50 characters.</value>
+  </data>
+  <data name="Status is required." xml:space="preserve">
+    <value>Status is required.</value>
+  </data>
+  <data name="Status must be either 'Accepted' or 'Declined'." xml:space="preserve">
+    <value>Status must be either 'Accepted' or 'Declined'.</value>
+  </data>
+  <data name="Status must be either 'Active' or 'Blocked'." xml:space="preserve">
+    <value>Status must be either 'Active' or 'Blocked'.</value>
+  </data>
+  <data name="Ticket type name cannot exceed 100 characters." xml:space="preserve">
+    <value>Ticket type name cannot exceed 100 characters.</value>
+  </data>
+  <data name="Ticket type name is required." xml:space="preserve">
+    <value>Ticket type name is required.</value>
+  </data>
+  <data name="TicketTypeId is required" xml:space="preserve">
+    <value>TicketTypeId is required</value>
+  </data>
+  <data name="TicketTypeId must be greater than 0" xml:space="preserve">
+    <value>TicketTypeId must be greater than 0</value>
+  </data>
+  <data name="Title cannot exceed 255 characters" xml:space="preserve">
+    <value>Title cannot exceed 255 characters</value>
+  </data>
+  <data name="Title cannot exceed 255 characters." xml:space="preserve">
+    <value>Title cannot exceed 255 characters.</value>
+  </data>
+  <data name="Title is required" xml:space="preserve">
+    <value>Title is required</value>
+  </data>
+  <data name="Title is required." xml:space="preserve">
+    <value>Title is required.</value>
+  </data>
+  <data name="Top must be between 1 and 20." xml:space="preserve">
+    <value>Top must be between 1 and 20.</value>
+  </data>
+  <data name="Top must be between 1 and 30." xml:space="preserve">
+    <value>Top must be between 1 and 30.</value>
+  </data>
+  <data name="Top must be between 1 and 50." xml:space="preserve">
+    <value>Top must be between 1 and 50.</value>
+  </data>
+  <data name="TourId is required" xml:space="preserve">
+    <value>TourId is required</value>
+  </data>
+  <data name="TourId is required." xml:space="preserve">
+    <value>TourId is required.</value>
+  </data>
+  <data name="TourId must be greater than 0" xml:space="preserve">
+    <value>TourId must be greater than 0</value>
+  </data>
+  <data name="TourId must be greater than 0 when provided" xml:space="preserve">
+    <value>TourId must be greater than 0 when provided</value>
+  </data>
+  <data name="TourScheduleTicketId must be greater than 0" xml:space="preserve">
+    <value>TourScheduleTicketId must be greater than 0</value>
+  </data>
+  <data name="TravelExperience cannot exceed 30 characters." xml:space="preserve">
+    <value>TravelExperience cannot exceed 30 characters.</value>
+  </data>
+  <data name="TravelInterests contains invalid value." xml:space="preserve">
+    <value>TravelInterests contains invalid value.</value>
+  </data>
+  <data name="TravelStyle cannot exceed 500 characters." xml:space="preserve">
+    <value>TravelStyle cannot exceed 500 characters.</value>
+  </data>
+  <data name="Type cannot exceed 50 characters." xml:space="preserve">
+    <value>Type cannot exceed 50 characters.</value>
+  </data>
+  <data name="Type is required." xml:space="preserve">
+    <value>Type is required.</value>
+  </data>
+  <data name="UnitPrice must be greater than or equal to 0" xml:space="preserve">
+    <value>UnitPrice must be greater than or equal to 0</value>
+  </data>
+  <data name="UserId must be greater than 0" xml:space="preserve">
+    <value>UserId must be greater than 0</value>
+  </data>
+  <data name="UserId must be greater than 0." xml:space="preserve">
+    <value>UserId must be greater than 0.</value>
+  </data>
+  <data name="Verification code is required." xml:space="preserve">
+    <value>Verification code is required.</value>
+  </data>
+  <data name="VoucherCode must be between 3 and 50 characters" xml:space="preserve">
+    <value>VoucherCode must be between 3 and 50 characters</value>
+  </data>
+  <data name="FullNameCannotContainSpecialCharacters" xml:space="preserve">
+    <value>Full name cannot contain special characters or icons.</value>
+  </data>
+  <data name="PhoneNumberMax15Chars" xml:space="preserve">
+    <value>Phone number cannot exceed 15 digits.</value>
+  </data>
+  <data name="InvalidPhoneNumberFormat" xml:space="preserve">
+    <value>Invalid phone number format.</value>
+  </data>
+  <data name="VerificationCodeRequired" xml:space="preserve">
+    <value>OTP verification code is required.</value>
+  </data>
+</root>
