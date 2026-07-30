@@ -1,4 +1,4 @@
-using AuthAPI.DTOs;
+﻿using AuthAPI.DTOs;
 using AuthAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -27,11 +27,20 @@ namespace AuthAPI.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(new { message = M("InvalidInputData") });
 
-            var response = await _authService.Login(loginDTO);
-            if (response == null)
-                return Unauthorized(new { message = M("InvalidEmailOrPassword") });
+            try
+            {
+                var response = await _authService.Login(loginDTO);
+                if (response == null)
+                    return Unauthorized(new { message = M("InvalidEmailOrPassword") });
 
-            return Ok(new { message = M("LoginSuccessful"), data = response });
+                return Ok(new { message = M("LoginSuccessful"), data = response });
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message == "InvalidProvider")
+                    return Conflict(new { message = "InvalidProvider" });
+                throw;
+            }
         }
 
         [HttpPost("google-login")]
@@ -56,6 +65,8 @@ namespace AuthAPI.Controllers
             {
                 if (ex.Message == "PhoneNumberExists")
                     return Conflict(new { message = M("PhoneNumberExists") });
+                if (ex.Message == "InvalidProvider")
+                    return Conflict(new { message = "InvalidProvider" });
                 throw;
             }
         }
@@ -78,6 +89,8 @@ namespace AuthAPI.Controllers
             {
                 if (ex.Message == "PhoneNumberExists")
                     return Conflict(new { message = M("PhoneNumberExists") });
+                if (ex.Message == "InvalidProvider")
+                    return Conflict(new { message = "InvalidProvider" });
                 throw;
             }
         }
@@ -293,3 +306,4 @@ namespace AuthAPI.Controllers
         }
     }
 }
+
