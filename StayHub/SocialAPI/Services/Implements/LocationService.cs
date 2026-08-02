@@ -416,7 +416,7 @@ namespace SocialAPI.Services.Implements
                 {
                     lat = lastLog.Lat;
                     lng = lastLog.Lng;
-                    lastUpdated = lastLog.Timestamp;
+                    lastUpdated = lastLog.Timestamp ?? DateTime.UtcNow;
                     locationFound = true;
                 }
             }
