@@ -55,6 +55,27 @@ namespace SocialAPI.Services.Implements
                 return; // Bỏ qua ping nếu đã ping trong 1 giây vừa rồi
             }
 
+            // Exclusive tracking logic (Mobile Priority)
+            var activePlatformKey = $"active_platform_{currentUserId}";
+            var activePlatform = await db.StringGetAsync(activePlatformKey);
+
+            if (dto.Platform == "Web" && activePlatform.HasValue && activePlatform.ToString() == "Mobile")
+            {
+                throw new InvalidOperationException("Tracking is exclusively active on Mobile device.");
+            }
+
+            if (!string.IsNullOrEmpty(dto.Platform))
+            {
+                // TTL 60 seconds. Mobile pings every 12 seconds, so it will keep the lock alive.
+                await db.StringSetAsync(activePlatformKey, dto.Platform, TimeSpan.FromSeconds(60));
+
+                if (dto.Platform == "Mobile")
+                {
+                    // Thông báo cho Web biết rằng Mobile đang giữ quyền (kick Web ra khỏi trạng thái Tracking)
+                    await _hubContext.Clients.User(currentUserId.ToString()).SendAsync("ForceStopTracking", "Mobile");
+                }
+            }
+
             // 1. Lưu tọa độ vào DB (giới hạn tần suất ghi DB: tối đa 1 lần mỗi 30 giây cho mỗi user)
             try
             {
@@ -361,24 +382,26 @@ namespace SocialAPI.Services.Implements
             var locKey = $"live_loc_{userId}";
             var locVal = await db.StringGetAsync(locKey);
 
-            double lat = 16.047079; // Default Da Nang
-            double lng = 108.206230;
+            if (!locVal.HasValue)
+            {
+                throw new KeyNotFoundException("User's live location is not available or has expired.");
+            }
+
+            double lat = 0;
+            double lng = 0;
             DateTime lastUpdated = DateTime.UtcNow;
 
-            if (locVal.HasValue)
+            try
             {
-                try
-                {
-                    using var doc = JsonDocument.Parse(locVal.ToString());
-                    var root = doc.RootElement;
-                    lat = root.GetProperty("lat").GetDouble();
-                    lng = root.GetProperty("lng").GetDouble();
-                    lastUpdated = root.GetProperty("lastUpdated").GetDateTime();
-                }
-                catch (Exception)
-                {
-                    // If corrupt, fallback to default
-                }
+                using var doc = JsonDocument.Parse(locVal.ToString());
+                var root = doc.RootElement;
+                lat = root.GetProperty("lat").GetDouble();
+                lng = root.GetProperty("lng").GetDouble();
+                lastUpdated = root.GetProperty("lastUpdated").GetDateTime();
+            }
+            catch (Exception)
+            {
+                throw new KeyNotFoundException("User's live location data is corrupted.");
             }
 
             string fullName = $"User #{userId}";
