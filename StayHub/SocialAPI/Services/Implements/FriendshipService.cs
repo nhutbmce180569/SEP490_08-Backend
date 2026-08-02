@@ -37,7 +37,7 @@ public class FriendshipService : IFriendshipService
         _bookingApiClient = bookingApiClient;
         _tourApiClient = tourApiClient;
         _context = context;
-        _authApiBase = configuration["InternalApi:AuthApiBaseUrl"] ?? "https://localhost:7001";
+        _authApiBase = (configuration["InternalApi:AuthApiBaseUrl"] ?? "https://localhost:7001").TrimEnd('/');
     }
 
     public async Task<FriendshipResponseDto> SendRequestAsync(int requesterId, FriendRequestDto requestDto)
