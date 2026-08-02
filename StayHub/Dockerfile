@@ -26,6 +26,7 @@ RUN dotnet publish ${PROJECT_NAME}/${PROJECT_NAME}.csproj -c Release -o /app/pub
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/publish .
 
 # Optimize memory usage for VPS (Workstation GC instead of Server GC)
