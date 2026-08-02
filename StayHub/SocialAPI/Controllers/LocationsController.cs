@@ -50,6 +50,10 @@ namespace SocialAPI.Controllers
                 await _locationService.PingLocationAsync(userId, dto, userRole);
                 return Ok(new { message = M("LocationPingedSuccessfully") });
             }
+            catch (InvalidOperationException ex)
+            {
+                return StatusCode(409, new { message = ex.Message });
+            }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = M("AnErrorOccurredWhilePingingLocation"), details = ex.Message });
