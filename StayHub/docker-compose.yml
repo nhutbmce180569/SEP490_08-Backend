@@ -1,0 +1,171 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    restart: always
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=StayHub@Dev12345!
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  gateway-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PROJECT_NAME=GatewayAPI
+    container_name: gateway-api
+    restart: always
+    ports:
+      - "7010:8080"
+    environment:
+      - ConnectionStrings__Redis=redis:6379
+      - ReverseProxy__Clusters__auth-cluster__Destinations__dest__Address=http://auth-api:8080/
+      - ReverseProxy__Clusters__booking-cluster__Destinations__dest__Address=http://booking-api:8080/
+      - ReverseProxy__Clusters__payment-cluster__Destinations__dest__Address=http://payment-api:8080/
+      - ReverseProxy__Clusters__social-cluster__Destinations__dest__Address=http://social-api:8080/
+      - ReverseProxy__Clusters__tour-cluster__Destinations__dest__Address=http://tour-api:8080/
+      - ReverseProxy__Clusters__voucher-cluster__Destinations__dest__Address=http://voucher-api:8080/
+      - ReverseProxy__Clusters__ai-cluster__Destinations__dest__Address=http://ai-api:8080/
+      - ReverseProxy__Clusters__content-cluster__Destinations__dest__Address=http://content-api:8080/
+      - ReverseProxy__Clusters__system-cluster__Destinations__dest__Address=http://system-api:8080/
+    depends_on:
+      - redis
+
+  auth-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PROJECT_NAME=AuthAPI
+    container_name: auth-api
+    restart: always
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=StayHub_IdentityDb;User Id=sa;Password=StayHub@Dev12345!;TrustServerCertificate=True;Encrypt=False;
+      - ConnectionStrings__Redis=redis:6379
+    depends_on:
+      - sqlserver
+      - redis
+
+  booking-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PROJECT_NAME=BookingAPI
+    container_name: booking-api
+    restart: always
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=StayHub_BookingDb;User Id=sa;Password=StayHub@Dev12345!;TrustServerCertificate=True;Encrypt=False;
+    depends_on:
+      - sqlserver
+
+  payment-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PROJECT_NAME=PaymentAPI
+    container_name: payment-api
+    restart: always
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=StayHub_PaymentDb;User Id=sa;Password=StayHub@Dev12345!;TrustServerCertificate=True;Encrypt=False;
+    depends_on:
+      - sqlserver
+
+  social-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PROJECT_NAME=SocialAPI
+    container_name: social-api
+    restart: always
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=Stayhub_SocialDb;User Id=sa;Password=StayHub@Dev12345!;TrustServerCertificate=True;Encrypt=False;
+      - ConnectionStrings__Redis=redis:6379
+    depends_on:
+      - sqlserver
+      - redis
+
+  tour-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PROJECT_NAME=TourAPI
+    container_name: tour-api
+    restart: always
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=StayHub_CatalogDb;User Id=sa;Password=StayHub@Dev12345!;TrustServerCertificate=True;Encrypt=False;
+    depends_on:
+      - sqlserver
+
+  voucher-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PROJECT_NAME=VoucherAPI
+    container_name: voucher-api
+    restart: always
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=StayHub_VoucherDb;User Id=sa;Password=StayHub@Dev12345!;TrustServerCertificate=True;Encrypt=False;
+    depends_on:
+      - sqlserver
+
+  ai-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PROJECT_NAME=AIAPI
+    container_name: ai-api
+    restart: always
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=StayHub_AiDb;User Id=sa;Password=StayHub@Dev12345!;TrustServerCertificate=True;Encrypt=False;
+    depends_on:
+      - sqlserver
+
+  content-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PROJECT_NAME=ContentAPI
+    container_name: content-api
+    restart: always
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=StayHub_ContentDb;User Id=sa;Password=StayHub@Dev12345!;TrustServerCertificate=True;Encrypt=False;
+      - ConnectionStrings__Redis=redis:6379
+    depends_on:
+      - sqlserver
+      - redis
+
+  system-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PROJECT_NAME=SystemAPI
+    container_name: system-api
+    restart: always
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=StayHub_SystemDb;User Id=sa;Password=StayHub@Dev12345!;TrustServerCertificate=True;Encrypt=False;
+    depends_on:
+      - sqlserver
+
+volumes:
+  sqlserver_data:
