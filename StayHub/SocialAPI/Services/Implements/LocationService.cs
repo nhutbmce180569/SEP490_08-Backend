@@ -382,26 +382,51 @@ namespace SocialAPI.Services.Implements
             var locKey = $"live_loc_{userId}";
             var locVal = await db.StringGetAsync(locKey);
 
-            if (!locVal.HasValue)
-            {
-                throw new KeyNotFoundException("User's live location is not available or has expired.");
-            }
-
             double lat = 0;
             double lng = 0;
             DateTime lastUpdated = DateTime.UtcNow;
+            bool locationFound = false;
 
-            try
+            if (locVal.HasValue)
             {
-                using var doc = JsonDocument.Parse(locVal.ToString());
-                var root = doc.RootElement;
-                lat = root.GetProperty("lat").GetDouble();
-                lng = root.GetProperty("lng").GetDouble();
-                lastUpdated = root.GetProperty("lastUpdated").GetDateTime();
+                try
+                {
+                    using var doc = JsonDocument.Parse(locVal.ToString());
+                    var root = doc.RootElement;
+                    lat = root.GetProperty("lat").GetDouble();
+                    lng = root.GetProperty("lng").GetDouble();
+                    lastUpdated = root.GetProperty("lastUpdated").GetDateTime();
+                    locationFound = true;
+                }
+                catch
+                {
+                    // Ignore parsing error
+                }
             }
-            catch (Exception)
+
+            if (!locationFound)
             {
-                throw new KeyNotFoundException("User's live location data is corrupted.");
+                // Fallback to the latest database footprint log
+                var lastLog = await _context.LocationLogs
+                    .Where(l => l.UserId == userId)
+                    .OrderByDescending(l => l.Timestamp)
+                    .FirstOrDefaultAsync();
+
+                if (lastLog != null)
+                {
+                    lat = lastLog.Lat;
+                    lng = lastLog.Lng;
+                    lastUpdated = lastLog.Timestamp;
+                    locationFound = true;
+                }
+            }
+
+            // If absolutely no coordinates found, use fallback coordinates (Danang center)
+            if (!locationFound)
+            {
+                lat = 16.047079;
+                lng = 108.206230;
+                lastUpdated = DateTime.MinValue; // Signal to UI that it's offline / not initialized
             }
 
             string fullName = $"User #{userId}";
