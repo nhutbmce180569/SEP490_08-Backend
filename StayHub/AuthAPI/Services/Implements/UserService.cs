@@ -115,7 +115,14 @@ namespace AuthAPI.Services.Implements
                 foreach (var roleId in createUserDto.RoleIds)
                 {
                     var role = await _roleRepository.GetById(roleId);
-                    if (role != null) newUser.Roles.Add(role);
+                    if (role != null)
+                    {
+                        if (role.Name == "Admin")
+                        {
+                            throw new InvalidOperationException("Cannot assign Admin role to a user.");
+                        }
+                        newUser.Roles.Add(role);
+                    }
                 }
             }
             else
@@ -245,7 +252,14 @@ namespace AuthAPI.Services.Implements
                 foreach (var roleId in updateUserDto.RoleIds)
                 {
                     var role = await _roleRepository.GetById(roleId);
-                    if (role != null) existingUser.Roles.Add(role);
+                    if (role != null)
+                    {
+                        if (role.Name == "Admin")
+                        {
+                            throw new InvalidOperationException("Cannot assign Admin role to a user.");
+                        }
+                        existingUser.Roles.Add(role);
+                    }
                 }
             }
 
