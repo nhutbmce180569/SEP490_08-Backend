@@ -65,6 +65,15 @@ namespace BookingAPI
                 }
             })
             .AddHttpMessageHandler<AuthorizationHeaderHandler>();
+
+            builder.Services.AddHttpClient("TourApiClient", client =>
+            {
+                var tourApiBaseUrl = builder.Configuration["GatewayApi:BaseUrl"];
+                if (!string.IsNullOrWhiteSpace(tourApiBaseUrl))
+                {
+                    client.BaseAddress = new Uri(tourApiBaseUrl.TrimEnd('/') + "/");
+                }
+            });
             builder.Services.AddHttpClient<IVoucherApiClient, VoucherApiClient>(client =>
             {
                 var gatewayBaseUrl = builder.Configuration["GatewayApi:BaseUrl"];
