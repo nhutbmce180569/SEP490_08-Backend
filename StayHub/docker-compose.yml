@@ -32,15 +32,6 @@ services:
       - "7010:8080"
     environment:
       - ConnectionStrings__Redis=redis:6379
-      - ReverseProxy__Clusters__auth-cluster__Destinations__dest__Address=http://auth-api:8080/
-      - ReverseProxy__Clusters__booking-cluster__Destinations__dest__Address=http://booking-api:8080/
-      - ReverseProxy__Clusters__payment-cluster__Destinations__dest__Address=http://payment-api:8080/
-      - ReverseProxy__Clusters__social-cluster__Destinations__dest__Address=http://social-api:8080/
-      - ReverseProxy__Clusters__tour-cluster__Destinations__dest__Address=http://tour-api:8080/
-      - ReverseProxy__Clusters__voucher-cluster__Destinations__dest__Address=http://voucher-api:8080/
-      - ReverseProxy__Clusters__ai-cluster__Destinations__dest__Address=http://ai-api:8080/
-      - ReverseProxy__Clusters__content-cluster__Destinations__dest__Address=http://content-api:8080/
-      - ReverseProxy__Clusters__system-cluster__Destinations__dest__Address=http://system-api:8080/
     depends_on:
       - redis
 
@@ -69,6 +60,10 @@ services:
     restart: always
     environment:
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=StayHub_BookingDb;User Id=sa;Password=StayHub@Dev12345!;TrustServerCertificate=True;Encrypt=False;
+      - GatewayApi__BaseUrl=http://gateway-api:8080/
+      - AuthApi__BaseUrl=http://auth-api:8080/
+      - SystemApi__BaseUrl=http://system-api:8080/
+      - ContentApi__BaseUrl=http://content-api:8080/
     depends_on:
       - sqlserver
 
@@ -82,6 +77,7 @@ services:
     restart: always
     environment:
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=StayHub_PaymentDb;User Id=sa;Password=StayHub@Dev12345!;TrustServerCertificate=True;Encrypt=False;
+      - GatewayApi__BaseUrl=http://gateway-api:8080/
     depends_on:
       - sqlserver
 
@@ -96,6 +92,12 @@ services:
     environment:
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=Stayhub_SocialDb;User Id=sa;Password=StayHub@Dev12345!;TrustServerCertificate=True;Encrypt=False;
       - ConnectionStrings__Redis=redis:6379
+      - AuthApi__BaseUrl=http://auth-api:8080/
+      - BookingApi__BaseUrl=http://booking-api:8080/
+      - TourApi__BaseUrl=http://tour-api:8080/
+      - InternalApi__AuthApiBaseUrl=http://auth-api:8080/
+      - InternalApi__TourApiBaseUrl=http://tour-api:8080/
+      - InternalApi__SystemApiBaseUrl=http://system-api:8080/
     depends_on:
       - sqlserver
       - redis
@@ -110,6 +112,9 @@ services:
     restart: always
     environment:
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=StayHub_CatalogDb;User Id=sa;Password=StayHub@Dev12345!;TrustServerCertificate=True;Encrypt=False;
+      - SystemApi__BaseUrl=http://system-api:8080/
+      - GatewayApi__BaseUrl=http://gateway-api:8080/
+      - BookingApi__BaseUrl=http://booking-api:8080/
     depends_on:
       - sqlserver
 
@@ -123,6 +128,7 @@ services:
     restart: always
     environment:
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=StayHub_VoucherDb;User Id=sa;Password=StayHub@Dev12345!;TrustServerCertificate=True;Encrypt=False;
+      - Gateway__BaseUrl=http://gateway-api:8080/
     depends_on:
       - sqlserver
 
@@ -136,6 +142,7 @@ services:
     restart: always
     environment:
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=StayHub_AiDb;User Id=sa;Password=StayHub@Dev12345!;TrustServerCertificate=True;Encrypt=False;
+      - Gateway__BaseUrl=http://gateway-api:8080/
     depends_on:
       - sqlserver
 
@@ -150,6 +157,7 @@ services:
     environment:
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=StayHub_ContentDb;User Id=sa;Password=StayHub@Dev12345!;TrustServerCertificate=True;Encrypt=False;
       - ConnectionStrings__Redis=redis:6379
+      - ApiUrls__TourAPI=http://tour-api:8080/
     depends_on:
       - sqlserver
       - redis
@@ -164,6 +172,7 @@ services:
     restart: always
     environment:
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=StayHub_SystemDb;User Id=sa;Password=StayHub@Dev12345!;TrustServerCertificate=True;Encrypt=False;
+      - AuthApi__BaseUrl=http://auth-api:8080/
     depends_on:
       - sqlserver
 
