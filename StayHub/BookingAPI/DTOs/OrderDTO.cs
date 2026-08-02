@@ -112,6 +112,7 @@ namespace BookingAPI.DTOs
     {
         public int Id { get; set; }
 
+        [System.Text.Json.Serialization.JsonPropertyName("createdBy")]
         public int OperatorId { get; set; }
 
         public int CategoryId { get; set; }
