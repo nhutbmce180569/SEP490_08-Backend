@@ -69,6 +69,8 @@ namespace TourAPI
             builder.Services.AddHttpClient<ICategoryService, CategoryService>(client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(10);
+                var gatewayUrl = builder.Configuration.GetValue<string>("GatewayApi:BaseUrl") ?? "https://localhost:7010";
+                client.BaseAddress = new Uri(gatewayUrl.TrimEnd('/') + "/");
             })
             .AddHttpMessageHandler<AuthorizationHeaderHandler>();
             builder.Services.AddHttpClient<ITicketTypeApiClient, TicketTypeApiClient>(client =>
@@ -154,8 +156,10 @@ namespace TourAPI
             builder.Services.AddHttpClient<IOrderService, OrderService>(client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(10);
+                var gatewayUrl = builder.Configuration.GetValue<string>("GatewayApi:BaseUrl") ?? "https://localhost:7010";
+                client.BaseAddress = new Uri(gatewayUrl.TrimEnd('/') + "/");
             })
-           .AddHttpMessageHandler<AuthorizationHeaderHandler>();
+            .AddHttpMessageHandler<AuthorizationHeaderHandler>();
             
             builder.Services.AddHostedService<TourAPI.BackgroundServices.ScheduleNotificationBackgroundService>();
             // Add services to the container.

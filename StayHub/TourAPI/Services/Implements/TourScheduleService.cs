@@ -1,5 +1,6 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
 using System.Security.Claims; // 💡 ĐÃ THÊM: Để bóc Claims danh tính
@@ -18,6 +19,7 @@ namespace TourAPI.Services.Implements
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IBookingApiClient _bookingApiClient;
         private readonly ILogger<TourScheduleService> _logger;
+        private readonly IConfiguration _configuration;
 
         public TourScheduleService(
             ITourScheduleRepository scheduleRepo,
@@ -26,7 +28,8 @@ namespace TourAPI.Services.Implements
             IHttpClientFactory httpClientFactory,
             IHttpContextAccessor httpContextAccessor,
             IBookingApiClient bookingApiClient,
-            ILogger<TourScheduleService> logger)
+            ILogger<TourScheduleService> logger,
+            IConfiguration configuration)
         {
             _scheduleRepo = scheduleRepo;
             _tourRepo = tourRepo;
@@ -35,6 +38,7 @@ namespace TourAPI.Services.Implements
             _httpContextAccessor = httpContextAccessor;
             _bookingApiClient = bookingApiClient;
             _logger = logger;
+            _configuration = configuration;
         }
 
         public async Task<PaginationDTO<ReadTourScheduleDTO>> GetAllSchedulesAsync(int page, int pageSize)
@@ -132,12 +136,13 @@ namespace TourAPI.Services.Implements
                     roomName = fullRoomName // Định dạng chuẩn: Tên tour _tên schedule
                 };
 
+                var gatewayUrl = (_configuration["GatewayApi:BaseUrl"] ?? "https://localhost:7010").TrimEnd('/');
                 using var client = _httpClientFactory.CreateClient();
                 client.DefaultRequestHeaders.Add("Authorization", token);
 
                 // 👉 Bước A: Ra lệnh cho SocialAPI tạo Group Chat
                 var response = await client.PostAsJsonAsync(
-                    "https://localhost:7010/api/chat/rooms/schedule",
+                    $"{gatewayUrl}/api/chat/rooms/schedule",
                     chatRoomRequest
                 );
 
@@ -146,7 +151,7 @@ namespace TourAPI.Services.Implements
                 {
                     var addMemberRequest = new { userIds = new List<int> { managerId } };
                     await client.PostAsJsonAsync(
-                        $"https://localhost:7010/api/chat/rooms/schedule/{scheduleId}/members",
+                        $"{gatewayUrl}/api/chat/rooms/schedule/{scheduleId}/members",
                         addMemberRequest
                     );
                     _logger.LogInformation($"Manager {managerId} automatically added to chat room for schedule {scheduleId}");

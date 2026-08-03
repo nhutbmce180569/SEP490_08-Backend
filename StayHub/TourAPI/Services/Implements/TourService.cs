@@ -409,7 +409,7 @@ namespace TourAPI.Services.Implements
 
             var uniqueCustomerIds = reviews.Select(r => r.CustomerId).Distinct().ToList();
 
-            var gatewayUrl = "https://localhost:7010";
+            var gatewayUrl = (_configuration["GatewayApi:BaseUrl"] ?? "https://localhost:7010").TrimEnd('/');
 
             var userDict = new ConcurrentDictionary<int, (string Name, string? Avatar)>();
 
@@ -456,7 +456,7 @@ namespace TourAPI.Services.Implements
             // Lấy danh sách OperatorId duy nhất (tránh gọi API trùng lặp)
             //            var uniqueOperatorIds = tours.Select(t => t.OperatorId).Distinct().ToList();
 
-            var gatewayUrl = "https://localhost:7010"; // Cổng Gateway của bạn
+            var gatewayUrl = (_configuration["GatewayApi:BaseUrl"] ?? "https://localhost:7010").TrimEnd('/');
 
 
             var response = await _httpClient.GetAsync($"{gatewayUrl}/api/users/{id}");
@@ -464,7 +464,7 @@ namespace TourAPI.Services.Implements
             if (response.IsSuccessStatusCode)
             {
                 var apiResponse = await response.Content.ReadFromJsonAsync<UserApiResponse>();
-                name = apiResponse?.Data?.FullName;
+                name = apiResponse?.Data?.FullName ?? "";
             }
             return name;
         }

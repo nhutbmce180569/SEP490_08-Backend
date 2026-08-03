@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using TourAPI.DTOs;
 using TourAPI.Models;
@@ -16,6 +17,7 @@ namespace TourAPI.Services.Implements
         private readonly ILogger<TourScheduleStaffService> _logger;
         private readonly INotificationInternalService _notificationService;
         private readonly ITourScheduleRepository _scheduleRepository;
+        private readonly IConfiguration _configuration;
 
         public TourScheduleStaffService(
             ITourScheduleStaffRepository staffRepository,
@@ -23,7 +25,8 @@ namespace TourAPI.Services.Implements
             IHttpContextAccessor httpContextAccessor,
             ILogger<TourScheduleStaffService> logger,
             INotificationInternalService notificationService,
-            ITourScheduleRepository scheduleRepository)
+            ITourScheduleRepository scheduleRepository,
+            IConfiguration configuration)
         {
             _staffRepository = staffRepository;
             _httpClientFactory = httpClientFactory;
@@ -31,6 +34,7 @@ namespace TourAPI.Services.Implements
             _logger = logger;
             _notificationService = notificationService;
             _scheduleRepository = scheduleRepository;
+            _configuration = configuration;
         }
 
         public async Task AssignStaffToScheduleAsync(AssignStaffRequestDto dto)
@@ -92,11 +96,12 @@ namespace TourAPI.Services.Implements
                     userIds = new List<int> { userId } // Khớp DTO đầu nhận của SocialAPI
                 };
 
+                var gatewayUrl = (_configuration["GatewayApi:BaseUrl"] ?? "https://localhost:7010").TrimEnd('/');
                 using var client = _httpClientFactory.CreateClient();
                 client.DefaultRequestHeaders.Add("Authorization", token);
 
                 var response = await client.PostAsJsonAsync(
-                    $"https://localhost:7010/api/chat/rooms/schedule/{scheduleId}/members",
+                    $"{gatewayUrl}/api/chat/rooms/schedule/{scheduleId}/members",
                     addMemberRequest
                 );
 
@@ -139,11 +144,12 @@ namespace TourAPI.Services.Implements
                 var token = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].ToString();
                 if (string.IsNullOrWhiteSpace(token)) return;
 
+                var gatewayUrl = (_configuration["GatewayApi:BaseUrl"] ?? "https://localhost:7010").TrimEnd('/');
                 using var client = _httpClientFactory.CreateClient();
                 client.DefaultRequestHeaders.Add("Authorization", token);
 
                 var response = await client.DeleteAsync(
-                    $"https://localhost:7010/api/chat/rooms/schedule/{scheduleId}/members/{userId}"
+                    $"{gatewayUrl}/api/chat/rooms/schedule/{scheduleId}/members/{userId}"
                 );
 
                 if (response.IsSuccessStatusCode)
@@ -174,8 +180,9 @@ namespace TourAPI.Services.Implements
 
             try
             {
+                var gatewayUrl = (_configuration["GatewayApi:BaseUrl"] ?? "https://localhost:7010").TrimEnd('/');
                 var client = _httpClientFactory.CreateClient();
-                var response = await client.PostAsJsonAsync("https://localhost:7010/api/users/batch", staffIds);
+                var response = await client.PostAsJsonAsync($"{gatewayUrl}/api/users/batch", staffIds);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -194,8 +201,9 @@ namespace TourAPI.Services.Implements
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, $"Error when fetching batch users details: {ex.Message}");
                 // Fallback nếu kết nối lỗi
             }
 

@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.AspNetCore.Mvc;
 using TourAPI.DTOs;
 
@@ -15,7 +15,7 @@ namespace TourAPI.Services.Implements
         public async Task<bool> CheckCompletedOrder(CheckCompletedBookingRequest request)
         {
             var response = await _httpClient.PostAsJsonAsync(
-                "https://localhost:7010/api/orders/check-completed-booking",
+                "api/orders/check-completed-booking",
                 request
             );
 
@@ -29,7 +29,7 @@ namespace TourAPI.Services.Implements
         public async Task<bool> CheckTourHasOrder(CheckBookingTour checkBookingTour)
         {
             var response = await _httpClient.PostAsJsonAsync(
-                "https://localhost:7010/api/orders/check-booking",
+                "api/orders/check-booking",
                 checkBookingTour
             );
 

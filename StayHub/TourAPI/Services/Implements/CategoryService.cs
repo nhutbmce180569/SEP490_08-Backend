@@ -1,4 +1,4 @@
-﻿using System.Net.Http;
+using System.Net.Http;
 using System.Text.Json;
 
 namespace TourAPI.Services.Implements
@@ -6,7 +6,6 @@ namespace TourAPI.Services.Implements
     public class CategoryService : ICategoryService
     {
         private readonly HttpClient _httpClient;
-        private const string GatewayBaseUrl = "https://localhost:7010";
 
         public CategoryService(HttpClient httpClient)
         {
@@ -16,7 +15,7 @@ namespace TourAPI.Services.Implements
         public async Task<bool> CheckCategoryExist(int categoryId)
         {
             var categoryExists = await _httpClient
-                .GetAsync($"{GatewayBaseUrl}/api/categories/{categoryId}");
+                .GetAsync($"api/categories/{categoryId}");
 
             return categoryExists.IsSuccessStatusCode;
         }
@@ -33,7 +32,7 @@ namespace TourAPI.Services.Implements
             try
             {
                 var response = await _httpClient.GetAsync(
-                    $"{GatewayBaseUrl}/api/categories?page=1&pageSize=500");
+                    "api/categories?page=1&pageSize=500");
 
                 if (!response.IsSuccessStatusCode)
                 {
