@@ -59,7 +59,14 @@ public class MomentsController : LocalizedControllerBase
 
     [HttpGet]
     // 💡 SỬA TẠI ĐÂY: Đổi int scheduleId thành int? scheduleId
-    public async Task<IActionResult> GetMomentFeed([FromQuery] int? scheduleId, [FromQuery(Name = "$skip")] int skip = 0, [FromQuery(Name = "$top")] int top = 5)
+    public async Task<IActionResult> GetMomentFeed(
+        [FromQuery] int? scheduleId,
+        [FromQuery(Name = "$skip")] int skip = 0,
+        [FromQuery(Name = "$top")] int top = 5,
+        [FromQuery] double? minLat = null,
+        [FromQuery] double? maxLat = null,
+        [FromQuery] double? minLng = null,
+        [FromQuery] double? maxLng = null)
     {
         try
         {
@@ -70,7 +77,17 @@ public class MomentsController : LocalizedControllerBase
             }
 
             var bearerToken = Request.Headers["Authorization"].ToString();
-            var result = await _momentService.GetMomentFeedWithUsersAsync(scheduleId, userId.Value, bearerToken, skip, top);
+
+            IEnumerable<MomentResponseDto> result;
+            bool hasBbox = minLat.HasValue && maxLat.HasValue && minLng.HasValue && maxLng.HasValue;
+            if (hasBbox)
+            {
+                result = await _momentService.GetMomentFeedWithUsersAsync(scheduleId, userId.Value, bearerToken, skip, top, minLat, maxLat, minLng, maxLng);
+            }
+            else
+            {
+                result = await _momentService.GetMomentFeedWithUsersAsync(scheduleId, userId.Value, bearerToken, skip, top);
+            }
 
             Response.Headers.Add("Cache-Control", "no-store, no-cache, must-revalidate, post-check=0, pre-check=0");
             Response.Headers.Add("Pragma", "no-cache");
