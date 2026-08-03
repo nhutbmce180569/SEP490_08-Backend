@@ -594,59 +594,42 @@ namespace SocialAPI.Services.Implements
                     return await _friendshipRepository.CheckAreFriendsAsync(userId1, userId2);
                 }
 
-                // If either user is Admin, allow chat
-                bool isUser1Admin = profile1.RoleNames.Any(r => r.Equals("Admin", StringComparison.OrdinalIgnoreCase));
-                bool isUser2Admin = profile2.RoleNames.Any(r => r.Equals("Admin", StringComparison.OrdinalIgnoreCase));
-                if (isUser1Admin || isUser2Admin)
+                // If either user is Admin or Manager, allow chat
+                bool isUser1AdminOrManager = profile1.RoleNames.Any(r => 
+                    r.Equals("Admin", StringComparison.OrdinalIgnoreCase) || 
+                    r.Equals("Manager", StringComparison.OrdinalIgnoreCase));
+                bool isUser2AdminOrManager = profile2.RoleNames.Any(r => 
+                    r.Equals("Admin", StringComparison.OrdinalIgnoreCase) || 
+                    r.Equals("Manager", StringComparison.OrdinalIgnoreCase));
+                if (isUser1AdminOrManager || isUser2AdminOrManager)
                 {
                     return true;
                 }
 
-                // Check if either is Staff or Manager
-                bool isUser1StaffOrManager = profile1.RoleNames.Any(r =>
-                    r.Equals("Staff", StringComparison.OrdinalIgnoreCase) ||
-                    r.Equals("Manager", StringComparison.OrdinalIgnoreCase));
+                // Check if either is Staff
+                bool isUser1Staff = profile1.RoleNames.Any(r => r.Equals("Staff", StringComparison.OrdinalIgnoreCase));
+                bool isUser2Staff = profile2.RoleNames.Any(r => r.Equals("Staff", StringComparison.OrdinalIgnoreCase));
 
-                bool isUser2StaffOrManager = profile2.RoleNames.Any(r =>
-                    r.Equals("Staff", StringComparison.OrdinalIgnoreCase) ||
-                    r.Equals("Manager", StringComparison.OrdinalIgnoreCase));
-
-                // If both are staff/manager, allow chat
-                if (isUser1StaffOrManager && isUser2StaffOrManager)
+                // If both are staff, allow chat
+                if (isUser1Staff && isUser2Staff)
                 {
                     return true;
                 }
 
-                // If one is customer and one is staff/manager
-                if (isUser1StaffOrManager || isUser2StaffOrManager)
+                // If one is customer and one is staff
+                if (isUser1Staff || isUser2Staff)
                 {
-                    int customerId = isUser1StaffOrManager ? userId2 : userId1;
-                    int staffOrManagerId = isUser1StaffOrManager ? userId1 : userId2;
-                    var staffOrManagerProfile = isUser1StaffOrManager ? profile1 : profile2;
-
+                    int customerId = isUser1Staff ? userId2 : userId1;
+                    int staffId = isUser1Staff ? userId1 : userId2;
+                    
                     var scheduleIds = new List<int>();
 
                     // Fetch assigned schedules for Staff
-                    if (staffOrManagerProfile.RoleNames.Any(r => r.Equals("Staff", StringComparison.OrdinalIgnoreCase)))
+                    var staffSchedules = await _tourApiClient.GetStaffScheduleIdsAsync(staffId);
+                    if (staffSchedules != null && staffSchedules.Any())
                     {
-                        var staffSchedules = await _tourApiClient.GetStaffScheduleIdsAsync(staffOrManagerId);
-                        if (staffSchedules != null && staffSchedules.Any())
-                        {
-                            scheduleIds.AddRange(staffSchedules);
-                        }
+                        scheduleIds.AddRange(staffSchedules);
                     }
-
-                    // Fetch managed schedules for Manager
-                    if (staffOrManagerProfile.RoleNames.Any(r => r.Equals("Manager", StringComparison.OrdinalIgnoreCase)))
-                    {
-                        var managerSchedules = await _tourApiClient.GetManagerScheduleIdsAsync(staffOrManagerId);
-                        if (managerSchedules != null && managerSchedules.Any())
-                        {
-                            scheduleIds.AddRange(managerSchedules);
-                        }
-                    }
-
-                    scheduleIds = scheduleIds.Distinct().ToList();
 
                     if (!scheduleIds.Any())
                     {
