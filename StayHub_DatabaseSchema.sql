@@ -586,7 +586,7 @@ CREATE TABLE TourMoments (
     Caption NVARCHAR(MAX),
     Lat FLOAT,
     Lng FLOAT,
-    Privacy VARCHAR(20) NOT NULL DEFAULT 'Public' CONSTRAINT CHK_MomentPrivacy CHECK (Privacy IN ('Public', 'Private', 'Friend')),
+    Privacy VARCHAR(20) NOT NULL DEFAULT 'Public' CONSTRAINT CHK_MomentPrivacy CHECK (Privacy IN ('Public', 'Private', 'Friend', 'Tour')),
     Status VARCHAR(20) NOT NULL DEFAULT 'Approved' CONSTRAINT CHK_TourMoments_Status CHECK (Status IN ('Approved', 'Pending', 'Flagged', 'Rejected')),
     CreatedAt DATETIME2 DEFAULT GETDATE()
 );
