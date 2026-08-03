@@ -15,6 +15,7 @@ namespace GatewayAPI
             builder.Services.AddControllers().AddStayHubDataAnnotationsLocalization();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddStayHubLocalization();
+            builder.Services.AddHttpClient();
 
             // 1. SỬA LẠI CẤU HÌNH CORS CHO SIGNALR
             builder.Services.AddCors(options =>
