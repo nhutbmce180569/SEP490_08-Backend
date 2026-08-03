@@ -30,7 +30,11 @@ namespace GatewayAPI.Controllers
                 return BadRequest(new { error = "Text parameter is required." });
             }
 
-            var apiKey = _configuration["DeepL:ApiKey"] ?? Environment.GetEnvironmentVariable("DEEPL_API_KEY");
+            var apiKey = _configuration["DeepL:ApiKey"];
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                apiKey = Environment.GetEnvironmentVariable("DEEPL_API_KEY");
+            }
             if (string.IsNullOrEmpty(apiKey))
             {
                 _logger.LogWarning("DeepL API key is not configured.");
