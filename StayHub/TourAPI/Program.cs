@@ -147,7 +147,11 @@ namespace TourAPI
             .AddHttpMessageHandler<AuthorizationHeaderHandler>();
             builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddHttpClient<IAuthApiClient, AuthApiClient>();
-            builder.Services.AddHttpClient<INotificationInternalService, NotificationInternalService>();
+            builder.Services.AddHttpClient<INotificationInternalService, NotificationInternalService>()
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            });
             //{
             //    client.Timeout = TimeSpan.FromSeconds(10);
             //}).AddHttpMessageHandler<AuthorizationHeaderHandler>();
