@@ -14,17 +14,23 @@ namespace TourAPI.Services.Implements
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogger<TourScheduleStaffService> _logger;
+        private readonly INotificationInternalService _notificationService;
+        private readonly ITourScheduleRepository _scheduleRepository;
 
         public TourScheduleStaffService(
             ITourScheduleStaffRepository staffRepository,
             IHttpClientFactory httpClientFactory,
             IHttpContextAccessor httpContextAccessor,
-            ILogger<TourScheduleStaffService> logger)
+            ILogger<TourScheduleStaffService> logger,
+            INotificationInternalService notificationService,
+            ITourScheduleRepository scheduleRepository)
         {
             _staffRepository = staffRepository;
             _httpClientFactory = httpClientFactory;
             _httpContextAccessor = httpContextAccessor;
             _logger = logger;
+            _notificationService = notificationService;
+            _scheduleRepository = scheduleRepository;
         }
 
         public async Task AssignStaffToScheduleAsync(AssignStaffRequestDto dto)
@@ -53,6 +59,24 @@ namespace TourAPI.Services.Implements
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Failed to add staff {dto.StaffId} to chat room for schedule {dto.ScheduleId}. Error: {ex.Message}");
+            }
+
+            // ✨ GỬI THÔNG BÁO CHO STAFF
+            try
+            {
+                var schedule = await _scheduleRepository.GetByIdAsync(dto.ScheduleId);
+                string title = "New Tour Assignment";
+                string role = dto.AssignedRole ?? "Staff";
+                string tourName = schedule?.Tour?.Name ?? "Unknown Tour";
+                string content = schedule != null 
+                    ? $"You have been assigned to the tour '{tourName}' (Schedule ID: {schedule.Id}) with the role of {role}. Departure Date: {schedule.DepartureDate:MM/dd/yyyy}."
+                    : $"You have been assigned to a tour schedule (ID: {dto.ScheduleId}) with the role of {role}.";
+                    
+                await _notificationService.NotifyUserAsync(dto.StaffId, title, content);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Failed to send notification to staff {dto.StaffId} for schedule {dto.ScheduleId}. Error: {ex.Message}");
             }
         }
 
