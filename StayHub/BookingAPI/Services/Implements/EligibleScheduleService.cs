@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using BookingAPI.DTOs;
 using BookingAPI.Repositories; // Thêm namespace Repository Order của bạn
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 
 namespace BookingAPI.Services.Implements
 {
@@ -16,12 +17,14 @@ namespace BookingAPI.Services.Implements
         private readonly IOrderRepository _orderRepository;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IConfiguration _configuration;
 
-        public EligibleScheduleService(IOrderRepository orderRepository, IHttpClientFactory httpClientFactory, IHttpContextAccessor httpContextAccessor)
+        public EligibleScheduleService(IOrderRepository orderRepository, IHttpClientFactory httpClientFactory, IHttpContextAccessor httpContextAccessor, IConfiguration configuration)
         {
             _orderRepository = orderRepository;
             _httpClientFactory = httpClientFactory;
             _httpContextAccessor = httpContextAccessor;
+            _configuration = configuration;
         }
 
         public async Task<List<EligibleScheduleDto>> GetEligibleSchedulesAsync(int userId)
@@ -51,8 +54,8 @@ namespace BookingAPI.Services.Implements
                     client.DefaultRequestHeaders.Add("Authorization", token);
                 }
 
-                // Thay đổi URL Gateway/Catalog tùy thuộc vào hệ thống của bạn
-                var catalogApiUrl = "http://localhost:5046/api/tourschedules/batch";
+                var gatewayUrl = (_configuration["GatewayApi:BaseUrl"] ?? "https://localhost:7010").TrimEnd('/');
+                var catalogApiUrl = $"{gatewayUrl}/api/tourschedules/batch";
                 var scheduleResponse = await client.PostAsJsonAsync(catalogApiUrl, distinctScheduleIds);
 
                 if (scheduleResponse.IsSuccessStatusCode)
@@ -65,7 +68,7 @@ namespace BookingAPI.Services.Implements
                         var tourIds = scheduleDetails.Where(s => s.TourId > 0).Select(s => s.TourId).Distinct().ToList();
                         if (tourIds.Any())
                         {
-                            var toursApiUrl = "http://localhost:5046/api/tours/batch";
+                            var toursApiUrl = $"{gatewayUrl}/api/tours/batch";
                             var toursResponse = await client.PostAsJsonAsync(toursApiUrl, tourIds);
 
                             if (toursResponse.IsSuccessStatusCode)
