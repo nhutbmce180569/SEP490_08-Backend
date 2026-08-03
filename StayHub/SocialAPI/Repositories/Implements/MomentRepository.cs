@@ -83,6 +83,43 @@ public class MomentRepository : IMomentRepository
             .Take(top)
             .ToListAsync();
     }
+
+    public async Task<IEnumerable<TourMoment>> GetMomentFeedPagedAsync(int? scheduleId, int currentUserId, int skip, int top, double? minLat, double? maxLat, double? minLng, double? maxLng)
+    {
+        var query = _context.TourMoments
+            .AsNoTrackingWithIdentityResolution()
+            .AsSplitQuery()
+            .Include(m => m.MomentComments.Where(c => c.Status == "Approved"))
+            .Include(m => m.MomentReactions)
+            .Where(m => m.Status == "Approved" && m.Lat.HasValue && m.Lng.HasValue)
+            .AsQueryable();
+
+        if (scheduleId.HasValue && scheduleId.Value > 0)
+            query = query.Where(m => m.ScheduleId == scheduleId.Value);
+
+        // Bounding box filter — only applied when all 4 bounds are provided
+        if (minLat.HasValue && maxLat.HasValue && minLng.HasValue && maxLng.HasValue)
+        {
+            query = query.Where(m =>
+                m.Lat >= minLat.Value && m.Lat <= maxLat.Value &&
+                m.Lng >= minLng.Value && m.Lng <= maxLng.Value);
+        }
+
+        query = query.Where(m =>
+            m.UserId == currentUserId ||
+            m.Privacy == "Public" ||
+            m.Privacy == "Tour" ||
+            (m.Privacy == "Friend" && _context.Friendships.Any(f => f.Status == "Accepted" &&
+                ((f.RequesterId == currentUserId && f.ReceiverId == m.UserId) ||
+                 (f.ReceiverId == currentUserId && f.RequesterId == m.UserId)))));
+
+        return await query
+            .OrderByDescending(m => m.CreatedAt)
+            .ThenByDescending(m => m.Id)
+            .Skip(skip)
+            .Take(top)
+            .ToListAsync();
+    }
     public IQueryable<TourMoment> GetMomentsAsQueryable()
     {
         return _context.TourMoments.Where(m => m.Status == "Approved").AsQueryable();
