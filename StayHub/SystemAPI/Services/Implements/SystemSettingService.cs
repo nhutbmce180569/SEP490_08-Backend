@@ -46,7 +46,27 @@ namespace SystemAPI.Services.Implements
                     var setting = await _systemSettingRepository.GetSettingByKeyAsync(item.SettingKey);
                     if (setting != null)
                     {
-                        setting.SettingValue = item.SettingValue ?? "";
+                        if (string.IsNullOrWhiteSpace(item.SettingValue))
+                        {
+                            if (item.SettingKey == "WebVideoLogo" && !string.IsNullOrWhiteSpace(setting.SettingValue))
+                            {
+                                string? oldPublicId = _cloudinaryService.ExtractPublicIdFromUrl(setting.SettingValue);
+                                if (!string.IsNullOrWhiteSpace(oldPublicId))
+                                {
+                                    await _cloudinaryService.DeleteVideoAsync(oldPublicId);
+                                }
+                            }
+                            else if (item.SettingKey == "WebLogo" && !string.IsNullOrWhiteSpace(setting.SettingValue))
+                            {
+                                string? oldPublicId = _cloudinaryService.ExtractPublicIdFromUrl(setting.SettingValue);
+                                if (!string.IsNullOrWhiteSpace(oldPublicId))
+                                {
+                                    await _cloudinaryService.DeleteImageAsync(oldPublicId);
+                                }
+                            }
+                        }
+
+                        setting.SettingValue = string.IsNullOrWhiteSpace(item.SettingValue) ? "" : item.SettingValue;
                         setting.UpdatedAt = DateTime.UtcNow;
                         await _systemSettingRepository.UpdateSettingAsync(setting);
                     }

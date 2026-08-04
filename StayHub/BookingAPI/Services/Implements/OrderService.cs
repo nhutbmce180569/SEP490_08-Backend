@@ -29,6 +29,8 @@ namespace BookingAPI.Services.Implements
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IContentApiClient _contentApiClient;
         private readonly ILogger<OrderService> _logger;
+        private readonly IIdempotencyService _idempotencyService;
+
         public OrderService(
          IOrderRepository orderRepository,
          ITicketRepository ticketRepository,
@@ -41,7 +43,8 @@ namespace BookingAPI.Services.Implements
          IHttpClientFactory httpClientFactory,
          IHttpContextAccessor httpContextAccessor,
          IContentApiClient contentApiClient,
-         ILogger<OrderService> logger)
+         ILogger<OrderService> logger,
+         IIdempotencyService idempotencyService)
         {
             _orderRepository = orderRepository;
             _ticketRepository = ticketRepository;
@@ -55,6 +58,7 @@ namespace BookingAPI.Services.Implements
             _httpContextAccessor = httpContextAccessor;
             _contentApiClient = contentApiClient;
             _logger = logger;
+            _idempotencyService = idempotencyService;
         }
 
         public async Task<bool> CheckCompletedBookingAsync(CheckBookingRequest request)
@@ -75,7 +79,7 @@ namespace BookingAPI.Services.Implements
 
             return await _orderRepository.HasBookingAsync(request.ScheduleIds);
         }
-        public async Task<ReadOrderDTO> CreateOrderAsync(int customerId, CreateOrderDTO request)
+        public async Task<ReadOrderDTO> CreateOrderAsync(int customerId, CreateOrderDTO request, string idempotencyKey)
         {
             if (request.OrderDetails == null || !request.OrderDetails.Any())
             {
@@ -168,6 +172,7 @@ namespace BookingAPI.Services.Implements
             }
 
             var reservedDetails = new List<ValidatedOrderDetail>();
+            var isOrderSaved = false;
 
             try
             {
@@ -186,6 +191,9 @@ namespace BookingAPI.Services.Implements
                 }
 
                 var savedOrder = await _orderRepository.AddAsync(order);
+                isOrderSaved = true;
+
+                await _idempotencyService.SetCompletedAsync(idempotencyKey, customerId, savedOrder.Id);
 
                 _backgroundJobService.ScheduleAutoCancelOrder(savedOrder.Id);
 
@@ -195,6 +203,11 @@ namespace BookingAPI.Services.Implements
             }
             catch
             {
+                if (!isOrderSaved)
+                {
+                    await _idempotencyService.DeleteProcessingKeyAsync(idempotencyKey, customerId);
+                }
+
                 await ReleaseReservedTicketsAsync(reservedDetails);
 
                 if (voucherRedeemed && !string.IsNullOrWhiteSpace(voucherCode))
