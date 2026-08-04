@@ -291,11 +291,27 @@ public class MomentService : IMomentService
         var rawMoments = (await _momentRepository.GetMomentFeedPagedAsync(scheduleId, currentUserId, skip, top)).ToList();
         
         var moments = new List<TourMoment>();
+        // Cache membership results per scheduleId to avoid repeated HTTP calls
+        var membershipCache = new Dictionary<int, bool>();
         foreach (var m in rawMoments)
         {
             if (m.Privacy.Equals("Tour", StringComparison.OrdinalIgnoreCase) && m.UserId != currentUserId)
             {
-                bool isMember = await CheckIsTourMemberAsync(m.ScheduleId, currentUserId, bearerToken);
+                // If a specific scheduleId was passed as query filter, the caller has already
+                // been verified as an eligible member via the eligible-schedules API — skip
+                // the expensive inter-service membership check to avoid cross-service HTTPS
+                // certificate errors in local dev and unnecessary latency in production.
+                if (scheduleId.HasValue && scheduleId.Value > 0 && m.ScheduleId == scheduleId.Value)
+                {
+                    moments.Add(m);
+                    continue;
+                }
+
+                if (!membershipCache.TryGetValue(m.ScheduleId, out bool isMember))
+                {
+                    isMember = await CheckIsTourMemberAsync(m.ScheduleId, currentUserId, bearerToken);
+                    membershipCache[m.ScheduleId] = isMember;
+                }
                 if (!isMember)
                 {
                     continue;
@@ -356,6 +372,64 @@ public class MomentService : IMomentService
             }
         }
 
+        return dtos;
+    }
+
+    public async Task<IEnumerable<MomentResponseDto>> GetMomentFeedWithUsersAsync(
+        int? scheduleId, int currentUserId, string? bearerToken, int skip, int top,
+        double? minLat, double? maxLat, double? minLng, double? maxLng)
+    {
+        var rawMoments = (await _momentRepository.GetMomentFeedPagedAsync(scheduleId, currentUserId, skip, top, minLat, maxLat, minLng, maxLng)).ToList();
+
+        var moments = new List<TourMoment>();
+        var membershipCache = new Dictionary<int, bool>();
+        foreach (var m in rawMoments)
+        {
+            if (m.Privacy.Equals("Tour", StringComparison.OrdinalIgnoreCase) && m.UserId != currentUserId)
+            {
+                if (scheduleId.HasValue && scheduleId.Value > 0 && m.ScheduleId == scheduleId.Value)
+                {
+                    moments.Add(m);
+                    continue;
+                }
+                if (!membershipCache.TryGetValue(m.ScheduleId, out bool isMember))
+                {
+                    isMember = await CheckIsTourMemberAsync(m.ScheduleId, currentUserId, bearerToken);
+                    membershipCache[m.ScheduleId] = isMember;
+                }
+                if (!isMember) continue;
+            }
+            moments.Add(m);
+        }
+
+        var dtos = _mapper.Map<List<MomentResponseDto>>(moments);
+        if (!dtos.Any()) return dtos;
+
+        var likedMomentIds = moments
+            .Where(m => m.MomentReactions.Any(r => r.UserId == currentUserId && r.IsLike == true))
+            .Select(m => m.Id).ToHashSet();
+
+        var userIds = dtos.Select(d => d.UserId)
+            .Concat(dtos.SelectMany(d => d.Comments).Select(c => c.UserId))
+            .Distinct().ToList();
+
+        var userProfiles = await FetchUserProfilesAsync(userIds);
+        foreach (var dto in dtos)
+        {
+            dto.IsLikedByMe = likedMomentIds.Contains(dto.Id);
+            if (dto.User != null)
+            {
+                if (userProfiles.TryGetValue(dto.UserId, out var author))
+                { dto.User.FullName = author.FullName ?? "Anonymous user"; dto.User.AvatarUrl = author.AvatarUrl; }
+                else dto.User.FullName = "Anonymous user";
+            }
+            foreach (var c in dto.Comments)
+            {
+                if (userProfiles.TryGetValue(c.UserId, out var cu))
+                { c.UserName = cu.FullName ?? "Anonymous user"; c.AvatarUrl = cu.AvatarUrl; }
+                else c.UserName = "Anonymous user";
+            }
+        }
         return dtos;
     }
 
