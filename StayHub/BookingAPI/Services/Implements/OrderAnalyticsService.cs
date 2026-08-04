@@ -7,11 +7,13 @@ namespace BookingAPI.Services.Implements
     {
         private readonly IOrderRepository _orderRepository;
         private readonly IContentApiClient _contentApiClient;
+        private readonly ITourApiClient _tourApiClient;
 
-        public OrderAnalyticsService(IOrderRepository orderRepository, IContentApiClient contentApiClient)
+        public OrderAnalyticsService(IOrderRepository orderRepository, IContentApiClient contentApiClient, ITourApiClient tourApiClient)
         {
             _orderRepository = orderRepository;
             _contentApiClient = contentApiClient;
+            _tourApiClient = tourApiClient;
         }
 
         public async Task<OrderAnalyticsOverviewDTO> GetOverviewAsync(DateTime? from, DateTime? to)
@@ -71,6 +73,23 @@ namespace BookingAPI.Services.Implements
                     {
                         var typeDto = await _contentApiClient.GetTicketTypeByIdAsync(item.TicketTypeId);
                         item.TicketTypeName = typeDto?.Name ?? $"Loại #{item.TicketTypeId}";
+                    }
+                }
+            }
+
+            if (result.SalesByEvent != null && result.SalesByEvent.Count > 0)
+            {
+                foreach (var item in result.SalesByEvent)
+                {
+                    var schedule = await _tourApiClient.GetScheduleByIdAsync(item.ScheduleId);
+                    if (schedule != null)
+                    {
+                        var tour = await _tourApiClient.GetTourByIdAsync(schedule.TourId);
+                        item.TourName = tour?.Name ?? $"Tour #{schedule.TourId}";
+                    }
+                    else
+                    {
+                        item.TourName = $"Lịch trình #{item.ScheduleId}";
                     }
                 }
             }

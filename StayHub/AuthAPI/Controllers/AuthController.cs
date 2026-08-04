@@ -1,4 +1,4 @@
-﻿using AuthAPI.DTOs;
+using AuthAPI.DTOs;
 using AuthAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -230,11 +230,20 @@ namespace AuthAPI.Controllers
             if (!string.IsNullOrEmpty(providerClaim) && !providerClaim.Equals("Local", StringComparison.OrdinalIgnoreCase))
                 return BadRequest(new { message = M("SocialAccountCannotChangePassword") });
 
-            var response = await _authService.ChangePassword(userId, dto);
-            if (response == null)
-                return BadRequest(new { message = M("PasswordChangeFailed") });
+            try
+            {
+                var response = await _authService.ChangePassword(userId, dto);
+                if (response == null)
+                    return BadRequest(new { message = M("PasswordChangeFailed") });
 
-            return Ok(new { message = M("PasswordChangedSuccessfully"), data = response });
+                return Ok(new { message = M("PasswordChangedSuccessfully"), data = response });
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message == "NewPasswordMustBeDifferent")
+                    return BadRequest(new { message = "Mật khẩu mới không được trùng với mật khẩu cũ!" });
+                throw;
+            }
         }
 
         [HttpPost("forgot-password")]
