@@ -18,10 +18,13 @@ namespace BookingAPI.Controllers
     public class OrdersController : LocalizedControllerBase
     {
         private readonly IOrderService _orderService;
+        private readonly IIdempotencyService _idempotencyService;
 
-        public OrdersController(IOrderService orderService, IStringLocalizer<Messages> localizer)
+        public OrdersController(IOrderService orderService, IIdempotencyService idempotencyService, IStringLocalizer<Messages> localizer)
             : base(localizer)
-        {_orderService = orderService;
+        {
+            _orderService = orderService;
+            _idempotencyService = idempotencyService;
         }
 
         // POST: api/orders/check-completed-booking
@@ -30,7 +33,7 @@ namespace BookingAPI.Controllers
         {
             var hasBooked = await _orderService.CheckCompletedBookingAsync(request);
 
-            return Ok(hasBooked); 
+            return Ok(hasBooked);
         }
         // POST: api/orders/check-booking
         [HttpPost("check-booking")]
@@ -43,11 +46,11 @@ namespace BookingAPI.Controllers
         }
 
         [HttpPost]
-        [Authorize] 
+        [Authorize]
         public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDTO request)
         {
             // Lấy CustomerId từ Token đăng nhập của User
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                               ?? User.FindFirst("id")?.Value;
 
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int customerId))
@@ -55,9 +58,39 @@ namespace BookingAPI.Controllers
                 return Unauthorized(new { message = M("InvalidTokenClaimsUserNotIdentified") });
             }
 
+            var idempotencyKey = Request.Headers["Idempotency-Key"].FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(idempotencyKey))
+            {
+                return BadRequest(new { message = "Idempotency-Key header is required." });
+            }
+
+            var existingState = await _idempotencyService.GetStateAsync(idempotencyKey, customerId);
+            if (existingState != null)
+            {
+                if (existingState.Status == "Processing")
+                {
+                    return Conflict(new { message = "This order request is already being processed." });
+                }
+
+                if (existingState.Status == "Completed" && existingState.OrderId.HasValue)
+                {
+                    var existingOrder = await _orderService.GetOrderByIdAsync(existingState.OrderId.Value, customerId);
+                    if (existingOrder != null)
+                    {
+                        return StatusCode(201, new { message = M("OrderAndTicketsCreatedSuccessfully"), data = existingOrder });
+                    }
+                }
+            }
+
+            var lockAcquired = await _idempotencyService.TryAcquireLockAsync(idempotencyKey, customerId);
+            if (!lockAcquired)
+            {
+                return Conflict(new { message = "This order request is already being processed." });
+            }
+
             try
             {
-                var result = await _orderService.CreateOrderAsync(customerId, request);
+                var result = await _orderService.CreateOrderAsync(customerId, request, idempotencyKey);
                 return StatusCode(201, new { message = M("OrderAndTicketsCreatedSuccessfully"), data = result });
             }
             catch (BookingValidationException ex)
@@ -79,12 +112,12 @@ namespace BookingAPI.Controllers
             }
 
             var result = await _orderService.GetOrderByIdAsync(id, customerId);
-            
+
             if (result == null)
             {
                 return NotFound(new { message = $"Order with ID {id} not found." });
             }
-            
+
             return Ok(new { message = M("OrderRetrievedSuccessfully"), data = result });
         }
 
@@ -104,7 +137,7 @@ namespace BookingAPI.Controllers
 
         [HttpGet("schedule/{scheduleId}/customers")]
         [Authorize]
-        public async Task<IActionResult> GetCustomersByScheduleId(int scheduleId, [FromQuery] string? attendeeName = null) 
+        public async Task<IActionResult> GetCustomersByScheduleId(int scheduleId, [FromQuery] string? attendeeName = null)
         {
             var result = await _orderService.GetScheduleCustomersAsync(scheduleId, attendeeName);
 
@@ -123,7 +156,7 @@ namespace BookingAPI.Controllers
             [FromQuery] string? status = null)
         {
             // Lấy CustomerId từ Token đăng nhập của User
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                               ?? User.FindFirst("id")?.Value;
 
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int customerId))

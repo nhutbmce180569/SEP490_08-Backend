@@ -1,4 +1,3 @@
-
 using BookingAPI.Helpers;
 using BookingAPI.Mappers;
 using BookingAPI.Mappings;
@@ -13,6 +12,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
 using System.Text;
 namespace BookingAPI
 {
@@ -35,8 +35,16 @@ namespace BookingAPI
             builder.Services.AddHangfireServer();
 
             builder.Services.AddScoped<IEligibleScheduleService, EligibleScheduleService>();
-            builder.Services.AddScoped<IBackgroundJobService, BackgroundJobService>();
             builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddScoped<IBackgroundJobService, BackgroundJobService>();
+
+            // Redis Configuration
+            var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+            if (!string.IsNullOrEmpty(redisConnectionString))
+            {
+                builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnectionString));
+            }
+
             builder.Services.AddSingleton<IQrCodeService, QrCodeService>();
             builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddScoped<IOrderService, OrderService>();
@@ -44,6 +52,7 @@ namespace BookingAPI
             builder.Services.AddScoped<IPlatformAnalyticsService, PlatformAnalyticsService>();
             builder.Services.AddScoped<ICancellationRepository, CancellationRepository>();
             builder.Services.AddScoped<ICancellationService, CancellationService>();
+            builder.Services.AddScoped<IIdempotencyService, IdempotencyService>();
             builder.Services.AddHttpClient<IContentApiClient, ContentApiClient>(client =>
             {
                 var contentApiBaseUrl = builder.Configuration["ContentApi:BaseUrl"];
@@ -93,10 +102,10 @@ namespace BookingAPI
                 }
             });
             builder.Services.AddHttpClient("SocialApiClient", client =>
-  {
-      var gatewayBaseUrl = builder.Configuration["GatewayApi:BaseUrl"] ?? "https://localhost:7000";
-      client.BaseAddress = new Uri(gatewayBaseUrl.TrimEnd('/') + "/");
-  });
+            {
+                var gatewayBaseUrl = builder.Configuration["GatewayApi:BaseUrl"] ?? "https://localhost:7000";
+                client.BaseAddress = new Uri(gatewayBaseUrl.TrimEnd('/') + "/");
+            });
             builder.Services.AddScoped<ITicketRepository, TicketRepository>();
             builder.Services.AddScoped<ITicketService, TicketService>();
             builder.Services.AddHostedService<BookingAPI.BackgroundServices.OrderNotificationBackgroundService>();
