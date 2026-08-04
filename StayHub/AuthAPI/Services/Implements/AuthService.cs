@@ -229,6 +229,9 @@ namespace AuthAPI.Services.Implements
             if (!_passwordHelper.Verify(user, user.PasswordHash, changePasswordDTO.OldPassword))
                 return null;
 
+            if (changePasswordDTO.OldPassword == changePasswordDTO.NewPassword)
+                throw new InvalidOperationException("NewPasswordMustBeDifferent");
+
             user.PasswordHash = _passwordHelper.Hash(user, changePasswordDTO.NewPassword);
             user.RequirePasswordChange = false;
             user.SecurityStamp = Guid.NewGuid().ToString(); // Vô hiệu hoá nội bộ bên AuthAPI

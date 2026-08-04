@@ -321,22 +321,30 @@ namespace BookingAPI.Repositories.Implements
             var from = request.StartDate;
             var to = request.EndDate;
 
-            var paidOrders = FilterOrdersQuery(from, to)
-                .Where(o => PaidStatuses.Contains(o.Status ?? "") && o.OrderedAt.HasValue);
+            var allOrdersQuery = FilterOrdersQuery(from, to).Where(o => o.OrderedAt.HasValue);
+            var allOrders = await allOrdersQuery.ToListAsync();
 
-            var periodOrderIdsQuery = paidOrders.Select(o => o.Id);
+            var paidOrders = allOrders.Where(o => PaidStatuses.Contains(o.Status ?? "")).ToList();
+            var periodOrderIdsQuery = paidOrders.Select(o => o.Id).ToList();
 
-            var metricsData = await paidOrders
-                .GroupBy(_ => 1)
-                .Select(g => new BookingStatisticsMetricsDTO
-                {
-                    TotalRevenue = g.Sum(o => o.FinalAmount),
-                    TotalDiscount = g.Sum(o => o.DiscountValue ?? 0),
-                    TotalPromotionDiscount = g.Sum(o => o.PromotionDiscountValue ?? 0),
-                    TotalOrders = g.Count(),
-                    TotalTicketsSold = g.Sum(o => o.TotalQuantity)
-                })
-                .FirstOrDefaultAsync() ?? new BookingStatisticsMetricsDTO();
+            var metricsData = new BookingStatisticsMetricsDTO
+            {
+                TotalOrders = allOrders.Count,
+                PaidOrders = allOrders.Count(o => PaidStatuses.Contains(o.Status ?? "")),
+                PendingOrders = allOrders.Count(o => o.Status == "Pending"),
+                CancelledOrders = allOrders.Count(o => o.Status == "Cancelled"),
+                TotalRevenue = paidOrders.Sum(o => o.FinalAmount),
+                TotalDiscount = paidOrders.Sum(o => o.DiscountValue ?? 0),
+                TotalPromotionDiscount = paidOrders.Sum(o => o.PromotionDiscountValue ?? 0),
+                TotalTicketsSold = paidOrders.Sum(o => o.TotalQuantity)
+            };
+            
+            metricsData.GrossRevenue = metricsData.TotalRevenue + metricsData.TotalDiscount + metricsData.TotalPromotionDiscount;
+
+            // Calculate one-time/repeat customers based strictly on paid orders IN this period
+            var orderCountsInPeriod = paidOrders.GroupBy(o => o.CustomerId).Select(g => g.Count()).ToList();
+            metricsData.NewCustomers = orderCountsInPeriod.Count(c => c == 1);
+            metricsData.RepeatCustomers = orderCountsInPeriod.Count(c => c > 1);
 
             metricsData.TotalRefundAmount = await _context.CancellationRequests
                 .AsNoTracking()
@@ -348,7 +356,9 @@ namespace BookingAPI.Repositories.Implements
                     ))
                 .SumAsync(c => (long?)c.RefundAmount) ?? 0;
 
-            var revenueTrend = await GetRevenueTrendAsync(paidOrders, request.GroupBy);
+            var paidOrdersQuery = FilterOrdersQuery(from, to)
+                .Where(o => PaidStatuses.Contains(o.Status ?? "") && o.OrderedAt.HasValue);
+            var revenueTrend = await GetRevenueTrendAsync(paidOrdersQuery, request.GroupBy);
 
             var salesByTicketType = await _context.OrderDetails
                 .AsNoTracking()
@@ -363,79 +373,23 @@ namespace BookingAPI.Repositories.Implements
                 .OrderByDescending(x => x.Revenue)
                 .ToListAsync();
 
-            var ordersByHour = await paidOrders
-                .GroupBy(o => o.OrderedAt!.Value.Hour)
-                .Select(g => new OrdersByHourDTO
+            var salesByEvent = paidOrders
+                .GroupBy(o => o.ScheduleId)
+                .Select(g => new EventSalesDTO
                 {
-                    Hour = g.Key,
-                    OrderCount = g.Count()
+                    ScheduleId = g.Key,
+                    TotalBookings = g.Count(),
+                    TotalTickets = g.Sum(o => o.TotalQuantity),
+                    TotalRevenue = g.Sum(o => o.FinalAmount)
                 })
-                .OrderBy(x => x.Hour)
-                .ToListAsync();
-
-            var checkInCounts = await _context.Tickets
-                .AsNoTracking()
-                .Where(t => periodOrderIdsQuery.Contains(t.OrderDetail.OrderId))
-                .GroupBy(t => t.CheckInStatus == "CheckedIn" || t.CheckInStatus == "Checked"
-                    ? "CheckedIn"
-                    : "NotCheckedIn")
-                .Select(g => new
-                {
-                    Status = g.Key,
-                    TicketCount = g.Count()
-                })
-                .ToListAsync();
-
-            var totalCheckInTickets = checkInCounts.Sum(x => x.TicketCount);
-            var checkInRatio = checkInCounts
-                .Select(x => new CheckInStatusRatioDTO
-                {
-                    Status = x.Status,
-                    TicketCount = x.TicketCount,
-                    Percentage = totalCheckInTickets > 0
-                        ? Math.Round(x.TicketCount * 100m / totalCheckInTickets, 2)
-                        : 0
-                })
-                .OrderByDescending(x => x.TicketCount)
+                .OrderByDescending(x => x.TotalTickets)
+                .Take(5)
                 .ToList();
 
-            var topCancellationReasons = await _context.CancellationRequests
-                .AsNoTracking()
-                .Where(c =>
-                    c.RequestedAt.HasValue &&
-                    c.RequestedAt >= from &&
-                    c.RequestedAt <= to &&
-                    c.Reason != "")
-                .GroupBy(c => c.Reason)
-                .Select(g => new CancellationReasonStatsDTO
-                {
-                    Reason = g.Key,
-                    Count = g.Count()
-                })
-                .OrderByDescending(x => x.Count)
-                .Take(10)
-                .ToListAsync();
-
-            var promoDiscountSum = metricsData.TotalPromotionDiscount;
-            var voucherDiscountSum = metricsData.TotalDiscount;
-            var promoOrdersCount = await paidOrders.CountAsync(o => (o.PromotionDiscountValue ?? 0) > 0);
-            var voucherOrdersCount = await paidOrders.CountAsync(o => (o.DiscountValue ?? 0) > 0);
-
-            var discountBreakdown = new List<DiscountBreakdownDTO>
-            {
-                new()
-                {
-                    Type = "Promotion",
-                    TotalAmount = promoDiscountSum,
-                    OrderCount = promoOrdersCount
-                },
-                new()
-                {
-                    Type = "Voucher",
-                    TotalAmount = voucherDiscountSum,
-                    OrderCount = voucherOrdersCount
-                }
-            };
+            var ordersByHour = new List<OrdersByHourDTO>();
+            var checkInRatio = new List<CheckInStatusRatioDTO>();
+            var topCancellationReasons = new List<CancellationReasonStatsDTO>();
+            var discountBreakdown = new List<DiscountBreakdownDTO>();
 
             return new BookingStatisticsResponseDTO
             {
@@ -445,7 +399,8 @@ namespace BookingAPI.Repositories.Implements
                 OrdersByHour = ordersByHour,
                 CheckInRatio = checkInRatio,
                 TopCancellationReasons = topCancellationReasons,
-                DiscountBreakdown = discountBreakdown
+                DiscountBreakdown = discountBreakdown,
+                SalesByEvent = salesByEvent
             };
         }
 
