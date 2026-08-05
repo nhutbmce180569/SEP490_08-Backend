@@ -114,5 +114,39 @@ namespace AuthAPI.Services.Implements
             var key = $"reg_cooldown_{email}";
             await Db.KeyDeleteAsync(key);
         }
+
+        public async Task<int> IncrementFailedLoginAsync(string email)
+        {
+            var key = $"failed_login_{email}";
+            long count = await Db.StringIncrementAsync(key);
+            // Set an expiration of 24 hours so failed attempts eventually clear out
+            await Db.KeyExpireAsync(key, TimeSpan.FromHours(24));
+            return (int)count;
+        }
+
+        public async Task ResetFailedLoginAsync(string email)
+        {
+            var key = $"failed_login_{email}";
+            await Db.KeyDeleteAsync(key);
+        }
+
+        public async Task SetLockoutAsync(string email, TimeSpan duration)
+        {
+            var key = $"lockout_{email}";
+            var expireTime = DateTime.UtcNow.Add(duration);
+            await Db.StringSetAsync(key, expireTime.ToString("o"), duration);
+        }
+
+        public async Task<TimeSpan?> GetLockoutRemainingAsync(string email)
+        {
+            var key = $"lockout_{email}";
+            var value = await Db.StringGetAsync(key);
+            if (value.HasValue && DateTime.TryParse(value.ToString(), null, System.Globalization.DateTimeStyles.RoundtripKind, out var expireTime))
+            {
+                var remaining = expireTime.ToUniversalTime() - DateTime.UtcNow;
+                return remaining > TimeSpan.Zero ? remaining : null;
+            }
+            return null;
+        }
     }
 }

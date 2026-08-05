@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace VoucherAPI.DTOs;
+namespace TourAPI.DTOs;
 
 public class SaveVoucherDTO
 {
