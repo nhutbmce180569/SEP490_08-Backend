@@ -54,24 +54,66 @@ namespace AuthAPI.Services.Implements
         // 1. ĐĂNG NHẬP TRUYỀN THỐNG (LOCAL)
         public async Task<LoginResponseDTO?> Login(LoginDTO loginDTO)
         {
-            var user = await _userRepository.GetByEmail(loginDTO.Email);
+            var normalizedEmail = loginDTO.Email.Trim().ToLowerInvariant();
+
+            // 1. Check if the account is currently locked out
+            var lockoutRemaining = await _otpCacheService.GetLockoutRemainingAsync(normalizedEmail);
+            if (lockoutRemaining.HasValue && lockoutRemaining.Value.TotalSeconds > 0)
+            {
+                throw new InvalidOperationException($"AccountLocked:{Math.Ceiling(lockoutRemaining.Value.TotalMinutes)}");
+            }
+
+            var user = await _userRepository.GetByEmail(normalizedEmail);
 
             if (user == null)
-                return null;
+            {
+                await HandleFailedLoginAttempt(normalizedEmail);
+                return null; // Unreachable, HandleFailedLoginAttempt will throw
+            }
 
             if (user.Provider != "Local")
                 throw new InvalidOperationException("InvalidProvider");
 
             if (user.Status != "Active")
-                return null;
+                return null; // or throw "AccountInactive"
 
             if (!_passwordHelper.Verify(user, user.PasswordHash, loginDTO.Password))
-                return null;
+            {
+                await HandleFailedLoginAttempt(normalizedEmail);
+                return null; // Unreachable
+            }
+
+            // Successful login -> clear fail counter
+            await _otpCacheService.ResetFailedLoginAsync(normalizedEmail);
 
             return await GenerateLoginResponse(user);
         }
 
-        // 2. LÀM MỚI TOKEN (REFRESH TOKEN ROTATION)
+        private async Task HandleFailedLoginAttempt(string email)
+        {
+            int failCount = await _otpCacheService.IncrementFailedLoginAsync(email);
+            
+            if (failCount > 0 && failCount % 5 == 0)
+            {
+                TimeSpan lockoutDuration;
+                int lockoutTier = failCount / 5;
+                
+                switch (lockoutTier)
+                {
+                    case 1: lockoutDuration = TimeSpan.FromMinutes(15); break;
+                    case 2: lockoutDuration = TimeSpan.FromMinutes(30); break;
+                    case 3: lockoutDuration = TimeSpan.FromMinutes(60); break;
+                    case 4: lockoutDuration = TimeSpan.FromHours(2); break;
+                    default: lockoutDuration = TimeSpan.FromDays(1); break;
+                }
+
+                await _otpCacheService.SetLockoutAsync(email, lockoutDuration);
+                throw new InvalidOperationException($"AccountLocked:{Math.Ceiling(lockoutDuration.TotalMinutes)}");
+            }
+
+            throw new InvalidOperationException($"InvalidCredentials:{failCount}");
+        }
+
         public async Task<LoginResponseDTO?> RefreshToken(string token)
         {
             var savedToken = await _refreshTokenRepository.GetByToken(token);
