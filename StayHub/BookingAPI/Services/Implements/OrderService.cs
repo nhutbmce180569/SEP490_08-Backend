@@ -428,9 +428,9 @@ namespace BookingAPI.Services.Implements
                 throw new BookingValidationException("Tour schedule not found.");
             }
 
-            if (schedule.DepartureDate < DateTime.Now)
+            if (DateTime.Now >= schedule.DepartureDate.Date.AddDays(-1))
             {
-                throw new BookingValidationException("This departure has expired and can no longer be booked.");
+                throw new BookingValidationException("Bookings for this schedule are closed. You must book at least 1 day before the departure date.");
             }
 
             var tour = await _tourApiClient.GetTourByIdAsync(schedule.TourId);

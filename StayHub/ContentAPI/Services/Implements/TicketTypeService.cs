@@ -67,6 +67,11 @@ namespace ContentAPI.Services.Implements
                 throw new Exception("Ticket Type Name exist! Please check again!");
             }
 
+            if (!dto.MinAge.HasValue && !dto.MaxAge.HasValue)
+            {
+                throw new Exception("Min age and max age cannot be both null. Please provide at least one.");
+            }
+
             if (dto.MinAge.HasValue && dto.MaxAge.HasValue && dto.MaxAge.Value <= dto.MinAge.Value)
             {
                 throw new Exception("Max age must be greater than min age.");
@@ -93,6 +98,11 @@ namespace ContentAPI.Services.Implements
             if (existingTicketName != null && existingTicketName.Id != id)
             {
                 throw new Exception("Ticket Type Name exist! Please check again!");
+            }
+
+            if (!dto.MinAge.HasValue && !dto.MaxAge.HasValue)
+            {
+                throw new Exception("Min age and max age cannot be both null. Please provide at least one.");
             }
 
             if (dto.MinAge.HasValue && dto.MaxAge.HasValue && dto.MaxAge.Value <= dto.MinAge.Value)
