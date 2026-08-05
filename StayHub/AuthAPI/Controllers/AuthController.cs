@@ -31,7 +31,7 @@ namespace AuthAPI.Controllers
             {
                 var response = await _authService.Login(loginDTO);
                 if (response == null)
-                    return Unauthorized(new { message = M("InvalidEmailOrPassword") });
+                    return Unauthorized(new { message = "AccountInactiveOrInvalid" });
 
                 return Ok(new { message = M("LoginSuccessful"), data = response });
             }
@@ -39,6 +39,28 @@ namespace AuthAPI.Controllers
             {
                 if (ex.Message == "InvalidProvider")
                     return Conflict(new { message = "InvalidProvider" });
+                
+                if (ex.Message.StartsWith("AccountLocked:"))
+                {
+                    var minutes = ex.Message.Split(':')[1];
+                    return StatusCode(StatusCodes.Status429TooManyRequests, new 
+                    { 
+                        message = "AccountLocked", 
+                        lockoutMinutes = int.Parse(minutes) 
+                    });
+                }
+
+                if (ex.Message.StartsWith("InvalidCredentials:"))
+                {
+                    var failCount = int.Parse(ex.Message.Split(':')[1]);
+                    var remaining = 5 - (failCount % 5);
+                    return Unauthorized(new 
+                    { 
+                        message = "InvalidEmailOrPassword", 
+                        remainingAttempts = remaining 
+                    });
+                }
+
                 throw;
             }
         }
