@@ -42,7 +42,7 @@ namespace BookingAPI.Services.Implements
                 throw new Exception($"Cannot request cancellation because the order is in status: {order.Status}");
 
             if (order.CancellationRequests.Any(r => r.Status == "Pending"))
-                throw new Exception("There is already a pending cancellation request for this order.");
+                throw new InvalidOperationException("PendingCancellationExists");
 
             DateTime scheduleStartDate = DateTime.UtcNow.AddDays(10); 
 
@@ -237,6 +237,10 @@ namespace BookingAPI.Services.Implements
 
                 request.Status = "Rejected";
                 request.RejectReason = dto.RejectReason;
+                if (request.Order != null)
+                {
+                    request.Order.Status = "Paid";
+                }
             }
             else
             {
