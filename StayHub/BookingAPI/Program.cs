@@ -92,6 +92,10 @@ namespace BookingAPI
                 {
                     client.BaseAddress = new Uri(systemApiBaseUrl.TrimEnd('/') + "/");
                 }
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
             });
             builder.Services.AddHttpClient<IAuthApiClient, AuthApiClient>(client =>
             {
