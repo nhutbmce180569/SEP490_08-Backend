@@ -13,8 +13,14 @@ namespace BookingAPI.DTOs
         public long TotalDiscount { get; set; }
         public long TotalPromotionDiscount { get; set; }
         public long TotalRefundAmount { get; set; }
+        public long GrossRevenue { get; set; }
         public int TotalOrders { get; set; }
+        public int PaidOrders { get; set; }
+        public int PendingOrders { get; set; }
+        public int CancelledOrders { get; set; }
         public int TotalTicketsSold { get; set; }
+        public int NewCustomers { get; set; }
+        public int RepeatCustomers { get; set; }
     }
 
     public class RevenueTrendPointDTO
@@ -58,6 +64,15 @@ namespace BookingAPI.DTOs
         public int OrderCount { get; set; }
     }
 
+    public class EventSalesDTO
+    {
+        public int ScheduleId { get; set; }
+        public string? TourName { get; set; }
+        public int TotalBookings { get; set; }
+        public int TotalTickets { get; set; }
+        public long TotalRevenue { get; set; }
+    }
+
     public class BookingStatisticsResponseDTO
     {
         public BookingStatisticsMetricsDTO Metrics { get; set; } = new();
@@ -67,6 +82,7 @@ namespace BookingAPI.DTOs
         public List<CheckInStatusRatioDTO> CheckInRatio { get; set; } = [];
         public List<CancellationReasonStatsDTO> TopCancellationReasons { get; set; } = [];
         public List<DiscountBreakdownDTO> DiscountBreakdown { get; set; } = [];
+        public List<EventSalesDTO> SalesByEvent { get; set; } = [];
     }
 
     public class OrderAnalyticsOverviewDTO

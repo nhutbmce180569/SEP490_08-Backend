@@ -7,7 +7,7 @@ namespace BookingAPI.Services
     {
         Task<bool> CheckCompletedBookingAsync(CheckBookingRequest request);
         Task<bool> CheckBookingAsync(CheckBookingTour request);
-        Task<ReadOrderDTO> CreateOrderAsync(int customerId, CreateOrderDTO request);
+        Task<ReadOrderDTO> CreateOrderAsync(int customerId, CreateOrderDTO request, string idempotencyKey);
         Task<ReadOrderDTO?> GetOrderByIdAsync(int id, int customerId);
         Task<IEnumerable<ReadOrderDTO>> GetOrdersByScheduleIdAsync(int scheduleId);
         Task<IEnumerable<ScheduleCustomerDTO>> GetScheduleCustomersAsync(int scheduleId, string? attendeeName = null);

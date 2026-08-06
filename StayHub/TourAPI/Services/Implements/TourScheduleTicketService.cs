@@ -103,6 +103,10 @@ namespace TourAPI.Services.Implements
             await ValidateSchedule(entity.ScheduleId);
 
             var soldQuantity = dto.SoldQuantity ?? entity.SoldQuantity ?? 0;
+
+            // Ticket Type is strictly immutable after creation.
+            dto.TicketTypeId = entity.TicketTypeId;
+
             ValidateTicketValues(dto.Price, dto.Quantity, soldQuantity);
             await ValidateTicketTypeUniqueness(entity.ScheduleId, dto.TicketTypeId, id);
 
