@@ -32,6 +32,8 @@ services:
       - "7010:8080"
     environment:
       - ConnectionStrings__Redis=redis:6379
+      - DEEPL_API_KEY=a9f2a061-7dbe-4690-ba86-f1695eb20e6b:fx
+      - DeepL__ApiKey=a9f2a061-7dbe-4690-ba86-f1695eb20e6b:fx
     depends_on:
       - redis
 
