@@ -68,8 +68,7 @@ namespace GatewayAPI.Controllers
                 }
 
                 var content = await response.Content.ReadAsStringAsync();
-                using var jsonDoc = JsonDocument.Parse(content);
-                return Ok(jsonDoc.RootElement);
+                return Content(content, "application/json");
             }
             catch (Exception ex)
             {
