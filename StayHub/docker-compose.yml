@@ -60,6 +60,7 @@ services:
     restart: always
     environment:
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=StayHub_BookingDb;User Id=sa;Password=StayHub@Dev12345!;TrustServerCertificate=True;Encrypt=False;
+      - ConnectionStrings__Redis=redis:6379
       - GatewayApi__BaseUrl=http://gateway-api:8080/
       - AuthApi__BaseUrl=http://auth-api:8080/
       - SystemApi__BaseUrl=http://system-api:8080/
@@ -67,6 +68,7 @@ services:
       - Frontend__BaseUrl=https://stayhub.cloud
     depends_on:
       - sqlserver
+      - redis
 
   payment-api:
     build:
