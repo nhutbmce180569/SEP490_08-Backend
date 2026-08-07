@@ -22,5 +22,10 @@ namespace AuthAPI.Services
         Task<string?> GetRegisterOtpAsync(string email);
         Task DeleteRegisterOtpAsync(string email);
         Task DeleteRegisterCooldownAsync(string email);
+
+        Task<int> IncrementFailedLoginAsync(string email);
+        Task ResetFailedLoginAsync(string email);
+        Task SetLockoutAsync(string email, TimeSpan duration);
+        Task<TimeSpan?> GetLockoutRemainingAsync(string email);
     }
 }

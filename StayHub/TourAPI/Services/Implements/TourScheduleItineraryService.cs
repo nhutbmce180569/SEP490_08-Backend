@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using TourAPI.DTOs;
 using TourAPI.Models;
 using TourAPI.Repositories;
+using TourAPI.Services;
 
 namespace TourAPI.Services.Implements
 {
@@ -16,17 +17,20 @@ namespace TourAPI.Services.Implements
         private readonly ITourScheduleRepository _tourScheduleRepository;
         private readonly ITourRepository _tourRepository;
         private readonly IMapper _mapper;
+        private readonly IBookingApiClient _bookingApiClient;
 
         public TourScheduleItineraryService(
             ITourScheduleItineraryRepository repository,
             ITourScheduleRepository tourScheduleRepository,
             ITourRepository tourRepository,
-            IMapper mapper)
+            IMapper mapper,
+            IBookingApiClient bookingApiClient)
         {
             _repository = repository;
             _tourScheduleRepository = tourScheduleRepository;
             _tourRepository = tourRepository;
             _mapper = mapper;
+            _bookingApiClient = bookingApiClient;
         }
 
         public async Task<IEnumerable<ReadTourScheduleItineraryDTO>> GetByScheduleId(int scheduleId)
@@ -48,6 +52,11 @@ namespace TourAPI.Services.Implements
 
             var schedule = await _tourScheduleRepository.GetByIdAsync(dto.ScheduleId);
             if (schedule == null) throw new Exception($"Tour schedule with Id {dto.ScheduleId} not found");
+
+            if (await _bookingApiClient.HasOrdersForScheduleAsync(dto.ScheduleId))
+            {
+                throw new Exception("Cannot add new itinerary items to a schedule that has paid orders.");
+            }
 
             var tour = await _tourRepository.GetById(schedule.TourId);
             if (tour == null) throw new Exception($"Tour with Id {schedule.TourId} not found");
@@ -72,6 +81,20 @@ namespace TourAPI.Services.Implements
             var schedule = await _tourScheduleRepository.GetByIdAsync(entity.ScheduleId);
             if (schedule == null) throw new Exception($"Tour schedule with Id {entity.ScheduleId} not found");
 
+            if (await _bookingApiClient.HasOrdersForScheduleAsync(entity.ScheduleId))
+            {
+                // BR-36: Block core content updates by preserving existing values.
+                // Only time adjustments (StartDuration, EndDuration) are permitted.
+                dto.Title = entity.Title;
+                dto.Description = entity.Description;
+                dto.LocationName = entity.LocationName;
+                dto.LocationLat = entity.LocationLat;
+                dto.LocationLng = entity.LocationLng;
+                dto.TourismInfoId = entity.TourismInfoId;
+                dto.DayNumber = entity.DayNumber;
+                dto.ItineraryDate = entity.ItineraryDate;
+            }
+
             var tour = await _tourRepository.GetById(schedule.TourId);
             if (tour == null) throw new Exception($"Tour with Id {schedule.TourId} not found");
 
@@ -86,6 +109,11 @@ namespace TourAPI.Services.Implements
         {
             var entity = await _repository.GetByIdAsync(id);
             if (entity == null) throw new Exception("TourScheduleItinerary not found");
+
+            if (await _bookingApiClient.HasOrdersForScheduleAsync(entity.ScheduleId))
+            {
+                throw new Exception("Cannot delete itinerary items from a schedule that has paid orders.");
+            }
 
             var schedule = await _tourScheduleRepository.GetByIdAsync(entity.ScheduleId);
             if (schedule == null) throw new Exception($"Tour schedule with Id {entity.ScheduleId} not found");
@@ -109,6 +137,11 @@ namespace TourAPI.Services.Implements
             var scheduleExists = await _tourScheduleRepository.GetByIdAsync(scheduleId);
             if (scheduleExists == null)
                 throw new Exception($"Tour schedule with Id {scheduleId} not found");
+
+            if (await _bookingApiClient.HasOrdersForScheduleAsync(scheduleId))
+            {
+                throw new Exception("Cannot add new itinerary items to a schedule that has paid orders.");
+            }
 
             var tour = await _tourRepository.GetById(scheduleExists.TourId);
             if (tour == null) throw new Exception($"Tour with Id {scheduleExists.TourId} not found");

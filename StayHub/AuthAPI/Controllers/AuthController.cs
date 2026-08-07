@@ -1,4 +1,4 @@
-﻿using AuthAPI.DTOs;
+using AuthAPI.DTOs;
 using AuthAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -31,7 +31,7 @@ namespace AuthAPI.Controllers
             {
                 var response = await _authService.Login(loginDTO);
                 if (response == null)
-                    return Unauthorized(new { message = M("InvalidEmailOrPassword") });
+                    return Unauthorized(new { message = "AccountInactiveOrInvalid" });
 
                 return Ok(new { message = M("LoginSuccessful"), data = response });
             }
@@ -39,6 +39,28 @@ namespace AuthAPI.Controllers
             {
                 if (ex.Message == "InvalidProvider")
                     return Conflict(new { message = "InvalidProvider" });
+                
+                if (ex.Message.StartsWith("AccountLocked:"))
+                {
+                    var minutes = ex.Message.Split(':')[1];
+                    return StatusCode(StatusCodes.Status429TooManyRequests, new 
+                    { 
+                        message = "AccountLocked", 
+                        lockoutMinutes = int.Parse(minutes) 
+                    });
+                }
+
+                if (ex.Message.StartsWith("InvalidCredentials:"))
+                {
+                    var failCount = int.Parse(ex.Message.Split(':')[1]);
+                    var remaining = 5 - (failCount % 5);
+                    return Unauthorized(new 
+                    { 
+                        message = "InvalidEmailOrPassword", 
+                        remainingAttempts = remaining 
+                    });
+                }
+
                 throw;
             }
         }
@@ -230,11 +252,20 @@ namespace AuthAPI.Controllers
             if (!string.IsNullOrEmpty(providerClaim) && !providerClaim.Equals("Local", StringComparison.OrdinalIgnoreCase))
                 return BadRequest(new { message = M("SocialAccountCannotChangePassword") });
 
-            var response = await _authService.ChangePassword(userId, dto);
-            if (response == null)
-                return BadRequest(new { message = M("PasswordChangeFailed") });
+            try
+            {
+                var response = await _authService.ChangePassword(userId, dto);
+                if (response == null)
+                    return BadRequest(new { message = M("PasswordChangeFailed") });
 
-            return Ok(new { message = M("PasswordChangedSuccessfully"), data = response });
+                return Ok(new { message = M("PasswordChangedSuccessfully"), data = response });
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message == "NewPasswordMustBeDifferent")
+                    return BadRequest(new { message = "Mật khẩu mới không được trùng với mật khẩu cũ!" });
+                throw;
+            }
         }
 
         [HttpPost("forgot-password")]

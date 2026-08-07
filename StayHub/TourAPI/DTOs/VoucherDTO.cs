@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace VoucherAPI.DTOs;
+namespace TourAPI.DTOs;
 
 public class ReadVoucherDTO
 {
@@ -166,31 +166,3 @@ public class UpdateVoucherDTO
     public TopCustomerVoucherAssignmentDTO? TopCustomerAssignment { get; set; }
 }
 
-public class UserApiResponse
-{
-    public string? Message { get; set; }
-
-    public ReadUserApiDTO? Data { get; set; }
-}
-
-public class ReadUserApiDTO
-{
-    public int Id { get; set; }
-
-    public string? Email { get; set; }
-
-    public string? FullName { get; set; }
-
-    public string? Status { get; set; }
-}
-
-public class TourApiResponse
-{
-    public int Id { get; set; }
-
-    public string? Name { get; set; }
-
-    public string? Status { get; set; }
-
-    public int CreatedBy { get; set; }
-}
