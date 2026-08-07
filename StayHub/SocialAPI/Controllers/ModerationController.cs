@@ -46,7 +46,7 @@ public class ModerationController : LocalizedControllerBase
                         .Select(r => r.Value.ToLowerInvariant())
                         .ToList();
 
-        return roles.Contains("staff") || roles.Contains("tourmanager") || roles.Contains("manager") || roles.Contains("admin");
+        return roles.Contains("tourmanager") || roles.Contains("manager");
     }
 
     [HttpPost("report")]
@@ -64,7 +64,17 @@ public class ModerationController : LocalizedControllerBase
         }
         catch (ArgumentException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            var fallback = ex.Message switch
+            {
+                "CannotReportOwnMoment" => "You cannot report your own moment.",
+                "CannotReportOwnComment" => "You cannot report your own comment.",
+                "AlreadyReportedContent" => "You have already reported this content. Please wait for moderation.",
+                _ => ex.Message
+            };
+
+            var msg = M(ex.Message);
+            var finalMessage = msg != null && msg != ex.Message ? msg : fallback;
+            return BadRequest(new { message = finalMessage });
         }
         catch (Exception ex)
         {

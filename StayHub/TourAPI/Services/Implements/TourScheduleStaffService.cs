@@ -46,6 +46,29 @@ namespace TourAPI.Services.Implements
                 throw new InvalidOperationException("This staff member has already been assigned to this schedule.");
             }
 
+            var newSchedule = await _scheduleRepository.GetByIdAsync(dto.ScheduleId);
+            if (newSchedule == null) 
+            {
+                throw new KeyNotFoundException("Schedule not found.");
+            }
+
+            var assignedData = await _staffRepository.GetAssignedSchedulesAsync(dto.StaffId, 1, 1000, false, null);
+
+            foreach (var assignment in assignedData.Items)
+            {
+                if (assignment.ScheduleId == dto.ScheduleId) continue;
+                
+                var existingSchedule = assignment.Schedule;
+                if (existingSchedule != null)
+                {
+                    if (newSchedule.DepartureDate <= existingSchedule.ReturnDate && 
+                        newSchedule.ReturnDate >= existingSchedule.DepartureDate)
+                    {
+                        throw new InvalidOperationException("This Staff member is already assigned to another tour schedule during the selected period.");
+                    }
+                }
+            }
+
             var staffAssignment = new TourScheduleStaff
             {
                 ScheduleId = dto.ScheduleId,
@@ -97,7 +120,11 @@ namespace TourAPI.Services.Implements
                 };
 
                 var gatewayUrl = (_configuration["GatewayApi:BaseUrl"] ?? "https://localhost:7010").TrimEnd('/');
-                using var client = _httpClientFactory.CreateClient();
+                var handler = new HttpClientHandler
+                {
+                    ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                };
+                using var client = new HttpClient(handler);
                 client.DefaultRequestHeaders.Add("Authorization", token);
 
                 var response = await client.PostAsJsonAsync(
@@ -145,7 +172,11 @@ namespace TourAPI.Services.Implements
                 if (string.IsNullOrWhiteSpace(token)) return;
 
                 var gatewayUrl = (_configuration["GatewayApi:BaseUrl"] ?? "https://localhost:7010").TrimEnd('/');
-                using var client = _httpClientFactory.CreateClient();
+                var handler = new HttpClientHandler
+                {
+                    ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                };
+                using var client = new HttpClient(handler);
                 client.DefaultRequestHeaders.Add("Authorization", token);
 
                 var response = await client.DeleteAsync(
@@ -181,7 +212,11 @@ namespace TourAPI.Services.Implements
             try
             {
                 var gatewayUrl = (_configuration["GatewayApi:BaseUrl"] ?? "https://localhost:7010").TrimEnd('/');
-                var client = _httpClientFactory.CreateClient();
+                var handler = new HttpClientHandler
+                {
+                    ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                };
+                using var client = new HttpClient(handler);
                 var response = await client.PostAsJsonAsync($"{gatewayUrl}/api/users/batch", staffIds);
 
                 if (response.IsSuccessStatusCode)

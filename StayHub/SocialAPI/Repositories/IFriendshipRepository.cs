@@ -17,4 +17,5 @@ public interface IFriendshipRepository
     Task<(List<Friendship> Friends, int Total)> GetFriendListPagedAsync(int userId, int page, int pageSize);
     Task<bool> CheckAreFriendsAsync(int userId1, int userId2);
     Task<Friendship?> GetFriendshipBetweenUsersAsync(int user1, int user2);
+    Task<List<Friendship>> GetAllFriendsAsync(int userId);
 }

@@ -47,7 +47,11 @@ namespace BookingAPI.Services.Implements
             try
             {
                 var token = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].ToString();
-                var client = _httpClientFactory.CreateClient();
+                var handler = new HttpClientHandler
+                {
+                    ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                };
+                using var client = new HttpClient(handler);
 
                 if (!string.IsNullOrWhiteSpace(token))
                 {

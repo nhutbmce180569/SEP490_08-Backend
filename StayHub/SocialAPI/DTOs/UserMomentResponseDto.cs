@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 
 namespace SocialAPI.DTOs
 {
     public class UserMomentResponseDto
     {
         public int Id { get; set; }
+        public int UserId { get; set; }
         public int ScheduleId { get; set; }
         public string ImageUrl { get; set; } = string.Empty;
         public string? Caption { get; set; }

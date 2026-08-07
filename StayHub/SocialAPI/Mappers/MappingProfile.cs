@@ -17,6 +17,8 @@ public class MappingProfile : Profile
                 opt => opt.MapFrom(src => src.MomentReactions.Count(r => r.IsLike == true)))
             // IsLikedByMe không map ở đây (cần currentUserId) -> set trong Service
             .ForMember(dest => dest.IsLikedByMe, opt => opt.Ignore())
+            // Giữ lại MomentUserDto đã được khởi tạo, tránh bị AutoMapper set thành null
+            .ForMember(dest => dest.User, opt => opt.Ignore())
             .ForMember(dest => dest.Comments, opt => opt.MapFrom(src => src.MomentComments))
             .ForMember(dest => dest.Privacy, opt => opt.MapFrom(src => src.Privacy ?? "Public"));
 
