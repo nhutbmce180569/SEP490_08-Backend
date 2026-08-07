@@ -124,14 +124,7 @@ namespace SocialAPI
             // ============================================================
             // 🚨 SỬA LỖI DI CRASH: Đăng ký IAuthApiClient vào Container
             // ============================================================
-            builder.Services.AddHttpClient<IAuthApiClient, AuthApiClient>(client =>
-            {
-                client.BaseAddress = new Uri(builder.Configuration["AuthApi:BaseUrl"] ?? "https://localhost:7001/");
-            })
-            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-            {
-                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-            });
+            builder.Services.AddScoped<IAuthApiClient, AuthApiClient>();
 
             // Cấu hình Cloudinary & Redis
             builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));

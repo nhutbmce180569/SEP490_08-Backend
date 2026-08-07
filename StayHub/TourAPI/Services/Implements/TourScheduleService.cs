@@ -132,7 +132,11 @@ namespace TourAPI.Services.Implements
                     roomName = fullRoomName // Định dạng chuẩn: Tên tour _tên schedule
                 };
 
-                using var client = _httpClientFactory.CreateClient();
+                var handler = new HttpClientHandler
+                {
+                    ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                };
+                using var client = new HttpClient(handler);
                 client.DefaultRequestHeaders.Add("Authorization", token);
 
                 // 👉 Bước A: Ra lệnh cho SocialAPI tạo Group Chat

@@ -291,6 +291,57 @@ namespace SocialAPI.Services.Implements
             var isMember = room.ChatMembers.Any(cm => cm.UserId == currentUserId);
             if (!isMember) throw new UnauthorizedAccessException("You are not a member of this chat room.");
 
+            if (room.ScheduleId.HasValue)
+            {
+                var scheduleId = room.ScheduleId.Value;
+                var staffIds = await _tourApiClient.GetStaffIdsByScheduleAsync(scheduleId);
+                var customerIds = await _bookingApiClient.GetCustomerIdsByScheduleAsync(scheduleId);
+
+                var ineligibleIds = new List<int>();
+
+                foreach (var uid in dto.UserIds)
+                {
+                    bool isStaff = staffIds != null && staffIds.Contains(uid);
+                    bool isCustomer = customerIds != null && customerIds.Contains(uid);
+                    bool isManager = false;
+
+                    if (!isStaff && !isCustomer)
+                    {
+                        isManager = await _tourApiClient.VerifyManagerAsync(scheduleId, uid);
+                    }
+
+                    if (!isStaff && !isCustomer && !isManager)
+                    {
+                        ineligibleIds.Add(uid);
+                    }
+                }
+
+                if (ineligibleIds.Any())
+                {
+                    var ineligibleNames = new List<string>();
+                    try
+                    {
+                        var profiles = await _authApiClient.GetUserProfilesAsync(ineligibleIds);
+                        if (profiles != null)
+                        {
+                            foreach (var id in ineligibleIds)
+                            {
+                                if (profiles.TryGetValue(id, out var p) && !string.IsNullOrWhiteSpace(p.FullName))
+                                    ineligibleNames.Add(p.FullName);
+                                else
+                                    ineligibleNames.Add($"User ID {id}");
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        ineligibleNames = ineligibleIds.Select(id => $"User ID {id}").ToList();
+                    }
+
+                    throw new InvalidOperationException($"UserNotEligibleForScheduleChat|{string.Join(", ", ineligibleNames)}");
+                }
+            }
+
             int targetRoomId = currentRoomId;
             ChatRoom targetRoom = room;
 
@@ -299,7 +350,31 @@ namespace SocialAPI.Services.Implements
                 var existingMemberIds = room.ChatMembers.Select(cm => cm.UserId).ToList();
                 var allMembers = existingMemberIds.Concat(dto.UserIds).Distinct().ToList();
 
-                targetRoom = await _chatRepository.CreateGroupChatAsync("Group Chat", allMembers);
+                if (allMembers.Count < 3)
+                {
+                    throw new InvalidOperationException("A group chat must have at least 3 members.");
+                }
+
+                string groupName = "Group Chat";
+                var memberProfiles = await _authApiClient.GetUserProfilesAsync(allMembers);
+                if (memberProfiles != null && memberProfiles.Any())
+                {
+                    var firstThree = memberProfiles.Values.Take(3).ToList();
+                    var nameParts = new List<string>();
+                    foreach (var p in firstThree)
+                    {
+                        var fullName = string.IsNullOrWhiteSpace(p.FullName) ? "User" : p.FullName.Trim();
+                        var lastWord = fullName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).LastOrDefault()?.ToLower();
+                        if (!string.IsNullOrEmpty(lastWord))
+                        {
+                            nameParts.Add(lastWord);
+                        }
+                    }
+                    var dateSuffix = DateTime.UtcNow.ToString("d/M");
+                    groupName = $"{string.Join("-", nameParts)}-{dateSuffix}";
+                }
+
+                targetRoom = await _chatRepository.CreateGroupChatAsync(groupName, allMembers);
                 targetRoomId = targetRoom.Id;
             }
             else
@@ -582,6 +657,69 @@ namespace SocialAPI.Services.Implements
             }
         }
 
+        public async Task RemoveMemberFromRoomAsync(int roomId, int targetUserId, int currentUserId)
+        {
+            if (targetUserId == currentUserId)
+            {
+                throw new InvalidOperationException("You cannot remove yourself using this function. Use the leave group function instead.");
+            }
+
+            var room = await _chatRepository.GetChatRoomByIdAsync(roomId);
+            if (room == null) throw new KeyNotFoundException("Chat room not found.");
+
+            var isTargetMember = room.ChatMembers?.Any(cm => cm.UserId == targetUserId) ?? false;
+            if (!isTargetMember)
+            {
+                isTargetMember = await _chatRepository.IsUserInRoomAsync(roomId, targetUserId);
+            }
+            if (!isTargetMember) throw new InvalidOperationException("Target user is not a member of this chat room.");
+
+            // Get current user profile to verify role
+            var profiles = await _authApiClient.GetUserProfilesAsync(new List<int> { currentUserId });
+            if (profiles == null || !profiles.TryGetValue(currentUserId, out var currentUserProfile))
+            {
+                throw new UnauthorizedAccessException("Could not verify your role.");
+            }
+
+            bool isStaffOrManager = currentUserProfile.RoleNames.Any(r => 
+                r.Equals("Admin", StringComparison.OrdinalIgnoreCase) || 
+                r.Equals("Manager", StringComparison.OrdinalIgnoreCase) || 
+                r.Equals("Staff", StringComparison.OrdinalIgnoreCase));
+
+            if (!isStaffOrManager)
+            {
+                throw new UnauthorizedAccessException("Only Staff and Managers can remove members from a chat room.");
+            }
+
+            await _chatRepository.LeaveRoomAsync(roomId, targetUserId);
+
+            var systemMessage = new ChatMessage
+            {
+                ChatRoomId = roomId,
+                SenderId = 0,
+                Content = "A member has been removed from the chat.",
+                IsRead = false,
+                SentAt = DateTime.UtcNow
+            };
+
+            var savedMsg = await _chatRepository.SaveMessageAsync(systemMessage);
+
+            var savedMsgDto = new ChatMessageDto
+            {
+                Id = savedMsg.Id,
+                ChatRoomId = savedMsg.ChatRoomId,
+                SenderId = savedMsg.SenderId,
+                SenderName = "System",
+                SenderAvatar = "https://cdn.stayhub.vn/avatars/system.png",
+                Content = savedMsg.Content,
+                IsRead = savedMsg.IsRead ?? false,
+                SentAt = savedMsg.SentAt ?? DateTime.UtcNow
+            };
+
+            await _hubContext.Clients.Group(roomId.ToString()).SendAsync("ReceiveMessage", savedMsgDto);
+            await _hubContext.Clients.User(targetUserId.ToString()).SendAsync("RoomRemoved", roomId);
+        }
+
         private async Task<bool> CanChatAsync(int userId1, int userId2)
         {
             if (userId1 == userId2) return true;
@@ -591,63 +729,61 @@ namespace SocialAPI.Services.Implements
                 var profiles = await _authApiClient.GetUserProfilesAsync(new List<int> { userId1, userId2 });
                 if (profiles == null || !profiles.TryGetValue(userId1, out var profile1) || !profiles.TryGetValue(userId2, out var profile2))
                 {
-                    return await _friendshipRepository.CheckAreFriendsAsync(userId1, userId2);
+                    return false;
                 }
 
-                // If either user is Admin or Manager, allow chat
-                bool isUser1AdminOrManager = profile1.RoleNames.Any(r => 
-                    r.Equals("Admin", StringComparison.OrdinalIgnoreCase) || 
-                    r.Equals("Manager", StringComparison.OrdinalIgnoreCase));
-                bool isUser2AdminOrManager = profile2.RoleNames.Any(r => 
-                    r.Equals("Admin", StringComparison.OrdinalIgnoreCase) || 
-                    r.Equals("Manager", StringComparison.OrdinalIgnoreCase));
-                if (isUser1AdminOrManager || isUser2AdminOrManager)
+                // Rule 1: Manager can chat with anyone
+                bool isUser1Manager = profile1.RoleNames.Any(r => r.Equals("Manager", StringComparison.OrdinalIgnoreCase) || r.Equals("TourManager", StringComparison.OrdinalIgnoreCase));
+                bool isUser2Manager = profile2.RoleNames.Any(r => r.Equals("Manager", StringComparison.OrdinalIgnoreCase) || r.Equals("TourManager", StringComparison.OrdinalIgnoreCase));
+                
+                if (isUser1Manager || isUser2Manager)
                 {
                     return true;
                 }
 
-                // Check if either is Staff
                 bool isUser1Staff = profile1.RoleNames.Any(r => r.Equals("Staff", StringComparison.OrdinalIgnoreCase));
                 bool isUser2Staff = profile2.RoleNames.Any(r => r.Equals("Staff", StringComparison.OrdinalIgnoreCase));
 
-                // If both are staff, allow chat
+                // Rule 2: Staff - Staff
                 if (isUser1Staff && isUser2Staff)
                 {
                     return true;
                 }
 
-                // If one is customer and one is staff
-                if (isUser1Staff || isUser2Staff)
+                // Rule 4: Staff - Customer
+                bool isUser1Customer = profile1.RoleNames.Any(r => r.Equals("Customer", StringComparison.OrdinalIgnoreCase));
+                bool isUser2Customer = profile2.RoleNames.Any(r => r.Equals("Customer", StringComparison.OrdinalIgnoreCase));
+
+                if ((isUser1Staff && isUser2Customer) || (isUser2Staff && isUser1Customer))
                 {
                     int customerId = isUser1Staff ? userId2 : userId1;
                     int staffId = isUser1Staff ? userId1 : userId2;
                     
                     var scheduleIds = new List<int>();
-
-                    // Fetch assigned schedules for Staff
                     var staffSchedules = await _tourApiClient.GetStaffScheduleIdsAsync(staffId);
                     if (staffSchedules != null && staffSchedules.Any())
                     {
                         scheduleIds.AddRange(staffSchedules);
                     }
 
-                    if (!scheduleIds.Any())
-                    {
-                        return false;
-                    }
+                    if (!scheduleIds.Any()) return false;
 
-                    // Check completed bookings
                     return await _bookingApiClient.CheckCompletedBookingAsync(customerId, scheduleIds);
                 }
 
-                // If both are regular customers, check friendship
-                return await _friendshipRepository.CheckAreFriendsAsync(userId1, userId2);
+                // Rule 3: Customer - Customer
+                if (isUser1Customer && isUser2Customer)
+                {
+                    return await _friendshipRepository.CheckAreFriendsAsync(userId1, userId2);
+                }
+
+                // Rule 5 & 6: Deny all other cases
+                return false;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating chat permissions between {User1} and {User2}", userId1, userId2);
-                // Fallback to friendship check
-                return await _friendshipRepository.CheckAreFriendsAsync(userId1, userId2);
+                return false;
             }
         }
     }

@@ -144,16 +144,28 @@ namespace TourAPI
                 var gatewayUrl = builder.Configuration.GetValue<string>("GatewayApi:BaseUrl") ?? "https://localhost:7010";
                 client.BaseAddress = new Uri(gatewayUrl.TrimEnd('/') + "/");
             })
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            })
             .AddHttpMessageHandler<AuthorizationHeaderHandler>();
             builder.Services.AddScoped<IEmailService, EmailService>();
-            builder.Services.AddHttpClient<IAuthApiClient, AuthApiClient>();
-            builder.Services.AddHttpClient<INotificationInternalService, NotificationInternalService>();
+            builder.Services.AddScoped<IAuthApiClient, AuthApiClient>();
+            builder.Services.AddHttpClient<INotificationInternalService, NotificationInternalService>()
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            });
             //{
             //    client.Timeout = TimeSpan.FromSeconds(10);
             //}).AddHttpMessageHandler<AuthorizationHeaderHandler>();
             builder.Services.AddHttpClient<IOrderService, OrderService>(client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(10);
+            })
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
             })
            .AddHttpMessageHandler<AuthorizationHeaderHandler>();
             

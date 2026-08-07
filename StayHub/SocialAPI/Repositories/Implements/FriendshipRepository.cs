@@ -82,6 +82,14 @@ public class FriendshipRepository : IFriendshipRepository
         return (friends, total);
     }
 
+    public async Task<List<Friendship>> GetAllFriendsAsync(int userId)
+    {
+        return await _context.Friendships
+            .Where(f => f.Status == "Accepted" && (f.RequesterId == userId || f.ReceiverId == userId))
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
     public async Task<bool> CheckAreFriendsAsync(int userId1, int userId2)
     {
         return await _context.Friendships.AnyAsync(f =>

@@ -9,6 +9,7 @@ public class FriendshipResponseDto
     public int RequesterId { get; set; }
     public required string FullName { get; set; }
     public string? AvatarUrl { get; set; }
+    public string? Email { get; set; }
     public string? Status { get; set; }
     public DateTime? CreatedAt { get; set; }
 }

@@ -13,9 +13,13 @@ namespace TourAPI.Services.Implements
     {
         private readonly HttpClient _httpClient;
 
-        public AuthApiClient(HttpClient httpClient, IConfiguration configuration)
+        public AuthApiClient(IConfiguration configuration)
         {
-            _httpClient = httpClient;
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            };
+            _httpClient = new HttpClient(handler);
             var baseUrl = configuration.GetValue<string>("AuthApi:BaseUrl") ?? "https://localhost:7001";
             _httpClient.BaseAddress = new Uri(baseUrl);
             _httpClient.DefaultRequestHeaders.Add("X-Service-Key", configuration.GetValue<string>("InternalService:Key"));
