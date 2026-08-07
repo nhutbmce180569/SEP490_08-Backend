@@ -97,19 +97,15 @@ namespace BookingAPI
             {
                 ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
             });
-            builder.Services.AddHttpClient<IAuthApiClient, AuthApiClient>(client =>
-            {
-                var authApiBaseUrl = builder.Configuration["AuthApi:BaseUrl"] ?? "https://localhost:7001";
-                if (!string.IsNullOrWhiteSpace(authApiBaseUrl))
-                {
-                    client.BaseAddress = new Uri(authApiBaseUrl.TrimEnd('/') + "/");
-                }
-            });
+            builder.Services.AddScoped<IAuthApiClient, AuthApiClient>();
             builder.Services.AddHttpClient("SocialApiClient", client =>
-            {
-                var gatewayBaseUrl = builder.Configuration["GatewayApi:BaseUrl"] ?? "https://localhost:7000";
-                client.BaseAddress = new Uri(gatewayBaseUrl.TrimEnd('/') + "/");
-            });
+  {
+      var gatewayBaseUrl = builder.Configuration["GatewayApi:BaseUrl"] ?? "https://localhost:7000";
+      client.BaseAddress = new Uri(gatewayBaseUrl.TrimEnd('/') + "/");
+  }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+  {
+      ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+  });
             builder.Services.AddScoped<ITicketRepository, TicketRepository>();
             builder.Services.AddScoped<ITicketService, TicketService>();
             builder.Services.AddHostedService<BookingAPI.BackgroundServices.OrderNotificationBackgroundService>();

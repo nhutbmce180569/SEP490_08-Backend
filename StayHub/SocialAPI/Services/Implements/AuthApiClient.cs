@@ -8,9 +8,16 @@ namespace SocialAPI.Services.Implements
         private readonly HttpClient _httpClient;
         private readonly string? _internalKey;
 
-        public AuthApiClient(HttpClient httpClient, IConfiguration configuration)
+        public AuthApiClient(IConfiguration configuration)
         {
-            _httpClient = httpClient;
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            };
+            _httpClient = new HttpClient(handler)
+            {
+                BaseAddress = new Uri(configuration["AuthApi:BaseUrl"] ?? "https://localhost:7001/")
+            };
             _internalKey = configuration["InternalApi:SecretKey"];
         }
 
@@ -24,17 +31,31 @@ namespace SocialAPI.Services.Implements
             try
             {
                 var response = await _httpClient.PostAsJsonAsync("api/users/batch", ids);
+                Console.WriteLine($"[AuthApiClient] Batch Request sent for {ids.Count} users. Status: {response.StatusCode}");
                 if (!response.IsSuccessStatusCode)
+                {
+                    var err = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[AuthApiClient] Error response: {err}");
                     return new Dictionary<int, UserProfileShortDto>();
+                }
 
-                var payload = await response.Content
-                    .ReadFromJsonAsync<BatchResponse<List<UserProfileShortDto>>>();
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"[AuthApiClient] JSON Response: {jsonResponse}");
 
-                return payload?.Data?.ToDictionary(u => u.Id, u => u)
-                    ?? new Dictionary<int, UserProfileShortDto>();
+                var payload = System.Text.Json.JsonSerializer.Deserialize<BatchResponse<List<UserProfileShortDto>>>(
+                    jsonResponse, 
+                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+
+                var dict = payload?.Data?.ToDictionary(u => u.Id, u => u) ?? new Dictionary<int, UserProfileShortDto>();
+                Console.WriteLine($"[AuthApiClient] Parsed {dict.Count} user profiles.");
+                return dict;
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"[AuthApiClient] Error fetching user profiles: {ex.Message}");
+                if (ex.InnerException != null)
+                    Console.WriteLine($"[AuthApiClient] Inner Exception: {ex.InnerException.Message}");
                 return new Dictionary<int, UserProfileShortDto>();
             }
         }

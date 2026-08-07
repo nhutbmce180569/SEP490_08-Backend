@@ -7,9 +7,15 @@ public class AuthApiClient : IAuthApiClient
 {
     private readonly HttpClient _httpClient;
 
-    public AuthApiClient(HttpClient httpClient)
+    public AuthApiClient(IConfiguration configuration)
     {
-        _httpClient = httpClient;
+        var handler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        };
+        _httpClient = new HttpClient(handler);
+        var authApiBaseUrl = configuration["AuthApi:BaseUrl"] ?? "https://localhost:7001";
+        _httpClient.BaseAddress = new Uri(authApiBaseUrl.TrimEnd('/') + "/");
     }
 
     public async Task<List<BatchUserProfileDTO>> GetUsersBatchAsync(List<int> userIds)
