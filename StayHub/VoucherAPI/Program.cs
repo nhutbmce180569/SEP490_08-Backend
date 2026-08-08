@@ -187,6 +187,8 @@ public class Program
                     Console.WriteLine($"[VoucherAPI] DB Migration/Seed notice: {dbEx.Message}");
                 }
 
+                // Commented out remapping logic because it incorrectly reassigns vouchers of users with ID > 100 on startup.
+                /*
                 var userValService = scope.ServiceProvider.GetRequiredService<IUserValidationService>();
 
                 var batchUsers = userValService.GetUsersBatchAsync(Enumerable.Range(1, 100).ToList()).GetAwaiter().GetResult();
@@ -212,6 +214,7 @@ public class Program
                         Console.WriteLine("[VoucherAPI] Successfully remapped dummy UserVouchers to valid customer IDs.");
                     }
                 }
+                */
             }
             catch (Exception ex)
             {
