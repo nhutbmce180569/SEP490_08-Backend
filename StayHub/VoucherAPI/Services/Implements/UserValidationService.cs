@@ -70,7 +70,7 @@ public class UserValidationService : IUserValidationService
     {
         var gatewayUrl = _configuration["Gateway:BaseUrl"] ?? "https://localhost:7010";
         
-        var request = new HttpRequestMessage(HttpMethod.Get, $"{gatewayUrl}/api/internal/users/birthdays?month={month}");
+        var request = new HttpRequestMessage(HttpMethod.Get, $"{gatewayUrl.TrimEnd('/')}/api/internal/users/birthdays?month={month}");
         var internalKey = _configuration["InternalService:Key"] ?? "StayHub_Internal_Service_Key_2026";
         if (!string.IsNullOrEmpty(internalKey))
         {
