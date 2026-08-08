@@ -48,7 +48,65 @@ public class VouchersController : LocalizedControllerBase
             return NotFound(new { message = M("VoucherNotFound") });
         }
 
+        // Security: Manager can only view vouchers they created.
+        // Admin can view all vouchers.
+        var isAdmin = User.IsInRole("Admin");
+        if (!isAdmin && result.CreatorId != GetCurrentUserId())
+        {
+            return Forbid();
+        }
+
         return Ok(result);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null)
+        {
+            return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
+        }
+
+        try
+        {
+            var isAdmin = User.IsInRole("Admin");
+            await _voucherService.Delete(id, currentUserId.Value, isAdmin);
+            return NoContent();
+        }
+        catch (Exception ex) when (ex.Message == "Voucher not found")
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("{id}/assignments/{userVoucherId}")]
+    public async Task<IActionResult> RevokeAssignment(int id, int userVoucherId)
+    {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null)
+        {
+            return Unauthorized(new { message = M("CannotExtractUserIDFromToken") });
+        }
+
+        try
+        {
+            var isAdmin = User.IsInRole("Admin");
+            await _voucherService.RevokeAssignment(id, userVoucherId, currentUserId.Value, isAdmin);
+            return NoContent();
+        }
+        catch (Exception ex) when (ex.Message == "Voucher not found")
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPost]

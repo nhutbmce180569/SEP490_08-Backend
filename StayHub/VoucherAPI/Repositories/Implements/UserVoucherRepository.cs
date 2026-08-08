@@ -60,6 +60,12 @@ public class UserVoucherRepository : IUserVoucherRepository
         await _context.SaveChangesAsync();
     }
 
+    public async Task DeleteAsync(UserVoucher entity)
+    {
+        _context.UserVouchers.Remove(entity);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task DeleteRangeAsync(IEnumerable<UserVoucher> entities)
     {
         _context.UserVouchers.RemoveRange(entities);

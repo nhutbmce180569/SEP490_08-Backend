@@ -148,7 +148,11 @@ public class UpdateVoucherDTO
     [Range(1, long.MaxValue, ErrorMessage = "MaxDiscountAmount must be greater than 0")]
     public long? MaxDiscountAmount { get; set; }
 
-    [Range(0, long.MaxValue, ErrorMessage = "MinOrderAmount must be non-negative")]
+    // [FIX VAL-3] MinOrderAmount in Update uses Range(0, ...) intentionally:
+    // Setting MinOrderAmount = 0 acts as a sentinel to REMOVE the minimum order requirement.
+    // The service layer converts 0 (or negative) to null. This is an explicit design choice;
+    // if a more explicit API is preferred, a bool RemoveMinOrderAmount field could be added instead.
+    [Range(0, long.MaxValue, ErrorMessage = "MinOrderAmount must be non-negative (use 0 to remove the minimum order requirement)")]
     public long? MinOrderAmount { get; set; }
 
     [Range(1, int.MaxValue, ErrorMessage = "AvailableCount must be at least 1")]

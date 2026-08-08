@@ -27,6 +27,10 @@ public interface IVoucherService
 
     Task<ReadVoucherDTO> Deactivate(int id, int currentUserId, bool isAdmin);
 
+    Task Delete(int id, int currentUserId, bool isAdmin);
+
+    Task RevokeAssignment(int voucherId, int userVoucherId, int currentUserId, bool isAdmin);
+
     Task<object> GetBirthdayPreviewAsync(int month, int year);
     Task<object> DistributeBirthdayVoucherAsync(
         int month,

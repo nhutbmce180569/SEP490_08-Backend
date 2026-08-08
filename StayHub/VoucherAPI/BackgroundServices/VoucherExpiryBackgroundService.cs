@@ -72,6 +72,8 @@ namespace VoucherAPI.BackgroundServices
             using var scope = _serviceProvider.CreateScope();
             var _dbContext = scope.ServiceProvider.GetRequiredService<StayHubVoucherDbContext>();
             var _notificationService = scope.ServiceProvider.GetRequiredService<INotificationInternalService>();
+            var _emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+            var _userValidationService = scope.ServiceProvider.GetRequiredService<IUserValidationService>();
 
             var tomorrow = DateTime.UtcNow.AddDays(1).Date;
             var dayAfterTomorrow = tomorrow.AddDays(1);
@@ -87,10 +89,35 @@ namespace VoucherAPI.BackgroundServices
                 {
                     if (voucher.CreatorId > 0)
                     {
+                        // [FIX NOTIFY] Send in-app notification (existing)
                         var title = "Voucher Expiring Soon";
                         var content = $"Your voucher code '{voucher.Code}' will expire tomorrow ({voucher.EndDate:dd/MM/yyyy}). Please review if you want to extend it.";
-                        
                         await _notificationService.NotifyUserAsync(voucher.CreatorId, title, content);
+
+                        // [FIX NOTIFY] Also send email to the Manager/Creator — consistent with birthday voucher flow
+                        try
+                        {
+                            var creatorInfo = await _userValidationService.ValidateUserAsync(voucher.CreatorId);
+                            if (creatorInfo.Exists && !string.IsNullOrWhiteSpace(creatorInfo.Email))
+                            {
+                                var emailSubject = $"[StayHub] Voucher '{voucher.Code}' sắp hết hạn vào ngày mai";
+                                var emailBody = $@"
+                                    <h3>Voucher sắp hết hạn</h3>
+                                    <p>Xin chào {creatorInfo.FullName},</p>
+                                    <p>Voucher của bạn sẽ hết hạn vào <strong>ngày mai ({voucher.EndDate:dd/MM/yyyy})</strong>:</p>
+                                    <ul>
+                                        <li><strong>Mã voucher:</strong> {voucher.Code}</li>
+                                        <li><strong>Đã dùng:</strong> {voucher.UsedCount} / {voucher.AvailableCount}</li>
+                                        <li><strong>Ngày hết hạn:</strong> {voucher.EndDate:dd/MM/yyyy HH:mm} (UTC)</li>
+                                    </ul>
+                                    <p>Nếu muốn gia hạn, vui lòng cập nhật EndDate trước khi voucher hết hiệu lực.</p>";
+                                await _emailService.SendEmailAsync(creatorInfo.Email, emailSubject, emailBody);
+                            }
+                        }
+                        catch (Exception emailEx)
+                        {
+                            _logger.LogWarning(emailEx, "Failed to send expiry email for voucher {Code} to creator {CreatorId}", voucher.Code, voucher.CreatorId);
+                        }
                     }
                 }
             }

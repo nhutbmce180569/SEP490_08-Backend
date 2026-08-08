@@ -218,17 +218,12 @@ public class VoucherService : IVoucherService
         }
 
         var assignments = await ResolveCustomerAssignmentsAsync(dto.CustomerAssignments, dto.TopCustomerAssignment);
-        
-        if (assignments.Count == 0)
-        {
-            var activeUserIds = await _userValidationService.GetAllActiveCustomerIdsAsync();
-            var limit = dto.AvailableCount;
-            assignments = activeUserIds.Take(limit).Select(id => new CreateUserVoucherAssignmentDTO
-            {
-                UserId = id,
-                Quantity = 1
-            }).ToList();
-        }
+
+        // [FIX BL-1] Removed silent auto-assign to all customers.
+        // If no customer assignment is specified, the voucher is created as a
+        // public voucher (no UserVoucher records) that any customer can manually save.
+        // Previously, the system silently picked the first N customers by ID which was
+        // an undocumented and unintuitive behavior.
 
         if (assignments.Count > 0)
         {
@@ -360,9 +355,13 @@ public class VoucherService : IVoucherService
 
         if (dto.AvailableCount.HasValue)
         {
-            if (dto.AvailableCount.Value < entity.UsedCount)
+            // AvailableCount = per-person limit (how many vouchers one person can hold).
+            // This must always be >= UsedCount per person, but UsedCount here is the global
+            // redeem counter, not per-person. So we just ensure it's a positive value.
+            // The per-person Quantity is tracked in UserVoucher.Quantity separately.
+            if (dto.AvailableCount.Value < 1)
             {
-                throw new Exception("AvailableCount cannot be less than UsedCount");
+                throw new Exception("AvailableCount must be at least 1");
             }
 
             entity.AvailableCount = dto.AvailableCount.Value;
@@ -496,6 +495,63 @@ public class VoucherService : IVoucherService
         var dto = _mapper.Map<ReadVoucherDTO>(entity);
         await EnrichVoucherAsync(dto, entity);
         return dto;
+    }
+
+    public async Task Delete(int id, int currentUserId, bool isAdmin)
+    {
+        var entity = await _voucherRepository.GetByIdWithUserVouchersAsync(id);
+        if (entity == null)
+        {
+            throw new Exception("Voucher not found");
+        }
+
+        if (!isAdmin && entity.CreatorId != currentUserId)
+        {
+            throw new Exception("You can only delete vouchers that you created");
+        }
+
+        // [FIX FEAT-1] Only allow hard-delete when no customer has ever used this voucher.
+        // Vouchers with usage history must be deactivated instead to preserve financial audit trails.
+        if (entity.UsedCount > 0)
+        {
+            throw new Exception("Cannot delete a voucher that has already been used. Deactivate it instead.");
+        }
+
+        // Remove all customer assignments first to avoid FK violations
+        if (entity.UserVouchers.Any())
+        {
+            await _userVoucherRepository.DeleteRangeAsync(entity.UserVouchers);
+        }
+
+        await _voucherRepository.DeleteAsync(entity);
+    }
+
+    public async Task RevokeAssignment(int voucherId, int userVoucherId, int currentUserId, bool isAdmin)
+    {
+        var voucher = await _voucherRepository.GetByIdWithUserVouchersAsync(voucherId);
+        if (voucher == null)
+        {
+            throw new Exception("Voucher not found");
+        }
+
+        if (!isAdmin && voucher.CreatorId != currentUserId)
+        {
+            throw new Exception("You can only manage assignments for vouchers that you created");
+        }
+
+        var assignment = voucher.UserVouchers.FirstOrDefault(uv => uv.Id == userVoucherId);
+        if (assignment == null)
+        {
+            throw new Exception($"Assignment with Id {userVoucherId} not found for this voucher");
+        }
+
+        // [FIX FEAT-2] Cannot revoke an assignment the customer has already used.
+        if (assignment.Status.Equals("Used", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new Exception("Cannot revoke a voucher assignment that has already been used by the customer");
+        }
+
+        await _userVoucherRepository.DeleteAsync(assignment);
     }
 
     private async Task EnrichVoucherAsync(ReadVoucherDTO dto, Voucher entity)
@@ -659,6 +715,9 @@ public class VoucherService : IVoucherService
         {
             throw new Exception("EndDate must be later than StartDate");
         }
+        // NOTE: StartDate-in-past validation is intentionally NOT here.
+        // It is only enforced during Create (see above) to avoid breaking
+        // UPDATE of existing vouchers that are already active.
     }
 
     private static void ValidateDiscount(string discountType, long discountValue)
