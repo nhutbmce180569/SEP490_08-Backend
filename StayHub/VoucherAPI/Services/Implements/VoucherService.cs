@@ -922,9 +922,9 @@ public class VoucherService : IVoucherService
             throw new Exception(isVi ? "Không tìm thấy voucher sinh nhật của tháng này." : "Birthday voucher for this month not found.");
         }
 
-        if (voucher.StartDate <= DateTime.Now)
+        if (voucher.UsedCount > 0)
         {
-            throw new Exception(isVi ? "Voucher sinh nhật này đã bắt đầu thời hạn sử dụng, không thể hủy." : "This birthday voucher has already started and cannot be cancelled.");
+            throw new Exception(isVi ? "Voucher sinh nhật này đã có khách hàng sử dụng, không thể hủy." : "This birthday voucher has already been used by customers and cannot be cancelled.");
         }
 
         // Remove child assignments first to prevent foreign key constraint violations
