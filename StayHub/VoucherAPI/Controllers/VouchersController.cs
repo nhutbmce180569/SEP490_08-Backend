@@ -226,6 +226,21 @@ public class VouchersController : LocalizedControllerBase
         }
     }
 
+    [HttpDelete("birthday-distribute")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteBirthdayVoucher([FromQuery] int month, [FromQuery] int year)
+    {
+        try
+        {
+            var result = await _voucherService.DeleteBirthdayVoucherAsync(month, year);
+            return Ok(new { message = "Birthday voucher cancelled successfully." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     private int? GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value

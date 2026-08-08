@@ -28,4 +28,5 @@ public interface IVoucherRepository
     Task RedeemAsync(int voucherId, int userVoucherId);
 
     Task RestoreAsync(int voucherId, int userVoucherId);
+    Task DeleteAsync(Voucher entity);
 }

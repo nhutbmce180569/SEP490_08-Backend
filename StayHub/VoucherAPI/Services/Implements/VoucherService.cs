@@ -749,7 +749,19 @@ public class VoucherService : IVoucherService
         DateTime? endDate = null)
     {
         var now = DateTime.Now;
+        var currentMonth = now.Month;
+        var nextMonth = currentMonth == 12 ? 1 : currentMonth + 1;
+
+        if (month != currentMonth && month != nextMonth)
+        {
+            throw new Exception("Chỉ được phép phát voucher sinh nhật cho tháng hiện tại hoặc tháng kế tiếp.");
+        }
+
         var year = now.Year;
+        if (month == 1 && currentMonth == 12)
+        {
+            year = now.Year + 1;
+        }
         var voucherCode = $"BDAY_{year}_{month:D2}";
 
         if (await CheckBirthdayVoucherDistributedAsync(month, year))
@@ -874,6 +886,24 @@ public class VoucherService : IVoucherService
             EmailsSent = emailsSent,
             Message = "Birthday vouchers distributed successfully."
         };
+    }
+
+    public async Task<bool> DeleteBirthdayVoucherAsync(int month, int year)
+    {
+        var voucherCode = $"BDAY_{year}_{month:D2}";
+        var voucher = await _voucherRepository.GetByCodeAsync(voucherCode);
+        if (voucher == null)
+        {
+            throw new Exception("Không tìm thấy voucher sinh nhật của tháng này.");
+        }
+
+        if (voucher.StartDate <= DateTime.Now)
+        {
+            throw new Exception("Voucher sinh nhật này đã bắt đầu thời hạn sử dụng, không thể hủy.");
+        }
+
+        await _voucherRepository.DeleteAsync(voucher);
+        return true;
     }
 
     private static string ResolveStatus(Voucher voucher)

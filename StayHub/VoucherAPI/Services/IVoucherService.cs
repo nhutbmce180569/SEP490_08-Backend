@@ -37,4 +37,5 @@ public interface IVoucherService
         DateTime? startDate = null,
         DateTime? endDate = null);
     Task<bool> CheckBirthdayVoucherDistributedAsync(int month, int year);
+    Task<bool> DeleteBirthdayVoucherAsync(int month, int year);
 }

@@ -173,4 +173,10 @@ public class VoucherRepository : IVoucherRepository
             throw;
         }
     }
+
+    public async Task DeleteAsync(Voucher entity)
+    {
+        _context.Vouchers.Remove(entity);
+        await _context.SaveChangesAsync();
+    }
 }
