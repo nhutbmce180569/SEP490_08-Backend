@@ -100,9 +100,9 @@ public class MomentService : IMomentService
                     }
                 }
 
-                if (minDistance > 40000.0)
+                if (minDistance > 50.0)
                 {
-                    throw new ArgumentException($"Your moment location is too far from the tour route waypoints (closest is {minDistance:F1}km away, limit is 40000.0km). Please post moments that are physically within the tour's path.");
+                    throw new ArgumentException($"Your moment location is too far from the tour route waypoints (closest is {minDistance:F1}km away, limit is 50.0km). Please post moments that are physically within the tour's path.");
                 }
             }
         }
