@@ -16,7 +16,7 @@ public class TourValidationService : ITourValidationService
 
     public async Task<(bool Exists, string? Name, string? Status, int CreatedBy)> ValidateTourAsync(int tourId)
     {
-        var gatewayUrl = _configuration["Gateway:BaseUrl"] ?? "https://localhost:7010";
+        var gatewayUrl = (_configuration["Gateway:BaseUrl"] ?? "https://localhost:7010").TrimEnd('/');
         var response = await _httpClient.GetAsync($"{gatewayUrl}/api/tours/public/{tourId}");
 
         if (!response.IsSuccessStatusCode)
