@@ -16,7 +16,7 @@ namespace VoucherAPI.Services.Implements
 
         public async Task NotifyUserAsync(int userId, string title, string content)
         {
-            var gatewayUrl = _configuration["Gateway:BaseUrl"] ?? "https://localhost:7010";
+            var gatewayUrl = (_configuration["Gateway:BaseUrl"] ?? "https://localhost:7010").TrimEnd('/');
             var requestUrl = $"{gatewayUrl}/api/notifications/internal/send";
 
             var payload = new
