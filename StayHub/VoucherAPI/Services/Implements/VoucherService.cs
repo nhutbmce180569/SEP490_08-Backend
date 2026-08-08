@@ -927,6 +927,13 @@ public class VoucherService : IVoucherService
             throw new Exception(isVi ? "Voucher sinh nhật này đã bắt đầu thời hạn sử dụng, không thể hủy." : "This birthday voucher has already started and cannot be cancelled.");
         }
 
+        // Remove child assignments first to prevent foreign key constraint violations
+        var userVouchers = await _userVoucherRepository.GetByVoucherIdAsync(voucher.Id);
+        if (userVouchers != null && userVouchers.Any())
+        {
+            await _userVoucherRepository.DeleteRangeAsync(userVouchers);
+        }
+
         await _voucherRepository.DeleteAsync(voucher);
         return true;
     }

@@ -17,4 +17,6 @@ public interface IUserVoucherRepository
     Task AddRangeAsync(IEnumerable<UserVoucher> entities);
 
     Task UpdateAsync(UserVoucher entity);
+
+    Task DeleteRangeAsync(IEnumerable<UserVoucher> entities);
 }
