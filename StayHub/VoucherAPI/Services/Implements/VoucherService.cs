@@ -748,13 +748,14 @@ public class VoucherService : IVoucherService
         DateTime? startDate = null,
         DateTime? endDate = null)
     {
+        var isVi = System.Globalization.CultureInfo.CurrentCulture.Name.StartsWith("vi", StringComparison.OrdinalIgnoreCase);
         var now = DateTime.Now;
         var currentMonth = now.Month;
         var nextMonth = currentMonth == 12 ? 1 : currentMonth + 1;
 
         if (month != currentMonth && month != nextMonth)
         {
-            throw new Exception("Chỉ được phép phát voucher sinh nhật cho tháng hiện tại hoặc tháng kế tiếp.");
+            throw new Exception(isVi ? "Chỉ được phép phát voucher sinh nhật cho tháng hiện tại hoặc tháng kế tiếp." : "Birthday vouchers can only be distributed for the current or next month.");
         }
 
         var year = now.Year;
@@ -766,7 +767,7 @@ public class VoucherService : IVoucherService
 
         if (await CheckBirthdayVoucherDistributedAsync(month, year))
         {
-            throw new Exception($"Birthday voucher for month {month}/{year} has already been distributed (Code: {voucherCode}).");
+            throw new Exception(isVi ? $"Voucher sinh nhật cho tháng {month}/{year} đã được phát trước đó (Mã: {voucherCode})." : $"Birthday voucher for month {month}/{year} has already been distributed (Code: {voucherCode}).");
         }
 
         var customers = await _userValidationService.GetCustomersByBirthdayMonthAsync(month);
@@ -775,7 +776,7 @@ public class VoucherService : IVoucherService
 
         if (activeCustomers.Count == 0)
         {
-            throw new Exception($"No active customers found with a birthday in month {month}.");
+            throw new Exception(isVi ? $"Không tìm thấy khách hàng nào hoạt động có sinh nhật trong tháng {month}." : $"No active customers found with a birthday in month {month}.");
         }
 
         var finalDiscountType = string.Equals(discountType, "Amount", StringComparison.OrdinalIgnoreCase) ? "Amount" : "Percent";
@@ -787,15 +788,13 @@ public class VoucherService : IVoucherService
 
         if (start.Month != month)
         {
-            throw new Exception($"Ngày bắt đầu ({start:dd/MM/yyyy}) phải thuộc Tháng sinh nhật được chọn (Tháng {month}).");
+            throw new Exception(isVi ? $"Ngày bắt đầu ({start:dd/MM/yyyy}) phải thuộc Tháng sinh nhật được chọn (Tháng {month})." : $"Start date ({start:dd/MM/yyyy}) must be in the selected birthday month (Month {month}).");
         }
 
         if (end < start)
         {
-            throw new Exception($"Ngày hết hạn ({end:dd/MM/yyyy}) phải lớn hơn hoặc bằng Ngày bắt đầu ({start:dd/MM/yyyy}).");
+            throw new Exception(isVi ? $"Ngày hết hạn ({end:dd/MM/yyyy}) phải lớn hơn hoặc bằng Ngày bắt đầu ({start:dd/MM/yyyy})." : $"Expiration date ({end:dd/MM/yyyy}) must be greater than or equal to Start date ({start:dd/MM/yyyy}).");
         }
-
-        var isVi = System.Globalization.CultureInfo.CurrentCulture.Name.StartsWith("vi", StringComparison.OrdinalIgnoreCase);
 
         var description = isVi
             ? (finalDiscountType == "Percent"
@@ -915,16 +914,17 @@ public class VoucherService : IVoucherService
 
     public async Task<bool> DeleteBirthdayVoucherAsync(int month, int year)
     {
+        var isVi = System.Globalization.CultureInfo.CurrentCulture.Name.StartsWith("vi", StringComparison.OrdinalIgnoreCase);
         var voucherCode = $"BDAY_{year}_{month:D2}";
         var voucher = await _voucherRepository.GetByCodeAsync(voucherCode);
         if (voucher == null)
         {
-            throw new Exception("Không tìm thấy voucher sinh nhật của tháng này.");
+            throw new Exception(isVi ? "Không tìm thấy voucher sinh nhật của tháng này." : "Birthday voucher for this month not found.");
         }
 
         if (voucher.StartDate <= DateTime.Now)
         {
-            throw new Exception("Voucher sinh nhật này đã bắt đầu thời hạn sử dụng, không thể hủy.");
+            throw new Exception(isVi ? "Voucher sinh nhật này đã bắt đầu thời hạn sử dụng, không thể hủy." : "This birthday voucher has already started and cannot be cancelled.");
         }
 
         await _voucherRepository.DeleteAsync(voucher);
