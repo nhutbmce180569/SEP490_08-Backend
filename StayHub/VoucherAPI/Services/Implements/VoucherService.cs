@@ -795,9 +795,15 @@ public class VoucherService : IVoucherService
             throw new Exception($"Ngày hết hạn ({end:dd/MM/yyyy}) phải lớn hơn hoặc bằng Ngày bắt đầu ({start:dd/MM/yyyy}).");
         }
 
-        var description = finalDiscountType == "Percent"
-            ? $"Happy Birthday! Enjoy {finalDiscountValue}% off (up to {finalMaxDiscount?.ToString("N0")} VND) on any tour booking. Valid for month {month}."
-            : $"Happy Birthday! Enjoy {finalDiscountValue:N0} VND off on any tour booking. Valid for month {month}.";
+        var isVi = System.Globalization.CultureInfo.CurrentCulture.Name.StartsWith("vi", StringComparison.OrdinalIgnoreCase);
+
+        var description = isVi
+            ? (finalDiscountType == "Percent"
+                ? $"Chúc mừng sinh nhật! Giảm {finalDiscountValue}% (tối đa {finalMaxDiscount?.ToString("N0")} VNĐ) cho bất kỳ lượt đặt tour nào. Có hiệu lực trong tháng {month}."
+                : $"Chúc mừng sinh nhật! Giảm {finalDiscountValue:N0} VNĐ cho bất kỳ lượt đặt tour nào. Có hiệu lực trong tháng {month}.")
+            : (finalDiscountType == "Percent"
+                ? $"Happy Birthday! Enjoy {finalDiscountValue}% off (up to {finalMaxDiscount?.ToString("N0")} VND) on any tour booking. Valid for month {month}."
+                : $"Happy Birthday! Enjoy {finalDiscountValue:N0} VND off on any tour booking. Valid for month {month}.");
 
         var voucherDto = new CreateVoucherDTO
         {
@@ -825,8 +831,10 @@ public class VoucherService : IVoucherService
         {
             try
             {
-                var notifyTitle = "🎁 Happy Birthday from StayHub!";
-                var notifyContent = $"We have sent a discount voucher (Code: {voucherCode}) to your account. Enjoy your trip!";
+                var notifyTitle = isVi ? "🎁 Chúc mừng sinh nhật từ StayHub!" : "🎁 Happy Birthday from StayHub!";
+                var notifyContent = isVi 
+                    ? $"Chúng tôi đã gửi một mã giảm giá (Mã: {voucherCode}) vào tài khoản của bạn. Chúc bạn có một chuyến đi tuyệt vời!"
+                    : $"We have sent a discount voucher (Code: {voucherCode}) to your account. Enjoy your trip!";
                 await _notificationInternalService.NotifyUserAsync(customer.Id, notifyTitle, notifyContent);
             }
             catch
@@ -838,13 +846,20 @@ public class VoucherService : IVoucherService
             {
                 try
                 {
-                    var subject = "Happy Birthday from StayHub!";
-                    var body = $@"
-                        <h3>Happy Birthday, {customer.FullName}!</h3>
-                        <p>We are excited to celebrate your birthday month with you!</p>
-                        <p>Here is a special gift: a discount voucher (Code: {voucherCode}) for your next tour booking.</p>
-                        <p><strong>Your Voucher Code:</strong> {voucherCode}</p>
-                        <p>This voucher has already been saved to your account. Enjoy your trip!</p>";
+                    var subject = isVi ? "Chúc mừng sinh nhật từ StayHub!" : "Happy Birthday from StayHub!";
+                    var body = isVi
+                        ? $@"
+                            <h3>Chúc mừng sinh nhật, {customer.FullName}!</h3>
+                            <p>Chúng tôi rất vui mừng được chào đón tháng sinh nhật của bạn!</p>
+                            <p>Đây là một món quà đặc biệt dành riêng cho bạn: một mã giảm giá (Mã: {voucherCode}) cho lần đặt tour tiếp theo.</p>
+                            <p><strong>Mã giảm giá của bạn:</strong> {voucherCode}</p>
+                            <p>Mã này đã được lưu sẵn vào ví voucher trong tài khoản của bạn. Chúc bạn có một hành trình đầy niềm vui!</p>"
+                        : $@"
+                            <h3>Happy Birthday, {customer.FullName}!</h3>
+                            <p>We are excited to celebrate your birthday month with you!</p>
+                            <p>Here is a special gift: a discount voucher (Code: {voucherCode}) for your next tour booking.</p>
+                            <p><strong>Your Voucher Code:</strong> {voucherCode}</p>
+                            <p>This voucher has already been saved to your account. Enjoy your trip!</p>";
 
                     await _emailService.SendEmailAsync(customer.Email, subject, body);
                     emailsSent++;
@@ -862,14 +877,24 @@ public class VoucherService : IVoucherService
         {
             try
             {
-                var adminSubject = $"[StayHub Admin] Birthday Vouchers Distributed - {month}/{year}";
-                var adminBody = $@"
-                    <h3>Birthday Vouchers Report</h3>
-                    <p>The birthday vouchers for {month}/{year} have been successfully distributed.</p>
-                    <p><strong>Voucher Code:</strong> {voucherCode}</p>
-                    <p><strong>Total Eligible Customers:</strong> {activeCustomers.Count}</p>
-                    <p><strong>Total Emails Sent:</strong> {emailsSent}</p>
-                    <p>Action performed by Admin ID: {currentAdminId}</p>";
+                var adminSubject = isVi 
+                    ? $"[StayHub Admin] Đã phát Voucher Sinh nhật - Tháng {month}/{year}" 
+                    : $"[StayHub Admin] Birthday Vouchers Distributed - {month}/{year}";
+                var adminBody = isVi
+                    ? $@"
+                        <h3>Báo cáo phát Voucher Sinh nhật</h3>
+                        <p>Các voucher sinh nhật của tháng {month}/{year} đã được phát thành công.</p>
+                        <p><strong>Mã Voucher:</strong> {voucherCode}</p>
+                        <p><strong>Tổng số khách hàng đủ điều kiện:</strong> {activeCustomers.Count}</p>
+                        <p><strong>Tổng số email đã gửi:</strong> {emailsSent}</p>
+                        <p>Hành động được thực hiện bởi Admin ID: {currentAdminId}</p>"
+                    : $@"
+                        <h3>Birthday Vouchers Report</h3>
+                        <p>The birthday vouchers for {month}/{year} have been successfully distributed.</p>
+                        <p><strong>Voucher Code:</strong> {voucherCode}</p>
+                        <p><strong>Total Eligible Customers:</strong> {activeCustomers.Count}</p>
+                        <p><strong>Total Emails Sent:</strong> {emailsSent}</p>
+                        <p>Action performed by Admin ID: {currentAdminId}</p>";
 
                 await _emailService.SendEmailAsync(adminInfo.Email, adminSubject, adminBody);
             }
@@ -884,7 +909,7 @@ public class VoucherService : IVoucherService
             VoucherCode = voucherCode,
             TotalEligibleCustomers = activeCustomers.Count,
             EmailsSent = emailsSent,
-            Message = "Birthday vouchers distributed successfully."
+            Message = isVi ? "Đã phát voucher sinh nhật thành công." : "Birthday vouchers distributed successfully."
         };
     }
 
