@@ -619,7 +619,7 @@ namespace BookingAPI.Services.Implements
                 discountAmount = promo.DiscountValue;
             }
 
-            long finalDiscount = (long)discountAmount;
+            long finalDiscount = (long)Math.Round(discountAmount, MidpointRounding.AwayFromZero);
             if (finalDiscount > basePrice) finalDiscount = basePrice;
 
             return (Math.Max(0, basePrice - finalDiscount), finalDiscount);
