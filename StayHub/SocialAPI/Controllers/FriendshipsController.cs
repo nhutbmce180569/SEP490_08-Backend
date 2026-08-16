@@ -134,6 +134,35 @@ public class FriendshipsController : LocalizedControllerBase
         }
     }
 
+    [HttpDelete("{id}/cancel")]
+    public async Task<IActionResult> CancelRequest(int id)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            await _friendshipService.CancelRequestAsync(userId, id);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            var fallback = ex.Message == "CannotCancelNonPendingRequest"
+                ? "Only pending friend requests can be cancelled."
+                : ex.Message;
+
+            var msg = M(ex.Message);
+            var finalMessage = msg != null && msg != ex.Message ? msg : fallback;
+            return BadRequest(new { message = finalMessage });
+        }
+    }
+
     [HttpGet("list")]
     public async Task<IActionResult> GetFriendList([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
