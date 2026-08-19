@@ -536,6 +536,7 @@ public class MomentService : IMomentService
     public async Task ReportContentAsync(int reporterId, string contentType, int targetId, string reason, string? details)
     {
         int? scheduleId = null;
+        int? contentOwnerId = null;
 
         if (contentType.Equals("Moment", StringComparison.OrdinalIgnoreCase))
         {
@@ -543,12 +544,14 @@ public class MomentService : IMomentService
             if (moment == null) throw new KeyNotFoundException("Moment not found.");
             if (moment.UserId == reporterId) throw new ArgumentException("CannotReportOwnMoment");
             scheduleId = moment.ScheduleId;
+            contentOwnerId = moment.UserId;
         }
         else if (contentType.Equals("Comment", StringComparison.OrdinalIgnoreCase))
         {
             var comment = await _dbContext.MomentComments.FindAsync(targetId);
             if (comment == null) throw new KeyNotFoundException("Comment not found.");
             if (comment.UserId == reporterId) throw new ArgumentException("CannotReportOwnComment");
+            contentOwnerId = comment.UserId;
             var moment = await _dbContext.TourMoments.FindAsync(comment.MomentId);
             if (moment != null) scheduleId = moment.ScheduleId;
         }
@@ -580,6 +583,37 @@ public class MomentService : IMomentService
 
         await _dbContext.ContentReports.AddAsync(report);
         await _dbContext.SaveChangesAsync();
+
+        // Gửi thông báo xác nhận cho người báo cáo
+        try
+        {
+            await _notificationInternalService.NotifyUserAsync(
+                reporterId,
+                "Report Submitted",
+                $"Your report on a {contentType.ToLower()} has been submitted and is under review."
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MomentService] Failed to notify reporter about report submission: {ex.Message}");
+        }
+
+        // Gửi thông báo cho chủ nội dung bị báo cáo
+        if (contentOwnerId.HasValue && contentOwnerId.Value != reporterId)
+        {
+            try
+            {
+                await _notificationInternalService.NotifyUserAsync(
+                    contentOwnerId.Value,
+                    "Your Content Was Reported",
+                    $"Your {contentType.ToLower()} has been reported for: {reason}. It will be reviewed by our moderation team."
+                );
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[MomentService] Failed to notify content owner about report: {ex.Message}");
+            }
+        }
 
         if (scheduleId.HasValue && scheduleId.Value > 0)
         {
@@ -660,6 +694,24 @@ public class MomentService : IMomentService
     {
         var report = await _dbContext.ContentReports.FindAsync(reportId);
         if (report == null) throw new KeyNotFoundException("Report not found.");
+
+        int? contentOwnerId = null;
+        if (report.ContentType.Equals("Moment", StringComparison.OrdinalIgnoreCase))
+        {
+            var moment = await _dbContext.TourMoments.FindAsync(report.TargetId);
+            if (moment != null)
+            {
+                contentOwnerId = moment.UserId;
+            }
+        }
+        else if (report.ContentType.Equals("Comment", StringComparison.OrdinalIgnoreCase))
+        {
+            var comment = await _dbContext.MomentComments.FindAsync(report.TargetId);
+            if (comment != null)
+            {
+                contentOwnerId = comment.UserId;
+            }
+        }
 
         if (action.Equals("Reject", StringComparison.OrdinalIgnoreCase))
         {
@@ -754,7 +806,51 @@ public class MomentService : IMomentService
         }
 
         await _dbContext.SaveChangesAsync();
+
+        // Gửi thông báo cho tất cả các reporter liên quan (bao gồm cả báo cáo trùng lặp)
+        var reportersToNotify = new List<int> { report.ReporterId };
+        foreach (var dup in duplicateReports)
+        {
+            reportersToNotify.Add(dup.ReporterId);
+        }
+        reportersToNotify = reportersToNotify.Distinct().ToList();
+
+        string reporterTitle = "Report Resolved";
+        string reporterContent = action.Equals("Reject", StringComparison.OrdinalIgnoreCase)
+            ? $"Your report on a {report.ContentType.ToLower()} has been reviewed and appropriate action has been taken."
+            : $"Your report on a {report.ContentType.ToLower()} has been reviewed and no violation was found.";
+
+        foreach (var rId in reportersToNotify)
+        {
+            try
+            {
+                await _notificationInternalService.NotifyUserAsync(rId, reporterTitle, reporterContent);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[MomentService] Failed to notify reporter {rId} about resolution: {ex.Message}");
+            }
+        }
+
+        // Gửi thông báo cho chủ sở hữu nội dung
+        if (contentOwnerId.HasValue)
+        {
+            string ownerTitle = "Content Moderation";
+            string ownerContent = action.Equals("Reject", StringComparison.OrdinalIgnoreCase)
+                ? $"Your {report.ContentType.ToLower()} has been reviewed following a report and moderation action was taken."
+                : $"Your {report.ContentType.ToLower()} has been reviewed following a report and no violation was found.";
+
+            try
+            {
+                await _notificationInternalService.NotifyUserAsync(contentOwnerId.Value, ownerTitle, ownerContent);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[MomentService] Failed to notify content owner {contentOwnerId.Value} about resolution: {ex.Message}");
+            }
+        }
     }
+
 
     public async Task<MomentResponseDto?> GetMomentByIdAsync(int momentId, int currentUserId)
     {

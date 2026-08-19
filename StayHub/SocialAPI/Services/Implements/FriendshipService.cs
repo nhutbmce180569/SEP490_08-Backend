@@ -268,6 +268,21 @@ public class FriendshipService : IFriendshipService
         await _hubContext.Clients.User(otherUserId.ToString()).SendAsync("FriendshipDeleted", userId);
     }
 
+    public async Task CancelRequestAsync(int requesterId, int friendshipId)
+    {
+        var friendship = await _friendshipRepository.GetByIdAsync(friendshipId);
+        if (friendship == null)
+            throw new KeyNotFoundException("Friend request not found.");
+
+        if (friendship.RequesterId != requesterId)
+            throw new UnauthorizedAccessException("You can only cancel your own friend requests.");
+
+        if (!string.Equals(friendship.Status, "Pending", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("CannotCancelNonPendingRequest");
+
+        await _friendshipRepository.DeleteAsync(friendshipId);
+    }
+
     public async Task<PaginationDTO<FriendshipResponseDto>> GetFriendListAsync(int userId, int page, int pageSize)
     {
         var allFriends = await _friendshipRepository.GetAllFriendsAsync(userId);
