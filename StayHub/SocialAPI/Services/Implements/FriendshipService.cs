@@ -49,6 +49,17 @@ public class FriendshipService : IFriendshipService
         if (exists)
             throw new InvalidOperationException("A friendship or pending request already exists between these users.");
 
+        // Anti-spam: Check if the receiver has declined a request from the requester within the last 7 days
+        var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
+        bool recentlyDeclined = await _context.Friendships.AnyAsync(f => 
+            f.RequesterId == requesterId && 
+            f.ReceiverId == requestDto.ReceiverId && 
+            f.Status == "Declined" &&
+            f.CreatedAt >= sevenDaysAgo);
+        
+        if (recentlyDeclined)
+            throw new InvalidOperationException("RecentlyDeclinedFriendRequest");
+
         // Block friend requests involving Staff or Manager accounts.
         // Uses IAuthApiClient (internal /api/users/batch) which returns full RoleNames.
         try
@@ -112,15 +123,8 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", friendIds);
-            if (response.IsSuccessStatusCode)
-            {
-                var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                if (apiResult?.Data != null)
-                {
-                    usersDict = apiResult.Data.ToDictionary(u => u.Id, u => u);
-                }
-            }
+            var profilesMap = await _authApiClient.GetUserProfilesAsync(friendIds);
+            usersDict = profilesMap;
         }
         catch 
         { 
@@ -136,6 +140,7 @@ public class FriendshipService : IFriendshipService
             {
                 dto.FullName = userProfile.FullName ?? "Anonymous user";
                 dto.AvatarUrl = userProfile.AvatarUrl;
+                dto.Email = userProfile.Email;
             }
             else
             {
@@ -156,15 +161,8 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", requesterIds);
-            if (response.IsSuccessStatusCode)
-            {
-                var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                if (apiResult?.Data != null)
-                {
-                    usersDict = apiResult.Data.ToDictionary(u => u.Id, u => u);
-                }
-            }
+            var profilesMap = await _authApiClient.GetUserProfilesAsync(requesterIds);
+            usersDict = profilesMap;
         }
         catch
         {
@@ -181,6 +179,7 @@ public class FriendshipService : IFriendshipService
             {
                 dto.FullName = userProfile.FullName ?? "Anonymous user";
                 dto.AvatarUrl = userProfile.AvatarUrl;
+                dto.Email = userProfile.Email;
             }
             else
             {
@@ -201,15 +200,8 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", receiverIds);
-            if (response.IsSuccessStatusCode)
-            {
-                var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                if (apiResult?.Data != null)
-                {
-                    usersDict = apiResult.Data.ToDictionary(u => u.Id, u => u);
-                }
-            }
+            var profilesMap = await _authApiClient.GetUserProfilesAsync(receiverIds);
+            usersDict = profilesMap;
         }
         catch
         {
@@ -226,6 +218,7 @@ public class FriendshipService : IFriendshipService
             {
                 dto.FullName = userProfile.FullName ?? "Anonymous user";
                 dto.AvatarUrl = userProfile.AvatarUrl;
+                dto.Email = userProfile.Email;
             }
             else
             {
@@ -265,6 +258,9 @@ public class FriendshipService : IFriendshipService
         if (friendship.RequesterId != userId && friendship.ReceiverId != userId)
             throw new UnauthorizedAccessException("You do not have permission to delete this friendship.");
 
+        if (!string.Equals(friendship.Status, "Accepted", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("CannotUnfriendUnacceptedFriendship");
+
         int otherUserId = friendship.RequesterId == userId ? friendship.ReceiverId : friendship.RequesterId;
 
         await _friendshipRepository.DeleteAsync(friendshipId);
@@ -272,34 +268,42 @@ public class FriendshipService : IFriendshipService
         await _hubContext.Clients.User(otherUserId.ToString()).SendAsync("FriendshipDeleted", userId);
     }
 
+    public async Task CancelRequestAsync(int requesterId, int friendshipId)
+    {
+        var friendship = await _friendshipRepository.GetByIdAsync(friendshipId);
+        if (friendship == null)
+            throw new KeyNotFoundException("Friend request not found.");
+
+        if (friendship.RequesterId != requesterId)
+            throw new UnauthorizedAccessException("You can only cancel your own friend requests.");
+
+        if (!string.Equals(friendship.Status, "Pending", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("CannotCancelNonPendingRequest");
+
+        await _friendshipRepository.DeleteAsync(friendshipId);
+    }
+
     public async Task<PaginationDTO<FriendshipResponseDto>> GetFriendListAsync(int userId, int page, int pageSize)
     {
-        var (friends, total) = await _friendshipRepository.GetFriendListPagedAsync(userId, page, pageSize);
+        var allFriends = await _friendshipRepository.GetAllFriendsAsync(userId);
+        var total = allFriends.Count;
 
         if (total == 0) return new PaginationDTO<FriendshipResponseDto> { Data = new List<FriendshipResponseDto>(), Total = 0 };
 
-        var friendIds = friends.Select(f => f.RequesterId == userId ? f.ReceiverId : f.RequesterId).Distinct().ToList();
+        var friendIds = allFriends.Select(f => f.RequesterId == userId ? f.ReceiverId : f.RequesterId).Distinct().ToList();
 
-        var authApiUrl = $"{_authApiBase}/api/users/batch/public";
         var userProfiles = new Dictionary<int, UserProfileShortDto>();
         try
         {
-            var response = await _httpClient.PostAsJsonAsync(authApiUrl, friendIds);
-            if (response.IsSuccessStatusCode)
-            {
-                var result = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                if (result?.Data != null)
-                {
-                    userProfiles = result.Data.ToDictionary(u => u.Id, u => u);
-                }
-            }
+            var profilesMap = await _authApiClient.GetUserProfilesAsync(friendIds);
+            userProfiles = profilesMap;
         }
         catch
         {
             // Intentionally swallowed: return friend list without profile names if AuthAPI is unavailable
         }
 
-        var friendDtos = _mapper.Map<List<FriendshipResponseDto>>(friends, opt => 
+        var friendDtos = _mapper.Map<List<FriendshipResponseDto>>(allFriends, opt => 
         {
             opt.Items["CurrentUserId"] = userId; 
         });
@@ -308,8 +312,9 @@ public class FriendshipService : IFriendshipService
         {
             if (userProfiles.TryGetValue(dto.FriendId, out var profile))
             {
-                dto.FullName = profile.FullName;
+                dto.FullName = profile.FullName ?? "Anonymous user";
                 dto.AvatarUrl = profile.AvatarUrl;
+                dto.Email = profile.Email;
             }
             else
             {
@@ -317,9 +322,15 @@ public class FriendshipService : IFriendshipService
             }
         }
 
+        // Sort by FullName alphabetically
+        friendDtos = friendDtos.OrderBy(d => d.FullName).ToList();
+
+        // Paginate in-memory
+        var pagedDtos = friendDtos.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
         return new PaginationDTO<FriendshipResponseDto>
         {
-            Data = friendDtos,
+            Data = pagedDtos,
             Total = total
         };
     }
@@ -335,20 +346,12 @@ public class FriendshipService : IFriendshipService
 
         try
         {
-            var response = await _httpClient.PostAsJsonAsync($"{_authApiBase}/api/users/batch/public", new List<int> { dto.FriendId });
-            if (response.IsSuccessStatusCode)
+            var profilesMap = await _authApiClient.GetUserProfilesAsync(new List<int> { dto.FriendId });
+            if (profilesMap.TryGetValue(dto.FriendId, out var userProfile))
             {
-                var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<List<UserProfileShortDto>>>();
-                var userProfile = apiResult?.Data?.FirstOrDefault();
-                if (userProfile != null)
-                {
-                    dto.FullName = userProfile.FullName ?? "Anonymous user";
-                    dto.AvatarUrl = userProfile.AvatarUrl;
-                }
-                else
-                {
-                    dto.FullName = "Anonymous user";
-                }
+                dto.FullName = userProfile.FullName ?? "Anonymous user";
+                dto.AvatarUrl = userProfile.AvatarUrl;
+                dto.Email = userProfile.Email;
             }
             else
             {

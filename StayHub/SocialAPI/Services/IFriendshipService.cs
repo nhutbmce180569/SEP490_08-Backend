@@ -12,6 +12,7 @@ public interface IFriendshipService
     Task<IEnumerable<FriendshipResponseDto>> GetSentRequestsAsync(int userId);
     Task UpdateRequestStatusAsync(int userId, FriendRequestUpdateDto updateDto);
     Task DeleteFriendshipAsync(int userId, int friendshipId);
+    Task CancelRequestAsync(int requesterId, int friendshipId);
     Task<PaginationDTO<FriendshipResponseDto>> GetFriendListAsync(int userId, int page, int pageSize);
     Task<FriendshipResponseDto?> GetFriendshipStatusAsync(int userId, int targetUserId);
     Task<IEnumerable<UserProfileShortDto>> GetSuggestionsAsync(int userId);

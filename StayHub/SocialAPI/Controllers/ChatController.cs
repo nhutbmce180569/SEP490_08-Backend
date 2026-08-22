@@ -187,9 +187,53 @@ namespace SocialAPI.Controllers
             {
                 return Forbid();
             }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message.StartsWith("UserNotEligibleForScheduleChat|"))
+                {
+                    var names = ex.Message.Substring("UserNotEligibleForScheduleChat|".Length);
+                    var fallbackBase = "The following users are not eligible to join this tour schedule chat: {0}";
+                    var msg = M("UserNotEligibleForScheduleChat");
+                    var finalMessage = (msg != null && msg != "UserNotEligibleForScheduleChat") 
+                        ? string.Format(msg, names) 
+                        : string.Format(fallbackBase, names);
+                    return BadRequest(new { message = finalMessage });
+                }
+
+                var fallback = ex.Message;
+                var translatedMsg = M(ex.Message);
+                return BadRequest(new { message = translatedMsg != null && translatedMsg != ex.Message ? translatedMsg : fallback });
+            }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = M("AnErrorOccurredWhileAddingMembers"), error = ex.Message });
+            }
+        }
+
+        [HttpDelete("rooms/{roomId}/members/{targetUserId}")]
+        public async Task<IActionResult> RemoveMember(int roomId, int targetUserId)
+        {
+            try
+            {
+                var currentUserId = GetUserId();
+                await _chatService.RemoveMemberFromRoomAsync(roomId, targetUserId, currentUserId);
+                return Ok(new { message = "Member removed successfully." });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = M("AnErrorOccurredWhileRemovingMember"), error = ex.Message });
             }
         }
 

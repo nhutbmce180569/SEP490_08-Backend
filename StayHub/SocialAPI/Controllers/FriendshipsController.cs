@@ -14,7 +14,7 @@ namespace SocialAPI.Controllers;
 
 [Route("api/friends")]
 [ApiController]
-[Authorize]
+[Authorize(Roles = "Customer")]
 public class FriendshipsController : LocalizedControllerBase
 {
     private readonly IFriendshipService _friendshipService;
@@ -48,7 +48,17 @@ public class FriendshipsController : LocalizedControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(new { message = ex.Message });
+            var fallback = ex.Message switch
+            {
+                "RecentlyDeclinedFriendRequest" => "Your previous friend request to this user was declined. Please wait 7 days before sending another request.",
+                "You cannot send friend requests if you are a staff or manager." => "You cannot send friend requests if you are a staff or manager.",
+                "You cannot send friend requests to staff or manager accounts." => "You cannot send friend requests to staff or manager accounts.",
+                _ => ex.Message
+            };
+
+            var msg = M(ex.Message);
+            var finalMessage = msg != null && msg != ex.Message ? msg : fallback;
+            return BadRequest(new { message = finalMessage });
         }
     }
 
@@ -111,6 +121,45 @@ public class FriendshipsController : LocalizedControllerBase
         catch (UnauthorizedAccessException ex)
         {
             return StatusCode(403, new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            var fallback = ex.Message == "CannotUnfriendUnacceptedFriendship"
+                ? "Only accepted friendships can be unfriended."
+                : ex.Message;
+            
+            var msg = M(ex.Message);
+            var finalMessage = msg != null && msg != ex.Message ? msg : fallback;
+            return BadRequest(new { message = finalMessage });
+        }
+    }
+
+    [HttpDelete("{id}/cancel")]
+    public async Task<IActionResult> CancelRequest(int id)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            await _friendshipService.CancelRequestAsync(userId, id);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            var fallback = ex.Message == "CannotCancelNonPendingRequest"
+                ? "Only pending friend requests can be cancelled."
+                : ex.Message;
+
+            var msg = M(ex.Message);
+            var finalMessage = msg != null && msg != ex.Message ? msg : fallback;
+            return BadRequest(new { message = finalMessage });
         }
     }
 

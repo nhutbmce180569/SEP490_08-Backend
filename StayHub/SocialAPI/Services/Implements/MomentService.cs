@@ -288,36 +288,61 @@ public class MomentService : IMomentService
 
     public async Task<IEnumerable<MomentResponseDto>> GetMomentFeedWithUsersAsync(int? scheduleId, int currentUserId, string? bearerToken, int skip, int top)
     {
-        var rawMoments = (await _momentRepository.GetMomentFeedPagedAsync(scheduleId, currentUserId, skip, top)).ToList();
-        
+        // ─── PAGINATION FIX ────────────────────────────────────────────────────────
+        // Problem: DB returns exactly `top` rows, but then service filters out Tour-
+        // privacy moments the user isn't a member of. This means the returned list
+        // can be smaller than `top`, causing the frontend's infinite-scroll to stop
+        // early thinking there are no more pages.
+        //
+        // Solution: Fetch a larger buffer (top * 4) and use a sliding window until
+        // we have accumulated `top` visible moments or exhausted the DB.
+        // ──────────────────────────────────────────────────────────────────────────
+
         var moments = new List<TourMoment>();
-        // Cache membership results per scheduleId to avoid repeated HTTP calls
         var membershipCache = new Dictionary<int, bool>();
-        foreach (var m in rawMoments)
+        int dbSkip = skip;
+        const int bufferMultiplier = 4; // fetch 4× more than needed per round-trip
+
+        while (moments.Count < top)
         {
-            if (m.Privacy.Equals("Tour", StringComparison.OrdinalIgnoreCase) && m.UserId != currentUserId)
+            int fetchCount = (top - moments.Count) * bufferMultiplier;
+            var rawBatch = (await _momentRepository.GetMomentFeedPagedAsync(scheduleId, currentUserId, dbSkip, fetchCount)).ToList();
+
+            if (!rawBatch.Any()) break; // No more data in DB
+
+            foreach (var m in rawBatch)
             {
-                // If a specific scheduleId was passed as query filter, the caller has already
-                // been verified as an eligible member via the eligible-schedules API — skip
-                // the expensive inter-service membership check to avoid cross-service HTTPS
-                // certificate errors in local dev and unnecessary latency in production.
-                if (scheduleId.HasValue && scheduleId.Value > 0 && m.ScheduleId == scheduleId.Value)
+                if (m.Privacy.Equals("Tour", StringComparison.OrdinalIgnoreCase) && m.UserId != currentUserId)
+                {
+                    // If a specific scheduleId filter was provided, the caller already verified
+                    // membership via eligible-schedules API — skip the expensive check.
+                    if (scheduleId.HasValue && scheduleId.Value > 0 && m.ScheduleId == scheduleId.Value)
+                    {
+                        moments.Add(m);
+                    }
+                    else
+                    {
+                        if (!membershipCache.TryGetValue(m.ScheduleId, out bool isMember))
+                        {
+                            isMember = await CheckIsTourMemberAsync(m.ScheduleId, currentUserId, bearerToken);
+                            membershipCache[m.ScheduleId] = isMember;
+                        }
+                        if (isMember) moments.Add(m);
+                    }
+                }
+                else
                 {
                     moments.Add(m);
-                    continue;
                 }
 
-                if (!membershipCache.TryGetValue(m.ScheduleId, out bool isMember))
-                {
-                    isMember = await CheckIsTourMemberAsync(m.ScheduleId, currentUserId, bearerToken);
-                    membershipCache[m.ScheduleId] = isMember;
-                }
-                if (!isMember)
-                {
-                    continue;
-                }
+                if (moments.Count >= top) break;
             }
-            moments.Add(m);
+
+            // Advance the DB cursor by how many raw rows we processed
+            dbSkip += rawBatch.Count;
+
+            // If DB returned fewer rows than we asked for, there's nothing left
+            if (rawBatch.Count < fetchCount) break;
         }
 
         var dtos = _mapper.Map<List<MomentResponseDto>>(moments);
@@ -379,27 +404,46 @@ public class MomentService : IMomentService
         int? scheduleId, int currentUserId, string? bearerToken, int skip, int top,
         double? minLat, double? maxLat, double? minLng, double? maxLng)
     {
-        var rawMoments = (await _momentRepository.GetMomentFeedPagedAsync(scheduleId, currentUserId, skip, top, minLat, maxLat, minLng, maxLng)).ToList();
-
         var moments = new List<TourMoment>();
         var membershipCache = new Dictionary<int, bool>();
-        foreach (var m in rawMoments)
+        int dbSkip = skip;
+        const int bufferMultiplier = 4;
+
+        while (moments.Count < top)
         {
-            if (m.Privacy.Equals("Tour", StringComparison.OrdinalIgnoreCase) && m.UserId != currentUserId)
+            int fetchCount = (top - moments.Count) * bufferMultiplier;
+            var rawBatch = (await _momentRepository.GetMomentFeedPagedAsync(scheduleId, currentUserId, dbSkip, fetchCount, minLat, maxLat, minLng, maxLng)).ToList();
+
+            if (!rawBatch.Any()) break;
+
+            foreach (var m in rawBatch)
             {
-                if (scheduleId.HasValue && scheduleId.Value > 0 && m.ScheduleId == scheduleId.Value)
+                if (m.Privacy.Equals("Tour", StringComparison.OrdinalIgnoreCase) && m.UserId != currentUserId)
+                {
+                    if (scheduleId.HasValue && scheduleId.Value > 0 && m.ScheduleId == scheduleId.Value)
+                    {
+                        moments.Add(m);
+                    }
+                    else
+                    {
+                        if (!membershipCache.TryGetValue(m.ScheduleId, out bool isMember))
+                        {
+                            isMember = await CheckIsTourMemberAsync(m.ScheduleId, currentUserId, bearerToken);
+                            membershipCache[m.ScheduleId] = isMember;
+                        }
+                        if (isMember) moments.Add(m);
+                    }
+                }
+                else
                 {
                     moments.Add(m);
-                    continue;
                 }
-                if (!membershipCache.TryGetValue(m.ScheduleId, out bool isMember))
-                {
-                    isMember = await CheckIsTourMemberAsync(m.ScheduleId, currentUserId, bearerToken);
-                    membershipCache[m.ScheduleId] = isMember;
-                }
-                if (!isMember) continue;
+
+                if (moments.Count >= top) break;
             }
-            moments.Add(m);
+
+            dbSkip += rawBatch.Count;
+            if (rawBatch.Count < fetchCount) break;
         }
 
         var dtos = _mapper.Map<List<MomentResponseDto>>(moments);
@@ -492,17 +536,22 @@ public class MomentService : IMomentService
     public async Task ReportContentAsync(int reporterId, string contentType, int targetId, string reason, string? details)
     {
         int? scheduleId = null;
+        int? contentOwnerId = null;
 
         if (contentType.Equals("Moment", StringComparison.OrdinalIgnoreCase))
         {
             var moment = await _dbContext.TourMoments.FindAsync(targetId);
             if (moment == null) throw new KeyNotFoundException("Moment not found.");
+            if (moment.UserId == reporterId) throw new ArgumentException("CannotReportOwnMoment");
             scheduleId = moment.ScheduleId;
+            contentOwnerId = moment.UserId;
         }
         else if (contentType.Equals("Comment", StringComparison.OrdinalIgnoreCase))
         {
             var comment = await _dbContext.MomentComments.FindAsync(targetId);
             if (comment == null) throw new KeyNotFoundException("Comment not found.");
+            if (comment.UserId == reporterId) throw new ArgumentException("CannotReportOwnComment");
+            contentOwnerId = comment.UserId;
             var moment = await _dbContext.TourMoments.FindAsync(comment.MomentId);
             if (moment != null) scheduleId = moment.ScheduleId;
         }
@@ -519,7 +568,7 @@ public class MomentService : IMomentService
             r.Status == "Pending");
 
         if (alreadyReported)
-            throw new ArgumentException("Bạn đã báo cáo nội dung này rồi. Vui lòng chờ kiểm duyệt viên xem xét.");
+            throw new ArgumentException("AlreadyReportedContent");
 
         var report = new ContentReport
         {
@@ -534,6 +583,37 @@ public class MomentService : IMomentService
 
         await _dbContext.ContentReports.AddAsync(report);
         await _dbContext.SaveChangesAsync();
+
+        // Gửi thông báo xác nhận cho người báo cáo
+        try
+        {
+            await _notificationInternalService.NotifyUserAsync(
+                reporterId,
+                "Report Submitted",
+                $"Your report on a {contentType.ToLower()} has been submitted and is under review."
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MomentService] Failed to notify reporter about report submission: {ex.Message}");
+        }
+
+        // Gửi thông báo cho chủ nội dung bị báo cáo
+        if (contentOwnerId.HasValue && contentOwnerId.Value != reporterId)
+        {
+            try
+            {
+                await _notificationInternalService.NotifyUserAsync(
+                    contentOwnerId.Value,
+                    "Your Content Was Reported",
+                    $"Your {contentType.ToLower()} has been reported for: {reason}. It will be reviewed by our moderation team."
+                );
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[MomentService] Failed to notify content owner about report: {ex.Message}");
+            }
+        }
 
         if (scheduleId.HasValue && scheduleId.Value > 0)
         {
@@ -614,6 +694,24 @@ public class MomentService : IMomentService
     {
         var report = await _dbContext.ContentReports.FindAsync(reportId);
         if (report == null) throw new KeyNotFoundException("Report not found.");
+
+        int? contentOwnerId = null;
+        if (report.ContentType.Equals("Moment", StringComparison.OrdinalIgnoreCase))
+        {
+            var moment = await _dbContext.TourMoments.FindAsync(report.TargetId);
+            if (moment != null)
+            {
+                contentOwnerId = moment.UserId;
+            }
+        }
+        else if (report.ContentType.Equals("Comment", StringComparison.OrdinalIgnoreCase))
+        {
+            var comment = await _dbContext.MomentComments.FindAsync(report.TargetId);
+            if (comment != null)
+            {
+                contentOwnerId = comment.UserId;
+            }
+        }
 
         if (action.Equals("Reject", StringComparison.OrdinalIgnoreCase))
         {
@@ -708,7 +806,51 @@ public class MomentService : IMomentService
         }
 
         await _dbContext.SaveChangesAsync();
+
+        // Gửi thông báo cho tất cả các reporter liên quan (bao gồm cả báo cáo trùng lặp)
+        var reportersToNotify = new List<int> { report.ReporterId };
+        foreach (var dup in duplicateReports)
+        {
+            reportersToNotify.Add(dup.ReporterId);
+        }
+        reportersToNotify = reportersToNotify.Distinct().ToList();
+
+        string reporterTitle = "Report Resolved";
+        string reporterContent = action.Equals("Reject", StringComparison.OrdinalIgnoreCase)
+            ? $"Your report on a {report.ContentType.ToLower()} has been reviewed and appropriate action has been taken."
+            : $"Your report on a {report.ContentType.ToLower()} has been reviewed and no violation was found.";
+
+        foreach (var rId in reportersToNotify)
+        {
+            try
+            {
+                await _notificationInternalService.NotifyUserAsync(rId, reporterTitle, reporterContent);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[MomentService] Failed to notify reporter {rId} about resolution: {ex.Message}");
+            }
+        }
+
+        // Gửi thông báo cho chủ sở hữu nội dung
+        if (contentOwnerId.HasValue)
+        {
+            string ownerTitle = "Content Moderation";
+            string ownerContent = action.Equals("Reject", StringComparison.OrdinalIgnoreCase)
+                ? $"Your {report.ContentType.ToLower()} has been reviewed following a report and moderation action was taken."
+                : $"Your {report.ContentType.ToLower()} has been reviewed following a report and no violation was found.";
+
+            try
+            {
+                await _notificationInternalService.NotifyUserAsync(contentOwnerId.Value, ownerTitle, ownerContent);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[MomentService] Failed to notify content owner {contentOwnerId.Value} about resolution: {ex.Message}");
+            }
+        }
     }
+
 
     public async Task<MomentResponseDto?> GetMomentByIdAsync(int momentId, int currentUserId)
     {
