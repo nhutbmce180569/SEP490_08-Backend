@@ -57,9 +57,9 @@ namespace AuthAPI.DTOs
 
     public class UpdateProfileDTO
     {
-        [Required(ErrorMessage = "Full Name is required.")]
-        [StringLength(100, MinimumLength = 2, ErrorMessage = "Full name must be between 2 and 100 characters.")]
-        [RegularExpression(@"^[a-zA-Z0-9\sÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ]+$", ErrorMessage = "FullNameCannotContainSpecialCharacters")]
+        [Required(ErrorMessage = "FullNameRequired")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "FullNameLength")]
+        [RegularExpression(@"^[\p{L}0-9\s]+$", ErrorMessage = "FullNameCannotContainSpecialCharacters")]
         public string FullName { get; set; } = null!;
 
         [Phone(ErrorMessage = "Invalid phone number format.")]
@@ -76,21 +76,23 @@ namespace AuthAPI.DTOs
 
     public class RegisterDTO
     {
-        [Required(ErrorMessage = "Email is required.")]
-        [EmailAddress(ErrorMessage = "Invalid email format.")]
+        [Required(ErrorMessage = "EmailRequired")]
+        [StringLength(255, ErrorMessage = "EmailTooLong")]
+        [EmailAddress(ErrorMessage = "InvalidEmailFormat")]
         public string Email { get; set; } = null!;
 
-        [Required(ErrorMessage = "Password is required.")]
+        [Required(ErrorMessage = "PasswordRequired")]
+        [StringLength(100, ErrorMessage = "PasswordTooLong")]
         [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$",
-            ErrorMessage = "Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.")]
+            ErrorMessage = "PasswordFormatInvalid")]
         public string Password { get; set; } = null!;
 
-        [Required(ErrorMessage = "Full Name is required.")]
-        [StringLength(100, MinimumLength = 2, ErrorMessage = "Full name must be between 2 and 100 characters.")]
-        [RegularExpression(@"^[a-zA-Z0-9\sÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ]+$", ErrorMessage = "FullNameCannotContainSpecialCharacters")]
+        [Required(ErrorMessage = "FullNameRequired")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "FullNameLength")]
+        [RegularExpression(@"^[\p{L}0-9\s]+$", ErrorMessage = "FullNameCannotContainSpecialCharacters")]
         public string FullName { get; set; } = null!;
 
-        [Required(ErrorMessage = "Phone Number is required.")]
+        [Required(ErrorMessage = "PhoneNumberRequired")]
         [StringLength(15, MinimumLength = 8, ErrorMessage = "PhoneNumberMax15Chars")]
         [RegularExpression(@"^[0-9+()\- ]{8,15}$", ErrorMessage = "InvalidPhoneNumberFormat")]
         public string PhoneNumber { get; set; } = null!;
@@ -101,12 +103,14 @@ namespace AuthAPI.DTOs
 
     public class SendRegisterOtpDTO
     {
-        [Required(ErrorMessage = "Email is required.")]
-        [EmailAddress(ErrorMessage = "Invalid email format.")]
+        [Required(ErrorMessage = "EmailRequired")]
+        [StringLength(255, ErrorMessage = "EmailTooLong")]
+        [EmailAddress(ErrorMessage = "InvalidEmailFormat")]
         public string Email { get; set; } = null!;
 
-        [Required(ErrorMessage = "Full Name is required.")]
-        [RegularExpression(@"^[a-zA-Z0-9\sÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ]+$", ErrorMessage = "FullNameCannotContainSpecialCharacters")]
+        [Required(ErrorMessage = "FullNameRequired")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "FullNameLength")]
+        [RegularExpression(@"^[\p{L}0-9\s]+$", ErrorMessage = "FullNameCannotContainSpecialCharacters")]
         public string FullName { get; set; } = null!;
     }
 

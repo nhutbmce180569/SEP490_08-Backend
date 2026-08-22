@@ -40,7 +40,7 @@ namespace AuthAPI.DTOs
 
         [Required(ErrorMessage = "Full Name is required.")]
         [StringLength(100, MinimumLength = 2, ErrorMessage = "Full name must be between 2 and 100 characters.")]
-        [RegularExpression(@"^[a-zA-Z0-9\sÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ]+$", ErrorMessage = "FullNameCannotContainSpecialCharacters")]
+        [RegularExpression(@"^[\p{L}0-9\s]+$", ErrorMessage = "FullNameCannotContainSpecialCharacters")]
         public string FullName { get; set; } = null!;
 
         [AllowedImageExtensions(new string[] { ".jpg", ".jpeg", ".png", ".gif" }, ErrorMessage = "Avatar must be an image file (.jpg, .jpeg, .png, .gif).")]
@@ -61,7 +61,7 @@ namespace AuthAPI.DTOs
     {
         [Required(ErrorMessage = "Full Name is required.")]
         [StringLength(100, MinimumLength = 2, ErrorMessage = "Full name must be between 2 and 100 characters.")]
-        [RegularExpression(@"^[a-zA-Z0-9\sÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ]+$", ErrorMessage = "FullNameCannotContainSpecialCharacters")]
+        [RegularExpression(@"^[\p{L}0-9\s]+$", ErrorMessage = "FullNameCannotContainSpecialCharacters")]
         public string FullName { get; set; } = null!;
 
         [AllowedImageExtensions(new string[] { ".jpg", ".jpeg", ".png", ".gif" }, ErrorMessage = "Avatar must be an image file (.jpg, .jpeg, .png, .gif).")]
