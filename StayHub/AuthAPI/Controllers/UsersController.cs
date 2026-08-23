@@ -86,7 +86,7 @@ namespace AuthAPI.Controllers
             }
             catch (Exception ex)
             {
-                return Conflict(new { message = ex.Message });
+                return Conflict(new { message = M(ex.Message) });
             }
         }
 
@@ -114,7 +114,7 @@ namespace AuthAPI.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new { message = M(ex.Message) });
             }
         }
 
@@ -136,7 +136,7 @@ namespace AuthAPI.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new { message = M(ex.Message) });
             }
         }
 
@@ -271,7 +271,7 @@ namespace AuthAPI.Controllers
             catch (InvalidOperationException ex)
             {
                 // Bắt lỗi nếu cố tình block Admin
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new { message = M(ex.Message) });
             }
             catch (Exception ex)
             {
