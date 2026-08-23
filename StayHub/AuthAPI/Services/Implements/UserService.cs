@@ -75,7 +75,7 @@ namespace AuthAPI.Services.Implements
         {
             var existingUser = await _userRepository.GetByEmail(createUserDto.Email);
             if (existingUser != null)
-                throw new InvalidOperationException("Email is already in use.");
+                throw new InvalidOperationException("EmailAlreadyInUse");
 
             if (!string.IsNullOrWhiteSpace(createUserDto.PhoneNumber))
             {

@@ -8,15 +8,19 @@ namespace BookingAPI.DTOs
         public int OrderId { get; set; }
 
         [Required]
+        [StringLength(100, ErrorMessage = "BankNameTooLong")]
         public string BankName { get; set; } = null!;
 
         [Required]
+        [StringLength(50, ErrorMessage = "AccountNumberTooLong")]
         public string AccountNumber { get; set; } = null!;
 
         [Required]
+        [StringLength(100, ErrorMessage = "AccountHolderNameTooLong")]
         public string AccountHolderName { get; set; } = null!;
 
         [Required]
+        [StringLength(2500, ErrorMessage = "ReasonTooLong")]
         public string Reason { get; set; } = null!;
     }
 
@@ -26,6 +30,7 @@ namespace BookingAPI.DTOs
         [RegularExpression("^(Approve|Reject)$", ErrorMessage = "Action must be either 'Approve' or 'Reject'.")]
         public string Action { get; set; } = null!; // "Approve" hoặc "Reject"
 
+        [StringLength(500, ErrorMessage = "RejectReasonTooLong")]
         public string? RejectReason { get; set; } // Bắt buộc nếu Action là "Reject"
     }
     public class CancellationRequestListDTO
