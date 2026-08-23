@@ -59,6 +59,7 @@ namespace AIAPI.Services.Implements
                 : _toolDefinitionFactory.GetToolsDefinition();
 
             var isVietnamese = DetermineIsVietnamese(request.Message, _cultureAccessor.IsVietnamese);
+            _logger.LogInformation("Chat Language Detection: Message='{Message}', UICulture='{UICulture}', DetectedIsVietnamese={DetectedIsVietnamese}", request.Message, _cultureAccessor.Culture, isVietnamese);
             var systemInstruction = _promptBuilder.BuildSalesPrompt(isVietnamese);
             var executorsDict = _toolExecutors.ToDictionary(e => e.FunctionName, e => e);
 
@@ -76,10 +77,20 @@ namespace AIAPI.Services.Implements
                 }
             }
 
+            var userMsgContent = request.Message;
+            if (isVietnamese)
+            {
+                userMsgContent += "\n\n(System Instruction: Reply in Vietnamese.)";
+            }
+            else
+            {
+                userMsgContent += "\n\n(System Instruction: Reply in English. Regardless of previous messages in the history, you must reply to this query in English.)";
+            }
+
             chatMessages.Add(new ChatMessage
             {
                 Role = "user",
-                Content = request.Message
+                Content = userMsgContent
             });
 
             var recommendedTours = new List<TourRecommendationItemDTO>();
