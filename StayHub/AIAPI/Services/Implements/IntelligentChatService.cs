@@ -58,7 +58,8 @@ namespace AIAPI.Services.Implements
                 ? _toolDefinitionFactory.GetOpenAiToolsDefinition()
                 : _toolDefinitionFactory.GetToolsDefinition();
 
-            var systemInstruction = _promptBuilder.BuildSalesPrompt(_cultureAccessor.IsVietnamese);
+            var isVietnamese = DetermineIsVietnamese(request.Message, _cultureAccessor.IsVietnamese);
+            var systemInstruction = _promptBuilder.BuildSalesPrompt(isVietnamese);
             var executorsDict = _toolExecutors.ToDictionary(e => e.FunctionName, e => e);
 
             var chatMessages = new List<ChatMessage>();
@@ -217,7 +218,7 @@ namespace AIAPI.Services.Implements
                 break;
             }
 
-            var suggestedQuestions = _cultureAccessor.IsVietnamese
+            var suggestedQuestions = isVietnamese
                 ? new List<string>
                   {
                       "Có những tour du lịch nào đang hot?",
@@ -241,6 +242,54 @@ namespace AIAPI.Services.Implements
                 TourismInsights = tourismInsights,
                 SuggestedQuestions = suggestedQuestions
             };
+        }
+
+        private bool DetermineIsVietnamese(string message, bool uiIsVietnamese)
+        {
+            if (string.IsNullOrWhiteSpace(message)) return uiIsVietnamese;
+
+            // 1. If it has Vietnamese tone marks, it is definitely Vietnamese
+            string vietnameseChars = "áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵđÁÀẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬÉÈẺẼẸÊẾỀỂỄỆÍÌỈĨỊÓÒỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÚÙỦŨỤƯỨỪỬỮỰÝỲỶỸỴĐ";
+            if (message.Any(c => vietnameseChars.Contains(c)))
+            {
+                return true;
+            }
+
+            // 2. Tokenize and count English/Vietnamese keywords
+            var words = message.ToLowerInvariant()
+                .Split(new[] { ' ', '.', ',', '!', '?', ';', ':', '-', '_', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .ToHashSet();
+
+            string[] englishKeywords = { 
+                "hello", "hi", "tour", "tours", "recommend", "recommendation", "recommendations",
+                "weather", "book", "booking", "show", "what", "how", "where", "when", "who", "why", 
+                "yes", "no", "good", "morning", "afternoon", "evening", "day", "date", "price", 
+                "cost", "schedule", "trip", "travel", "guide", "hotel", "stay", "find", "search", 
+                "list", "please", "thanks", "thank", "help", "information", "info", "suggest", 
+                "suggestion", "suggestions", "me", "i", "you", "my", "a", "an", "the", "is", "are", 
+                "am", "was", "were", "do", "does", "did", "can", "could", "will", "would", "should",
+                "to", "in", "at", "for", "with", "about"
+            };
+
+            string[] vietnameseUnmarkedKeywords = {
+                "toi", "muon", "di", "tim", "thoi", "tiet", "cho", "dat", "gia", "lich", "trinh", 
+                "viet", "nam", "chuyen", "vien", "tu", "van", "ban", "goi", "y", "khao", "sat",
+                "co", "khong", "nao", "hot", "hom", "nay", "ngay", "tuan", "sau", "thang", "nam"
+            };
+
+            int englishCount = words.Count(w => englishKeywords.Contains(w));
+            int vietnameseCount = words.Count(w => vietnameseUnmarkedKeywords.Contains(w));
+
+            if (englishCount > 0 && englishCount >= vietnameseCount)
+            {
+                return false;
+            }
+            if (vietnameseCount > 0 && vietnameseCount > englishCount)
+            {
+                return true;
+            }
+
+            return uiIsVietnamese;
         }
     }
 }
