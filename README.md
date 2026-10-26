@@ -1,7 +1,7 @@
 # StayHub - Smart Tour Booking & Management System
 
 **StayHub** is a comprehensive travel management platform built on a robust **Microservices Architecture**. It goes beyond traditional tour booking, operator management, and online payments by delivering breakthrough user experiences. Key features include an AI Assistant for personalized itinerary suggestions, 3D AR mapping, and a dedicated internal social network supporting real-time chat, SOS emergency alerts, and Locket-style moment sharing.
-
+Documentation: https://1drv.ms/f/c/977ea38a062b63c4/IgC7aR5muEfcRIYqbVrgANDwAbUkVbacHVTSKiGnLHXe6FA
 ---
 
 ## 🛠 Technology Stack
